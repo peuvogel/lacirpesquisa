@@ -130,7 +130,7 @@ Plans:
 Plans:
 
 - [x] 04-01-PLAN.md — Wave 0: geo fetch script, types, session model, CI fixtures (MAP-05/08 infra)
-- [ ] 04-02-PLAN.md — Wave 1: UF choropleth + legend (MAP-01)
+- [x] 04-02-PLAN.md — Wave 1: UF choropleth + legend (MAP-01)
 - [ ] 04-03-PLAN.md — Wave 2: territory paste UF matching (MAP-02)
 - [ ] 04-04-PLAN.md — Wave 3: GroupBar DnD + presets + summary strip (MAP-07/08/10)
 - [ ] 04-05-PLAN.md — Wave 4: drill-down + lazy topo + muni match (MAP-03/04/05)
@@ -180,6 +180,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 9/9 | Complete   | 2026-07-25 |
-| 4. Mapas como interface estatística | 1/8 | In Progress|  |
+| 4. Mapas como interface estatística | 2/8 | In Progress|  |
 | 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |
