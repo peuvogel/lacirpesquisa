@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useReducer } from 'react';
 import type { GeoLevel, MapViewState, TerritoryRef } from '@/geo/types';
 import { resolvePresetTerritories, type RegionPresetId } from '@/geo/territoryCatalog';
-import { getMockVariableById } from './mockAnalysisData';
+import { getCatalogLabel } from '@/features/catalog/catalogAnalysisData';
+
+export type MapProvenance = 'catalog' | 'paste' | 'hybrid';
 
 export const MAX_GROUPS = 10;
 export const MAX_TERRITORIES_PER_GROUP = 27;
@@ -33,7 +35,7 @@ export interface MapAnalysisState {
   groups: MapAnalysisGroup[];
   activeGroupId: string | null;
   mapView: MapViewState;
-  provenance: 'mock' | 'paste' | 'hybrid';
+  provenance: MapProvenance;
 }
 
 export type MapAnalysisAction =
@@ -66,7 +68,7 @@ export function createInitialMapAnalysisState(): MapAnalysisState {
     groups: [],
     activeGroupId: null,
     mapView: { level: 'uf' as GeoLevel },
-    provenance: 'mock',
+    provenance: 'catalog',
   };
 }
 
@@ -261,8 +263,7 @@ function collectVariableLabels(state: MapAnalysisState): string[] {
   const labels: string[] = [];
   for (const group of state.groups) {
     for (const id of group.variableIds) {
-      const variable = getMockVariableById(id);
-      const label = variable?.label ?? id;
+      const label = getCatalogLabel(id);
       if (!seen.has(label)) {
         seen.add(label);
         labels.push(label);

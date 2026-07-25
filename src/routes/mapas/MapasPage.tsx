@@ -22,7 +22,12 @@ import {
   deriveSelectionSummary,
   useMapAnalysis,
 } from './mapAnalysisState';
-import { getDefaultMockVariableId, getMockMetricByUf } from './mockAnalysisData';
+import {
+  getCatalogLabel,
+  getDefaultCatalogVariableId,
+  getMetricByUf,
+  getMetricByUfAndYear,
+} from '@/features/catalog/catalogAnalysisData';
 import { SelectionSummaryStrip } from './SelectionSummaryStrip';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
 
@@ -89,10 +94,17 @@ export function MapasPage() {
   const activeVariableId = useMemo(() => {
     if (activeGroup?.variableIds[0]) return activeGroup.variableIds[0];
     const firstWithVars = state.groups.find((group) => group.variableIds.length > 0);
-    return firstWithVars?.variableIds[0] ?? getDefaultMockVariableId();
+    return firstWithVars?.variableIds[0] ?? getDefaultCatalogVariableId();
   }, [activeGroup, state.groups]);
 
-  const choroplethValues = useMemo(() => getMockMetricByUf(activeVariableId), [activeVariableId]);
+  const choroplethValues = useMemo(() => {
+    const pointYear = activeGroup?.time.mode === 'point' ? activeGroup.time.point : undefined;
+    const year = pointYear?.trim() ? parseInt(pointYear, 10) : NaN;
+    if (Number.isFinite(year)) {
+      return getMetricByUfAndYear(activeVariableId, year);
+    }
+    return getMetricByUf(activeVariableId);
+  }, [activeGroup?.time, activeVariableId]);
 
   const ungroupedTerritories = useMemo(
     () => buildUngroupedTerritories(selectedUFs, state.groups),
@@ -345,6 +357,7 @@ export function MapasPage() {
           <ChoroplethLegend
             values={Object.values(choroplethValues)}
             activeVariableId={activeVariableId}
+            variableLabel={getCatalogLabel(activeVariableId)}
           />
           {!hasInteracted ? <MapLegendHint /> : null}
         </section>

@@ -19,7 +19,7 @@ import {
   type TimeMode,
 } from './mapAnalysisState';
 
-const YEAR_OPTIONS = Array.from(
+const DEFAULT_YEAR_OPTIONS = Array.from(
   { length: CAPACITATION_MAX_YEAR - CAPACITATION_MIN_YEAR + 1 },
   (_, index) => String(CAPACITATION_MIN_YEAR + index),
 );
@@ -27,6 +27,8 @@ const YEAR_OPTIONS = Array.from(
 export interface TemporalidadeControlProps {
   time: GroupTimeConfig;
   onChange: (time: GroupTimeConfig) => void;
+  /** When set (catalog pack years), replaces the full capacitação 2000–2025 list (D-19). */
+  yearOptions?: readonly string[];
   className?: string;
 }
 
@@ -35,11 +37,13 @@ function YearSelect({
   label,
   value,
   onChange,
+  yearOptions,
 }: {
   id: string;
   label: string;
   value?: string;
   onChange: (year: string) => void;
+  yearOptions: readonly string[];
 }) {
   return (
     <div className="space-y-1.5">
@@ -51,7 +55,7 @@ function YearSelect({
           <SelectValue placeholder="Escolha o ano" />
         </SelectTrigger>
         <SelectContent>
-          {YEAR_OPTIONS.map((year) => (
+          {yearOptions.map((year) => (
             <SelectItem key={year} value={year}>
               {year}
             </SelectItem>
@@ -90,7 +94,13 @@ function ComparePeriodInput({
   );
 }
 
-export function TemporalidadeControl({ time, onChange, className }: TemporalidadeControlProps) {
+export function TemporalidadeControl({
+  time,
+  onChange,
+  yearOptions,
+  className,
+}: TemporalidadeControlProps) {
+  const years = yearOptions?.length ? yearOptions : DEFAULT_YEAR_OPTIONS;
   const hasTime = isTimeValid(time);
   const rangeInvalid = isRangeTimeInvalid(time);
 
@@ -138,6 +148,7 @@ export function TemporalidadeControl({ time, onChange, className }: Temporalidad
               label="Ano único"
               value={time.point}
               onChange={handlePointChange}
+              yearOptions={years}
             />
           </TabsContent>
           <TabsContent value="range" className="mt-4 space-y-3">
@@ -147,12 +158,14 @@ export function TemporalidadeControl({ time, onChange, className }: Temporalidad
                 label="Ano inicial"
                 value={time.start}
                 onChange={(year) => handleRangeChange('start', year)}
+                yearOptions={years}
               />
               <YearSelect
                 id="time-end"
                 label="Ano final"
                 value={time.end}
                 onChange={(year) => handleRangeChange('end', year)}
+                yearOptions={years}
               />
             </div>
             {rangeInvalid ? (
@@ -194,6 +207,7 @@ export function TemporalidadeControl({ time, onChange, className }: Temporalidad
             label="Ano único"
             value={time.point}
             onChange={handlePointChange}
+            yearOptions={years}
           />
         </TabsContent>
         <TabsContent value="range" className="mt-4 space-y-3">
@@ -203,12 +217,14 @@ export function TemporalidadeControl({ time, onChange, className }: Temporalidad
               label="Ano inicial"
               value={time.start}
               onChange={(year) => handleRangeChange('start', year)}
+              yearOptions={years}
             />
             <YearSelect
               id="time-end"
               label="Ano final"
               value={time.end}
               onChange={(year) => handleRangeChange('end', year)}
+              yearOptions={years}
             />
           </div>
           {rangeInvalid ? (

@@ -51,7 +51,7 @@ describe('SelectionSummaryStrip', () => {
           name: 'Grupo 1',
           territoryIds: [baTerritory, peTerritory],
           time: { mode: 'range', start: '2018', end: '2022' },
-          variableIds: ['mock.internacoes', 'mock.obitos'],
+          variableIds: ['sih.embolia_trombose.internacoes', 'sih.embolia_trombose.obitos'],
         },
         {
           id: 'g2',
@@ -65,7 +65,7 @@ describe('SelectionSummaryStrip', () => {
             },
           ],
           time: { mode: 'point', point: '2020' },
-          variableIds: ['mock.internacoes'],
+          variableIds: ['sih.embolia_trombose.internacoes'],
         },
       ],
     };
@@ -76,7 +76,7 @@ describe('SelectionSummaryStrip', () => {
     expect(summary.sentence).toContain('BA, PE');
     expect(summary.sentence).toContain('2 grupos');
     expect(summary.sentence).toContain('2018–2022');
-    expect(summary.sentence).toContain('Internações hospitalares');
+    expect(summary.sentence).toContain('Internações por embolia e trombose arteriais');
   });
 
   it('has aria-live polite on container', () => {

@@ -41,14 +41,14 @@ function twoGroupFixture(): MapAnalysisGroup[] {
       name: 'Grupo A',
       territoryIds: [baTerritory],
       time: { mode: 'point', point: '2020' },
-      variableIds: ['mock.internacoes'],
+      variableIds: ['sih.embolia_trombose.internacoes'],
     },
     {
       id: 'g2',
       name: 'Grupo B',
       territoryIds: [spTerritory],
       time: { mode: 'point', point: '2021' },
-      variableIds: ['mock.internacoes'],
+      variableIds: ['sih.embolia_trombose.internacoes'],
     },
   ];
 }
@@ -64,7 +64,12 @@ function renderDialog(
   onDataset: (dataset: ReturnType<typeof useSession>['dataset']) => void = () => {},
 ) {
   const onOpenChange = vi.fn();
-  const summary = deriveSelectionSummary({ groups, activeGroupId: 'g1', mapView: { level: 'uf' }, provenance: 'mock' });
+  const summary = deriveSelectionSummary({
+    groups,
+    activeGroupId: 'g1',
+    mapView: { level: 'uf' },
+    provenance: 'catalog',
+  });
 
   render(
     <MemoryRouter>
@@ -75,7 +80,7 @@ function renderDialog(
           onOpenChange={onOpenChange}
           groups={groups}
           summary={summary}
-          provenance="mock"
+          provenance="catalog"
         />
       </SessionProvider>
     </MemoryRouter>,

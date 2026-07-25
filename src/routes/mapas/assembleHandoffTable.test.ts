@@ -21,8 +21,8 @@ function group(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGroup {
     id: 'g1',
     name: 'Grupo 1',
     territoryIds: [baTerritory],
-    time: { mode: 'point', point: '2020' },
-    variableIds: ['mock.internacoes'],
+    time: { mode: 'point', point: '2019' },
+    variableIds: ['sih.embolia_trombose.internacoes'],
     ...overrides,
   };
 }
@@ -35,8 +35,21 @@ describe('assembleHandoffTable', () => {
     expect(result.headers[0]).toBe('Território');
     expect(result.headers[1]).toBe('Grupo');
     expect(result.headers[2]).toBe('Período');
-    expect(result.headers).toContain('Internações hospitalares');
+    expect(result.headers).toContain('Internações por embolia e trombose arteriais');
     expect(result.rows.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('emits pack metric for SP that is not the old mock UF_WEIGHT value', () => {
+    const result = assembleHandoffTable([
+      group({
+        territoryIds: [spTerritory],
+        variableIds: ['mock.internacoes'],
+        time: { mode: 'point', point: '2019' },
+      }),
+    ]);
+    const value = Number(result.rows[0]?.[3]);
+    expect(value).toBe(5660);
+    expect(value).not.toBe(898000);
   });
 
   it('emits one row per territory for two groups with two variables', () => {
@@ -45,14 +58,14 @@ describe('assembleHandoffTable', () => {
         id: 'g1',
         name: 'Grupo A',
         territoryIds: [baTerritory],
-        variableIds: ['mock.internacoes'],
+        variableIds: ['sih.embolia_trombose.internacoes'],
       }),
       group({
         id: 'g2',
         name: 'Grupo B',
         territoryIds: [spTerritory],
-        time: { mode: 'point', point: '2021' },
-        variableIds: ['mock.obitos'],
+        time: { mode: 'point', point: '2019' },
+        variableIds: ['sih.embolia_trombose.obitos'],
       }),
     ];
 
@@ -80,14 +93,14 @@ describe('assembleHandoffTable', () => {
     expect(result.rows).toEqual(paste.rows);
   });
 
-  it('uses mock assembly when provenance is mock even if paste exists', () => {
+  it('uses catalog assembly when provenance is catalog even if paste exists', () => {
     const paste = {
       headers: ['Município', 'Taxa por 100k'],
       rows: [['Salvador', '12,5']],
     };
 
     const result = assembleHandoffTable([group()], {
-      provenance: 'mock',
+      provenance: 'catalog',
       pasteData: paste,
     });
 

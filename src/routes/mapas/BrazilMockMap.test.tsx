@@ -6,7 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrazilMockMap } from './BrazilMockMap';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
-import { getMockMetricByUf } from './mockAnalysisData';
+import { getMetricByUf } from '@/features/catalog/catalogAnalysisData';
 import { UF_LIST, getUfName } from './ufCodes';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -95,7 +95,7 @@ describe('BrazilMockMap', () => {
 });
 
 describe('BrazilMapCanvas', () => {
-  const mockMetrics = getMockMetricByUf('mock.internacoes');
+  const mockMetrics = getMetricByUf('sih.embolia_trombose.internacoes');
 
   it('renders exactly 27 interactive UF elements', () => {
     render(
@@ -105,7 +105,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={() => {}}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
       />,
     );
     expect(screen.getAllByRole('button')).toHaveLength(27);
@@ -119,7 +119,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={() => {}}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
       />,
     );
 
@@ -138,7 +138,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={() => {}}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
       />,
     );
     for (const uf of UF_LIST) {
@@ -156,7 +156,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={onToggleUF}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
       />,
     );
 
@@ -174,7 +174,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={() => {}}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
       />,
     );
 
@@ -192,7 +192,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={() => {}}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
         mapView={{ level: 'municipio', parentCode: 'BA', ufIbge: '29' }}
         onSetMapView={onSetMapView}
       />,
@@ -211,7 +211,7 @@ describe('BrazilMapCanvas', () => {
         onHoverUF={() => {}}
         onToggleUF={() => {}}
         choroplethValues={mockMetrics}
-        activeVariableId="mock.internacoes"
+        activeVariableId="sih.embolia_trombose.internacoes"
         mapView={{ level: 'uf' }}
       />,
     );

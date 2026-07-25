@@ -8,7 +8,6 @@ import type { CatalogEntry, PackFile } from './types';
 import variablesJson from '../../../public/data/catalog/variables.json';
 import emboliaPackJson from '../../../public/data/catalog/packs/sih.embolia_trombose_uf.json';
 import amputacaoPackJson from '../../../public/data/catalog/packs/sih.amputacao_mmii_uf.json';
-import { UF_LIST } from '@/routes/mapas/ufCodes';
 
 /** Analysis variable shown in Mapas checkboxes / choropleth (catalog or paste overlay). */
 export interface CatalogAnalysisVariable {
@@ -39,8 +38,22 @@ const LOADABLE_ENTRIES = CATALOG_ENTRIES.filter(
   (entry) => entry.loadable && entry.packId && entry.columnKey,
 );
 
+/** UF siglas + IBGE codes derived from packs (keeps this module free of Mapas imports). */
+const UF_META: Array<{ sigla: string; ibgeCode: string }> = (() => {
+  const seen = new Map<string, string>();
+  for (const pack of Object.values(PACKS)) {
+    for (const row of pack.rows) {
+      const sigla = String(row.uf);
+      if (!seen.has(sigla)) seen.set(sigla, String(row.uf_codigo));
+    }
+  }
+  return [...seen.entries()]
+    .map(([sigla, ibgeCode]) => ({ sigla, ibgeCode }))
+    .sort((a, b) => a.sigla.localeCompare(b.sigla));
+})();
+
 const IBGE_BY_SIGLA: Record<string, string> = Object.fromEntries(
-  UF_LIST.map(({ sigla, ibgeCode }) => [sigla, ibgeCode]),
+  UF_META.map(({ sigla, ibgeCode }) => [sigla, ibgeCode]),
 );
 
 export function resolveVariableId(variableId: string): string {
@@ -176,7 +189,7 @@ export function getMetricByIbgeCode(variableId: string): Record<string, number> 
  */
 export function getCatalogVariableIdsByUf(): Record<string, string[]> {
   const ids = LOADABLE_ENTRIES.map((e) => e.id);
-  return Object.fromEntries(UF_LIST.map(({ sigla }) => [sigla, [...ids]]));
+  return Object.fromEntries(UF_META.map(({ sigla }) => [sigla, [...ids]]));
 }
 
 export function getCatalogLabel(variableId: string): string {

@@ -20,11 +20,32 @@ export const MOCK_COLLECTION_LINKS: Record<string, CollectionLink[]> = {
       note: 'Abra Morbidade hospitalar (SIH) e selecione Linha = UF ou Município, Coluna = Ano, Conteúdo = Internações.',
     },
   ],
+  'Internações por embolia e trombose arteriais': [
+    {
+      label: 'TABNET: SIH/SUS',
+      url: 'http://tabnet.datasus.gov.br/',
+      note: 'Morbidade hospitalar (SIH/nibr) — embolia e trombose arteriais por UF e ano.',
+    },
+  ],
   'Óbitos hospitalares': [
     {
       label: 'TABNET: SIH/SUS',
       url: 'http://tabnet.datasus.gov.br/',
       note: 'Em Morbidade hospitalar, use Conteúdo = Óbitos e filtre por causa ou procedimento conforme sua pergunta.',
+    },
+  ],
+  'Óbitos hospitalares por embolia e trombose arteriais': [
+    {
+      label: 'TABNET: SIH/SUS',
+      url: 'http://tabnet.datasus.gov.br/',
+      note: 'Morbidade hospitalar (SIH) — óbitos por embolia e trombose arteriais.',
+    },
+  ],
+  'Internações por amputação de membros inferiores': [
+    {
+      label: 'TABNET: SIH/SUS Procedimentos',
+      url: 'http://tabnet.datasus.gov.br/',
+      note: 'Procedimentos hospitalares (qibr) — amputação de MMII por UF e ano.',
     },
   ],
   'Taxa de mortalidade infantil': [

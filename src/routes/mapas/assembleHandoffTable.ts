@@ -1,11 +1,10 @@
-import type { GroupTimeConfig, MapAnalysisGroup } from './mapAnalysisState';
-import { formatTimeSummary } from './mapAnalysisState';
 import {
-  getMockMetricByUf,
-  getMockMetricByUfAndYear,
-  getMockVariableById,
-  MOCK_ID_TO_LABEL,
-} from './mockAnalysisData';
+  getCatalogLabel,
+  getMetricByUf,
+  getMetricByUfAndYear,
+} from '@/features/catalog/catalogAnalysisData';
+import type { GroupTimeConfig, MapAnalysisGroup, MapProvenance } from './mapAnalysisState';
+import { formatTimeSummary } from './mapAnalysisState';
 
 const MAX_HANDOFF_ROWS = 10_000;
 
@@ -15,9 +14,9 @@ export interface PasteHandoffData {
 }
 
 export interface AssembleHandoffOptions {
-  /** When provenance is hybrid/paste and paste rows exist, prefer paste over mock assembly. */
+  /** When provenance is hybrid/paste and paste rows exist, prefer paste over catalog assembly. */
   pasteData?: PasteHandoffData | null;
-  provenance?: 'mock' | 'paste' | 'hybrid';
+  provenance?: MapProvenance;
 }
 
 export interface AssembledHandoffTable {
@@ -53,18 +52,17 @@ function resolveYearFromTime(time: GroupTimeConfig): number | null {
   }
 }
 
-function metricValue(variableId: string, sigla: string, time: GroupTimeConfig): number {
+/** Returns pack metric as string, or n/d when missing (never invent 0 for null rates). */
+function metricValue(variableId: string, sigla: string, time: GroupTimeConfig): string {
   const year = resolveYearFromTime(time);
-  if (year !== null) {
-    const byYear = getMockMetricByUfAndYear(variableId, year);
-    return byYear[sigla] ?? 0;
-  }
-  const base = getMockMetricByUf(variableId);
-  return base[sigla] ?? 0;
+  const byUf =
+    year !== null ? getMetricByUfAndYear(variableId, year) : getMetricByUf(variableId);
+  const value = byUf[sigla];
+  return value === undefined ? 'n/d' : String(value);
 }
 
 function variableHeaderLabel(variableId: string): string {
-  return getMockVariableById(variableId)?.label ?? MOCK_ID_TO_LABEL[variableId] ?? variableId;
+  return getCatalogLabel(variableId);
 }
 
 function buildSourceLabel(groups: MapAnalysisGroup[]): string {
@@ -92,17 +90,16 @@ function collectVariableHeaders(groups: MapAnalysisGroup[]): string[] {
 }
 
 /**
- * Assembles a wide tabular dataset from map analysis groups and mock time-series metrics.
+ * Assembles a wide tabular dataset from map analysis groups and catalog pack metrics.
  *
  * Output shape: Território; Grupo; Período; {variable columns…} — one row per territory per group.
- * When `provenance` is `paste` or `hybrid` and `pasteData` is provided, paste rows are returned as-is
- * (headers/rows from user paste take precedence over mock assembly).
+ * When `provenance` is `paste` or `hybrid` and `pasteData` is provided, paste rows are returned as-is.
  */
 export function assembleHandoffTable(
   groups: MapAnalysisGroup[],
   options: AssembleHandoffOptions = {},
 ): AssembledHandoffTable {
-  const { pasteData, provenance = 'mock' } = options;
+  const { pasteData, provenance = 'catalog' } = options;
   const sourceLabel = buildSourceLabel(groups);
 
   if (
@@ -139,7 +136,7 @@ export function assembleHandoffTable(
           row.push('');
           continue;
         }
-        row.push(String(metricValue(variableId, sigla, group.time)));
+        row.push(metricValue(variableId, sigla, group.time));
       }
 
       rows.push(row);

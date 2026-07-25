@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { computeVariableIntersection } from './computeVariableIntersection';
 import {
-  getMockVariableById,
-  getMockVariableIdsByUf,
-  type MockVariable,
-} from './mockAnalysisData';
+  getAnalysisVariableById,
+  getCatalogVariableIdsByUf,
+  type CatalogAnalysisVariable,
+} from '@/features/catalog/catalogAnalysisData';
+import { computeVariableIntersection } from './computeVariableIntersection';
 
 export interface VariableCheckboxListProps {
   territorySiglas: string[];
@@ -20,8 +20,13 @@ function formatMissingUfs(siglas: string[]): string {
   return siglas.join(', ');
 }
 
-function ProvenanceBadge({ variable }: { variable: MockVariable }) {
-  const label = variable.provenance === 'paste' ? 'Dados colados por você' : 'Exemplo didático';
+function ProvenanceBadge({ variable }: { variable: CatalogAnalysisVariable }) {
+  const label =
+    variable.provenance === 'paste'
+      ? 'Dados colados por você'
+      : variable.sourceSystem
+        ? `Catálogo LACIR · ${variable.sourceSystem}`
+        : 'Catálogo LACIR';
   return (
     <Badge variant="outline" className="shrink-0 font-sans text-[11px]">
       {label}
@@ -33,27 +38,36 @@ function resolveVariableRows(
   territorySiglas: string[],
   pastedVariableIds: string[],
 ): {
-  intersection: MockVariable[];
-  partial: Array<{ variable: MockVariable; missingFrom: string[] }>;
+  intersection: CatalogAnalysisVariable[];
+  partial: Array<{ variable: CatalogAnalysisVariable; missingFrom: string[] }>;
 } {
-  const variablesByUf = getMockVariableIdsByUf();
+  const variablesByUf = getCatalogVariableIdsByUf();
   const availability = computeVariableIntersection(territorySiglas, variablesByUf);
 
   const intersection = availability.intersection
-    .map((id) => getMockVariableById(id))
-    .filter((entry): entry is MockVariable => Boolean(entry));
+    .map((id) => getAnalysisVariableById(id))
+    .filter((entry): entry is CatalogAnalysisVariable => Boolean(entry));
 
   const partial = availability.partial
     .map(({ variable: id, missingFrom }) => {
-      const variable = getMockVariableById(id);
+      const variable = getAnalysisVariableById(id);
       return variable ? { variable, missingFrom } : null;
     })
-    .filter((entry): entry is { variable: MockVariable; missingFrom: string[] } => Boolean(entry));
+    .filter(
+      (entry): entry is { variable: CatalogAnalysisVariable; missingFrom: string[] } =>
+        Boolean(entry),
+    );
 
   for (const id of pastedVariableIds) {
-    const variable = getMockVariableById(id);
+    const variable = getAnalysisVariableById(id);
     if (variable && !intersection.some((entry) => entry.id === id)) {
       intersection.push({ ...variable, provenance: 'paste' });
+    } else if (!variable && !intersection.some((entry) => entry.id === id)) {
+      intersection.push({
+        id,
+        label: id,
+        provenance: 'paste',
+      });
     }
   }
 
@@ -129,8 +143,8 @@ export function VariableCheckboxList({
       </ul>
 
       <p className="font-sans text-xs text-text-muted" data-testid="variable-provenance-footnote">
-        Variáveis marcadas como <strong>Exemplo didático</strong> vêm de dados fictícios para
-        capacitação. Dados colados por você refletem tabelas que você colou nesta sessão.
+        Variáveis do <strong>Catálogo LACIR</strong> vêm de packs SIH/CNES/SIDRA versionados.
+        Dados colados por você refletem tabelas que você colou nesta sessão.
       </p>
     </div>
   );

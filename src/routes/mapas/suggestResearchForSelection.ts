@@ -1,6 +1,7 @@
+import { getCatalogLabel } from '@/features/catalog/catalogAnalysisData';
 import { isTestAvailable } from '@/features/tests/registry';
-import type { MapAnalysisGroup } from './mapAnalysisState';
-import { MOCK_ID_TO_LABEL } from './mockAnalysisData';
+import type { MapAnalysisGroup, MapProvenance } from './mapAnalysisState';
+import { MOCK_LABEL_TO_ID } from './mockAnalysisData';
 
 export interface ResearchSuggestion {
   testId: string;
@@ -9,7 +10,7 @@ export interface ResearchSuggestion {
 
 export interface SuggestResearchInput {
   groups: MapAnalysisGroup[];
-  provenance?: 'mock' | 'paste' | 'hybrid';
+  provenance?: MapProvenance;
 }
 
 const COUNT_KEYWORDS = ['óbito', 'interna', 'amputa'] as const;
@@ -32,7 +33,7 @@ function formatTerritories(count: number, labels: string[]): string {
 }
 
 function variableLabel(variableId: string): string {
-  return MOCK_ID_TO_LABEL[variableId] ?? variableId;
+  return getCatalogLabel(variableId);
 }
 
 function collectUniqueTerritoryLabels(groups: MapAnalysisGroup[]): string[] {
@@ -218,10 +219,9 @@ export function suggestResearchFromFlatSelection(
               name: sigla,
             })),
             time: { mode: 'point', point: '2020' },
-            variableIds: selectedVariables.map((label) => {
-              const entry = Object.entries(MOCK_ID_TO_LABEL).find(([, v]) => v === label);
-              return entry?.[0] ?? label;
-            }),
+            variableIds: selectedVariables.map(
+              (label) => MOCK_LABEL_TO_ID[label] ?? label,
+            ),
           },
         ]
       : [];
@@ -230,5 +230,5 @@ export function suggestResearchFromFlatSelection(
     return suggestResearchForSelection({ groups: [] });
   }
 
-  return suggestResearchForSelection({ groups: pseudoGroups, provenance: 'mock' });
+  return suggestResearchForSelection({ groups: pseudoGroups, provenance: 'catalog' });
 }

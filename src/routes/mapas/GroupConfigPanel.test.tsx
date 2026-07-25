@@ -44,7 +44,7 @@ describe('GroupConfigPanel', () => {
     render(<GroupConfigPanel group={group} dispatch={dispatch} />);
 
     expect(screen.getByRole('heading', { name: 'O que comparar?' })).toBeInTheDocument();
-    expect(screen.getAllByText('Exemplo didático').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Catálogo LACIR/).length).toBeGreaterThan(0);
     expect(screen.getByTestId('variable-provenance-footnote')).toBeInTheDocument();
   });
 
@@ -64,17 +64,19 @@ describe('GroupConfigPanel', () => {
 
     render(<GroupConfigPanel group={group} dispatch={dispatch} />);
 
-    const checkbox = screen.getByRole('checkbox', { name: /Internações hospitalares/i });
+    const checkbox = screen.getByRole('checkbox', {
+      name: /Internações por embolia e trombose arteriais/i,
+    });
     fireEvent.click(checkbox);
 
     expect(dispatch).toHaveBeenCalledWith({
       type: 'TOGGLE_GROUP_VARIABLE',
       groupId,
-      variableId: 'mock.internacoes',
+      variableId: 'sih.embolia_trombose.internacoes',
     });
   });
 
-  it('shows partial variable destructive note when variable missing in some UFs', () => {
+  it('lists catalog loadables for BA+RS without partial-availability gaps', () => {
     let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'CREATE_GROUP',
       territories: [
@@ -86,12 +88,15 @@ describe('GroupConfigPanel', () => {
     state = mapAnalysisReducer(state, {
       type: 'SET_GROUP_TIME',
       groupId,
-      time: { mode: 'range', start: '2018', end: '2022' },
+      time: { mode: 'range', start: '2018', end: '2021' },
     });
     const group = state.groups[0]!;
 
     render(<GroupConfigPanel group={group} dispatch={vi.fn()} />);
 
-    expect(screen.getAllByText(/Não existe em/).length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole('checkbox', { name: /Internações por embolia e trombose arteriais/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Não existe em/)).not.toBeInTheDocument();
   });
 });

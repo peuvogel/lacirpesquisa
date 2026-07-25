@@ -1,7 +1,11 @@
-import type { Dispatch } from 'react';
+import { useMemo, type Dispatch } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import { cn } from '@/lib/utils';
 import type { TerritoryRef } from '@/geo/types';
+import {
+  getCatalogTimeSeriesYears,
+  getDefaultCatalogVariableId,
+} from '@/features/catalog/catalogAnalysisData';
 import { TemporalidadeControl } from './TemporalidadeControl';
 import { VariableCheckboxList } from './VariableCheckboxList';
 import {
@@ -23,6 +27,24 @@ function territoriesToSiglas(territories: TerritoryRef[]): string[] {
     .map((t) => t.sigla!);
 }
 
+/** Intersection of pack years for selected vars; falls back to default catalog var years. */
+function resolveYearOptions(variableIds: string[]): string[] {
+  const ids = variableIds.length > 0 ? variableIds : [getDefaultCatalogVariableId()];
+  let intersection: number[] | null = null;
+  for (const id of ids) {
+    const years = getCatalogTimeSeriesYears(id);
+    if (years.length === 0) continue;
+    intersection =
+      intersection === null
+        ? [...years]
+        : intersection.filter((y) => years.includes(y));
+  }
+  if (!intersection?.length) {
+    intersection = getCatalogTimeSeriesYears(getDefaultCatalogVariableId());
+  }
+  return intersection.map(String);
+}
+
 export function GroupConfigPanel({
   group,
   dispatch,
@@ -31,6 +53,10 @@ export function GroupConfigPanel({
 }: GroupConfigPanelProps) {
   const territorySiglas = territoriesToSiglas(group.territoryIds);
   const timeReady = isTimeValid(group.time);
+  const yearOptions = useMemo(
+    () => resolveYearOptions(group.variableIds),
+    [group.variableIds],
+  );
 
   const handleTimeChange = (time: typeof group.time) => {
     dispatch({ type: 'SET_GROUP_TIME', groupId: group.id, time });
@@ -57,7 +83,11 @@ export function GroupConfigPanel({
         ) : null}
       </header>
 
-      <TemporalidadeControl time={group.time} onChange={handleTimeChange} />
+      <TemporalidadeControl
+        time={group.time}
+        onChange={handleTimeChange}
+        yearOptions={yearOptions}
+      />
 
       {timeReady ? (
         group.variableIds.length === 0 ? (

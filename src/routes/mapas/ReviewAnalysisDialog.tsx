@@ -16,14 +16,14 @@ import {
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useSession } from '@/shared/session/SessionProvider';
 import { assembleHandoffTable, type PasteHandoffData } from './assembleHandoffTable';
-import type { MapAnalysisGroup, SelectionSummary } from './mapAnalysisState';
+import { getCatalogLabel } from '@/features/catalog/catalogAnalysisData';
+import type { MapAnalysisGroup, MapProvenance, SelectionSummary } from './mapAnalysisState';
 import {
   guardHandoffTestId,
   MAPAS_TABULAR_OPTIONS,
   resolveHandoffTestId,
 } from './mapHandoffShared';
 import { getCollectionLinks } from './mockCollectionLinks';
-import { MOCK_ID_TO_LABEL } from './mockAnalysisData';
 import { SelectionSummaryStrip } from './SelectionSummaryStrip';
 import { suggestResearchForSelection } from './suggestResearchForSelection';
 import { SuggestedTestCard } from './SuggestedTestCard';
@@ -34,7 +34,7 @@ export interface ReviewAnalysisDialogProps {
   onOpenChange: (open: boolean) => void;
   groups: MapAnalysisGroup[];
   summary: SelectionSummary;
-  provenance?: 'mock' | 'paste' | 'hybrid';
+  provenance?: MapProvenance;
   pasteData?: PasteHandoffData | null;
 }
 
@@ -43,7 +43,7 @@ function collectVariableLabelsForLinks(groups: MapAnalysisGroup[]): string[] {
   const labels: string[] = [];
   for (const group of groups) {
     for (const variableId of group.variableIds) {
-      const label = MOCK_ID_TO_LABEL[variableId] ?? variableId;
+      const label = getCatalogLabel(variableId);
       if (!seen.has(label)) {
         seen.add(label);
         labels.push(label);
@@ -58,7 +58,7 @@ export function ReviewAnalysisDialog({
   onOpenChange,
   groups,
   summary,
-  provenance = 'mock',
+  provenance = 'catalog',
   pasteData,
 }: ReviewAnalysisDialogProps) {
   const navigate = useNavigate();
@@ -119,11 +119,16 @@ export function ReviewAnalysisDialog({
     }
   }
 
+  const groupsReady = groups.every(
+    (g) => g.territoryIds.length > 0 && g.variableIds.length > 0,
+  );
   const canConfirm =
     groups.length > 0 &&
-    (provenance === 'mock'
-      ? groups.every((g) => g.territoryIds.length > 0 && g.variableIds.length > 0)
-      : Boolean(pasteData?.rows.length));
+    (provenance === 'paste'
+      ? Boolean(pasteData?.rows.length)
+      : provenance === 'hybrid'
+        ? Boolean(pasteData?.rows.length) || groupsReady
+        : groupsReady);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
