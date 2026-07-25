@@ -86,6 +86,7 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 | Mapas intra-estado: municípios + mesorregiões + regiões de saúde | Ligantes fazem estudos estaduais (ex.: Bahia) com granularidade útil | — Pending |
 | Meta-análise por último na ordem de build | Depende de base sólida de UI/testes/mapas | — Pending |
 | Sem login/backend neste milestone | Foco em valor didático e entrega; auth depois | — Pending |
+| Reutilizar lógica/fórmulas do JASP (e do MVP) — não reinventar engines | `jasp-desktop-development/` e testes v1.0 são oráculo e fonte de algoritmos; esforço do milestone vai para UI didática, interpretação PT e UX | — Pending |
 
 ## Evolution
 

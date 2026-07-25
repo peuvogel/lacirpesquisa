@@ -2,7 +2,7 @@
 
 **Milestone:** v2.0 Suite estatística + mapas DataSUS  
 **Defined:** 2026-07-25  
-**Status:** Draft → pending roadmap mapping
+**Status:** Roadmap mapped — ready for planning
 
 ## v2.0 Requirements
 
@@ -78,37 +78,37 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
-| TEST-05 | — | Pending |
-| TEST-06 | — | Pending |
-| TEST-07 | — | Pending |
-| TEST-08 | — | Pending |
-| TEST-09 | — | Pending |
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| MAP-03 | — | Pending |
-| MAP-04 | — | Pending |
-| MAP-05 | — | Pending |
-| CAT-01 | — | Pending |
-| CAT-02 | — | Pending |
-| CAT-03 | — | Pending |
-| META-01 | — | Pending |
-| META-02 | — | Pending |
-| META-03 | — | Pending |
-| META-04 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
+| UI-01 | Phase 1 | Pending |
+| UI-02 | Phase 1 | Pending |
+| UI-03 | Phase 1 | Pending |
+| UI-04 | Phase 1 | Pending |
+| UI-05 | Phase 1 | Pending |
+| UI-06 | Phase 1 | Pending |
+| UX-01 | Phase 1 | Pending |
+| TEST-01 | Phase 2 | Pending |
+| TEST-02 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Pending |
+| TEST-04 | Phase 3 | Pending |
+| TEST-05 | Phase 3 | Pending |
+| TEST-06 | Phase 3 | Pending |
+| TEST-07 | Phase 3 | Pending |
+| TEST-08 | Phase 3 | Pending |
+| TEST-09 | Phase 3 | Pending |
+| UX-02 | Phase 3 | Pending |
+| MAP-01 | Phase 4 | Pending |
+| MAP-02 | Phase 4 | Pending |
+| MAP-03 | Phase 4 | Pending |
+| MAP-04 | Phase 4 | Pending |
+| MAP-05 | Phase 4 | Pending |
+| CAT-01 | Phase 5 | Pending |
+| CAT-02 | Phase 5 | Pending |
+| CAT-03 | Phase 5 | Pending |
+| META-01 | Phase 6 | Pending |
+| META-02 | Phase 6 | Pending |
+| META-03 | Phase 6 | Pending |
+| META-04 | Phase 6 | Pending |
 
-**Coverage:** 29/29 requirements mapped after roadmap  
+**Coverage:** 29/29 requirements mapped ✓  
 **Orphaned requirements:** (none)  
 **Phantom phase requirements:** (none)
 
