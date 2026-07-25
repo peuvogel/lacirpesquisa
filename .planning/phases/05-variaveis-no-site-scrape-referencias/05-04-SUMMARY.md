@@ -71,7 +71,7 @@ Each task was committed atomically:
 1. **Task 1: Variáveis page shell, filters, and list** - `9522542` (feat)
 2. **Task 2: Detail panel with provenance + test hint** - `b7e109a` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `7cde82c` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/routes/variaveis/VariaveisPage.tsx` — catalog page composition + Estatística handoff
