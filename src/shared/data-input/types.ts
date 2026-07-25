@@ -152,7 +152,7 @@ export interface DatasusHeaderCandidate {
   reasons: string[];
 }
 
-export type DatasusColumnRole = 'primary-category' | 'category' | 'time' | 'measure' | 'total';
+export type DatasusColumnRole = 'primary-category' | 'category' | 'time' | 'measure' | 'total' | 'ignore';
 
 export type DatasusVariableType = 'categorical' | 'temporal' | 'quantitative' | 'total' | 'metadata';
 
