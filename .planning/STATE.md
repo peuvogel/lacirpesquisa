@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-09 executed — Mapas mock map, intersection panel, session mapSelection
-stopped_at: Completed 01-09-PLAN.md
-last_updated: "2026-07-25T18:04:22.750Z"
-last_activity: 2026-07-25 — Plan 01-09 executed (BrazilMockMap, VariablePanel, computeVariableIntersection)
+status: Plan 01-10 executed — Teste demo end-to-end, ResultsPanel, PNG export
+stopped_at: Completed 01-10-PLAN.md
+last_updated: "2026-07-25T18:30:00.000Z"
+last_activity: 2026-07-25 — Plan 01-10 executed (TesteDemo, ResultsPanel, demoStats)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 9
-  percent: 0
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (8/12 plans complete)
+**Current focus:** Phase 1 — In progress (10/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01 through 01-07 and 01-09 complete (12 plans total, wave-based execution) — 01-10+ still pending
-Status: Plan 01-09 executed — Mapas mock map, intersection panel, session mapSelection
-Last activity: 2026-07-25 — Plan 01-09 executed (BrazilMockMap, VariablePanel, computeVariableIntersection)
+Plan: 01-01 through 01-10 complete (12 plans total) — 01-11 and 01-12 pending
+Status: Plan 01-10 executed — Teste demo end-to-end, ResultsPanel, PNG export
+Last activity: 2026-07-25 — Plan 01-10 executed (TesteDemo, ResultsPanel, demoStats)
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Accumulated Context
 
@@ -63,6 +63,9 @@ Progress: [███████░░░] 67%
 - [Phase 01]: IBGE Malhas SVG committed as sanitized brazilUfPaths data; cartogram fallback not needed
 - [Phase 01]: Step 4 variable types editable per column (D-08 expanded) — React port improves on legacy read-only type summary
 - [Phase 01]: useDatasusWizard publishes DatasusSession via onSessionChange; no window.__LACIR_SHARED__ writes (01-10 wires SessionProvider)
+- [Phase 01]: TabularInputPanel showPreview=false defers ColumnPreviewTable to Configurar in TesteDemo flow
+- [Phase 01]: ResultsPanel is the Phase 2/3 reusable Resultados shell (metrics, chart, interpretation, PNG)
+- [Phase 01]: Teste demo stub uses honest descriptive stats only — buildDemoInterpretation disclaims significance testing
 
 ### Pending Todos
 
@@ -74,8 +77,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:04:22.748Z
-Stopped at: Completed 01-09-PLAN.md
+Last session: 2026-07-25T18:30:00.000Z
+Stopped at: Completed 01-10-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -90,3 +93,4 @@ Resume file: None
 | Phase 01-redesign-base-react-shell P07 | 25min | 3 tasks | 9 files |
 | Phase 01-redesign-base-react-shell P08 | 25min | 3 tasks | 8 files |
 | Phase 01-redesign-base-react-shell P09 | 25min | 3 tasks | 11 files |
+| Phase 01-redesign-base-react-shell P10 | 25min | 3 tasks | 12 files |
