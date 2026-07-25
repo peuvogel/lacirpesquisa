@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AlphaSelector } from './AlphaSelector';
+import { AssumptionNudgeStrip } from './AssumptionNudgeStrip';
 import { ModeChoiceCard } from './ModeChoiceCard';
 import { SoftResetAlert } from './SoftResetAlert';
 
@@ -61,5 +62,50 @@ describe('shared Configurar components', () => {
     expect(
       screen.getByText(/Mantivemos os dados colados, mas limpamos as configurações específicas deste modo/),
     ).toBeInTheDocument();
+  });
+});
+
+describe('AssumptionNudgeStrip', () => {
+  it('renders info and warning nudges with distinct status alerts', () => {
+    render(
+      <AssumptionNudgeStrip
+        nudges={[
+          { severity: 'info', message: 'Teste não paramétrico — use quando a normalidade falhar.' },
+          { severity: 'warning', message: 'Contagens esperadas baixas — interprete com cautela.' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
+    const statuses = screen.getAllByRole('status');
+    expect(statuses).toHaveLength(2);
+    expect(screen.getByText(/Teste não paramétrico/)).toBeInTheDocument();
+    expect(screen.getByText(/Contagens esperadas baixas/)).toBeInTheDocument();
+  });
+
+  it('fires onNavigateTest when CTA is clicked', async () => {
+    const user = userEvent.setup();
+    const onNavigateTest = vi.fn();
+
+    render(
+      <AssumptionNudgeStrip
+        nudges={[
+          {
+            severity: 'warning',
+            message: 'Superdispersão detectada.',
+            cta: { label: 'Abrir Binomial Negativa', testId: 'binomial-negativa' },
+          },
+        ]}
+        onNavigateTest={onNavigateTest}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Abrir Binomial Negativa' }));
+    expect(onNavigateTest).toHaveBeenCalledWith('binomial-negativa');
+  });
+
+  it('renders nothing when nudges array is empty', () => {
+    const { container } = render(<AssumptionNudgeStrip nudges={[]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });
