@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-03 executed and committed — parseTabular/datasusImporter/datasusNormalizer ported to TS with differential parity suites over 3 TABNET fixtures, all green
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-07-25T17:34:47.782Z"
-last_activity: 2026-07-25 — Plan 01-03 executed (parseTabular.ts/datasusImporter.ts/datasusNormalizer.ts + TABNET fixtures)
+status: Plan 01-05 executed and committed — SessionProvider, Header/NAV_ITEMS, router (4 routes + errorElement), PlaceholderShell/EmptyState, Estatística/Mapas skeletons, all green
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-07-25T17:47:00.000Z"
+last_activity: 2026-07-25 — Plan 01-05 executed (SessionProvider, Header, AppShell, router, route shells)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 4
-  percent: 33
+  completed_plans: 5
+  percent: 42
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (4/12 plans complete)
+**Current focus:** Phase 1 — In progress (5/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01, 01-02, 01-03, 01-04 complete (12 plans total, wave-based execution) — 01-05+ still pending
-Status: Plan 01-03 executed and committed — parseTabular/datasusImporter/datasusNormalizer ported to TS with differential parity suites over 3 TABNET fixtures, all green
-Last activity: 2026-07-25 — Plan 01-03 executed (parseTabular.ts/datasusImporter.ts/datasusNormalizer.ts + TABNET fixtures)
+Plan: 01-01, 01-02, 01-03, 01-04, 01-05 complete (12 plans total, wave-based execution) — 01-06+ still pending
+Status: Plan 01-05 executed and committed — SessionProvider, Header/NAV_ITEMS, router (4 routes + errorElement), PlaceholderShell/EmptyState, Estatística/Mapas skeletons, all green
+Last activity: 2026-07-25 — Plan 01-05 executed (SessionProvider, Header, AppShell, router, route shells)
 
-Progress: [███░░░░░░░] 33%
+Progress: [████░░░░░░] 42%
 
 ## Accumulated Context
 
@@ -52,6 +52,9 @@ Progress: [███░░░░░░░] 33%
 - [Phase 01]: datasus-importer.js's splitDelimitedLine and tabular-data-input.js's splitDelimitedLine kept as two separate, undeduplicated implementations (tuned for different input shapes)
 - [Phase 01]: TABNET fixtures hand-authored (no raw messy export found under trabalhos datasus/ — all pre-cleaned by coleta_* scripts)
 - [Phase 01]: normalizer's Phase 2+ stat-derivation functions (deriveIndependentTTest/derivePairedTTest/deriveCorrelationPairs/derivePraisSeries) ported and typed but numerically unverified — Phase 2 parity work still needed
+- [Phase 01]: SessionProvider derives hasData every render (never stored as its own state) so it can't go stale for the 01-07 leave-warning
+- [Phase 01]: added src/app/RouteError.tsx as the router's errorElement (T-01-ROUTE mitigation) — catches both render errors and unmatched paths
+- [Phase 01]: deleted src/App.tsx and src/test/smoke.test.tsx — router.test.tsx is now the sole boot-level test
 
 ### Pending Todos
 
@@ -63,8 +66,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T17:34:47.782Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-07-25T17:47:00.000Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -74,3 +77,4 @@ Resume file: None
 | Phase 01 P03 | ~10 min | 3 tasks | 12 files |
 | Phase 01 P04 | 15 min | 3 tasks | 7 files |
 | Phase 01 P02 | 40min | 2 tasks | 3 files |
+| Phase 01 P05 | ~30 min | 3 tasks | 16 files |
