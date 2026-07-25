@@ -46,7 +46,7 @@ Plans:
 - [x] 01-03-PLAN.md — Wave 2: port tabular/DataSUS parsers with TABNET fixtures and differential parity tests
 - [x] 01-04-PLAN.md — Wave 2: port chart theme + ChartCanvas lifecycle + PNG export hook + pt-BR formatting
 - [x] 01-05-PLAN.md — Wave 3: app shell — header nav, router, placeholder routes, in-memory session
-- [ ] 01-06-PLAN.md — Wave 3: FlowSteps stepper, useTabularInput, paste/upload panel, confirmable column preview
+- [x] 01-06-PLAN.md — Wave 3: FlowSteps stepper, useTabularInput, paste/upload panel, confirmable column preview
 - [ ] 01-07-PLAN.md — Wave 4: test registry, collapsible sidebar, "Qual teste usar?" modal, Portal DATASUS link
 - [ ] 01-08-PLAN.md — Wave 4: DataSUS assistant — state machine port + six-step JSX panel
 - [ ] 01-09-PLAN.md — Wave 4: Mapas mock — 27-UF SVG, intersection/partial variable panel
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Redesign / base React shell | 5/12 | In Progress|  |
+| 1. Redesign / base React shell | 6/12 | In Progress|  |
 | 2. Migrar testes existentes | 0/TBD | Not started | - |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
