@@ -1,10 +1,11 @@
 ---
 phase: 2
 slug: migrar-testes-existentes
-status: draft
+status: approved
 shadcn_initialized: true
 preset: "vite | style: radix-nova | baseColor: neutral | cssVariables: true | iconLibrary: lucide | registries: {} (official only)"
 created: 2026-07-25
+reviewed_at: 2026-07-25
 ---
 
 # Phase 2 — UI Design Contract
@@ -50,7 +51,7 @@ created: 2026-07-25
 
 **Phase 2 exceptions:**
 - **Choice cards** (`ModeChoiceCard`, `MethodChoiceCard`): minimum **44px** tap height on the card body (title + one-line description), even when content is short — WCAG 2.5.5.
-- **ChartCustomizer** icon-only reset control: **44×44px** hit area.
+- **ChartCustomizer** reset is a **labeled text button** ("Restaurar padrão do teste"), not icon-only; minimum height **44px** for the control hit area.
 - **Didactic card** collapse trigger: full card header row is the hit target (min 44px height).
 
 ---
