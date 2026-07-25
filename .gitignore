@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+
+# Large reference / generated artifacts (keep out of git unless needed)
+jasp-desktop-development/
+trabalhos datasus/build/
+trabalhos datasus/outputs/
+trabalhos datasus/spreadsheet_work/node_modules/
