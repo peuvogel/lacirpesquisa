@@ -7,7 +7,7 @@ import { PraisWinstenTest } from './PraisWinstenTest';
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
   const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
-    return { destroy: destroySpy };
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
   });
   const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
     register: ReturnType<typeof vi.fn>;
@@ -27,6 +27,7 @@ vi.mock('chart.js', () => ({
   LineElement: {},
   BarElement: {},
   Legend: {},
+  Title: {},
   Tooltip: {},
   Filler: {},
 }));
@@ -87,7 +88,8 @@ describe('PraisWinstenTest', () => {
     });
 
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baixar gráfico (PNG)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Baixar/i }).length).toBeGreaterThanOrEqual(1);
 
     const prose = screen.getAllByText(/Analisou-se a tendência temporal|Resultado principal/i);
     expect(prose.length).toBeGreaterThan(0);
@@ -118,7 +120,7 @@ describe('PraisWinstenTest', () => {
     await user.click(screen.getByRole('tab', { name: 'Resíduos' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Prais-Winsten — resíduos')).toBeInTheDocument();
+      expect(screen.getByText('Prais-Winsten: resíduos')).toBeInTheDocument();
     });
   });
 });

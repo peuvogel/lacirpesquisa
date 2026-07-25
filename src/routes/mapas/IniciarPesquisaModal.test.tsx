@@ -69,13 +69,17 @@ describe('resolveHandoffTestId', () => {
     ).toBe('correlacao');
   });
 
-  it('falls back to t-student when the primary suggestion is em-breve', () => {
+  it('falls back to t-student when the primary suggestion is unavailable', () => {
+    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id !== 'anova-tukey');
+
     expect(
       resolveHandoffTestId([
         { testId: 'anova-tukey', rationale: 'anova' },
         { testId: 'demo', rationale: 'demo' },
       ]),
     ).toBe('t-student');
+
+    spy.mockRestore();
   });
 
   it('falls back to demo when t-student is unavailable', () => {
@@ -109,10 +113,10 @@ describe('IniciarPesquisaModal', () => {
     expect(screen.getByText('Teste demo')).toBeInTheDocument();
     expect(screen.getByText('t de Student')).toBeInTheDocument();
     expect(screen.getAllByText('Disponível').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Em breve').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
     expect(screen.getAllByText('Demonstração').length).toBeGreaterThanOrEqual(1);
 
-    const link = screen.getByRole('link', { name: /TABNET — SIH\/SUS/i });
+    const link = screen.getByRole('link', { name: /TABNET: SIH\/SUS/i });
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
@@ -146,7 +150,7 @@ describe('IniciarPesquisaModal', () => {
 
     expect(latestDataset!.headers).toEqual(['Município', 'Taxa por 100k', 'Situação']);
     expect(latestDataset!.rows).toHaveLength(2);
-    expect(latestDataset!.sourceLabel).toBe('Mapas — SP, BA');
+    expect(latestDataset!.sourceLabel).toBe('Mapas: SP, BA');
     expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
@@ -163,7 +167,7 @@ describe('IniciarPesquisaModal', () => {
     expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'correlacao' } });
   });
 
-  it('falls back to t-student when the primary suggestion is still em-breve', async () => {
+  it('navigates with anova-tukey handoff when three UFs suggest ANOVA', async () => {
     const user = userEvent.setup();
     renderModal({
       selectedUFs: ['SP', 'BA', 'RJ'],
@@ -172,7 +176,7 @@ describe('IniciarPesquisaModal', () => {
 
     await continueWithValidPaste(user);
 
-    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
+    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'anova-tukey' } });
   });
 
   it('falls back to demo when t-student is unavailable', async () => {

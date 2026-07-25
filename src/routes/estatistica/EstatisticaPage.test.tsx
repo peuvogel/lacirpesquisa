@@ -177,6 +177,9 @@ describe('EstatisticaPage', () => {
     ['qui-quadrado', /Qui-quadrado/i],
     ['anova-tukey', /ANOVA de uma via/i],
     ['kruskal-dunn', /Kruskal-Wallis/i],
+    ['poisson', /Regressão de Poisson/i],
+    ['binomial-negativa', /Regressão Binomial Negativa/i],
+    ['logistica', /Regressão Logística/i],
   ] as const)('mounts %s from sidebar without null render', async (testId, namePattern) => {
     const user = userEvent.setup();
     renderPage();
@@ -227,5 +230,59 @@ describe('EstatisticaPage', () => {
 
     expect(screen.getByLabelText(/Papel da coluna desfecho/i)).toHaveValue('numerica');
     expect(screen.getByLabelText(/Papel da coluna grupo/i)).toHaveValue('categorica');
+  });
+
+  const OVERDISPERSED_PASTE = `contagem;exposicao
+2;1
+18;1
+1;1
+22;1
+3;1
+25;1
+0;1
+20;1
+5;1
+28;1
+2;1
+30;1`;
+
+  it('handoffs from Poisson to Binomial Negativa preserving recognizedColumns', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /Regressão de Poisson/i }));
+
+    const textarea = screen.getByRole('textbox');
+    await user.clear(textarea);
+    await user.paste(OVERDISPERSED_PASTE);
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
+    expect(screen.getByLabelText(/Papel da coluna exposicao/i)).toHaveValue('numerica');
+
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    const nbButtons = screen.getAllByRole('button', { name: 'Abrir Binomial Negativa' });
+    await user.click(nbButtons[nbButtons.length - 1]!);
+
+    const mount = document.getElementById('lacir-test-module-mount');
+    expect(mount).toHaveAttribute('data-active-test-id', 'binomial-negativa');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
+    expect(screen.getByLabelText(/Papel da coluna exposicao/i)).toHaveValue('numerica');
+    expect(screen.getAllByText('detectado').length).toBeGreaterThanOrEqual(2);
   });
 });

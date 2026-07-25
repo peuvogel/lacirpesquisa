@@ -7,19 +7,19 @@
    =================================================== */
 
 @theme {
-  /* Surfaces (60/30 dominant/secondary) */
-  --color-bg: #0a0f0d;
-  --color-surface: #121917;
-  --color-elevated: #171f1c;
+  /* Surfaces — predominantly black / dark gray; green only as accent */
+  --color-bg: #09090b;
+  --color-surface: #0f0f12;
+  --color-elevated: #18181b;
 
-  /* Accent — teal, reserved for meaningful state (D-16) */
-  --color-accent: #10b981;
-  --color-accent-soft: rgba(16, 185, 129, 0.1);
-  --color-accent-border: rgba(16, 185, 129, 0.28);
+  /* Accent — sparse teal/green for active state only */
+  --color-accent: #209978;
+  --color-accent-soft: rgba(32, 153, 120, 0.12);
+  --color-accent-border: rgba(23, 121, 94, 0.45);
 
   /* Text */
-  --color-text: #e6efe9;
-  --color-text-muted: #8fa89c;
+  --color-text: #f4f4f5;
+  --color-text-muted: #a1a1aa;
 
   /* Semantic */
   --color-destructive: #ef4444;
@@ -105,11 +105,315 @@
     animation: lacirRouteEnter 220ms ease-out;
   }
 
+  @keyframes lacirChartEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes lacirChartExit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 320px;
+      margin-bottom: 1.25rem;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+      max-height: 0;
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-width: 0;
+    }
+  }
+
+  .lacir-chart-card {
+    overflow: hidden;
+  }
+
+  .lacir-chart-card[data-phase='enter'],
+  .lacir-chart-card[data-phase='shown'] {
+    animation: lacirChartEnter 200ms ease-out both;
+  }
+
+  .lacir-chart-card[data-phase='exit'] {
+    animation: lacirChartExit 180ms ease-in both;
+    pointer-events: none;
+  }
+
+  /* Active edit focus — slight grow, soft glow, hover parallax */
+  .lacir-chart-card--editing {
+    overflow: visible;
+    z-index: 3;
+  }
+
+  .lacir-chart-card--dimmed {
+    opacity: 0.42;
+    filter: grayscale(0.25);
+    transition:
+      opacity 200ms ease,
+      filter 200ms ease;
+  }
+
+  .lacir-chart-card--dimmed .lacir-chart-focus {
+    pointer-events: auto;
+  }
+
+  .lacir-chart-focus {
+    --parallax-x: 0deg;
+    --parallax-y: 0deg;
+    position: relative;
+    border-radius: 0.75rem;
+    transform-style: preserve-3d;
+    transition:
+      transform 180ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .lacir-chart-focus--editing {
+    transform: scale(1.035) perspective(900px) rotateX(var(--parallax-y)) rotateY(var(--parallax-x));
+    box-shadow:
+      0 0 0 1px rgba(32, 153, 120, 0.55),
+      0 0 0 4px rgba(32, 153, 120, 0.12),
+      0 12px 36px -10px rgba(32, 153, 120, 0.35),
+      0 0 40px rgba(32, 153, 120, 0.18);
+  }
+
+  .lacir-chart-focus--editing::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(32, 153, 120, 0.16),
+      transparent 42%,
+      rgba(255, 255, 255, 0.08) 70%,
+      transparent
+    );
+    opacity: 0.85;
+    mix-blend-mode: soft-light;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .lacir-route-enter {
       animation: none;
       opacity: 1;
       transform: none;
     }
+
+    .lacir-chart-card[data-phase='enter'],
+    .lacir-chart-card[data-phase='shown'],
+    .lacir-chart-card[data-phase='exit'] {
+      animation: none;
+    }
+
+    .lacir-chart-focus--editing {
+      transform: scale(1.02);
+    }
+
+    .lacir-dl-btn,
+    .lacir-dl-btn__icon,
+    .lacir-dl-btn__text {
+      transition: none;
+    }
+  }
+
+  /* Chart PNG download — compact overlay (top-right of chart) */
+  .lacir-dl-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 6px;
+    background-color: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+
+  .lacir-dl-btn,
+  .lacir-dl-btn__icon,
+  .lacir-dl-btn__text {
+    transition: all 0.2s ease;
+  }
+
+  .lacir-dl-btn__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .lacir-dl-btn__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+  }
+
+  .lacir-dl-btn__svg {
+    width: 12px;
+    fill: #64748b;
+  }
+
+  .lacir-dl-btn:hover {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.18);
+  }
+
+  .lacir-dl-btn:hover .lacir-dl-btn__svg {
+    fill: #334155;
+  }
+
+  .lacir-dl-btn:active {
+    transform: translateY(1px);
+  }
+
+  .lacir-dl-btn:focus-visible {
+    outline: 2px solid #94a3b8;
+    outline-offset: 1px;
+  }
+
+  /* Footer / bulk download keeps a slightly wider chip */
+  .lacir-dl-btn--wide {
+    width: auto;
+    min-width: 120px;
+    height: 34px;
+    padding: 0 12px 0 10px;
+    gap: 8px;
+    background-color: #209978;
+    border-color: #17795e;
+  }
+
+  .lacir-dl-btn--wide .lacir-dl-btn__text {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-sans);
+  }
+
+  .lacir-dl-btn--wide .lacir-dl-btn__icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .lacir-dl-btn--wide .lacir-dl-btn__svg {
+    width: 14px;
+    fill: #fff;
+  }
+
+  .lacir-dl-btn--wide:hover {
+    background: #17795e;
+  }
+
+  /* Chart type picker thumbnails — dark gray cards + visible checkbox */
+  .lacir-vis-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .lacir-vis-thumb {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-height: 84px;
+    padding: 22px 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #18181b;
+    cursor: pointer;
+    text-align: center;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .lacir-vis-thumb:hover {
+    border-color: rgba(32, 153, 120, 0.45);
+    background: #1f1f23;
+    box-shadow: 0 0 0 1px rgba(32, 153, 120, 0.12);
+  }
+
+  .lacir-vis-thumb--active {
+    border-color: #209978;
+    box-shadow: 0 0 0 1px rgba(32, 153, 120, 0.35);
+    background: #141416;
+  }
+
+  .lacir-vis-thumb--disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    background: #121214;
+  }
+
+  .lacir-vis-thumb--disabled:hover {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+    background: #121214;
+  }
+
+  .lacir-vis-thumb__check {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 1;
+  }
+
+  .lacir-vis-thumb__icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .lacir-vis-thumb__label {
+    font-size: 10px;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #e4e4e7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .lacir-vis-thumb--disabled .lacir-vis-thumb__label {
+    color: #71717a;
+  }
+
+  .lacir-dl-btn__svg--stroke {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: #64748b;
+    color: #64748b;
+  }
+
+  .lacir-dl-btn:hover .lacir-dl-btn__svg--stroke {
+    stroke: #334155;
+    color: #334155;
   }
 }
