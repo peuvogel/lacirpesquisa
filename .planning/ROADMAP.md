@@ -98,7 +98,7 @@ Plans:
 Plans:
 
 - [x] 03-01-PLAN.md — Wave 0: statsEngine χ²/ANOVA/Kruskal/Tukey/Dunn + glmEngine + golden fixtures + AssumptionNudgeStrip + jstat/ml-matrix
-- [ ] 03-02-PLAN.md — Wave A: Qui-quadrado TEST-04 (engine + UI + charts)
+- [x] 03-02-PLAN.md — Wave A: Qui-quadrado TEST-04 (engine + UI + charts)
 - [ ] 03-03-PLAN.md — Wave A: ANOVA+Tukey TEST-05 (parallel with 03-04)
 - [ ] 03-04-PLAN.md — Wave A: Kruskal+Dunn TEST-06 (parallel with 03-03)
 - [ ] 03-05-PLAN.md — Wave A gate: registry + routes for classical tests; UX-02 integration
@@ -167,7 +167,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
-| 3. Testes clássicos + GLM novos | 1/9 | In Progress|  |
+| 3. Testes clássicos + GLM novos | 2/9 | In Progress|  |
 | 4. Mapas como interface estatística | 0/TBD | Not started | - |
 | 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |

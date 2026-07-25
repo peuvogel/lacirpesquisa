@@ -23,7 +23,7 @@
 
 ### Testes — novos
 
-- [ ] **TEST-04**: User can run qui-quadrado de independência with effect size and expected-cell warning
+- [x] **TEST-04**: User can run qui-quadrado de independência with effect size and expected-cell warning
 - [ ] **TEST-05**: User can run one-way ANOVA with Tukey post-hoc
 - [ ] **TEST-06**: User can run Kruskal-Wallis with Dunn post-hoc
 - [ ] **TEST-07**: User can run Poisson regression with overdispersion check
@@ -61,7 +61,7 @@
 ### UX diferenciadores
 
 - [x] **UX-01**: User can use a guided “qual teste usar?” decision tree that routes to the right test module
-- [ ] **UX-02**: User sees assumption-check nudges appropriate to the active test (e.g. normality hint, expected counts, overdispersion)
+- [x] **UX-02**: User sees assumption-check nudges appropriate to the active test (e.g. normality hint, expected counts, overdispersion)
 
 ## Future Requirements
 
@@ -95,13 +95,13 @@
 | TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
 | TEST-03 | Phase 2 | Complete |
-| TEST-04 | Phase 3 | Pending |
+| TEST-04 | Phase 3 | Complete |
 | TEST-05 | Phase 3 | Pending |
 | TEST-06 | Phase 3 | Pending |
 | TEST-07 | Phase 3 | Pending |
 | TEST-08 | Phase 3 | Pending |
 | TEST-09 | Phase 3 | Pending |
-| UX-02 | Phase 3 | Pending |
+| UX-02 | Phase 3 | Complete |
 | MAP-01 | Phase 4 | Pending |
 | MAP-02 | Phase 4 | Pending |
 | MAP-03 | Phase 4 | Pending |
