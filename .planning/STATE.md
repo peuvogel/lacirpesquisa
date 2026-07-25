@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-10 executed — Teste demo end-to-end, ResultsPanel, PNG export
-stopped_at: Completed 01-10-PLAN.md
-last_updated: "2026-07-25T18:30:00.000Z"
-last_activity: 2026-07-25 — Plan 01-10 executed (TesteDemo, ResultsPanel, demoStats)
+status: Plan 01-11 executed — Iniciar pesquisa stub, collection links, paste handoff
+stopped_at: Completed 01-11-PLAN.md
+last_updated: "2026-07-25T18:29:00.000Z"
+last_activity: 2026-07-25 — Plan 01-11 executed (IniciarPesquisaModal, suggestResearchForSelection)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 10
-  percent: 83
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (10/12 plans complete)
+**Current focus:** Phase 1 — In progress (11/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01 through 01-10 complete (12 plans total) — 01-11 and 01-12 pending
-Status: Plan 01-10 executed — Teste demo end-to-end, ResultsPanel, PNG export
-Last activity: 2026-07-25 — Plan 01-10 executed (TesteDemo, ResultsPanel, demoStats)
+Plan: 01-01 through 01-11 complete (12 plans total) — 01-12 pending
+Status: Plan 01-11 executed — Iniciar pesquisa stub, collection links, paste handoff
+Last activity: 2026-07-25 — Plan 01-11 executed (IniciarPesquisaModal, suggestResearchForSelection)
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 92%
 
 ## Accumulated Context
 
@@ -66,6 +66,8 @@ Progress: [████████░░] 83%
 - [Phase 01]: TabularInputPanel showPreview=false defers ColumnPreviewTable to Configurar in TesteDemo flow
 - [Phase 01]: ResultsPanel is the Phase 2/3 reusable Resultados shell (metrics, chart, interpretation, PNG)
 - [Phase 01]: Teste demo stub uses honest descriptive stats only — buildDemoInterpretation disclaims significance testing
+- [Phase 01]: MAPAS_TABULAR_OPTIONS uses broad territorio/medida aliases so junk paste errors while typical TABNET tables still load
+- [Phase 01]: Iniciar pesquisa continue requires loaded paste with ≥2 columns and ≥1 data row — not loaded status alone
 
 ### Pending Todos
 
@@ -77,8 +79,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:30:00.000Z
-Stopped at: Completed 01-10-PLAN.md
+Last session: 2026-07-25T18:29:00.000Z
+Stopped at: Completed 01-11-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -94,3 +96,4 @@ Resume file: None
 | Phase 01-redesign-base-react-shell P08 | 25min | 3 tasks | 8 files |
 | Phase 01-redesign-base-react-shell P09 | 25min | 3 tasks | 11 files |
 | Phase 01-redesign-base-react-shell P10 | 25min | 3 tasks | 12 files |
+| Phase 01-redesign-base-react-shell P11 | 25min | 2 tasks | 6 files |
