@@ -37,7 +37,7 @@
 - [x] **MAP-03**: User can drill into a selected state and view município, mesorregião, or região/macrorregião de saúde choropleths
 - [x] **MAP-04**: User gets municipality name matching scoped by UF plus a matched/unmatched report
 - [x] **MAP-05**: Maps work fully offline from bundled static geo assets (no runtime map/IBGE API dependency)
-- [ ] **MAP-06**: User can analyze temporality on the map (select period / compare across time) as part of the statistical workflow
+- [x] **MAP-06**: User can analyze temporality on the map (select period / compare across time) as part of the statistical workflow
 - [x] **MAP-07**: User can group UFs into analysis groups, with presets for grandes regiões (Norte, Nordeste, Centro-Oeste, Sudeste, Sul) and custom groups
 - [x] **MAP-08**: User can select/group by macrorregiões de saúde (and related health-region geography) for analysis
 - [ ] **MAP-09**: User can select multiple diseases/agravos within the chosen territory groups and time window, then run statistical tests from that selection
@@ -107,7 +107,7 @@
 | MAP-03 | Phase 4 | Complete |
 | MAP-04 | Phase 4 | Complete |
 | MAP-05 | Phase 4 | Complete |
-| MAP-06 | Phase 4 | Pending |
+| MAP-06 | Phase 4 | Complete |
 | MAP-07 | Phase 4 | Complete |
 | MAP-08 | Phase 4 | Complete |
 | MAP-09 | Phase 4 | Pending |
