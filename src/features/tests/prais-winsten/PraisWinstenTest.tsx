@@ -39,6 +39,7 @@ interface ConfirmedDataset {
   headers: string[];
   rows: string[][];
   sourceLabel: string;
+  recognizedColumns: Record<string, number>;
 }
 
 function initialLoadedFromSession(
@@ -91,9 +92,18 @@ export function PraisWinstenTest() {
     tabular.setRawText(exampleText);
   }
 
-  function handleConfigureConfirm(confirmed: { headers: string[]; rows: string[][] }) {
+  function handleConfigureConfirm(confirmed: {
+    headers: string[];
+    rows: string[][];
+    recognizedColumns: Record<string, number>;
+  }) {
     const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
-    setConfirmedDataset({ headers: confirmed.headers, rows: confirmed.rows, sourceLabel });
+    setConfirmedDataset({
+      headers: confirmed.headers,
+      rows: confirmed.rows,
+      sourceLabel,
+      recognizedColumns: confirmed.recognizedColumns,
+    });
     setDataset({
       headers: confirmed.headers,
       rows: confirmed.rows,
@@ -126,7 +136,7 @@ export function PraisWinstenTest() {
     const dataset = buildDatasetFromConfirmed({
       headers: confirmedDataset.headers,
       rows: confirmedDataset.rows,
-      recognizedColumns: loadedInput.recognizedColumns,
+      recognizedColumns: confirmedDataset.recognizedColumns,
     });
 
     const validationErrors = validateSeries(dataset);

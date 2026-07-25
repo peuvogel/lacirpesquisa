@@ -10,6 +10,7 @@ import {
   defaultQuestion,
   didacticCards,
   MODE_OPTIONS,
+  TABULAR_OPTIONS,
   type TStudentMode,
 } from './tStudentConfig';
 import type { DatasusKnobState } from './tStudentEngine';
@@ -35,7 +36,11 @@ export interface TStudentConfigPanelProps {
   datasusSession: DatasusSession | null;
   datasusKnobs: DatasusKnobState;
   onDatasusKnobsChange: (knobs: DatasusKnobState) => void;
-  onConfirm: (confirmed: { headers: string[]; rows: string[][] }) => void;
+  onConfirm: (confirmed: {
+    headers: string[];
+    rows: string[][];
+    recognizedColumns: Record<string, number>;
+  }) => void;
 }
 
 export function TStudentConfigPanel({
@@ -90,6 +95,7 @@ export function TStudentConfigPanel({
           headers={loadedInput.headers}
           bodyRows={loadedInput.rows}
           recognizedColumns={loadedInput.recognizedColumns}
+          tabularOptions={TABULAR_OPTIONS}
           onConfirm={onConfirm}
         />
       </div>

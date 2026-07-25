@@ -6,6 +6,7 @@ import { ResearchQuestionField } from '@/features/tests/shared/ResearchQuestionF
 import {
   defaultQuestion,
   didacticCards,
+  TABULAR_OPTIONS,
 } from './praisConfig';
 import { buildDatasetFromConfirmed } from './praisEngine';
 import { SeriesPreviewTable } from './SeriesPreviewTable';
@@ -23,7 +24,11 @@ export interface PraisWinstenConfigPanelProps {
   onAlphaChange: (value: AlphaValue) => void;
   researchQuestion: string;
   onResearchQuestionChange: (value: string) => void;
-  onConfirm: (confirmed: { headers: string[]; rows: string[][] }) => void;
+  onConfirm: (confirmed: {
+    headers: string[];
+    rows: string[][];
+    recognizedColumns: Record<string, number>;
+  }) => void;
 }
 
 export function PraisWinstenConfigPanel({
@@ -73,6 +78,7 @@ export function PraisWinstenConfigPanel({
           headers={loadedInput.headers}
           bodyRows={loadedInput.rows}
           recognizedColumns={loadedInput.recognizedColumns}
+          tabularOptions={TABULAR_OPTIONS}
           onConfirm={onConfirm}
         />
       </div>

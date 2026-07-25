@@ -10,6 +10,7 @@ import {
   defaultQuestion,
   didacticCards,
   METHOD_OPTIONS,
+  TABULAR_OPTIONS,
   type CorrelacaoMethod,
 } from './correlacaoConfig';
 import type { DatasusKnobState } from './correlacaoEngine';
@@ -35,7 +36,11 @@ export interface CorrelacaoConfigPanelProps {
   datasusSession: DatasusSession | null;
   datasusKnobs: DatasusKnobState;
   onDatasusKnobsChange: (knobs: DatasusKnobState) => void;
-  onConfirm: (confirmed: { headers: string[]; rows: string[][] }) => void;
+  onConfirm: (confirmed: {
+    headers: string[];
+    rows: string[][];
+    recognizedColumns: Record<string, number>;
+  }) => void;
 }
 
 export function CorrelacaoConfigPanel({
@@ -90,6 +95,7 @@ export function CorrelacaoConfigPanel({
           headers={loadedInput.headers}
           bodyRows={loadedInput.rows}
           recognizedColumns={loadedInput.recognizedColumns}
+          tabularOptions={TABULAR_OPTIONS}
           onConfirm={onConfirm}
         />
       </div>

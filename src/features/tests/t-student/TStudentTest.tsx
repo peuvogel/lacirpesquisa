@@ -48,6 +48,7 @@ interface ConfirmedDataset {
   rows: string[][];
   sourceLabel: string;
   isDatasus: boolean;
+  recognizedColumns: Record<string, number>;
 }
 
 function initialLoadedFromSession(
@@ -143,7 +144,11 @@ export function TStudentTest() {
     setMode(nextMode);
   }
 
-  function handleConfigureConfirm(confirmed: { headers: string[]; rows: string[][] }) {
+  function handleConfigureConfirm(confirmed: {
+    headers: string[];
+    rows: string[][];
+    recognizedColumns: Record<string, number>;
+  }) {
     const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
     const isDatasus = sourceLabel.toLowerCase().includes('datasus');
     const nextDataset: ConfirmedDataset = {
@@ -151,6 +156,7 @@ export function TStudentTest() {
       rows: confirmed.rows,
       sourceLabel,
       isDatasus,
+      recognizedColumns: confirmed.recognizedColumns,
     };
     setConfirmedDataset(nextDataset);
     setShowSoftReset(false);
@@ -211,7 +217,7 @@ export function TStudentTest() {
       const dataset = buildDatasetFromConfirmed({
         headers: confirmedDataset.headers,
         rows: confirmedDataset.rows,
-        recognizedColumns: loadedInput.recognizedColumns,
+        recognizedColumns: confirmedDataset.recognizedColumns,
         mode,
       });
       validationErrors = validateSampleSize(mode, dataset);
