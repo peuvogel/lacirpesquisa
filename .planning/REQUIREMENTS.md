@@ -49,7 +49,7 @@
 - [ ] **CAT-02**: Every variable shows mandatory provenance/reference (source system, table/indicator, period covered, official citation/URL) — never orphan data
 - [ ] **CAT-03**: User sees a suggested statistical test hint based on the variable's classified type
 - [ ] **CAT-04**: User can load curated/scraped variable datasets into analysis directly in the app (no need to leave for TABNET during the classroom flow)
-- [ ] **CAT-05**: Scraped/curated datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping during analysis
+- [x] **CAT-05**: Scraped/curated datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping during analysis
 
 ### Meta-análise
 
@@ -116,7 +116,7 @@
 | CAT-02 | Phase 5 | Pending |
 | CAT-03 | Phase 5 | Pending |
 | CAT-04 | Phase 5 | Pending |
-| CAT-05 | Phase 5 | Pending |
+| CAT-05 | Phase 5 | Complete |
 | META-01 | Phase 6 | Pending |
 | META-02 | Phase 6 | Pending |
 | META-03 | Phase 6 | Pending |

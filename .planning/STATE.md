@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 4 context gathered
-last_updated: "2026-07-25T22:31:08.780Z"
+status: executing
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-07-25T22:40:37.946Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 37
-  completed_plans: 37
+  total_plans: 45
+  completed_plans: 38
   percent: 67
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 5 discuss complete — ready for plan-phase
+**Current focus:** Phase 05 — variaveis-no-site-scrape-referencias
 
 ## Current Position
 
-Phase: 05 (variaveis-no-site-scrape-referencias) — CONTEXT ready
-Plan: 0 of TBD
-Status: Ready for `/gsd:plan-phase 5`
+Phase: 05 (variaveis-no-site-scrape-referencias) — EXECUTING
+Plan: 2 of 7
+Status: Ready to execute
 Last activity: 2026-07-25
 
 Progress: discuss complete — planning next
@@ -80,6 +80,9 @@ Progress: discuss complete — planning next
 - [Phase 03-testes-classicos-glm-novos]: Poisson→NB handoff wired in EstatisticaPage via onCrossTestHandoff + recognizedColumns (D-20)
 - [Phase 03-testes-classicos-glm-novos]: Mapas 3-UF handoff now routes to anova-tukey since ANOVA is available
 - [Phase 04-mapas-como-interface-estatistica]: Phase 4 automated gate PASS (595 tests); human didactic UX deferred to human_needed
+- [Phase 05]: Package-first from existing coleta CSVs; regenerate optional after BASE_DIR port
+- [Phase 05]: Shared CNES/pop catalog ids emit once with packId=sih.embolia_trombose_uf; amputação pack still carries join columns
+- [Phase 05]: mock.taxa_mortalidade not aliased (infantil ≠ hospital); mock.amputacoes/internacoes/obitos aliased
 
 ### Pending Todos
 
@@ -91,8 +94,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:31:08.778Z
-Stopped at: Phase 4 context gathered
+Last session: 2026-07-25T22:40:34.096Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -114,3 +117,4 @@ Resume file: None
 | Phase 02-migrar-testes-existentes P06 | 8min | 3 tasks | 14 files |
 | Phase 03-testes-classicos-glm-novos P09 | 3min | 2 tasks | 10 files |
 | Phase 04-mapas-como-interface-estatistica P08 | 12min | 3 tasks | 3 files |
+| Phase 05 P01 | 2min | 2 tasks | 13 files |
