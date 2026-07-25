@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 3 context gathered
-last_updated: "2026-07-25T21:38:21.039Z"
+status: ready_for_phase_4
+stopped_at: Completed 03-09-PLAN.md
+last_updated: "2026-07-25T21:41:31.681Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 29
-  completed_plans: 28
-  percent: 33
+  completed_plans: 29
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 02 — migrar-testes-existentes (human UAT)
+**Current focus:** Phase 4 — mapas como interface estatística
 
 ## Current Position
 
-Phase: 02 (migrar-testes-existentes) — AWAITING HUMAN UAT
-Plan: 8 of 8 (complete)
-Status: Phase complete — ready for verification
+Phase: 03 (testes-classicos-glm-novos) — COMPLETE
+Plan: 9 of 9 (complete)
+Status: Phase complete — ready for Phase 4
 Last activity: 2026-07-25
 
-Progress: [██████████] 100% Phase 2 plans
+Progress: [██████████] 100% Phase 3 plans
 
 ## Accumulated Context
 
@@ -76,6 +76,9 @@ Progress: [██████████] 100% Phase 2 plans
 - [Phase 02-migrar-testes-existentes]: Chart factories return pure ChartData+Options; no imperative Chart() in factories
 - [Phase 02-migrar-testes-existentes]: Theme variant merge preserves scale title config via spread-before-grid override
 - [Phase 02-migrar-testes-existentes]: Demo stays on plain ResultsPanel; ResultsPanelWithCustomizer for migrated tests only (D-06)
+- [Phase 03-testes-classicos-glm-novos]: All ten registry entries available — zero em-breve; Wave B GLM trio flipped in 03-09
+- [Phase 03-testes-classicos-glm-novos]: Poisson→NB handoff wired in EstatisticaPage via onCrossTestHandoff + recognizedColumns (D-20)
+- [Phase 03-testes-classicos-glm-novos]: Mapas 3-UF handoff now routes to anova-tukey since ANOVA is available
 
 ### Pending Todos
 
@@ -87,8 +90,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T21:38:21.036Z
-Stopped at: Phase 3 context gathered
+Last session: 2026-07-25T21:41:31.676Z
+Stopped at: Completed 03-09-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -108,3 +111,4 @@ Resume file: None
 | Phase 01-redesign-base-react-shell P12 | 12min | 2 tasks | 7 files |
 | Phase 02-migrar-testes-existentes P02 | 3min | 3 tasks | 21 files |
 | Phase 02-migrar-testes-existentes P06 | 8min | 3 tasks | 14 files |
+| Phase 03-testes-classicos-glm-novos P09 | 3min | 2 tasks | 10 files |
