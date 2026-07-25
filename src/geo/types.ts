@@ -12,8 +12,10 @@ export interface TerritoryRef {
 /** Current map view state for drill-down navigation. */
 export interface MapViewState {
   level: GeoLevel;
-  /** Parent IBGE code when drilled below Brazil (e.g. UF code for muni view). */
+  /** UF sigla when drilled below Brazil (e.g. "BA"). */
   parentCode?: string;
+  /** UF IBGE two-digit code when drilled (e.g. "29" for BA). */
+  ufIbge?: string;
 }
 
 /** Municipality entry from offline IBGE Localidades name tables. */

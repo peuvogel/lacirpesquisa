@@ -9,6 +9,13 @@ export interface ProjectedPath {
   properties: Record<string, unknown>;
 }
 
+export type SvgExtent = [[number, number], [number, number]];
+
+export const DEFAULT_SVG_EXTENT: SvgExtent = [
+  [0, 0],
+  [800, 600],
+];
+
 function objectKey(topo: Topology): string {
   return Object.keys(topo.objects)[0]!;
 }
@@ -20,31 +27,33 @@ export function topoToFeatures(topo: Topology): Feature[] {
   return collection.features;
 }
 
+/** Fit a Mercator projection to features within an SVG extent (drill-down viewBox). */
+export function fitExtentToFeatures(
+  features: Feature<Geometry>[],
+  extent: SvgExtent = DEFAULT_SVG_EXTENT,
+): GeoProjection {
+  const projection = geoMercator();
+  if (features.length > 0) {
+    projection.fitExtent(extent, { type: 'FeatureCollection', features } as FeatureCollection);
+  }
+  return projection;
+}
+
+/** Filter features whose codarea starts with a UF IBGE prefix (meso drill scoping). */
+export function filterFeaturesByUfPrefix(features: Feature[], ufIbge: string): Feature[] {
+  return features.filter((feat) => {
+    const codarea = String((feat.properties as Record<string, unknown> | null)?.codarea ?? '');
+    return codarea.startsWith(ufIbge);
+  });
+}
+
 /** Project GeoJSON features to SVG path strings. */
 export function projectFeaturesToPaths(
   features: Feature<Geometry>[],
-  bounds?: [[number, number], [number, number]],
+  extent: SvgExtent = DEFAULT_SVG_EXTENT,
 ): ProjectedPath[] {
-  const projection: GeoProjection = geoMercator();
+  const projection = fitExtentToFeatures(features, extent);
   const pathGen = geoPath(projection);
-
-  if (bounds) {
-    projection.fitExtent(
-      [
-        [0, 0],
-        [800, 600],
-      ],
-      { type: 'FeatureCollection', features } as FeatureCollection,
-    );
-  } else if (features.length > 0) {
-    projection.fitExtent(
-      [
-        [0, 0],
-        [800, 600],
-      ],
-      { type: 'FeatureCollection', features } as FeatureCollection,
-    );
-  }
 
   return features.map((feat) => {
     const props = (feat.properties ?? {}) as Record<string, unknown>;
