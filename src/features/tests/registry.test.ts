@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getTestById, isTestAvailable, TEST_REGISTRY } from './registry';
+import {
+  getTestBadgeLabel,
+  getTestById,
+  isTestAvailable,
+  TEST_REGISTRY,
+} from './registry';
 
 describe('TEST_REGISTRY', () => {
   it('has unique ids', () => {
@@ -15,13 +20,16 @@ describe('TEST_REGISTRY', () => {
     }
   });
 
-  // Intentionally strict: when Phase 2 ships t-student, this assertion must
-  // be updated deliberately — that update is the signal the registry is
-  // being kept honest (01-07-PLAN.md Task 1).
-  it('marks exactly one entry available, and it is demo', () => {
+  it('marks exactly four entries available: demo plus three Phase 2 tests', () => {
     const available = TEST_REGISTRY.filter((entry) => entry.status === 'available');
-    expect(available).toHaveLength(1);
-    expect(available[0].id).toBe('demo');
+    expect(available).toHaveLength(4);
+    expect(available.map((entry) => entry.id).sort()).toEqual(
+      ['correlacao', 'demo', 'prais-winsten', 't-student'].sort(),
+    );
+  });
+
+  it('keeps demo in the Demonstração group', () => {
+    expect(getTestById('demo')?.group).toBe('Demonstração');
   });
 
   it('assigns every em-breve entry to phase 2 or 3', () => {
@@ -48,15 +56,39 @@ describe('getTestById', () => {
 });
 
 describe('isTestAvailable', () => {
-  it('is true only for demo', () => {
+  it('is true for demo and the three Phase 2 migrated tests', () => {
     expect(isTestAvailable('demo')).toBe(true);
-    for (const entry of TEST_REGISTRY) {
-      if (entry.id === 'demo') continue;
-      expect(isTestAvailable(entry.id)).toBe(false);
-    }
+    expect(isTestAvailable('t-student')).toBe(true);
+    expect(isTestAvailable('correlacao')).toBe(true);
+    expect(isTestAvailable('prais-winsten')).toBe(true);
+  });
+
+  it('is false for phase 3 em-breve tests', () => {
+    expect(isTestAvailable('qui-quadrado')).toBe(false);
+    expect(isTestAvailable('anova-tukey')).toBe(false);
   });
 
   it('is false for an unknown id', () => {
     expect(isTestAvailable('nope')).toBe(false);
+  });
+});
+
+describe('getTestBadgeLabel', () => {
+  it('labels demo as Demonstração', () => {
+    const demo = getTestById('demo');
+    expect(demo).toBeDefined();
+    expect(getTestBadgeLabel(demo!)).toBe('Demonstração');
+  });
+
+  it('labels available migrated tests as Disponível', () => {
+    const tStudent = getTestById('t-student');
+    expect(tStudent).toBeDefined();
+    expect(getTestBadgeLabel(tStudent!)).toBe('Disponível');
+  });
+
+  it('labels em-breve tests as Em breve', () => {
+    const anova = getTestById('anova-tukey');
+    expect(anova).toBeDefined();
+    expect(getTestBadgeLabel(anova!)).toBe('Em breve');
   });
 });

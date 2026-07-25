@@ -40,7 +40,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 't de Student',
     subtitle: 'Comparação simples para saber se a diferença entre dois grupos é real.',
     group: 'Comparação de médias',
-    status: 'em-breve',
+    status: 'available',
     phase: 2,
   },
   {
@@ -48,7 +48,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Correlação de Pearson / Spearman',
     subtitle: 'Veja de forma simples se duas coisas estão relacionadas e se caminham juntas.',
     group: 'Associação',
-    status: 'em-breve',
+    status: 'available',
     phase: 2,
   },
   {
@@ -56,7 +56,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Prais-Winsten',
     subtitle: 'Descubra se os números estão subindo, descendo ou estáveis ao longo do tempo.',
     group: 'Séries temporais',
-    status: 'em-breve',
+    status: 'available',
     phase: 2,
   },
   {
@@ -115,4 +115,11 @@ export function getTestById(id: string): TestRegistryEntry | undefined {
 
 export function isTestAvailable(id: string): boolean {
   return getTestById(id)?.status === 'available';
+}
+
+/** Sidebar/modal badge copy — demo is demonstração, not a real significance test (D-17). */
+export function getTestBadgeLabel(entry: TestRegistryEntry): string {
+  if (entry.status === 'em-breve') return 'Em breve';
+  if (entry.id === 'demo') return 'Demonstração';
+  return 'Disponível';
 }
