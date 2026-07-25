@@ -27,7 +27,7 @@
 - [x] **TEST-05**: User can run one-way ANOVA with Tukey post-hoc
 - [x] **TEST-06**: User can run Kruskal-Wallis with Dunn post-hoc
 - [x] **TEST-07**: User can run Poisson regression with overdispersion check
-- [ ] **TEST-08**: User can run Negative Binomial regression
+- [x] **TEST-08**: User can run Negative Binomial regression
 - [ ] **TEST-09**: User can run Logistic regression reporting odds ratios with confidence intervals
 
 ### Mapas (interface de análise estatística)
@@ -99,7 +99,7 @@
 | TEST-05 | Phase 3 | Complete |
 | TEST-06 | Phase 3 | Complete |
 | TEST-07 | Phase 3 | Complete |
-| TEST-08 | Phase 3 | Pending |
+| TEST-08 | Phase 3 | Complete |
 | TEST-09 | Phase 3 | Pending |
 | UX-02 | Phase 3 | Complete |
 | MAP-01 | Phase 4 | Pending |
