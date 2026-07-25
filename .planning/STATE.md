@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-07-25T22:40:37.946Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-07-25T22:42:45.093Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 38
+  completed_plans: 39
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 05 (variaveis-no-site-scrape-referencias) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-07-25
 
@@ -83,6 +83,9 @@ Progress: discuss complete — planning next
 - [Phase 05]: Package-first from existing coleta CSVs; regenerate optional after BASE_DIR port
 - [Phase 05]: Shared CNES/pop catalog ids emit once with packId=sih.embolia_trombose_uf; amputação pack still carries join columns
 - [Phase 05]: mock.taxa_mortalidade not aliased (infantil ≠ hospital); mock.amputacoes/internacoes/obitos aliased
+- [Phase 05]: Pure validation lives in validate.mjs (exported) so CLI and vitest share one rule set
+- [Phase 05]: Shared CNES/pop metrics fail closed on divergence across packs (RESEARCH A2)
+- [Phase 05]: test:run explicitly chains catalog:validate; pretest covers npm test / vitest interactive
 
 ### Pending Todos
 
@@ -94,8 +97,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:40:34.096Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-07-25T22:42:45.090Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -118,3 +121,4 @@ Resume file: None
 | Phase 03-testes-classicos-glm-novos P09 | 3min | 2 tasks | 10 files |
 | Phase 04-mapas-como-interface-estatistica P08 | 12min | 3 tasks | 3 files |
 | Phase 05 P01 | 2min | 2 tasks | 13 files |
+| Phase 05 P02 | 1min | 2 tasks | 4 files |
