@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 1 executed — awaiting human UAT
-last_updated: "2026-07-25T18:10:47.074Z"
+stopped_at: Phase 2 context gathered
+last_updated: "2026-07-25T18:49:45.516Z"
 last_activity: 2026-07-25 — Plan 01-12 executed (useLeaveWarning, LeaveWarningGuard, ClearDataButton)
 progress:
   total_phases: 6
@@ -82,9 +82,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:10:47.071Z
-Stopped at: Phase 1 executed — awaiting human UAT
-Resume file: .planning/phases/01-redesign-base-react-shell/01-VERIFICATION.md
+Last session: 2026-07-25T18:49:45.500Z
+Stopped at: Phase 2 context gathered
+Resume file: .planning/phases/02-migrar-testes-existentes/02-CONTEXT.md
 
 ## Performance Metrics
 
