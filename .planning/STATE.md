@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 2 plans verified — ready to execute
-last_updated: "2026-07-25T19:28:06.135Z"
+stopped_at: Phase 2 executed — gaps_found (Mapas handoff CR-01)
+last_updated: "2026-07-25T19:32:28.523Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
@@ -85,9 +85,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T19:27:59.720Z
-Stopped at: Phase 2 plans verified — ready to execute
-Resume file: None
+Last session: 2026-07-25T19:32:28.507Z
+Stopped at: Phase 2 executed — gaps_found (Mapas handoff CR-01)
+Resume file: .planning/phases/02-migrar-testes-existentes/02-VERIFICATION.md
 
 ## Performance Metrics
 
