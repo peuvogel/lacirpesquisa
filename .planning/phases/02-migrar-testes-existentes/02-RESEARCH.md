@@ -467,20 +467,19 @@ const fitted = dataset.time.map(t => Math.pow(10, model.alpha + model.beta * t))
 | A4 | One TABNET fixture per test suffices for D-09 | Parity | Edge derive bugs missed until Phase 3 |
 | A5 | `derive*` in TS matches JS normalizer when given same normalized source | Pitfall 3 | DataSUS Configurar path wrong for classroom |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Minimal export additions for correlacao/prais-winsten?**
+1. **Minimal export additions for correlacao/prais-winsten?** — **RESOLVED**
    - What we know: Only `renderTestModule` exported; D-09 references module.js exports.
-   - What's unclear: Whether planners add `export` to pure helpers without touching logic.
-   - Recommendation: Default to Stats-level + fixture expected-output parity; add exports only if a specific function cannot be reached otherwise.
+   - Resolution: Default to **Stats-level + fixture parity** for numeric and interpretation conclusion checks. Add **non-behavior-changing named exports** to legacy module.js only if Stats+fixture cannot reach conclusion parity for a specific helper. Implemented in `02-04-PLAN.md` Task 1 (correlacao) and `02-05-PLAN.md` Task 1 (prais-winsten) with same optional-export escape hatch.
 
-2. **Mapas handoff default test when real tests available**
+2. **Mapas handoff default test when real tests available** — **RESOLVED**
    - What we know: Cold start lands on demo (D-16); CONTEXT suggests last selected or t-Student for handoff with data.
-   - Recommendation: Preserve demo as default route; when `IniciarPesquisaModal` navigates with data, land on Configurar of suggested test if available, else t-Student.
+   - Resolution: Preserve demo as default cold-start route. When `IniciarPesquisaModal` navigates with session data, land on **Configurar of suggested test if `isTestAvailable(suggestedId)`**, else **`t-student`** if available, else **`demo`**. Implemented in `02-06-PLAN.md` Task 3 with RTL handoff test.
 
-3. **Independent t-Student data shapes**
+3. **Independent t-Student data shapes** — **RESOLVED**
    - What we know: `module-guided.js` supports wide CSV (unidade;grupo_a;grupo_b) and quick group paste; legacy `module.js` has separate two-column parse.
-   - Recommendation: Use guided wide format as primary (matches config.json description); port `buildManualDatasetFromTabularState` logic into TS engine.
+   - Resolution: Use **guided wide format as primary** (matches config.json description); port `buildManualDatasetFromTabularState` logic into `tStudentEngine.ts`. Legacy `parseDataset` remains oracle-only in differential tests. Implemented in `02-03-PLAN.md` Task 1.
 
 ## Environment Availability
 
@@ -615,9 +614,10 @@ const fitted = dataset.time.map(t => Math.pow(10, model.alpha + model.beta * t))
 | Architecture | HIGH-MEDIUM | TesteDemo pattern clear; ChartCustomizer is new surface |
 | Pitfalls | HIGH | Export asymmetry and derive* gap verified in source |
 
-### Open Questions
-- Whether to add non-behavior-changing exports to correlacao/prais-winsten for parity tests
-- Mapas handoff target test when multiple are available
+### Open Questions (RESOLVED)
+- correlacao/prais exports → Stats-level + fixture parity; optional non-behavior-changing named exports only if Stats+fixture cannot reach conclusion parity (`02-04`/`02-05` Task 1)
+- Mapas handoff → suggested test if available, else `t-student`, else `demo` (`02-06` Task 3)
+- t-Student data shapes → guided wide format primary (`02-03` Task 1)
 
 ### Ready for Planning
 Research complete. Planner can now create PLAN.md files.
