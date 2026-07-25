@@ -1,9 +1,10 @@
 import { UF_LIST } from './ufCodes';
+import { MOCK_VARIABLES_BY_UF } from './mockVariablesByUF';
 
 export interface MockVariable {
   id: string;
   label: string;
-  provenance: 'mock';
+  provenance: 'mock' | 'paste';
   unit?: string;
 }
 
@@ -16,6 +17,23 @@ export const MOCK_ANALYSIS_VARIABLES: readonly MockVariable[] = [
   { id: 'mock.cobertura_aps', label: 'Cobertura de atenção primária', provenance: 'mock', unit: '%' },
   { id: 'mock.procedimentos', label: 'Procedimentos ambulatoriais', provenance: 'mock', unit: 'n' },
 ] as const;
+
+/** Didactic compare-mode years (D-14 stable IDs for Phase 5). */
+export const MOCK_TIME_SERIES_YEARS = [2018, 2019, 2020, 2021, 2022] as const;
+
+/** Maps Phase 1 label strings to stable mock variable IDs. */
+export const MOCK_LABEL_TO_ID: Record<string, string> = {
+  'Internações por causa': 'mock.internacoes',
+  'Óbitos hospitalares': 'mock.obitos',
+  'Taxa de mortalidade infantil': 'mock.taxa_mortalidade',
+  'Cobertura de atenção primária': 'mock.cobertura_aps',
+  'Amputações de membros inferiores': 'mock.amputacoes',
+  'Procedimentos ambulatoriais': 'mock.procedimentos',
+};
+
+export const MOCK_ID_TO_LABEL: Record<string, string> = Object.fromEntries(
+  MOCK_ANALYSIS_VARIABLES.map((entry) => [entry.id, entry.label]),
+);
 
 const DEFAULT_VARIABLE_ID = MOCK_ANALYSIS_VARIABLES[0]!.id;
 
@@ -80,4 +98,29 @@ export function getMockMetricByIbgeCode(variableId: string): Record<string, numb
 
 export function getDefaultMockVariableId(): string {
   return DEFAULT_VARIABLE_ID;
+}
+
+/** UF sigla → mock variable IDs available in that UF (intersection helper). */
+export function getMockVariableIdsByUf(): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(MOCK_VARIABLES_BY_UF).map(([uf, labels]) => [
+      uf,
+      labels
+        .map((label) => MOCK_LABEL_TO_ID[label])
+        .filter((id): id is string => Boolean(id)),
+    ]),
+  );
+}
+
+/** Time-series metrics keyed by year for compare-mode choropleths. */
+export function getMockMetricByUfAndYear(
+  variableId: string,
+  year: number,
+): Record<string, number> {
+  const base = getMockMetricByUf(variableId);
+  const yearIndex = MOCK_TIME_SERIES_YEARS.indexOf(year as (typeof MOCK_TIME_SERIES_YEARS)[number]);
+  const factor = yearIndex >= 0 ? 0.85 + yearIndex * 0.075 : 1;
+  return Object.fromEntries(
+    Object.entries(base).map(([sigla, value]) => [sigla, Math.max(1, Math.round(value * factor))]),
+  );
 }
