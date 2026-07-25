@@ -128,7 +128,8 @@ Plans:
 **Plans**: 8 plans in 8 waves
 
 Plans:
-- [ ] 04-01-PLAN.md — Wave 0: geo fetch script, types, session model, CI fixtures (MAP-05/08 infra)
+
+- [x] 04-01-PLAN.md — Wave 0: geo fetch script, types, session model, CI fixtures (MAP-05/08 infra)
 - [ ] 04-02-PLAN.md — Wave 1: UF choropleth + legend (MAP-01)
 - [ ] 04-03-PLAN.md — Wave 2: territory paste UF matching (MAP-02)
 - [ ] 04-04-PLAN.md — Wave 3: GroupBar DnD + presets + summary strip (MAP-07/08/10)
@@ -136,6 +137,7 @@ Plans:
 - [ ] 04-06-PLAN.md — Wave 5: GroupConfigPanel time + variables hybrid data (MAP-06)
 - [ ] 04-07-PLAN.md — Wave 6: ReviewAnalysisDialog + assemble table + suggest test (MAP-09)
 - [ ] 04-08-PLAN.md — Wave 7: phase gate verification (MAP-01…10)
+
 **UI hint**: yes
 
 ### Phase 5: Variáveis no site (scrape + referências)
@@ -178,6 +180,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 9/9 | Complete   | 2026-07-25 |
-| 4. Mapas como interface estatística | 0/TBD | Not started | - |
+| 4. Mapas como interface estatística | 1/8 | In Progress|  |
 | 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |
