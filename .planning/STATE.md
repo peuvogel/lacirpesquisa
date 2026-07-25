@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-04 executed and committed — chart theme, ChartCanvas lifecycle wrapper, PNG export hook (UI-04), pt-BR format helpers all green
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-07-25T17:27:26.705Z"
-last_activity: 2026-07-25 — Plan 01-04 executed (chartTheme/ChartCanvas/useChartExport/format.ts)
+status: Plan 01-03 executed and committed — parseTabular/datasusImporter/datasusNormalizer ported to TS with differential parity suites over 3 TABNET fixtures, all green
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-07-25T17:34:47.782Z"
+last_activity: 2026-07-25 — Plan 01-03 executed (parseTabular.ts/datasusImporter.ts/datasusNormalizer.ts + TABNET fixtures)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 3
-  percent: 0
+  completed_plans: 4
+  percent: 33
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (2/12 plans complete)
+**Current focus:** Phase 1 — In progress (4/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01 and 01-04 complete (12 plans total, wave-based execution) — 01-02/01-03/01-05+ still pending
-Status: Plan 01-04 executed and committed — chart theme, ChartCanvas lifecycle wrapper, PNG export hook (UI-04), pt-BR format helpers all green
-Last activity: 2026-07-25 — Plan 01-04 executed (chartTheme/ChartCanvas/useChartExport/format.ts)
+Plan: 01-01, 01-02, 01-03, 01-04 complete (12 plans total, wave-based execution) — 01-05+ still pending
+Status: Plan 01-03 executed and committed — parseTabular/datasusImporter/datasusNormalizer ported to TS with differential parity suites over 3 TABNET fixtures, all green
+Last activity: 2026-07-25 — Plan 01-03 executed (parseTabular.ts/datasusImporter.ts/datasusNormalizer.ts + TABNET fixtures)
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 33%
 
 ## Accumulated Context
 
@@ -48,6 +48,10 @@ Progress: [██░░░░░░░░] 17%
 - [Phase 1]: ChartCanvas owns Chart.js instance via one useEffect (destroy-before-recreate, destroy-on-unmount), replacing the legacy global Map registry
 - [Phase 01]: theme.css is the single source for LACIR tokens; shadcn --color-accent/--color-border/--color-destructive remap removed from index.css to avoid circular refs / silent teal override
 - [Phase 01]: :root carries dark values directly (app never toggles .dark class); shadcn primitives would otherwise render light-mode OKLCH grays
+- [Phase 01]: parseTabular.ts/datasusImporter.ts/datasusNormalizer.ts ported byte-for-byte to TS with differential parity suites against assets/js/*.js over 3 hand-authored TABNET fixtures
+- [Phase 01]: datasus-importer.js's splitDelimitedLine and tabular-data-input.js's splitDelimitedLine kept as two separate, undeduplicated implementations (tuned for different input shapes)
+- [Phase 01]: TABNET fixtures hand-authored (no raw messy export found under trabalhos datasus/ — all pre-cleaned by coleta_* scripts)
+- [Phase 01]: normalizer's Phase 2+ stat-derivation functions (deriveIndependentTTest/derivePairedTTest/deriveCorrelationPairs/derivePraisSeries) ported and typed but numerically unverified — Phase 2 parity work still needed
 
 ### Pending Todos
 
@@ -59,13 +63,14 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T17:27:26.703Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-07-25T17:34:47.782Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
+| Phase 01 P03 | ~10 min | 3 tasks | 12 files |
 | Phase 01 P04 | 15 min | 3 tasks | 7 files |
 | Phase 01 P02 | 40min | 2 tasks | 3 files |

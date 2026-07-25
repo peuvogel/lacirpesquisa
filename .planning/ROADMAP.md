@@ -43,7 +43,7 @@ Plans:
 
 - [x] 01-01-PLAN.md — Wave 1: Vite/React/TS/Tailwind v4 scaffold, dependency install, vitest+RTL harness, shadcn primitives, purple-scaffold purge
 - [x] 01-02-PLAN.md — Wave 2: dark+teal token layer, Sora/IBM Plex Mono, two first-party accents, token contract test
-- [ ] 01-03-PLAN.md — Wave 2: port tabular/DataSUS parsers with TABNET fixtures and differential parity tests
+- [x] 01-03-PLAN.md — Wave 2: port tabular/DataSUS parsers with TABNET fixtures and differential parity tests
 - [x] 01-04-PLAN.md — Wave 2: port chart theme + ChartCanvas lifecycle + PNG export hook + pt-BR formatting
 - [ ] 01-05-PLAN.md — Wave 3: app shell — header nav, router, placeholder routes, in-memory session
 - [ ] 01-06-PLAN.md — Wave 3: FlowSteps stepper, useTabularInput, paste/upload panel, confirmable column preview
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Redesign / base React shell | 3/12 | In Progress|  |
+| 1. Redesign / base React shell | 4/12 | In Progress|  |
 | 2. Migrar testes existentes | 0/TBD | Not started | - |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
