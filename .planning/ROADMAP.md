@@ -15,7 +15,7 @@ v2.0 re-platforms the vanilla MVP calculator onto a React + Tailwind + shadcn/cu
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell
+- [x] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell (completed 2026-07-25)
 - [ ] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0
 - [ ] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges
 - [ ] **Phase 4: Mapas Brasil + estados** - Client-side Brazil/UF choropleth with drill-down into município/mesorregião/região de saúde, offline from bundled geo assets
@@ -52,7 +52,7 @@ Plans:
 - [x] 01-09-PLAN.md — Wave 4: Mapas mock — 27-UF SVG, intersection/partial variable panel
 - [x] 01-10-PLAN.md — Wave 5: Teste demo end-to-end + shared results pattern (chart, interpretation, PNG)
 - [x] 01-11-PLAN.md — Wave 5: Mapas "Iniciar pesquisa" stub — suggestions, collection links, paste handoff
-- [ ] 01-12-PLAN.md — Wave 6: conditional leave warning (Estatística + data only) and "Limpar dados"
+- [x] 01-12-PLAN.md — Wave 6: conditional leave warning (Estatística + data only) and "Limpar dados"
 
 **UI hint**: yes
 
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Redesign / base React shell | 11/12 | In Progress|  |
+| 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 0/TBD | Not started | - |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |

@@ -12,8 +12,8 @@
 - [x] **UI-02**: User completes each test via a shared flow: Dados → Configurar → Resultados
 - [x] **UI-03**: User can paste TABNET-style data (`;` delimiter, pt-BR decimal comma) and gets friendly validation errors
 - [x] **UI-04**: User can download the active result chart as PNG
-- [ ] **UI-05**: On Estatística only, if the user has already inputted data, the browser prompts before leaving/closing the page (no persistent refresh-loss banner)
-- [ ] **UI-06**: User reads a brief plain-Portuguese interpretation under every test result
+- [x] **UI-05**: On Estatística only, if the user has already inputted data, the browser prompts before leaving/closing the page (no persistent refresh-loss banner)
+- [x] **UI-06**: User reads a brief plain-Portuguese interpretation under every test result
 
 ### Testes — migração
 
@@ -82,8 +82,8 @@
 | UI-02 | Phase 1 | Complete |
 | UI-03 | Phase 1 | Complete |
 | UI-04 | Phase 1 | Complete |
-| UI-05 | Phase 1 | Pending |
-| UI-06 | Phase 1 | Pending |
+| UI-05 | Phase 1 | Complete |
+| UI-06 | Phase 1 | Complete |
 | UX-01 | Phase 1 | Complete |
 | TEST-01 | Phase 2 | Pending |
 | TEST-02 | Phase 2 | Pending |

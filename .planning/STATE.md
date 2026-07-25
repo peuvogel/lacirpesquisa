@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-11 executed — Iniciar pesquisa stub, collection links, paste handoff
-stopped_at: Completed 01-11-PLAN.md
-last_updated: "2026-07-25T18:29:00.000Z"
-last_activity: 2026-07-25 — Plan 01-11 executed (IniciarPesquisaModal, suggestResearchForSelection)
+status: Phase 1 complete — leave warning + Limpar dados (UI-05)
+stopped_at: Completed 01-12-PLAN.md
+last_updated: "2026-07-25T18:19:00.000Z"
+last_activity: 2026-07-25 — Plan 01-12 executed (useLeaveWarning, LeaveWarningGuard, ClearDataButton)
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (11/12 plans complete)
+**Current focus:** Phase 1 — Complete (12/12 plans)
 
 ## Current Position
 
-Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01 through 01-11 complete (12 plans total) — 01-12 pending
-Status: Plan 01-11 executed — Iniciar pesquisa stub, collection links, paste handoff
-Last activity: 2026-07-25 — Plan 01-11 executed (IniciarPesquisaModal, suggestResearchForSelection)
+Phase: 1 of 6 (Redesign / base React shell) — **Complete**
+Plan: 01-01 through 01-12 complete
+Status: Phase 1 complete — leave warning + Limpar dados (UI-05)
+Last activity: 2026-07-25 — Plan 01-12 executed (useLeaveWarning, LeaveWarningGuard, ClearDataButton)
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -68,6 +68,9 @@ Progress: [█████████░] 92%
 - [Phase 01]: Teste demo stub uses honest descriptive stats only — buildDemoInterpretation disclaims significance testing
 - [Phase 01]: MAPAS_TABULAR_OPTIONS uses broad territorio/medida aliases so junk paste errors while typical TABNET tables still load
 - [Phase 01]: Iniciar pesquisa continue requires loaded paste with ≥2 columns and ≥1 data row — not loaded status alone
+- [Phase 01]: beforeunload only via useLeaveWarning(hasData) with [hasData] deps — no useBlocker
+- [Phase 01]: LeaveWarningGuard structural route scoping instead of route-name conditionals
+- [Phase 01]: ClearDataButton onCleared resets TesteDemo tabular input and returns flow to Dados
 
 ### Pending Todos
 
@@ -79,8 +82,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:29:00.000Z
-Stopped at: Completed 01-11-PLAN.md
+Last session: 2026-07-25T18:19:00.000Z
+Stopped at: Completed 01-12-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -97,3 +100,4 @@ Resume file: None
 | Phase 01-redesign-base-react-shell P09 | 25min | 3 tasks | 11 files |
 | Phase 01-redesign-base-react-shell P10 | 25min | 3 tasks | 12 files |
 | Phase 01-redesign-base-react-shell P11 | 25min | 2 tasks | 6 files |
+| Phase 01-redesign-base-react-shell P12 | 12min | 2 tasks | 7 files |
