@@ -155,6 +155,28 @@
   .lacir-map-glow {
     filter: drop-shadow(0 0 6px rgba(32, 153, 120, 0.55));
   }
+
+  .lacir-map-glow--eligible {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lacir-map-glow--eligible {
+    animation: lacir-map-glow-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes lacir-map-glow-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px rgba(32, 153, 120, 0.55))
+      drop-shadow(0 0 12px rgba(32, 153, 120, 0.25));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(32, 153, 120, 0.65))
+      drop-shadow(0 0 16px rgba(32, 153, 120, 0.35));
+  }
 }
 
 /* Group bar drop zone highlight (04-UI-SPEC § Motion — 150ms ease-out). */

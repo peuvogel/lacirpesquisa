@@ -3,6 +3,8 @@ import { BrazilMapCanvas } from './BrazilMapCanvas';
 export interface BrazilMockMapProps {
   hoveredUF: string | null;
   selectedUFs: string[];
+  highlightedUFs?: string[];
+  groupMembership?: Record<string, { groupIndex: number; groupName: string }>;
   onHoverUF: (uf: string | null) => void;
   onToggleUF: (uf: string) => void;
 }

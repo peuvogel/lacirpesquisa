@@ -17,6 +17,23 @@ function renderMapasPage() {
   );
 }
 
+describe('MapasPage group workspace', () => {
+  it('renders GroupBar and SelectionSummaryStrip above map', () => {
+    renderMapasPage();
+
+    expect(screen.getByRole('region', { name: 'Barra de grupos' })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Resumo da seleção' })).toBeInTheDocument();
+    expect(screen.getByText('Nada selecionado ainda')).toBeInTheDocument();
+  });
+
+  it('creating a group updates the summary strip', () => {
+    renderMapasPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Norte' }));
+    expect(screen.getByText(/7 território\(s\)/)).toBeInTheDocument();
+  });
+});
+
 describe('MapasPage paste integration', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -52,7 +69,7 @@ describe('MapasPage paste integration', () => {
       'true',
     );
     expect(screen.getByText('Reconhecidos (1)')).toBeInTheDocument();
-    expect(screen.getByText('BA')).toBeInTheDocument();
+    expect(screen.getAllByText('BA').length).toBeGreaterThan(0);
   });
 
   it('shows unmatched lines without blocking map interaction', async () => {

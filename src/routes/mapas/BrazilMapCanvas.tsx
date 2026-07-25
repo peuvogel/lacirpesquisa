@@ -20,6 +20,8 @@ const ACCENT_BORDER_FILL = 'rgba(23, 121, 94, 0.45)';
 export function BrazilMapCanvas({
   hoveredUF,
   selectedUFs,
+  highlightedUFs = [],
+  groupMembership = {},
   onHoverUF,
   onToggleUF,
   choroplethValues,
@@ -42,7 +44,10 @@ export function BrazilMapCanvas({
     >
       <g transform={BRAZIL_UF_GROUP_TRANSFORM}>
         {BRAZIL_UF_PATHS.map(({ sigla, d }) => {
-          const isSelected = selectedUFs.includes(sigla);
+          const membership = groupMembership[sigla];
+          const isUngroupedSelected = selectedUFs.includes(sigla);
+          const isHighlighted = highlightedUFs.includes(sigla);
+          const isSelected = isUngroupedSelected || isHighlighted || Boolean(membership);
           const isHovered = hoveredUF === sigla;
           const metric = choroplethValues[sigla];
           const fill =
@@ -51,6 +56,13 @@ export function BrazilMapCanvas({
               : isSelected
                 ? ACCENT_BORDER_FILL
                 : SURFACE_FILL;
+
+          const glowClass =
+            isUngroupedSelected && !membership
+              ? 'lacir-map-glow lacir-map-glow--eligible'
+              : membership || isHighlighted
+                ? 'lacir-map-glow'
+                : undefined;
 
           return (
             <MapGeoPath
@@ -61,6 +73,10 @@ export function BrazilMapCanvas({
               isHovered={isHovered}
               isSelected={isSelected}
               fill={fill}
+              glowClass={glowClass}
+              groupBadge={
+                membership ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}` : undefined
+              }
               onHover={onHoverUF}
               onToggle={onToggleUF}
             />

@@ -34,7 +34,7 @@ export interface GroupBarProps {
   state: MapAnalysisState;
   dispatch: Dispatch<MapAnalysisAction>;
   ungroupedTerritories: TerritoryRef[];
-  onGroupCreated?: (territoryKeys: string[]) => void;
+  onGroupCreated?: (siglas: string[]) => void;
   onHighlightTerritories?: (territories: TerritoryRef[]) => void;
   className?: string;
 }
@@ -126,7 +126,9 @@ export function GroupBar({
       } else if (state.groups.length < MAX_GROUPS) {
         dispatch({ type: 'CREATE_GROUP', territories });
       }
-      onGroupCreated?.(territories.map(territoryKey));
+      onGroupCreated?.(
+        territories.filter((t) => t.level === 'uf' && t.sigla).map((t) => t.sigla!),
+      );
     },
     [dispatch, onGroupCreated, state.groups.length],
   );

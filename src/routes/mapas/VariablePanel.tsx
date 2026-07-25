@@ -34,7 +34,7 @@ export function VariablePanel({
       <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-border bg-surface p-6">
         <EmptyState
           heading="Explore o mapa do Brasil"
-          body="Passe o mouse sobre um estado para ver as variáveis disponíveis ali, ou clique para fixar a seleção e comparar mais de um estado."
+          body="Passe o mouse sobre um estado para ver o que está disponível. Clique para selecionar um ou mais estados e formar grupos de análise."
         />
       </div>
     );

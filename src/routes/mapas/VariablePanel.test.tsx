@@ -5,7 +5,7 @@ import { VariablePanel } from './VariablePanel';
 
 const EMPTY_HEADING = 'Explore o mapa do Brasil';
 const EMPTY_BODY =
-  'Passe o mouse sobre um estado para ver as variáveis disponíveis ali, ou clique para fixar a seleção e comparar mais de um estado.';
+  'Passe o mouse sobre um estado para ver o que está disponível. Clique para selecionar um ou mais estados e formar grupos de análise.';
 
 describe('VariablePanel', () => {
   it('lists hovered UF variables when nothing is locked', () => {
