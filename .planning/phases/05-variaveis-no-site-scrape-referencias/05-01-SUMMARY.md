@@ -83,7 +83,7 @@ Each task was committed atomically:
 1. **Task 1: Scaffold catalog scripts, columnMap, reference-seed, and port coleta paths** - `6723f0f` (feat)
 2. **Task 2: Implement catalog:build and commit generated assets** - `abb8d4a` (feat)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `1d20140` (docs: complete plan)
 
 ## Files Created/Modified
 
