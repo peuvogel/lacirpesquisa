@@ -24,7 +24,7 @@
 ### Testes — novos
 
 - [x] **TEST-04**: User can run qui-quadrado de independência with effect size and expected-cell warning
-- [ ] **TEST-05**: User can run one-way ANOVA with Tukey post-hoc
+- [x] **TEST-05**: User can run one-way ANOVA with Tukey post-hoc
 - [ ] **TEST-06**: User can run Kruskal-Wallis with Dunn post-hoc
 - [ ] **TEST-07**: User can run Poisson regression with overdispersion check
 - [ ] **TEST-08**: User can run Negative Binomial regression
@@ -96,7 +96,7 @@
 | TEST-02 | Phase 2 | Complete |
 | TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 3 | Complete |
-| TEST-05 | Phase 3 | Pending |
+| TEST-05 | Phase 3 | Complete |
 | TEST-06 | Phase 3 | Pending |
 | TEST-07 | Phase 3 | Pending |
 | TEST-08 | Phase 3 | Pending |
