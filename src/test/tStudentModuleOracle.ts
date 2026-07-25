@@ -27,6 +27,14 @@ export interface TStudentModuleOracle {
     se: number;
     differences: number[];
   };
+  classifyEffect: (d: number) => string;
+  buildManualInterpretation: (
+    result: ReturnType<typeof statsEngine.welchT> & { d: number },
+    alpha: number,
+    labels: string[],
+    question: string,
+    utils: Record<string, (...args: never[]) => unknown>,
+  ) => string;
 }
 
 let cached: TStudentModuleOracle | null = null;
@@ -38,7 +46,12 @@ export function loadTStudentModuleOracle(): TStudentModuleOracle {
   const lines = readFileSync(modulePath, 'utf8').split('\n');
   const welchBlock = lines.slice(606, 628).join('\n').replace('export function safeWelch', 'function safeWelch');
   const pairedBlock = lines.slice(1076, 1115).join('\n').replace('export function safePaired', 'function safePaired');
-  const wrapped = `${welchBlock}\n${pairedBlock}\n;({ safeWelch, safePaired });`;
+  const classifyBlock = lines.slice(139, 147).join('\n');
+  const interpretationBlock = lines
+    .slice(832, 858)
+    .join('\n')
+    .replace('export function buildManualInterpretation', 'function buildManualInterpretation');
+  const wrapped = `${classifyBlock}\n${welchBlock}\n${pairedBlock}\n${interpretationBlock}\n;({ safeWelch, safePaired, classifyEffect, buildManualInterpretation });`;
 
   cached = vm.runInNewContext(wrapped, {}, { filename: modulePath }) as TStudentModuleOracle;
   return cached;
