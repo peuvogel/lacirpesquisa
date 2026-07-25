@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 2 context gathered
-last_updated: "2026-07-25T18:49:45.516Z"
+stopped_at: Phase 2 UI-SPEC approved
+last_updated: "2026-07-25T18:59:03.415Z"
 last_activity: 2026-07-25 — Plan 01-12 executed (useLeaveWarning, LeaveWarningGuard, ClearDataButton)
 progress:
   total_phases: 6
@@ -82,9 +82,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:49:45.500Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-migrar-testes-existentes/02-CONTEXT.md
+Last session: 2026-07-25T18:59:03.412Z
+Stopped at: Phase 2 UI-SPEC approved
+Resume file: .planning/phases/02-migrar-testes-existentes/02-UI-SPEC.md
 
 ## Performance Metrics
 
