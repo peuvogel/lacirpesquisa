@@ -14,7 +14,7 @@ v2.0 re-platforms the vanilla MVP calculator onto a React + Tailwind + shadcn/cu
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/verde shell with tabs, shared paste→configure→results flow, PNG export, refresh warning, and the "qual teste usar?" decision tree
+- [ ] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell
 - [ ] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0
 - [ ] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges
 - [ ] **Phase 4: Mapas Brasil + estados** - Client-side Brazil/UF choropleth with drill-down into município/mesorregião/região de saúde, offline from bundled geo assets
@@ -24,16 +24,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Redesign / base React shell
-**Goal**: Users experience the new dark/verde React shell — brand, tabs, shared data-entry flow, export, and safety warning — that every test/map/catalog/meta module will mount on
+**Goal**: Users experience the LACIR portal React shell — header nav, Estatística flow, Mapas mock research launcher, shared paste, export, and conditional leave warning — that later modules mount on
 **Depends on**: Nothing (first phase)
 **Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UX-01
 **Success Criteria** (what must be TRUE):
-  1. User opens the app and sees a dark theme with green accents, the LACIR logo, and top-level tabs Testes | Mapas | Catálogo | Meta-análise
-  2. User completes any test through a consistent Dados → Configurar → Resultados flow
-  3. User pastes TABNET-style data (`;` delimiter, pt-BR decimal comma) and gets a friendly, specific validation error when the paste is malformed
+  1. User opens the app on Estatística and sees dark + teal accents, LACIR logo+name, and header nav Estatística | Meta-análise | Variáveis | Mapas (no version badge; DataSUS link inside Estatística)
+  2. User completes the stub test through Dados → Configurar → Resultados with brief PT interpretation
+  3. User pastes messy DataSUS/TABNET-style data and gets auto-detect → preview → confirm (friendly errors when invalid)
   4. User downloads the active result chart as a PNG
-  5. User sees a persistent warning that refreshing or closing the tab loses all work, and reads a brief plain-Portuguese interpretation under a result
-  6. User can follow a guided "qual teste usar?" decision tree that routes them to the correct test module
+  5. Leaving/closing Estatística with inputted data triggers a browser leave prompt; no persistent refresh banner
+  6. User can open "qual teste usar?" modal (roadmap with em breve) and use Mapas mock: hover/select UFs, variable panel intersection/partials, stub Iniciar pesquisa
 **Plans**: TBD
 **UI hint**: yes
 
