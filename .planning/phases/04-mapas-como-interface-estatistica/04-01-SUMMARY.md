@@ -75,7 +75,7 @@ completed: 2026-07-25
 2. **Task 2: Create geo types, fetch script, utilities, and CI fixtures** - `8612921` (feat)
 3. **Task 3: Create mapAnalysisState reducer and extend SessionProvider** - `f2b7f74` (feat)
 
-**Plan metadata:** pending (docs commit)
+**Plan metadata:** `cfdc285` (docs: complete plan)
 
 ## Files Created/Modified
 
