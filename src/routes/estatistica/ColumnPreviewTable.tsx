@@ -15,12 +15,17 @@ const ROLE_OPTIONS: Array<{ value: ColumnRole; label: string }> = [
   { value: 'ignorar', label: 'Ignorar' },
 ];
 
+export type ColumnPreviewConfirmMode = 'numeric-required' | 'categorical-pair';
+
 export interface ColumnPreviewTableProps {
   headers: string[];
   bodyRows: string[][];
   /** Domain key → column index, as produced by useTabularInput. */
   recognizedColumns: Record<string, number>;
   tabularOptions?: TabularInputOptions;
+  /** When categorical-pair, confirm requires all requiredKeys mapped (Phase 3 χ²). */
+  confirmMode?: ColumnPreviewConfirmMode;
+  onRoleAdjust?: () => void;
   onConfirm: (confirmed: {
     headers: string[];
     rows: string[][];
@@ -73,6 +78,8 @@ export function ColumnPreviewTable({
   bodyRows,
   recognizedColumns,
   tabularOptions,
+  confirmMode = 'numeric-required',
+  onRoleAdjust,
   onConfirm,
   maxPreviewRows = 8,
 }: ColumnPreviewTableProps) {
@@ -85,10 +92,19 @@ export function ColumnPreviewTable({
   const recognizedIndexes = useMemo(() => new Set(Object.values(recognizedColumns)), [recognizedColumns]);
 
   const previewRows = bodyRows.slice(0, maxPreviewRows);
-  const isValid = headers.length >= 2 && roles.some((role) => role === 'numerica');
+  const isValid = useMemo(() => {
+    if (headers.length < 2) return false;
+    if (confirmMode === 'categorical-pair' && tabularOptions) {
+      const mapped = deriveRecognizedColumnsFromRoles(roles, headers, tabularOptions);
+      const required = tabularOptions.requiredKeys ?? [];
+      return required.every((key) => mapped[key] !== undefined);
+    }
+    return roles.some((role) => role === 'numerica');
+  }, [confirmMode, headers.length, roles, tabularOptions]);
 
   function handleRoleChange(index: number, role: ColumnRole) {
     setRoles((previous) => previous.map((value, position) => (position === index ? role : value)));
+    onRoleAdjust?.();
   }
 
   function handleConfirm() {
