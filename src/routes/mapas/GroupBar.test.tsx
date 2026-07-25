@@ -1,3 +1,4 @@
+import type { Dispatch } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { resolveHealthMacroTerritories, resolvePresetTerritories } from '@/geo/territoryCatalog';
@@ -8,8 +9,12 @@ import {
 } from './mapAnalysisState';
 import { GroupBar } from './GroupBar';
 
+function mockDispatch() {
+  return vi.fn() as unknown as Dispatch<MapAnalysisAction> & ReturnType<typeof vi.fn>;
+}
+
 function renderGroupBar(
-  dispatch: ReturnType<typeof vi.fn>,
+  dispatch: Dispatch<MapAnalysisAction>,
   overrides: {
     state?: ReturnType<typeof createInitialMapAnalysisState>;
     ungroupedTerritories?: Parameters<typeof GroupBar>[0]['ungroupedTerritories'];
@@ -27,7 +32,7 @@ function renderGroupBar(
 
 describe('GroupBar', () => {
   it('Norte preset creates group with 7 territories via territoryCatalog', () => {
-    const dispatch = vi.fn();
+    const dispatch = mockDispatch();
     renderGroupBar(dispatch);
 
     fireEvent.click(screen.getByRole('button', { name: 'Norte' }));
@@ -41,7 +46,7 @@ describe('GroupBar', () => {
   });
 
   it('Criar grupo com seleção dispatches CREATE_GROUP without drag', () => {
-    const dispatch = vi.fn();
+    const dispatch = mockDispatch();
     const ungrouped = [
       { level: 'uf' as const, ibgeCode: '29', sigla: 'BA', name: 'Bahia' },
       { level: 'uf' as const, ibgeCode: '26', sigla: 'PE', name: 'Pernambuco' },
@@ -57,7 +62,7 @@ describe('GroupBar', () => {
   });
 
   it('health macro preset creates group with health-macro level TerritoryRefs', () => {
-    const dispatch = vi.fn();
+    const dispatch = mockDispatch();
     renderGroupBar(dispatch);
 
     fireEvent.click(screen.getByRole('button', { name: 'MR Bahia Norte' }));
@@ -74,7 +79,7 @@ describe('GroupBar', () => {
   });
 
   it('empty drop zone aria-label includes solte estados selecionados aqui', () => {
-    renderGroupBar(vi.fn());
+    renderGroupBar(mockDispatch());
 
     expect(
       screen.getByLabelText('Grupo 1, solte estados selecionados aqui'),
@@ -90,7 +95,7 @@ describe('GroupBar', () => {
 
     const dispatch = vi.fn((action: MapAnalysisAction) => {
       state = mapAnalysisReducer(state, action);
-    });
+    }) as unknown as Dispatch<MapAnalysisAction> & ReturnType<typeof vi.fn>;
 
     render(
       <GroupBar

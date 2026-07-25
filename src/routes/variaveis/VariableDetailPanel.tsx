@@ -59,9 +59,7 @@ export function VariableDetailPanel({
   }
 
   if (!hasCompleteProvenance(entry)) {
-    if (import.meta.env.DEV) {
-      console.assert(false, `Catalog entry missing D-05 provenance: ${entry.id}`);
-    }
+    console.assert(false, `Catalog entry missing D-05 provenance: ${entry.id}`);
     return (
       <EmptyState
         heading="Proveniência incompleta"
