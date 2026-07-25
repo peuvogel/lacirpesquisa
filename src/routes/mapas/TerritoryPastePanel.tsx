@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { matchUfPaste } from '@/geo/matchTerritoryLabels';
+import { loadMuniNameTable } from '@/geo/loadGeoAsset';
+import { matchMunicipalityPaste, matchUfPaste, looksLikeMunicipalityIntent, isLikelyUfLine } from '@/geo/matchTerritoryLabels';
+import type { TerritoryRef } from '@/geo/types';
 
 const DEBOUNCE_MS = 300;
 const TEXTAREA_ROWS = 8;
@@ -14,54 +16,123 @@ const monoStyle = {
 
 export interface TerritoryPastePanelProps {
   onMatched: (siglas: string[]) => void;
+  onMatchedTerritories?: (territories: TerritoryRef[]) => void;
   onClear?: () => void;
   initialText?: string;
+  /** UF sigla when map is drilled — enables municipality matching (MAP-04). */
+  activeUfScope?: string;
 }
 
 type PasteStatus = 'idle' | 'parsing' | 'report';
 
+interface ParsedReport {
+  matchedTerritories: TerritoryRef[];
+  matchedSiglas: string[];
+  unmatchedLines: string[];
+  scopeRequired: boolean;
+}
+
 export function TerritoryPastePanel({
   onMatched,
+  onMatchedTerritories,
   onClear,
   initialText = '',
+  activeUfScope,
 }: TerritoryPastePanelProps) {
   const [text, setText] = useState(initialText);
   const [status, setStatus] = useState<PasteStatus>('idle');
-  const [matchedSiglas, setMatchedSiglas] = useState<string[]>([]);
-  const [unmatchedLines, setUnmatchedLines] = useState<string[]>([]);
+  const [report, setReport] = useState<ParsedReport>({
+    matchedTerritories: [],
+    matchedSiglas: [],
+    unmatchedLines: [],
+    scopeRequired: false,
+  });
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const parseText = useCallback(
-    (value: string) => {
+    async (value: string) => {
       const trimmed = value.trim();
       if (!trimmed) {
         setStatus('idle');
-        setMatchedSiglas([]);
-        setUnmatchedLines([]);
+        setReport({
+          matchedTerritories: [],
+          matchedSiglas: [],
+          unmatchedLines: [],
+          scopeRequired: false,
+        });
         onClear?.();
         return;
       }
 
       setStatus('parsing');
 
-      const result = matchUfPaste(value);
-      const siglas = result.matched.map((entry) => entry.sigla);
+      try {
+        let parsed: ParsedReport;
 
-      setMatchedSiglas(siglas);
-      setUnmatchedLines(result.unmatched);
-      setStatus('report');
+        if (activeUfScope) {
+          const nameTable = await loadMuniNameTable(activeUfScope);
+          const result = matchMunicipalityPaste(value, activeUfScope, nameTable);
+          const territories = result.matched
+            .filter((entry) => entry.status === 'matched')
+            .map((entry) => entry.territory);
+          parsed = {
+            matchedTerritories: territories,
+            matchedSiglas: territories.filter((t) => t.level === 'uf' && t.sigla).map((t) => t.sigla!),
+            unmatchedLines: result.unmatched,
+            scopeRequired: result.scopeRequired,
+          };
+        } else {
+          const ufResult = matchUfPaste(value);
+          const lines = trimmed.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          const needsScope = lines.some(
+            (line) => !isLikelyUfLine(line) && looksLikeMunicipalityIntent(line),
+          );
+          const territories: TerritoryRef[] = ufResult.matched.map((uf) => ({
+            level: 'uf',
+            ibgeCode: uf.ibgeCode,
+            sigla: uf.sigla,
+            name: uf.name,
+          }));
+          parsed = {
+            matchedTerritories: territories,
+            matchedSiglas: ufResult.matched.map((entry) => entry.sigla),
+            unmatchedLines: ufResult.unmatched,
+            scopeRequired: needsScope,
+          };
+        }
 
-      if (siglas.length > 0) {
-        onMatched(siglas);
+        setReport(parsed);
+        setStatus('report');
+
+        if (parsed.matchedSiglas.length > 0) {
+          onMatched(parsed.matchedSiglas);
+        }
+        if (parsed.matchedTerritories.length > 0) {
+          onMatchedTerritories?.(parsed.matchedTerritories);
+        }
+      } catch {
+        setReport({
+          matchedTerritories: [],
+          matchedSiglas: [],
+          unmatchedLines: ['Erro ao carregar tabela de municípios para esta UF.'],
+          scopeRequired: false,
+        });
+        setStatus('report');
       }
     },
-    [onClear, onMatched],
+    [activeUfScope, onClear, onMatched, onMatchedTerritories],
   );
 
   useEffect(() => {
     if (!initialText) return;
-    parseText(initialText);
+    void parseText(initialText);
   }, [initialText, parseText]);
+
+  useEffect(() => {
+    if (text.trim()) {
+      void parseText(text);
+    }
+  }, [activeUfScope]); // eslint-disable-line react-hooks/exhaustive-deps -- re-parse when drill scope changes
 
   useEffect(() => {
     return () => {
@@ -71,7 +142,9 @@ export function TerritoryPastePanel({
 
   function scheduleParse(value: string) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => parseText(value), DEBOUNCE_MS);
+    debounceRef.current = setTimeout(() => {
+      void parseText(value);
+    }, DEBOUNCE_MS);
   }
 
   function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
@@ -79,8 +152,12 @@ export function TerritoryPastePanel({
     setText(value);
     if (!value.trim()) {
       setStatus('idle');
-      setMatchedSiglas([]);
-      setUnmatchedLines([]);
+      setReport({
+        matchedTerritories: [],
+        matchedSiglas: [],
+        unmatchedLines: [],
+        scopeRequired: false,
+      });
       onClear?.();
       return;
     }
@@ -93,16 +170,19 @@ export function TerritoryPastePanel({
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    parseText(text);
+    void parseText(text);
   }
 
-  const allUnmatched = status === 'report' && matchedSiglas.length === 0 && unmatchedLines.length > 0;
+  const { matchedSiglas, matchedTerritories, unmatchedLines, scopeRequired } = report;
+  const allUnmatched =
+    status === 'report' && matchedTerritories.length === 0 && unmatchedLines.length > 0 && !scopeRequired;
 
   return (
     <div className="flex h-full min-h-[320px] flex-col rounded-xl border border-border bg-surface p-6">
       <h2 className="font-sans text-lg font-bold text-text">Colar territórios</h2>
       <p className="mt-1 font-sans text-sm text-text-muted">
         Cole nomes de estados, municípios ou siglas — um por linha.
+        {activeUfScope ? ` Municípios serão reconhecidos dentro de ${activeUfScope}.` : null}
       </p>
 
       <textarea
@@ -127,6 +207,15 @@ export function TerritoryPastePanel({
 
       {status === 'report' ? (
         <div aria-live="polite" className="mt-4 space-y-4">
+          {scopeRequired ? (
+            <Alert variant="destructive">
+              <AlertTitle>Selecione um estado no mapa primeiro</AlertTitle>
+              <AlertDescription>
+                Para colar municípios, explore um estado no mapa (duplo clique) ou cole apenas siglas de UF.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
           {allUnmatched ? (
             <Alert variant="destructive">
               <AlertTitle>Não conseguimos reconhecer esses territórios</AlertTitle>
@@ -146,7 +235,25 @@ export function TerritoryPastePanel({
             </Alert>
           ) : null}
 
-          {matchedSiglas.length > 0 ? (
+          {matchedTerritories.length > 0 ? (
+            <div>
+              <h3 className="font-sans text-sm font-medium text-text">
+                Reconhecidos ({matchedTerritories.length})
+              </h3>
+              <ul className="mt-2 space-y-1" style={monoStyle}>
+                {matchedTerritories.map((t) => (
+                  <li
+                    key={`${t.level}:${t.ibgeCode}`}
+                    className={cn(
+                      'inline-flex rounded-md border border-accent-border bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent',
+                    )}
+                  >
+                    {t.level === 'municipio' ? `${t.name} (${t.ibgeCode})` : (t.sigla ?? t.name)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : matchedSiglas.length > 0 ? (
             <div>
               <h3 className="font-sans text-sm font-medium text-text">
                 Reconhecidos ({matchedSiglas.length})

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen, act } from '@testing-library/react';
+import { fireEvent, render, screen, act, waitFor } from '@testing-library/react';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
 
 const TEXTAREA_LABEL = 'Cole territórios — um por linha';
@@ -82,5 +82,41 @@ describe('TerritoryPastePanel', () => {
     fireEvent.blur(textarea);
 
     expect(onMatched).toHaveBeenCalledWith(['BA']);
+  });
+
+  it('matches Salvador with activeUfScope BA', async () => {
+    vi.useRealTimers();
+    const onMatchedTerritories = vi.fn();
+    render(
+      <TerritoryPastePanel
+        onMatched={() => {}}
+        onMatchedTerritories={onMatchedTerritories}
+        activeUfScope="BA"
+      />,
+    );
+    const textarea = screen.getByLabelText(TEXTAREA_LABEL);
+
+    fireEvent.change(textarea, { target: { value: 'Salvador' } });
+    fireEvent.blur(textarea);
+
+    await waitFor(() => {
+      expect(screen.getByText('Reconhecidos (1)')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Salvador \(2927408\)/)).toBeInTheDocument();
+    expect(onMatchedTerritories).toHaveBeenCalled();
+    vi.useFakeTimers();
+  });
+
+  it('shows scope required alert for municipality paste without UF scope', async () => {
+    render(<TerritoryPastePanel onMatched={() => {}} />);
+    const textarea = screen.getByLabelText(TEXTAREA_LABEL);
+
+    fireEvent.change(textarea, { target: { value: 'Salvador' } });
+
+    await act(async () => {
+      vi.advanceTimersByTime(DEBOUNCE_MS);
+    });
+
+    expect(screen.getByText('Selecione um estado no mapa primeiro')).toBeInTheDocument();
   });
 });

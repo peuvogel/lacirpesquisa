@@ -133,6 +133,96 @@ export function matchMunicipality(
   return { status: 'unmatched', input: name };
 }
 
+const MAX_MUNI_PASTE_LINES = 200;
+
+export interface MuniPasteResult {
+  matched: MatchResult[];
+  unmatched: string[];
+  scopeRequired: boolean;
+}
+
+/** Heuristic: 2-letter all-alpha token is a UF sigla. */
+export function isLikelyUfLine(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.length === 2 && /^[A-Za-z]{2}$/.test(trimmed);
+}
+
+/** Heuristic: line looks like a municipality name rather than a UF sigla or typo. */
+export function looksLikeMunicipalityIntent(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.length > 3 || trimmed.includes(' ');
+}
+
+/** Match municipality paste scoped by active UF (MAP-04). */
+export function matchMunicipalityPaste(
+  text: string,
+  ufSigla: string | undefined,
+  nameTable: MuniEntry[],
+): MuniPasteResult {
+  if (!ufSigla?.trim()) {
+    const lines = text
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, MAX_MUNI_PASTE_LINES);
+    const municipalityLines = lines.filter(
+      (line) => !isLikelyUfLine(line) && looksLikeMunicipalityIntent(line),
+    );
+    if (municipalityLines.length > 0) {
+      return {
+        matched: [],
+        unmatched: municipalityLines,
+        scopeRequired: true,
+      };
+    }
+    const ufResult = matchUfPaste(text);
+    return {
+      matched: ufResult.matched.map((uf) => ({
+        status: 'matched' as const,
+        input: uf.sigla,
+        territory: {
+          level: 'uf' as const,
+          ibgeCode: uf.ibgeCode,
+          sigla: uf.sigla,
+          name: uf.name,
+        },
+      })),
+      unmatched: ufResult.unmatched,
+      scopeRequired: false,
+    };
+  }
+
+  const lines = text
+    .split(/\r?\n/)
+    .slice(0, MAX_MUNI_PASTE_LINES)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const matched: MatchResult[] = [];
+  const unmatched: string[] = [];
+
+  for (const line of lines) {
+    if (isLikelyUfLine(line)) {
+      const ufResult = matchUfLabel(line);
+      if (ufResult.status === 'matched') {
+        matched.push(ufResult);
+      } else {
+        unmatched.push(line);
+      }
+      continue;
+    }
+
+    const result = matchMunicipality(line, ufSigla, nameTable);
+    if (result.status === 'matched') {
+      matched.push(result);
+    } else {
+      unmatched.push(line);
+    }
+  }
+
+  return { matched, unmatched, scopeRequired: false };
+}
+
 const MAX_PASTE_LINES = 5000;
 
 /** Match multiple territory labels with row cap (T-04-02 mitigation). */

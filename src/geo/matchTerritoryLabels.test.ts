@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { UF_LIST } from '@/routes/mapas/ufCodes';
 import {
   matchMunicipality,
+  matchMunicipalityPaste,
   matchTerritoryLabels,
   matchUfLabel,
   matchUfPaste,
@@ -100,6 +101,36 @@ describe('matchMunicipality', () => {
 
   it('reports unmatched municipality', () => {
     expect(matchMunicipality('Cidade Inexistente', 'BA', sampleCatalog).status).toBe('unmatched');
+  });
+});
+
+describe('matchMunicipalityPaste', () => {
+  it('matches Salvador with UF scope BA', () => {
+    const result = matchMunicipalityPaste('Salvador', 'BA', sampleCatalog);
+    expect(result.scopeRequired).toBe(false);
+    expect(result.matched).toHaveLength(1);
+    if (result.matched[0]?.status === 'matched') {
+      expect(result.matched[0].territory.ibgeCode).toBe('2927408');
+    }
+    expect(result.unmatched).toHaveLength(0);
+  });
+
+  it('reports XYZ as unmatched with UF scope BA', () => {
+    const result = matchMunicipalityPaste('XYZ', 'BA', sampleCatalog);
+    expect(result.unmatched).toEqual(['XYZ']);
+    expect(result.matched).toHaveLength(0);
+  });
+
+  it('flags scope required when municipality lines pasted without UF scope', () => {
+    const result = matchMunicipalityPaste('Salvador', undefined, sampleCatalog);
+    expect(result.scopeRequired).toBe(true);
+    expect(result.matched).toHaveLength(0);
+  });
+
+  it('caps municipality paste at 200 lines', () => {
+    const lines = Array.from({ length: 250 }, () => 'Salvador').join('\n');
+    const result = matchMunicipalityPaste(lines, 'BA', sampleCatalog);
+    expect(result.matched.length + result.unmatched.length).toBeLessThanOrEqual(200);
   });
 });
 
