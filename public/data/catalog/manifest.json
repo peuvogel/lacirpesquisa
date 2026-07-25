@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-07-25T22:39:52.901Z",
+  "catalogEntryCount": 32,
+  "packs": [
+    {
+      "packId": "sih.embolia_trombose_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_embolia_trombose_uf",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.amputacao_mmii_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_vascular_amputacao",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    }
+  ]
+}

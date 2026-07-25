@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "catalog:build": "node scripts/catalog/build.mjs",
+    "catalog:validate": "node scripts/catalog/validate.mjs"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
