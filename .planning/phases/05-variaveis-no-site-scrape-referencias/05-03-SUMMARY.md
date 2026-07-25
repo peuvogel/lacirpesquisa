@@ -79,7 +79,7 @@ Each task was committed atomically (TDD RED→GREEN):
 5. **Task 3 RED: buildSessionDataset tests** - `1c1b853` (test)
 6. **Task 3 GREEN: buildSessionDataset** - `02583a3` (feat)
 
-**Plan metadata:** _(pending docs commit)_
+**Plan metadata:** `761aae2` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/features/catalog/loadCatalog.ts` - Cached static catalog loader + `getCatalogPack`/`getPack`
