@@ -93,7 +93,19 @@ Plans:
   4. User runs Logistic regression and sees odds ratios with confidence intervals
   5. User sees assumption-check nudges appropriate to whichever test is active (e.g. normality hint, expected counts, overdispersion)
 
-**Plans**: TBD
+**Plans**: 9 plans (5 waves)
+
+Plans:
+
+- [ ] 03-01-PLAN.md — Wave 0: statsEngine χ²/ANOVA/Kruskal/Tukey/Dunn + glmEngine + golden fixtures + AssumptionNudgeStrip + jstat/ml-matrix
+- [ ] 03-02-PLAN.md — Wave A: Qui-quadrado TEST-04 (engine + UI + charts)
+- [ ] 03-03-PLAN.md — Wave A: ANOVA+Tukey TEST-05 (parallel with 03-04)
+- [ ] 03-04-PLAN.md — Wave A: Kruskal+Dunn TEST-06 (parallel with 03-03)
+- [ ] 03-05-PLAN.md — Wave A gate: registry + routes for classical tests; UX-02 integration
+- [ ] 03-06-PLAN.md — Wave B: Poisson TEST-07 + overdispersion CTA + glmCoefForestChart
+- [ ] 03-07-PLAN.md — Wave B: Binomial Negativa TEST-08 (parallel with 03-08)
+- [ ] 03-08-PLAN.md — Wave B: Logística TEST-09 (parallel with 03-07)
+- [ ] 03-09-PLAN.md — Wave B gate: full verification; all six tests available
 
 ### Phase 4: Mapas como interface estatística
 
