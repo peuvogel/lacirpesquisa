@@ -33,7 +33,7 @@
 ### Mapas (interface de análise estatística)
 
 - [x] **MAP-01**: User can plot a Brazil choropleth heatmap by UF with legend
-- [ ] **MAP-02**: User can paste territory labels as UF name or sigla and have them recognized
+- [x] **MAP-02**: User can paste territory labels as UF name or sigla and have them recognized
 - [ ] **MAP-03**: User can drill into a selected state and view município, mesorregião, or região/macrorregião de saúde choropleths
 - [ ] **MAP-04**: User gets municipality name matching scoped by UF plus a matched/unmatched report
 - [x] **MAP-05**: Maps work fully offline from bundled static geo assets (no runtime map/IBGE API dependency)
@@ -103,7 +103,7 @@
 | TEST-09 | Phase 3 | Complete |
 | UX-02 | Phase 3 | Complete |
 | MAP-01 | Phase 4 | Complete |
-| MAP-02 | Phase 4 | Pending |
+| MAP-02 | Phase 4 | Complete |
 | MAP-03 | Phase 4 | Pending |
 | MAP-04 | Phase 4 | Pending |
 | MAP-05 | Phase 4 | Complete |
