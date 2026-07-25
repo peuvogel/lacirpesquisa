@@ -24,6 +24,13 @@ describe('choroplethScale', () => {
     });
   });
 
+  it('legendBreaks returns 5 steps with PT labels Baixo and Alto', () => {
+    const breaks = legendBreaks([10, 50, 100, 200, 500]);
+    expect(breaks).toHaveLength(5);
+    expect(breaks[0]?.label).toBe('Baixo');
+    expect(breaks[4]?.label).toBe('Alto');
+  });
+
   it('handles empty values gracefully', () => {
     const scale = createChoroplethScale([]);
     expect(scale(0)).toBe(TEAL_STEPS[0]);

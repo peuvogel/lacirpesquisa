@@ -36,6 +36,14 @@ export function createChoroplethScale(values: number[]) {
     .interpolator(stepColor);
 }
 
+function ptBucketLabel(index: number, bucketCount: number): string {
+  if (index === 0) return 'Baixo';
+  if (index === bucketCount - 1) return 'Alto';
+  if (index === 1) return 'Baixo-médio';
+  if (index === bucketCount - 2) return 'Médio-alto';
+  return 'Médio';
+}
+
 /** Compute legend break buckets for display. */
 export function legendBreaks(values: number[], bucketCount = TEAL_STEPS.length): LegendBreak[] {
   if (values.length === 0) return [];
@@ -58,7 +66,7 @@ export function legendBreaks(values: number[], bucketCount = TEAL_STEPS.length):
       min: bucketMin,
       max: bucketMax,
       color: stepColor(t),
-      label: `${bucketMin.toFixed(1)}–${bucketMax.toFixed(1)}`,
+      label: ptBucketLabel(i, bucketCount),
     });
   }
 
