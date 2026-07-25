@@ -1,0 +1,55 @@
+/* ===================================================
+   LACIR BIOESTATÍSTICA — Design Tokens (Dark + Teal)
+   Single source of truth for every color, radius, font,
+   and type-scale value used across the app. Do not
+   declare a competing token elsewhere — see
+   01-UI-SPEC.md § Color / § Typography / § Spacing Scale.
+   =================================================== */
+
+@theme {
+  /* Surfaces (60/30 dominant/secondary) */
+  --color-bg: #0a0f0d;
+  --color-surface: #121917;
+  --color-elevated: #171f1c;
+
+  /* Accent — teal, reserved for meaningful state (D-16) */
+  --color-accent: #10b981;
+  --color-accent-soft: rgba(16, 185, 129, 0.1);
+  --color-accent-border: rgba(16, 185, 129, 0.28);
+
+  /* Text */
+  --color-text: #e6efe9;
+  --color-text-muted: #8fa89c;
+
+  /* Semantic */
+  --color-destructive: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Borders */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Radius scale — coexists with shadcn's own --radius (0.75rem) */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Fonts — Google Fonts loaded in index.html, system fallback keeps
+     text readable if the offline classroom can't reach the CDN */
+  --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Type scale — exactly 4 UI sizes, 2 weights (400/700) app-wide */
+  --text-label: 14px;
+  --text-label--line-height: 1.4;
+  --text-body: 16px;
+  --text-body--line-height: 1.6;
+  --text-heading: 20px;
+  --text-heading--line-height: 1.2;
+  --text-display: 32px;
+  --text-display--line-height: 1.15;
+
+  /* Data/mono register — kept outside the 4-size UI scale (§ Typography) */
+  --text-data: 14px;
+  --text-data--line-height: 1.55;
+}
