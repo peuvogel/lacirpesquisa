@@ -3,6 +3,8 @@ import {
   createInitialMapAnalysisState,
   deriveFlatMapSelection,
   deriveMapAnalysis,
+  deriveSelectionSummary,
+  formatTimeSummary,
   isGroupComplete,
   mapAnalysisReducer,
   type MapAnalysisGroup,
@@ -124,6 +126,34 @@ describe('deriveMapAnalysis', () => {
     };
     expect(deriveMapAnalysis(state).canReview).toBe(true);
     expect(isGroupComplete(completeGroup())).toBe(true);
+  });
+
+  it('summaryChips update when groups change', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      territories: [sampleTerritory],
+    });
+    const groupId = state.groups[0]!.id;
+    state = mapAnalysisReducer(state, {
+      type: 'SET_GROUP_TIME',
+      groupId,
+      time: { mode: 'range', start: '2018', end: '2022' },
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_GROUP_VARIABLE',
+      groupId,
+      variableId: 'mock.internacoes',
+    });
+
+    const summary = deriveSelectionSummary(state);
+    expect(summary.mode).toBe('complete');
+    expect(summary.sentence).toContain('2018–2022');
+  });
+});
+
+describe('formatTimeSummary', () => {
+  it('formats range mode with en-dash', () => {
+    expect(formatTimeSummary({ mode: 'range', start: '2018', end: '2022' })).toBe('2018–2022');
   });
 });
 
