@@ -73,7 +73,7 @@ completed: 2026-07-25
 2. **Task 2: Extract MapGeoPath and BrazilMapCanvas with choropleth fill** - `a07e7f9` (feat)
 3. **Task 3: Wire choropleth into MapasPage with default mock variable** - `82848fb` (feat)
 
-**Plan metadata:** `500730b` (docs: complete plan)
+**Plan metadata:** `9da668c` (docs: complete plan)
 
 ## Files Created/Modified
 

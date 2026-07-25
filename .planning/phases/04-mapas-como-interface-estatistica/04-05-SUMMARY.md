@@ -79,7 +79,7 @@ completed: 2026-07-25
 2. **Task 2: MapBreadcrumb + BrazilMapCanvas drill-down ladder** - `61268bf` (feat)
 3. **Task 3: Municipality matching scoped by UF in TerritoryPastePanel** - `7f43bc0` (feat)
 
-**Plan metadata:** `82060b0` (docs: complete plan)
+**Plan metadata:** `99a67aa` (docs: complete plan)
 
 ## Files Created/Modified
 
