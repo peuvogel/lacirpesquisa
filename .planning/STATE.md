@@ -4,13 +4,13 @@ milestone: v2.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-07-25T22:45:22.078Z"
+last_updated: "2026-07-25T22:48:36.418Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 40
+  completed_plans: 41
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 05 (variaveis-no-site-scrape-referencias) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-07-25
 
@@ -89,6 +89,9 @@ Progress: discuss complete — planning next
 - [Phase 05]: loadCatalog uses same-origin fetch('/data/catalog/...') with in-memory cache
 - [Phase 05]: buildSessionDataset left-joins onto first pack; assertCompatibleSelection enforces uf_codigo+ano
 - [Phase 05]: Zero new npm dependencies for catalog feature modules (05-03)
+- [Phase ?]: Enabled Estatística load in 05-04 (D-14); Mapas button stays disabled until 05-06
+- [Phase ?]: Multi-select checkboxes drive load when checked; otherwise selected loadable row is the load target
+- [Phase ?]: hasCompleteProvenance blocks incomplete orphans in the detail panel (T-05-09)
 
 ### Pending Todos
 
@@ -100,7 +103,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:45:22.076Z
+Last session: 2026-07-25T22:48:26.374Z
 Stopped at: Completed 05-03-PLAN.md
 Resume file: None
 
@@ -126,3 +129,4 @@ Resume file: None
 | Phase 05 P01 | 2min | 2 tasks | 13 files |
 | Phase 05 P02 | 1min | 2 tasks | 4 files |
 | Phase 05 P03 | 2min | 3 tasks | 8 files |
+| Phase 05 P04 | 3min | 2 tasks | 6 files |
