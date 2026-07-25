@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { useSession } from '@/shared/session/SessionProvider';
+import { createInitialMapAnalysisState } from './mapAnalysisState';
 import { BrazilMockMap } from './BrazilMockMap';
 import { computeVariableIntersection } from './computeVariableIntersection';
 import { MapLegendHint } from './MapLegendHint';
 import { MOCK_VARIABLES_BY_UF } from './mockVariablesByUF';
 import { IniciarPesquisaModal } from './IniciarPesquisaModal';
+import { TerritoryPastePanel } from './TerritoryPastePanel';
 import { VariablePanel } from './VariablePanel';
 
+type ContextPanelMode = 'explore' | 'paste' | 'group';
+
 export function MapasPage() {
-  const { setMapSelection } = useSession();
+  const { setMapSelection, setMapAnalysis, mapAnalysis } = useSession();
   const [hoveredUF, setHoveredUF] = useState<string | null>(null);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [selectedVariables, setSelectedVariables] = useState<string[]>([]);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [pesquisaOpen, setPesquisaOpen] = useState(false);
+  const [contextPanelMode, setContextPanelMode] = useState<ContextPanelMode>('explore');
 
   const markInteracted = useCallback(() => {
     setHasInteracted(true);
@@ -51,10 +57,35 @@ export function MapasPage() {
     [markInteracted],
   );
 
+  const handlePasteMatched = useCallback(
+    (siglas: string[]) => {
+      markInteracted();
+      setSelectedUFs((current) => {
+        const merged = [...current];
+        for (const sigla of siglas) {
+          if (!merged.includes(sigla)) merged.push(sigla);
+        }
+        return merged;
+      });
+
+      const base = mapAnalysis ?? createInitialMapAnalysisState();
+      const provenance: 'paste' | 'hybrid' =
+        mapAnalysis?.provenance === 'mock' || mapAnalysis?.provenance === 'hybrid'
+          ? 'hybrid'
+          : 'paste';
+      setMapAnalysis({ ...base, provenance });
+    },
+    [mapAnalysis, markInteracted, setMapAnalysis],
+  );
+
   const clearSelection = useCallback(() => {
     setSelectedUFs([]);
     setSelectedVariables([]);
     setHoveredUF(null);
+  }, []);
+
+  const togglePasteMode = useCallback(() => {
+    setContextPanelMode((mode) => (mode === 'paste' ? 'explore' : 'paste'));
   }, []);
 
   useEffect(() => {
@@ -104,15 +135,29 @@ export function MapasPage() {
           />
           {!hasInteracted ? <MapLegendHint /> : null}
         </section>
-        <aside className="lacir-mapas-panel w-[40%]" aria-label="Variáveis disponíveis">
-          <VariablePanel
-            hoveredUF={hoveredUF}
-            selectedUFs={selectedUFs}
-            selectedVariables={selectedVariables}
-            onToggleVariable={handleToggleVariable}
-            onClearSelection={clearSelection}
-            onIniciarPesquisa={() => setPesquisaOpen(true)}
-          />
+        <aside className="lacir-mapas-panel w-[40%]" aria-label="Painel contextual">
+          <div className="mb-3">
+            <Button
+              type="button"
+              variant={contextPanelMode === 'paste' ? 'default' : 'outline'}
+              size="sm"
+              onClick={togglePasteMode}
+            >
+              Colar territórios
+            </Button>
+          </div>
+          {contextPanelMode === 'paste' ? (
+            <TerritoryPastePanel onMatched={handlePasteMatched} />
+          ) : (
+            <VariablePanel
+              hoveredUF={hoveredUF}
+              selectedUFs={selectedUFs}
+              selectedVariables={selectedVariables}
+              onToggleVariable={handleToggleVariable}
+              onClearSelection={clearSelection}
+              onIniciarPesquisa={() => setPesquisaOpen(true)}
+            />
+          )}
         </aside>
       </div>
       <IniciarPesquisaModal
