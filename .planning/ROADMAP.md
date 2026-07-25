@@ -78,7 +78,7 @@ Plans:
 - [x] 02-05-PLAN.md — Wave 3: Prais-Winsten module (TEST-03) — parallel with 02-04
 - [x] 02-06-PLAN.md — Wave 4: Registry flip, EstatisticaPage routing, demo badge, Mapas handoff, integration gate
 - [x] 02-07-PLAN.md — Wave 5 (gap): Shared deriveRecognizedColumnsFromTabular + session bootstrap fix (CR-01)
-- [ ] 02-08-PLAN.md — Wave 6 (gap): ColumnPreview confirm mapping (WR-01) + handoff Resultados integration test
+- [x] 02-08-PLAN.md — Wave 6 (gap): ColumnPreview confirm mapping (WR-01) + handoff Resultados integration test
 
 ### Phase 3: Testes clássicos + GLM novos
 
@@ -147,7 +147,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
-| 2. Migrar testes existentes | 7/8 | In Progress|  |
+| 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
 | 5. Painel DataSUS / catálogo | 0/TBD | Not started | - |
