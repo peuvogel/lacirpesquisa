@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { matchMunicipality, matchTerritoryLabels, matchUfLabel } from './matchTerritoryLabels';
+import { UF_LIST } from '@/routes/mapas/ufCodes';
+import {
+  matchMunicipality,
+  matchTerritoryLabels,
+  matchUfLabel,
+  matchUfPaste,
+} from './matchTerritoryLabels';
 import type { MuniEntry } from './types';
 
 const sampleCatalog: MuniEntry[] = [
@@ -29,6 +35,56 @@ describe('matchUfLabel', () => {
   it('rejects unknown UF', () => {
     expect(matchUfLabel('XX').status).toBe('unmatched');
     expect(matchUfLabel('Atlantis').status).toBe('unmatched');
+  });
+
+  it.each([
+    ['BA', 'BA'],
+    ['bahia', 'BA'],
+    ['Bahia', 'BA'],
+    ['São Paulo', 'SP'],
+    ['sao paulo', 'SP'],
+    ['distrito federal', 'DF'],
+  ] as const)('matches %s to %s', (input, expectedSigla) => {
+    const result = matchUfLabel(input);
+    expect(result.status).toBe('matched');
+    if (result.status === 'matched') {
+      expect(result.territory.sigla).toBe(expectedSigla);
+    }
+  });
+
+  it('rejects XYZ as unmatched', () => {
+    expect(matchUfLabel('XYZ').status).toBe('unmatched');
+  });
+});
+
+describe('matchUfPaste', () => {
+  it('matches multi-line paste with matched and unmatched arrays', () => {
+    const result = matchUfPaste('BA\nPE\nXYZ\n');
+    expect(result.matched.map((entry) => entry.sigla)).toEqual(['BA', 'PE']);
+    expect(result.unmatched).toEqual(['XYZ']);
+  });
+
+  it('dedupes matched siglas preserving first occurrence order', () => {
+    const result = matchUfPaste('BA\nbahia\nPE\nPE');
+    expect(result.matched.map((entry) => entry.sigla)).toEqual(['BA', 'PE']);
+  });
+
+  it('preserves unmatched lines in report order', () => {
+    const result = matchUfPaste('XYZ\nABC\nBA');
+    expect(result.unmatched).toEqual(['XYZ', 'ABC']);
+  });
+
+  it('matches all 27 UFs by sigla and normalized full name', () => {
+    for (const uf of UF_LIST) {
+      expect(matchUfPaste(uf.sigla).matched[0]?.sigla).toBe(uf.sigla);
+      expect(matchUfPaste(uf.name).matched[0]?.sigla).toBe(uf.sigla);
+    }
+  });
+
+  it('caps paste at 100 lines', () => {
+    const lines = Array.from({ length: 150 }, (_, index) => (index % 2 === 0 ? 'BA' : 'ZZ'));
+    const result = matchUfPaste(lines.join('\n'));
+    expect(result.matched.length + result.unmatched.length).toBeLessThanOrEqual(100);
   });
 });
 
