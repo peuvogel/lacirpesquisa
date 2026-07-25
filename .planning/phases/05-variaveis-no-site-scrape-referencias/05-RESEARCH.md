@@ -615,20 +615,16 @@ Pipeline merge order:
 | A3 | ~15–25 reference seed rows is the right v1 depth | Reference curation | User may want denser catalog — discretionary, not locked |
 | A4 | `lacir_projetos` xlsx is not worth a loadable pack without inventing cells | Standard recommendation | If sheet has hidden tidy tables, optional pack was skipped |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Mapas default year become latest non-null year per variable (e.g. 2025) instead of Phase 4’s 2020-ish defaults?**
-   - What we know: Packs cover 2013–2025; rates empty in 2023.
-   - What's unclear: Best didactic default for capacitação.
-   - Recommendation: Default to latest year with non-null value for the active variable; document in plan as discretion.
+   - **RESOLVED:** Default to latest year with non-null value for the active variable; exclude years where the metric is null (e.g. 2023 rates/densities). Locked for 05-05.
 
 2. **Commit generated `public/data/catalog/*` in git vs generate in `prebuild` only?**
-   - What we know: Geo samples are committed; full geo may be gitignored.
-   - What's unclear: Repo size preference (~pack JSON will be small: 351 rows × 2 packs).
-   - Recommendation: **Commit** packs + variables for offline CI/tests (D-03 package-first).
+   - **RESOLVED:** **Commit** packs + `variables.json` + `manifest.json` for offline CI/tests (D-03 package-first). `catalog:build` regenerates when coletas change.
 
 3. **Wire `catalog:validate` into `pretest` vs separate CI step?**
-   - Recommendation: `pretest` script: `catalog:validate && vitest` if validate is <2s (expected).
+   - **RESOLVED:** `pretest` runs `catalog:validate` then vitest (05-02).
 
 ## Environment Availability
 
