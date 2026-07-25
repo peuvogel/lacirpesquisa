@@ -2,9 +2,9 @@
 
 ## Overview
 
-v2.0 re-platforms the vanilla MVP calculator onto a React + Tailwind + shadcn/cult-ui dark/verde shell, then rebuilds capability in the build order locked in PROJECT.md: base shell first (everything else mounts on it), migrate the three validated tests to protect capacitação value, add the new classic + GLM tests (highest math risk), ship the Brasil/estado map suite, curate the DataSUS variable catalog, and finish with meta-análise last since it reuses chart/stats maturity built along the way. Everything stays 100% client-side — no backend, no login, session lives only in the browser cache.
+v2.0 re-platforms the vanilla MVP calculator onto a React + Tailwind + shadcn/cult-ui dark/verde shell, then rebuilds capability in the build order locked in PROJECT.md: base shell first, migrate the three validated tests, add classic + GLM tests, ship maps as a **statistical analysis interface** (temporality, regional presets, health macro-regions, multi-disease), deliver **scraped/curated variables in-app with mandatory provenance**, and finish with meta-análise last. Analyses stay client-side (session in browser cache); DataSUS scrape is an offline/versioned data pipeline into bundled assets — never orphan variables without source references.
 
-**Implementation stance (locked):** Do **not** reinvent statistical engines from scratch. Port/adapt formulas and expected outputs from (1) existing v1.0 modules under `tests/` and (2) JASP open-source logic in `jasp-desktop-development/` (R analyses / docs as oracle). Milestone effort concentrates on the didactic React interface, Portuguese interpretation, assumption nudges, charts/export, maps, and catalog UX.
+**Implementation stance (locked):** Do **not** reinvent statistical engines from scratch. Port/adapt formulas and expected outputs from (1) existing v1.0 modules under `tests/` and (2) JASP open-source logic in `jasp-desktop-development/` (R analyses / docs as oracle). Milestone effort concentrates on didactic React UX, Portuguese interpretation, assumption nudges, charts/export, map-as-analysis-UI, and variable pipeline + provenance.
 
 ## Phases
 
@@ -18,8 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell (completed 2026-07-25)
 - [x] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0 (completed 2026-07-25)
 - [ ] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges
-- [ ] **Phase 4: Mapas Brasil + estados** - Client-side Brazil/UF choropleth with drill-down into município/mesorregião/região de saúde, offline from bundled geo assets
-- [ ] **Phase 5: Painel DataSUS / catálogo** - Searchable catalog of classified public-health variables with official source links and suggested-test hints
+- [ ] **Phase 4: Mapas como interface estatística** - Brazil/UF + drill-down; temporalidade; grupos de UF com presets (N/NE/CO/SE/S); macrorregiões de saúde; multi-doença; fluxo didático território×tempo×grupo → testes
+- [ ] **Phase 5: Variáveis no site (scrape + referências)** - Pipeline de curadoria/scrape versionado; catálogo classificado; **referência obrigatória** em cada variável; carregar dados no app sem sites externos na aula
 - [ ] **Phase 6: Meta-análise** - Fixed/random-effects pooling with forest plot, heterogeneity stats, funnel plot, and Egger's asymmetry check
 
 ## Phase Details
@@ -95,32 +95,39 @@ Plans:
 
 **Plans**: TBD
 
-### Phase 4: Mapas Brasil + estados
+### Phase 4: Mapas como interface estatística
 
-**Goal**: Ligantes can visualize DataSUS-style data on Brazil and intra-state choropleths without any backend or live map API
+**Goal**: Ligantes use the map as a didactic statistical-analysis surface — select territory, time, disease(s), and groups (regional presets / health macro-regions), then run tests — not merely a research launcher
 **Depends on**: Phase 3
-**Requirements**: MAP-01, MAP-02, MAP-03, MAP-04, MAP-05
+**Requirements**: MAP-01, MAP-02, MAP-03, MAP-04, MAP-05, MAP-06, MAP-07, MAP-08, MAP-09, MAP-10
 **Success Criteria** (what must be TRUE):
 
   1. User plots a Brazil choropleth heatmap by UF with a legend
   2. User pastes territory labels as UF name or sigla and has them correctly recognized
-  3. User drills into a selected state to view município, mesorregião, or região de saúde choropleths
+  3. User drills into a selected state to view município, mesorregião, or região/macrorregião de saúde choropleths
   4. User sees a matched/unmatched report when municipality names are resolved within the chosen UF
   5. Maps render fully offline from bundled static geo assets, with no runtime map or IBGE API dependency
+  6. User selects a time window / compares periods (temporalidade) as part of the map analysis flow
+  7. User groups UFs for analysis using presets (Norte, Nordeste, Centro-Oeste, Sudeste, Sul) and/or custom groups
+  8. User can include macrorregiões de saúde in grouping/selection
+  9. User selects multiple diseases/agravos within the active territory × time × group context and proceeds to statistical tests
+  10. The map flow stays didactic: clear steps, plain-PT guidance, and a visible summary of the current selection
 
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 5: Painel DataSUS / catálogo
+### Phase 5: Variáveis no site (scrape + referências)
 
-**Goal**: Ligantes can find and understand which public-health variables to use and where to get them, before or after choosing a test
+**Goal**: Ligantes analyze public-health variables already available in the app (via versioned scrape/curation pipeline), always seeing where each variable comes from — no orphan data, no mandatory external TABNET trip during class
 **Depends on**: Phase 4
-**Requirements**: CAT-01, CAT-02, CAT-03
+**Requirements**: CAT-01, CAT-02, CAT-03, CAT-04, CAT-05
 **Success Criteria** (what must be TRUE):
 
   1. User searches/browses a panel of public-health variables classified by type (categórica, numérica, ordinal, etc.)
-  2. User opens official source links (TABNET, e-Gestor, SIDRA, Atlas, etc.) directly from a catalog entry
+  2. Every catalog entry shows mandatory provenance (sistema/fonte, tabela/indicador, período, URL/citação oficial)
   3. User sees a suggested statistical test hint based on the variable's classified type
+  4. User loads curated/scraped datasets into Estatística/Mapas analysis without leaving the app for data collection
+  5. Datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping
 
 **Plans**: TBD
 
@@ -149,6 +156,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
-| 4. Mapas Brasil + estados | 0/TBD | Not started | - |
-| 5. Painel DataSUS / catálogo | 0/TBD | Not started | - |
+| 4. Mapas como interface estatística | 0/TBD | Not started | - |
+| 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |

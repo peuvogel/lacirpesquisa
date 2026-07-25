@@ -16,12 +16,13 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 - Redesign dark com detalhes verdes, logo LACIR, UX em abas (React + Vite + Tailwind + shadcn/cult-ui)
 - Migrar testes atuais: t de Student, Pearson/Spearman, Prais-Winsten
 - Adicionar: qui-quadrado, Poisson, Binomial Negativa, Regressão Logística, ANOVA, Kruskal-Wallis
-- Mapas client-side: Brasil por UF + intra-estado (municípios, mesorregiões, regiões de saúde) com heatmap e reconhecimento de nomes/siglas
-- Painel de variáveis DataSUS/fontes públicas classificadas com links diretos
+- **Variáveis no site (scrape/pipeline):** coletar e disponibilizar as variáveis de saúde pública no próprio produto para o usuário analisar sem depender de sites externos na hora da aula — **sempre com referência/proveniência** (fonte, sistema, tabela, período, link/citação)
+- **Mapas = interface de análise estatística** (não só launcher): temporalidade, agrupamento de UFs (presets região + macrorregiões de saúde), seleção múltipla de agravos/doenças, território × tempo × grupo → testes didáticos e intuitivos
+- Mapas client-side: Brasil por UF + intra-estado (municípios, mesorregiões, regiões/macrorregiões de saúde) com heatmap
 - Meta-análise por último: efeito fixo/aleatório + forest plot + I² + funnel plot + asymmetry básica
-- Estado só no cache do navegador; sem login/backend neste milestone
+- Análises e sessão no browser; scrape é pipeline de dados (build/assets), não runtime TABNET na aula
 
-**Build order:** Redesign/base → migrar testes atuais → novos testes → mapas → painel DataSUS → meta-análise
+**Build order:** Redesign/base → migrar testes atuais → novos testes → mapas (interface estatística) → variáveis scrapadas + catálogo com referências → meta-análise
 
 ## Requirements
 
@@ -43,17 +44,17 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 
 - [ ] Redesign React dark/verde com abas e UX didática
 - [ ] Suite estatística ampliada (qui-quadrado + GLM/contagem + logística + ANOVA/Kruskal)
-- [ ] Mapas Brasil/UF + intra-estado com heatmap
-- [ ] Painel catálogo DataSUS/fontes com classificação de variáveis e links
+- [ ] Mapas como interface de testes: temporalidade, presets regionais, macrorregiões de saúde, multi-doença
+- [ ] Pipeline de scrape/curadoria das variáveis no site + catálogo com referência obrigatória em cada variável
 - [ ] Meta-análise didática (fixo/aleatório, forest, I², funnel, asymmetry)
-- [ ] Persistência apenas em memória/cache do navegador
+- [ ] Persistência de sessão de análise apenas em memória/cache do navegador
 
 ### Out of Scope
 
-- Backend / API server / banco de dados — deferred; milestone é 100% client-side
+- Backend / API server / banco de dados de sessão — deferred; análises continuam client-side
 - Login, contas de usuário, salvar projetos na nuvem — próximo ciclo
 - Embutir JASP ou runtime R no browser — JASP é só referência de comportamento/cálculo
-- Download massivo automático de bases DataSUS — o painel mapeia e linka; coleta continua no TABNET/portais
+- Scraping runtime ao vivo do TABNET durante a aula (ToS/instabilidade) — scrape é offline/pipeline com assets versionados + referências
 - Suite bayesiana completa ou módulos JASP avançados além do escopo de meta-análise definido
 
 ## Context
@@ -81,11 +82,14 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 |----------|-----------|---------|
 | Reescrever em React + Vite + Tailwind + shadcn/cult-ui | cult-ui/shadcn exigem ecossistema React; redesign profundo justifica rewrite | — Pending |
 | Mapas 100% client-side (GeoJSON + parser de UF/siglas/nomes) | Sem backend; “API” = módulo JS interno | — Pending |
+| Mapas = interface de análise estatística (não só research launcher) | Temporalidade + grupos de UF/presets + macrorregiões de saúde + multi-doença; didático | — Pending (decisão 2026-07-25) |
+| Variáveis scrapadas/curadas no site com referência obrigatória | Usuário analisa sem sites externos na aula; proveniência sempre visível | — Pending (decisão 2026-07-25) |
+| Scrape via pipeline/assets versionados (não runtime TABNET) | Evita ToS/instabilidade em aula; dados + metadados de fonte no bundle | — Pending (decisão 2026-07-25) |
 | Meta-análise: fixo/aleatório + forest + I² + funnel + asymmetry básica | Suficiente para capacitação; suite JASP completa estoura escopo | — Pending |
 | Incluir qui-quadrado neste milestone | Ensinado na capacitação; faltava no MVP | — Pending |
-| Mapas intra-estado: municípios + mesorregiões + regiões de saúde | Ligantes fazem estudos estaduais (ex.: Bahia) com granularidade útil | — Pending |
+| Mapas intra-estado: municípios + mesorregiões + regiões/macrorregiões de saúde | Ligantes fazem estudos estaduais (ex.: Bahia) com granularidade útil | — Pending |
 | Meta-análise por último na ordem de build | Depende de base sólida de UI/testes/mapas | — Pending |
-| Sem login/backend neste milestone | Foco em valor didático e entrega; auth depois | — Pending |
+| Sem login/backend de sessão neste milestone | Foco em valor didático e entrega; auth depois | — Pending |
 | Reutilizar lógica/fórmulas do JASP (e do MVP) — não reinventar engines | `jasp-desktop-development/` e testes v1.0 são oráculo e fonte de algoritmos; esforço do milestone vai para UI didática, interpretação PT e UX | — Pending |
 
 ## Evolution
@@ -106,4 +110,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-25 — milestone v2.0 started*
+*Last updated: 2026-07-25 — pivot: variáveis scrapadas + mapa como interface estatística*

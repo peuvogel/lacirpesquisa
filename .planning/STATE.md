@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 gaps closed — awaiting human UAT
-last_updated: "2026-07-25T19:42:02.041Z"
+stopped_at: Phase 2 gaps closed — awaiting human UAT; plan pivot logged (scrape+map stats UI)
+last_updated: "2026-07-25T19:50:00.000Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
@@ -21,23 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 02 — migrar-testes-existentes
+**Current focus:** Phase 02 — migrar-testes-existentes (human UAT)
 
 ## Current Position
 
-Phase: 02 (migrar-testes-existentes) — EXECUTING
-Plan: 3 of 8
-Status: Ready to execute
+Phase: 02 (migrar-testes-existentes) — AWAITING HUMAN UAT
+Plan: 8 of 8 (complete)
+Status: Human UAT pending (02-HUMAN-UAT.md)
 Last activity: 2026-07-25
 
-Progress: [██████████] 100%
+Progress: [██████████] 100% Phase 2 plans
 
 ## Accumulated Context
 
 ### Decisions
 
 - Portal LACIR: header Estatística | Meta-análise | Variáveis | Mapas
-- Mapas = research launcher (hover/multi-UF/vars/iniciar pesquisa); Estatística standalone
+- **PIVOT 2026-07-25:** Mapas = interface de análise estatística (temporalidade, presets regionais N/NE/CO/SE/S, macrorregiões de saúde, multi-doença, UX didática) — supersedes “research launcher only”
+- **PIVOT 2026-07-25:** Variáveis scrapadas/curadas no site via pipeline versionado; análise sem sites externos na aula; **referência/proveniência obrigatória** em toda variável (nunca dado órfão)
+- **PIVOT 2026-07-25:** Scrape offline/build-time (assets), não runtime TABNET ao vivo — evita ToS/instabilidade em aula
 - Paste máximo + auto-detect → preview → confirm
 - Stub Teste demo na Fase 1; wizard modal; visual equilibrado teal
 - beforeunload só em Estatística com dados; sem banner
@@ -85,8 +87,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T19:42:02.039Z
-Stopped at: Phase 2 gaps closed — awaiting human UAT
+Last session: 2026-07-25T19:50:00.000Z
+Stopped at: Plan pivot logged (scrape + map stats UI) — resume Phase 2 human UAT
 Resume file: .planning/phases/02-migrar-testes-existentes/02-HUMAN-UAT.md
 
 ## Performance Metrics

@@ -30,19 +30,26 @@
 - [ ] **TEST-08**: User can run Negative Binomial regression
 - [ ] **TEST-09**: User can run Logistic regression reporting odds ratios with confidence intervals
 
-### Mapas
+### Mapas (interface de análise estatística)
 
 - [ ] **MAP-01**: User can plot a Brazil choropleth heatmap by UF with legend
 - [ ] **MAP-02**: User can paste territory labels as UF name or sigla and have them recognized
-- [ ] **MAP-03**: User can drill into a selected state and view município, mesorregião, or região de saúde choropleths
+- [ ] **MAP-03**: User can drill into a selected state and view município, mesorregião, or região/macrorregião de saúde choropleths
 - [ ] **MAP-04**: User gets municipality name matching scoped by UF plus a matched/unmatched report
 - [ ] **MAP-05**: Maps work fully offline from bundled static geo assets (no runtime map/IBGE API dependency)
+- [ ] **MAP-06**: User can analyze temporality on the map (select period / compare across time) as part of the statistical workflow
+- [ ] **MAP-07**: User can group UFs into analysis groups, with presets for grandes regiões (Norte, Nordeste, Centro-Oeste, Sudeste, Sul) and custom groups
+- [ ] **MAP-08**: User can select/group by macrorregiões de saúde (and related health-region geography) for analysis
+- [ ] **MAP-09**: User can select multiple diseases/agravos within the chosen territory groups and time window, then run statistical tests from that selection
+- [ ] **MAP-10**: Map analysis UX is didactic and intuitive (clear steps, plain-PT guidance, visible selection summary of territory × time × diseases × groups)
 
-### Catálogo DataSUS
+### Variáveis DataSUS (dados no site + referências)
 
 - [ ] **CAT-01**: User can search/browse a panel of public-health variables classified by type (categorical, numeric, ordinal, etc.)
-- [ ] **CAT-02**: User can open official source links (TABNET, e-Gestor, SIDRA, Atlas, etc.) from each catalog entry
+- [ ] **CAT-02**: Every variable shows mandatory provenance/reference (source system, table/indicator, period covered, official citation/URL) — never orphan data
 - [ ] **CAT-03**: User sees a suggested statistical test hint based on the variable's classified type
+- [ ] **CAT-04**: User can load curated/scraped variable datasets into analysis directly in the app (no need to leave for TABNET during the classroom flow)
+- [ ] **CAT-05**: Scraped/curated datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping during analysis
 
 ### Meta-análise
 
@@ -59,19 +66,19 @@
 ## Future Requirements
 
 - Login / contas de usuário e salvar projetos na nuvem
-- Backend / API persistente
-- Download massivo automático de bases DataSUS
+- Backend / API persistente de sessão
+- Refresh contínuo/automatizado do pipeline de scrape (CI) além do bundle versionado do milestone
 - Suite bayesiana / trim-and-fill / GLM genérico / zero-inflated
-- Mapas animados por tempo / setor censitário
+- Setor censitário / animações avançadas de mapa além da temporalidade didática (MAP-06)
 
 ## Out of Scope
 
 | Item | Reason |
 |------|--------|
-| Backend / database / auth | Explicit client-only milestone |
+| Backend / database / auth de sessão | Análises client-only; scrape é pipeline de assets |
 | Embutir JASP ou runtime R | JASP is numeric/behavior oracle only |
 | Mapbox / Google Maps / tile APIs with keys | Offline classroom + no secrets in client |
-| Bulk DataSUS scraping inside the app | Capacitação teaches manual TABNET extraction; ToS/ops risk |
+| Live runtime TABNET scraping during class | ToS/ops/instability; use versioned pipeline + provenance instead |
 | Full JASP UI clone | Didactic tabbed UX preferred |
 
 ## Traceability
@@ -100,17 +107,24 @@
 | MAP-03 | Phase 4 | Pending |
 | MAP-04 | Phase 4 | Pending |
 | MAP-05 | Phase 4 | Pending |
+| MAP-06 | Phase 4 | Pending |
+| MAP-07 | Phase 4 | Pending |
+| MAP-08 | Phase 4 | Pending |
+| MAP-09 | Phase 4 | Pending |
+| MAP-10 | Phase 4 | Pending |
 | CAT-01 | Phase 5 | Pending |
 | CAT-02 | Phase 5 | Pending |
 | CAT-03 | Phase 5 | Pending |
+| CAT-04 | Phase 5 | Pending |
+| CAT-05 | Phase 5 | Pending |
 | META-01 | Phase 6 | Pending |
 | META-02 | Phase 6 | Pending |
 | META-03 | Phase 6 | Pending |
 | META-04 | Phase 6 | Pending |
 
-**Coverage:** 29/29 requirements mapped ✓  
+**Coverage:** 36/36 requirements mapped ✓  
 **Orphaned requirements:** (none)  
 **Phantom phase requirements:** (none)
 
 ---
-*Last updated: 2026-07-25 — requirements defined for v2.0*
+*Last updated: 2026-07-25 — pivot: scrape+referências (CAT-02/04/05) + mapa interface estatística (MAP-06..10)*
