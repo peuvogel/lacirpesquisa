@@ -8,6 +8,8 @@ const ACCEPTED_FILE_TYPES = '.csv,.txt,.tsv,.xlsx';
 
 export interface TabularInputPanelProps extends UseTabularInputResult {
   onConfirm?: (confirmed: { headers: string[]; rows: string[][] }) => void;
+  /** When false, loaded data is acknowledged without rendering ColumnPreviewTable (01-10 flow). */
+  showPreview?: boolean;
 }
 
 /**
@@ -26,6 +28,7 @@ export function TabularInputPanel({
   recognizedColumns,
   error,
   onConfirm,
+  showPreview = true,
 }: TabularInputPanelProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -129,13 +132,19 @@ export function TabularInputPanel({
         </div>
       ) : null}
 
-      {status === 'loaded' ? (
+      {status === 'loaded' && showPreview ? (
         <ColumnPreviewTable
           headers={headers}
           bodyRows={bodyRows}
           recognizedColumns={recognizedColumns}
           onConfirm={handleConfirm}
         />
+      ) : null}
+
+      {status === 'loaded' && !showPreview ? (
+        <p className="text-sm text-muted-foreground">
+          Dados reconhecidos — avance para <strong>Configurar</strong> para revisar colunas e confirmar.
+        </p>
       ) : null}
     </div>
   );

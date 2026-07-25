@@ -8,11 +8,58 @@ export interface GroupSummary {
   sd: number;
 }
 
+export interface AnalysisColumns {
+  groupIndex: number;
+  valueIndex: number;
+  note?: string;
+}
+
 function sampleStandardDeviation(values: number[]): number {
   if (values.length <= 1) return 0;
   const average = legacyStats.mean(values);
   const sumSquaredDiffs = values.reduce((accumulator, value) => accumulator + (value - average) ** 2, 0);
   return Math.sqrt(sumSquaredDiffs / (values.length - 1));
+}
+
+function normalizeNumericToken(raw: string): string {
+  return raw.trim().replace(/\./g, '').replace(',', '.');
+}
+
+function looksNumeric(raw: string): boolean {
+  const value = raw.trim();
+  if (!value) return false;
+  return Number.isFinite(Number(normalizeNumericToken(value)));
+}
+
+function detectColumnRole(columnIndex: number, rows: string[][]): 'numerica' | 'categorica' {
+  const values = rows.map((row) => row[columnIndex] ?? '').filter((value) => value.trim() !== '');
+  if (!values.length) return 'categorica';
+
+  const numericRatio = values.filter(looksNumeric).length / values.length;
+  return numericRatio >= 0.6 ? 'numerica' : 'categorica';
+}
+
+/**
+ * Picks group/value columns from confirmed data, falling back to the first
+ * categórica + numérica pair when roles are ambiguous.
+ */
+export function pickAnalysisColumns(headers: string[], rows: string[][]): AnalysisColumns {
+  const roles = headers.map((_, index) => detectColumnRole(index, rows));
+  const numericIndexes = roles.map((role, index) => (role === 'numerica' ? index : -1)).filter((index) => index >= 0);
+  const categoricalIndexes = roles
+    .map((role, index) => (role === 'categorica' ? index : -1))
+    .filter((index) => index >= 0);
+
+  const valueIndex = numericIndexes[0] ?? Math.max(headers.length - 1, 0);
+  const groupIndex = categoricalIndexes[0] ?? 0;
+
+  let note: string | undefined;
+  if (numericIndexes.length !== 1 || categoricalIndexes.length !== 1) {
+    note =
+      'Usamos a primeira coluna categórica como grupo e a primeira numérica como medida — ajuste os papéis em Configurar se necessário.';
+  }
+
+  return { groupIndex, valueIndex, note };
 }
 
 /**

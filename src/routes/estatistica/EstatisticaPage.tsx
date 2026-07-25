@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { isTestAvailable } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
+import { TesteDemo } from './demo/TesteDemo';
 import { PortalDatasusLink } from './PortalDatasusLink';
 import { QualTesteModal } from './QualTesteModal';
 import { Sidebar } from './Sidebar';
@@ -30,7 +31,9 @@ export function EstatisticaPage() {
           <h1 className="font-sans text-display font-bold text-text">Estatística</h1>
           <PortalDatasusLink />
         </div>
-        <div id="lacir-test-module-mount" data-active-test-id={activeTestId} />
+        <div id="lacir-test-module-mount" data-active-test-id={activeTestId}>
+          {activeTestId === 'demo' ? <TesteDemo key={activeTestId} /> : null}
+        </div>
       </section>
       <QualTesteModal
         open={qualTesteOpen}
