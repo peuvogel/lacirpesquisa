@@ -13,7 +13,7 @@ import { EstatisticaPage } from './EstatisticaPage';
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
   const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
-    return { destroy: destroySpy };
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
   });
   const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
     register: ReturnType<typeof vi.fn>;
@@ -33,6 +33,7 @@ vi.mock('chart.js', () => ({
   LineElement: {},
   BarElement: {},
   Legend: {},
+  Title: {},
   Tooltip: {},
   Filler: {},
 }));
@@ -94,7 +95,7 @@ describe('EstatisticaPage', () => {
     const dataset: SessionDataset = {
       headers: ['Grupo', 'Valor'],
       rows: [['A', '1'], ['B', '2']],
-      sourceLabel: 'Mapas — SP, BA',
+      sourceLabel: 'Mapas: SP, BA',
       confirmedAt: Date.now(),
     };
 
@@ -133,7 +134,7 @@ describe('EstatisticaPage', () => {
         ['UF3', '10,9', '48,0', ''],
         ['UF4', '15,2', '42,7', ''],
       ],
-      sourceLabel: 'Mapas — SP',
+      sourceLabel: 'Mapas: SP',
       confirmedAt: Date.now(),
     };
 
@@ -170,5 +171,61 @@ describe('EstatisticaPage', () => {
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByText('r de Pearson')).toBeInTheDocument();
     expect(screen.queryByText(/Cada grupo precisa/i)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['qui-quadrado', /Qui-quadrado/i],
+    ['anova-tukey', /ANOVA de uma via/i],
+    ['kruskal-dunn', /Kruskal-Wallis/i],
+  ] as const)('mounts %s from sidebar without null render', async (testId, namePattern) => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: namePattern }));
+
+    const mount = document.getElementById('lacir-test-module-mount');
+    expect(mount).toHaveAttribute('data-active-test-id', testId);
+    expect(screen.getByRole('button', { name: 'Usar exemplo' })).toBeInTheDocument();
+  });
+
+  it('handoffs from ANOVA to Kruskal preserving recognizedColumns', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /ANOVA de uma via/i }));
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    const desfechoSelect = screen.getByLabelText(/Papel da coluna desfecho/i);
+    const grupoSelect = screen.getByLabelText(/Papel da coluna grupo/i);
+    expect(desfechoSelect).toHaveValue('numerica');
+    expect(grupoSelect).toHaveValue('categorica');
+
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    const kruskalButton = screen.queryByRole('button', { name: /Kruskal/i });
+    if (!kruskalButton) return;
+
+    await user.click(kruskalButton);
+
+    const mount = document.getElementById('lacir-test-module-mount');
+    expect(mount).toHaveAttribute('data-active-test-id', 'kruskal-dunn');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    expect(screen.getByLabelText(/Papel da coluna desfecho/i)).toHaveValue('numerica');
+    expect(screen.getByLabelText(/Papel da coluna grupo/i)).toHaveValue('categorica');
   });
 });

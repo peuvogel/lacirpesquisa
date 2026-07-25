@@ -46,12 +46,39 @@ describe('Sidebar', () => {
     expect(onSelectTest).toHaveBeenCalledWith('t-student');
   });
 
-  it('does not render qui-quadrado as a button and ignores clicks on its row', async () => {
+  it('calls onSelectTest when qui-quadrado is clicked', async () => {
     const user = userEvent.setup();
     const { onSelectTest } = renderSidebar();
 
-    expect(screen.queryByRole('button', { name: /Qui-quadrado/i })).not.toBeInTheDocument();
-    const row = screen.getByText('Qui-quadrado de independência').closest('[aria-disabled="true"]');
+    await user.click(screen.getByRole('button', { name: /Qui-quadrado/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('qui-quadrado');
+  });
+
+  it('calls onSelectTest when ANOVA de uma via is clicked', async () => {
+    const user = userEvent.setup();
+    const { onSelectTest } = renderSidebar();
+
+    await user.click(screen.getByRole('button', { name: /ANOVA de uma via/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('anova-tukey');
+  });
+
+  it('calls onSelectTest when Kruskal-Wallis is clicked', async () => {
+    const user = userEvent.setup();
+    const { onSelectTest } = renderSidebar();
+
+    await user.click(screen.getByRole('button', { name: /Kruskal-Wallis/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('kruskal-dunn');
+  });
+
+  it('does not render poisson as a button and ignores clicks on its row', async () => {
+    const user = userEvent.setup();
+    const { onSelectTest } = renderSidebar();
+
+    expect(screen.queryByRole('button', { name: /Regressão de Poisson/i })).not.toBeInTheDocument();
+    const row = screen.getByText('Regressão de Poisson').closest('[aria-disabled="true"]');
     expect(row).not.toBeNull();
     if (row) {
       await user.click(row);
@@ -59,15 +86,15 @@ describe('Sidebar', () => {
     expect(onSelectTest).not.toHaveBeenCalled();
   });
 
-  it('shows Demonstração for demo and Disponível for migrated available rows', () => {
+  it('shows category and title only  -  no didactic subtitle in the sidebar list', () => {
     renderSidebar();
-    const demoRow = screen.getByText('Teste demo').closest('button');
-    expect(demoRow).not.toBeNull();
-    expect(demoRow).toHaveTextContent('Demonstração');
-
     const studentRow = screen.getByText('t de Student').closest('button');
     expect(studentRow).not.toBeNull();
-    expect(studentRow).toHaveTextContent('Disponível');
+    expect(studentRow).not.toHaveTextContent('Comparação simples');
+    expect(studentRow).not.toHaveTextContent('Disponível');
+
+    expect(screen.getByText('Comparação de médias')).toBeInTheDocument();
+    expect(screen.queryByText(/Prova de conceito do fluxo/i)).not.toBeInTheDocument();
   });
 
   it('calls onOpenQualTeste when Qual teste usar? is clicked', async () => {

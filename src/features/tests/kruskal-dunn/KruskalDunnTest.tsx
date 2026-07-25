@@ -44,20 +44,24 @@ interface ConfirmedDataset {
 
 export interface KruskalDunnTestProps {
   onNavigateTest?: (testId: string) => void;
+  handoffRecognizedColumns?: Record<string, number>;
 }
 
 function initialLoadedFromSession(
   sessionDataset: ReturnType<typeof useSession>['dataset'],
+  handoffRecognizedColumns?: Record<string, number>,
 ): KruskalLoadedInput | null {
   if (!sessionDataset) return null;
   return {
     headers: sessionDataset.headers,
     rows: sessionDataset.rows,
-    recognizedColumns: deriveRecognizedColumnsFromTabular(
-      sessionDataset.headers,
-      sessionDataset.rows,
-      TABULAR_OPTIONS,
-    ),
+    recognizedColumns:
+      handoffRecognizedColumns ??
+      deriveRecognizedColumnsFromTabular(
+        sessionDataset.headers,
+        sessionDataset.rows,
+        TABULAR_OPTIONS,
+      ),
     sourceLabel: sessionDataset.sourceLabel,
   };
 }
@@ -99,14 +103,17 @@ function PairwiseResultsTable({ rows }: { rows: PairwiseRow[] }) {
   );
 }
 
-export function KruskalDunnTest({ onNavigateTest }: KruskalDunnTestProps) {
+export function KruskalDunnTest({
+  onNavigateTest,
+  handoffRecognizedColumns,
+}: KruskalDunnTestProps) {
   const { dataset: sessionDataset, setDataset } = useSession();
   const tabular = useTabularInput(TABULAR_OPTIONS);
   const sourceLabelRef = useRef('colado');
 
   const [activeStep, setActiveStep] = useState<FlowStep>(() => initialStepFromSession(sessionDataset));
   const [loadedInput, setLoadedInput] = useState<KruskalLoadedInput | null>(() =>
-    initialLoadedFromSession(sessionDataset),
+    initialLoadedFromSession(sessionDataset, handoffRecognizedColumns),
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');

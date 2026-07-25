@@ -128,7 +128,7 @@ describe('AnovaTukeyTest', () => {
     const kruskalButton = screen.queryByRole('button', { name: /Kruskal/i });
     if (kruskalButton) {
       await user.click(kruskalButton);
-      expect(onNavigateTest).toHaveBeenCalledWith('kruskal-dunn');
+      expect(onNavigateTest).toHaveBeenCalledWith('kruskal-dunn', expect.any(Object));
     }
   });
 });

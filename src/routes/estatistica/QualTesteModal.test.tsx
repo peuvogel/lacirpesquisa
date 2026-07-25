@@ -56,6 +56,19 @@ describe('QualTesteModal', () => {
     }
   });
 
+  it('shows Disponível for Wave A classical tests in the roadmap', () => {
+    renderModal();
+
+    for (const id of ['qui-quadrado', 'anova-tukey', 'kruskal-dunn'] as const) {
+      const entry = TEST_REGISTRY.find((item) => item.id === id);
+      expect(entry).toBeDefined();
+      const titleNodes = screen.getAllByText(entry!.title);
+      const roadmapButton = titleNodes.find((node) => node.closest('button'));
+      expect(roadmapButton?.closest('button')).not.toBeNull();
+      expect(roadmapButton!.closest('button')!.parentElement).toHaveTextContent('Disponível');
+    }
+  });
+
   it('calls onSelectTest(demo) and closes via Começar pelo Teste demo', async () => {
     const user = userEvent.setup();
     const { onOpenChange, onSelectTest } = renderModal();

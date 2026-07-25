@@ -43,7 +43,7 @@ interface ConfirmedDataset {
 }
 
 export interface AnovaTukeyTestProps {
-  onNavigateTest?: (testId: string) => void;
+  onNavigateTest?: (testId: string, recognizedColumns?: Record<string, number>) => void;
 }
 
 function initialLoadedFromSession(
@@ -145,7 +145,9 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
 
   function handleCrossTestHandoff(testId: string) {
     if (testId !== 'kruskal-dunn') return;
-    onNavigateTest?.(testId);
+    const recognizedColumns =
+      confirmedDataset?.recognizedColumns ?? loadedInput?.recognizedColumns;
+    onNavigateTest?.(testId, recognizedColumns);
   }
 
   function handleConfigureConfirm(confirmed: {
