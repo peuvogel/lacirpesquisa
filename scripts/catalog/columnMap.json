@@ -1,0 +1,163 @@
+{
+  "sih.embolia_trombose_uf": {
+    "medicos_vasculares_sus": {
+      "id": "cnes.medicos_vasculares_sus",
+      "label": "Médicos vasculares no SUS (CNES)",
+      "variableType": "contagem",
+      "domain": "rh_sus",
+      "unit": "n",
+      "sourceSystem": "CNES",
+      "sourceName": "Cadastro Nacional de Estabelecimentos de Saúde — profissionais",
+      "tableOrIndicator": "cnes/cnv/prid02br.def",
+      "sourceKey": "cnes"
+    },
+    "populacao": {
+      "id": "sidra.populacao_residente",
+      "label": "População residente (SIDRA)",
+      "variableType": "contagem",
+      "domain": "populacao",
+      "unit": "n",
+      "sourceSystem": "SIDRA/IBGE",
+      "sourceName": "Estimativas e Censo — população residente por UF",
+      "tableOrIndicator": "SIDRA 6579 / 9514",
+      "sourceKey": "sidra_6579"
+    },
+    "medicos_vasculares_por_100k": {
+      "id": "cnes.medicos_vasculares_por_100k",
+      "label": "Densidade de médicos vasculares SUS (por 100 mil)",
+      "variableType": "taxa",
+      "domain": "rh_sus",
+      "unit": "por 100 mil",
+      "sourceSystem": "CNES",
+      "sourceName": "CNES profissionais / população SIDRA",
+      "tableOrIndicator": "cnes/cnv/prid02br.def + SIDRA",
+      "sourceKey": "cnes"
+    },
+    "internacoes_embolia_trombose_arteriais": {
+      "id": "sih.embolia_trombose.internacoes",
+      "label": "Internações por embolia e trombose arteriais",
+      "variableType": "contagem",
+      "domain": "vascular",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao",
+      "aliases": ["mock.internacoes"]
+    },
+    "obitos_embolia_trombose_arteriais": {
+      "id": "sih.embolia_trombose.obitos",
+      "label": "Óbitos hospitalares por embolia e trombose arteriais",
+      "variableType": "contagem",
+      "domain": "vascular",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao",
+      "aliases": ["mock.obitos"]
+    },
+    "dias_permanencia_embolia_trombose_arteriais": {
+      "id": "sih.embolia_trombose.dias_permanencia",
+      "label": "Dias de permanência — embolia e trombose arteriais",
+      "variableType": "contagem",
+      "domain": "vascular",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade_pct": {
+      "id": "sih.embolia_trombose.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — embolia e trombose arteriais",
+      "variableType": "taxa",
+      "domain": "vascular",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def (calculada pós-agregação)",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "media_permanencia_calculada": {
+      "id": "sih.embolia_trombose.media_permanencia",
+      "label": "Média de permanência — embolia e trombose arteriais",
+      "variableType": "numerica",
+      "domain": "vascular",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def (calculada pós-agregação)",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_internacao_por_100k": {
+      "id": "sih.embolia_trombose.taxa_internacao_100k",
+      "label": "Taxa de internação por embolia e trombose arteriais (por 100 mil)",
+      "variableType": "taxa",
+      "domain": "vascular",
+      "unit": "por 100 mil",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "SIH nibr / população SIDRA",
+      "tableOrIndicator": "sih/cnv/nibr.def + SIDRA",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.amputacao_mmii_uf": {
+    "internacoes_amputacao_mmii": {
+      "id": "sih.amputacao_mmii.internacoes",
+      "label": "Internações por amputação de membros inferiores",
+      "variableType": "contagem",
+      "domain": "vascular",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "AIH consolidados — local de internação",
+      "tableOrIndicator": "sih/cnv/qibr.def",
+      "sourceKey": "sih",
+      "aliases": ["mock.amputacoes"]
+    },
+    "obitos_amputacao_mmii": {
+      "id": "sih.amputacao_mmii.obitos",
+      "label": "Óbitos hospitalares por amputação de membros inferiores",
+      "variableType": "contagem",
+      "domain": "vascular",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "AIH consolidados — local de internação",
+      "tableOrIndicator": "sih/cnv/qibr.def",
+      "sourceKey": "sih"
+    },
+    "taxa_mortalidade_sih_pct": {
+      "id": "sih.amputacao_mmii.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — amputação MMII",
+      "variableType": "taxa",
+      "domain": "vascular",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "AIH consolidados — local de internação",
+      "tableOrIndicator": "sih/cnv/qibr.def (calculada pós-agregação)",
+      "sourceKey": "sih"
+    },
+    "letalidade_calculada_pct": {
+      "id": "sih.amputacao_mmii.letalidade",
+      "label": "Letalidade hospitalar — amputação MMII",
+      "variableType": "taxa",
+      "domain": "vascular",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "AIH consolidados — local de internação",
+      "tableOrIndicator": "sih/cnv/qibr.def (calculada pós-agregação)",
+      "sourceKey": "sih"
+    },
+    "taxa_internacao_amputacao_mmii_por_100k": {
+      "id": "sih.amputacao_mmii.taxa_internacao_100k",
+      "label": "Taxa de internação por amputação MMII (por 100 mil)",
+      "variableType": "taxa",
+      "domain": "vascular",
+      "unit": "por 100 mil",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "SIH qibr / população SIDRA",
+      "tableOrIndicator": "sih/cnv/qibr.def + SIDRA",
+      "sourceKey": "sih"
+    }
+  }
+}
