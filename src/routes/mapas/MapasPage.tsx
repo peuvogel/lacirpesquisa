@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -23,9 +16,9 @@ import { GroupConfigPanel } from './GroupConfigPanel';
 import { MapBreadcrumb } from './MapBreadcrumb';
 import { MapLegendHint } from './MapLegendHint';
 import { MapPrimaryActionBar } from './MapPrimaryActionBar';
+import { ReviewAnalysisDialog } from './ReviewAnalysisDialog';
 import {
   createInitialMapAnalysisState,
-  deriveFlatMapSelection,
   deriveSelectionSummary,
   useMapAnalysis,
 } from './mapAnalysisState';
@@ -75,7 +68,7 @@ function territoriesToSiglas(territories: TerritoryRef[]): string[] {
 }
 
 export function MapasPage() {
-  const { setMapSelection, setMapAnalysis, mapAnalysis } = useSession();
+  const { setMapAnalysis, mapAnalysis } = useSession();
   const { state, dispatch, derived } = useMapAnalysis(mapAnalysis ?? undefined);
   const isTablet = useIsTabletViewport();
 
@@ -248,19 +241,6 @@ export function MapasPage() {
   }, [state, setMapAnalysis]);
 
   useEffect(() => {
-    const flat = deriveFlatMapSelection(state);
-    if (flat) {
-      setMapSelection(flat);
-      return;
-    }
-    if (selectedUFs.length > 0) {
-      setMapSelection({ ufs: selectedUFs, variables: [] });
-      return;
-    }
-    setMapSelection(null);
-  }, [selectedUFs, setMapSelection, state]);
-
-  useEffect(() => {
     if (state.activeGroupId && contextPanelMode !== 'paste') {
       setContextPanelMode('group');
     }
@@ -410,17 +390,13 @@ export function MapasPage() {
         )}
       </div>
 
-      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-        <DialogContent className="max-w-lg" data-testid="review-analysis-dialog">
-          <DialogHeader>
-            <DialogTitle>Revisar antes de analisar</DialogTitle>
-            <DialogDescription>
-              Confira territórios, grupos, período e variáveis. A LACIR sugere um teste — você pode
-              trocar antes de continuar.
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
+      <ReviewAnalysisDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        groups={state.groups}
+        summary={summary}
+        provenance={state.provenance}
+      />
     </div>
   );
 }

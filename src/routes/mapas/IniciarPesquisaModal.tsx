@@ -1,6 +1,9 @@
+/**
+ * @deprecated Phase 4 primary handoff is {@link ReviewAnalysisDialog}. Kept for legacy
+ * flat UF/variable selection and collection-link reference during migration.
+ */
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,45 +12,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getTestBadgeLabel, getTestById, isTestAvailable } from '@/features/tests/registry';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import { useTabularInput } from '@/shared/data-input/useTabularInput';
-import type { TabularInputOptions } from '@/shared/data-input/types';
 import { useSession } from '@/shared/session/SessionProvider';
-import { cn } from '@/lib/utils';
 import { getCollectionLinks } from './mockCollectionLinks';
-import { suggestResearchForSelection, type ResearchSuggestion } from './suggestResearchForSelection';
+import {
+  MAPAS_TABULAR_OPTIONS,
+  resolveHandoffTestId,
+} from './mapHandoffShared';
+import {
+  suggestResearchFromFlatSelection,
+  type ResearchSuggestion,
+} from './suggestResearchForSelection';
+import { SuggestedTestCard } from './SuggestedTestCard';
 
-/** Mapas → Estatística: suggested test if available, else t-student, else demo (T-02-07 whitelist). */
-export function resolveHandoffTestId(suggestions: ResearchSuggestion[]): string {
-  const primarySuggested = suggestions.find((suggestion) => suggestion.testId !== 'demo');
-  if (primarySuggested && isTestAvailable(primarySuggested.testId)) {
-    return primarySuggested.testId;
-  }
-  if (isTestAvailable('t-student')) {
-    return 't-student';
-  }
-  return 'demo';
-}
-
-/** Broad DATASUS-shaped aliases so junk paste errors while typical TABNET tables still load. */
-const MAPAS_TABULAR_OPTIONS: TabularInputOptions = {
-  aliases: {
-    territorio: ['Município', 'UF', 'Unidade da Federação', 'Estado'],
-    medida: [
-      'Taxa por 100k',
-      'Taxa',
-      'Internações',
-      'Óbitos',
-      'Quantidade',
-      'Valor',
-      'Nascidos vivos',
-    ],
-  },
-  requiredKeys: ['territorio', 'medida'],
-  numericKeys: ['medida'],
-  expectedFormatLabel: 'Território; Medida numérica',
-};
+export { resolveHandoffTestId, MAPAS_TABULAR_OPTIONS } from './mapHandoffShared';
+export type { ResearchSuggestion } from './suggestResearchForSelection';
+export { ReviewAnalysisDialog } from './ReviewAnalysisDialog';
 
 export interface IniciarPesquisaModalProps {
   open: boolean;
@@ -56,67 +37,8 @@ export interface IniciarPesquisaModalProps {
   selectedVariables: string[];
 }
 
-function SuggestionRow({
-  testId,
-  rationale,
-}: {
-  testId: string;
-  rationale: string;
-}) {
-  const entry = getTestById(testId);
-  if (!entry) return null;
-
-  const isAvailable = entry.status === 'available';
-  const badgeLabel = getTestBadgeLabel(entry);
-  const isDemo = entry.id === 'demo';
-
-  const content = (
-    <>
-      <span className="flex min-w-0 flex-col items-start gap-0.5 text-left">
-        <span className="font-sans text-label font-bold text-text">{entry.title}</span>
-        <span className="font-sans text-sm font-normal text-text-muted">{rationale}</span>
-      </span>
-      <Badge
-        variant={isAvailable && !isDemo ? 'default' : 'outline'}
-        className={cn(
-          'shrink-0',
-          isAvailable && !isDemo ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted',
-        )}
-      >
-        {badgeLabel}
-      </Badge>
-    </>
-  );
-
-  const rowClassName =
-    'flex w-full items-start justify-between gap-2 rounded-lg border px-3.5 py-3 transition-all duration-200';
-
-  if (isAvailable) {
-    return (
-      <div
-        className={cn(
-          rowClassName,
-          'border-accent-border bg-accent-soft shadow-[inset_4px_0_0_var(--color-accent)]',
-        )}
-      >
-        {content}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      aria-disabled="true"
-      className={cn(rowClassName, 'cursor-not-allowed border-transparent bg-transparent opacity-60')}
-    >
-      {content}
-    </div>
-  );
-}
-
 /**
- * D-24 stub handoff: selection → suggested analyses → official collection links
- * → paste table → continue to Estatística with session.dataset populated.
+ * @deprecated Use ReviewAnalysisDialog for MAP-09 group-aware handoff (D-20–D-22).
  */
 export function IniciarPesquisaModal({
   open,
@@ -129,13 +51,13 @@ export function IniciarPesquisaModal({
   const tabularInput = useTabularInput(MAPAS_TABULAR_OPTIONS);
 
   const suggestions = useMemo(
-    () => suggestResearchForSelection(selectedUFs, selectedVariables),
+    () => suggestResearchFromFlatSelection(selectedUFs, selectedVariables),
     [selectedUFs, selectedVariables],
   );
 
   const sourceLabel = useMemo(() => {
     const ufPart = selectedUFs.length ? selectedUFs.join(', ') : 'sem UF';
-    return `Mapas — ${ufPart}`;
+    return `Mapas: ${ufPart}`;
   }, [selectedUFs]);
 
   function handleContinue() {
@@ -160,16 +82,14 @@ export function IniciarPesquisaModal({
             Iniciar pesquisa
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Análises sugeridas, links oficiais de coleta e colagem de dados para continuar na
-            Estatística.
+            Fluxo legado da Fase 1 — use Revisar e analisar no mapa para o handoff atual.
           </DialogDescription>
         </DialogHeader>
 
         <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2">
           <p className="text-sm text-text">
-            Os dados de disponibilidade e links abaixo são um exemplo da Fase 1 — o catálogo
-            completo chega em uma fase posterior. Use esta tela para aprender o fluxo, não como
-            fonte definitiva de cobertura.
+            Este fluxo legado será removido. Use <strong>Revisar e analisar</strong> no mapa para
+            montar a tabela e ir para Estatística.
           </p>
         </div>
 
@@ -179,7 +99,7 @@ export function IniciarPesquisaModal({
           </h2>
           <div className="flex flex-col gap-2">
             {suggestions.map((suggestion) => (
-              <SuggestionRow
+              <SuggestedTestCard
                 key={suggestion.testId}
                 testId={suggestion.testId}
                 rationale={suggestion.rationale}

@@ -106,10 +106,10 @@ describe('IniciarPesquisaModal', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders the stub notice, suggested analyses, and collection links with noopener', () => {
+  it('renders the deprecated notice, suggested analyses, and collection links with noopener', () => {
     renderModal();
 
-    expect(screen.getByText(/exemplo da Fase 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/Este fluxo legado será removido/i)).toBeInTheDocument();
     expect(screen.getByText('Teste demo')).toBeInTheDocument();
     expect(screen.getByText('t de Student')).toBeInTheDocument();
     expect(screen.getAllByText('Disponível').length).toBeGreaterThanOrEqual(1);
