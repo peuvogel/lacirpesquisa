@@ -34,7 +34,20 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. User downloads the active result chart as a PNG
   5. Leaving/closing Estatística with inputted data triggers a browser leave prompt; no persistent refresh banner
   6. User can open "qual teste usar?" modal (roadmap with em breve) and use Mapas mock: hover/select UFs, variable panel intersection/partials, stub Iniciar pesquisa
-**Plans**: TBD
+**Plans**: 12 plans (6 waves)
+Plans:
+- [ ] 01-01-PLAN.md — Wave 1: Vite/React/TS/Tailwind v4 scaffold, dependency install, vitest+RTL harness, shadcn primitives, purple-scaffold purge
+- [ ] 01-02-PLAN.md — Wave 2: dark+teal token layer, Sora/IBM Plex Mono, two first-party accents, token contract test
+- [ ] 01-03-PLAN.md — Wave 2: port tabular/DataSUS parsers with TABNET fixtures and differential parity tests
+- [ ] 01-04-PLAN.md — Wave 2: port chart theme + ChartCanvas lifecycle + PNG export hook + pt-BR formatting
+- [ ] 01-05-PLAN.md — Wave 3: app shell — header nav, router, placeholder routes, in-memory session
+- [ ] 01-06-PLAN.md — Wave 3: FlowSteps stepper, useTabularInput, paste/upload panel, confirmable column preview
+- [ ] 01-07-PLAN.md — Wave 4: test registry, collapsible sidebar, "Qual teste usar?" modal, Portal DATASUS link
+- [ ] 01-08-PLAN.md — Wave 4: DataSUS assistant — state machine port + six-step JSX panel
+- [ ] 01-09-PLAN.md — Wave 4: Mapas mock — 27-UF SVG, intersection/partial variable panel
+- [ ] 01-10-PLAN.md — Wave 5: Teste demo end-to-end + shared results pattern (chart, interpretation, PNG)
+- [ ] 01-11-PLAN.md — Wave 5: Mapas "Iniciar pesquisa" stub — suggestions, collection links, paste handoff
+- [ ] 01-12-PLAN.md — Wave 6: conditional leave warning (Estatística + data only) and "Limpar dados"
 **UI hint**: yes
 
 ### Phase 2: Migrar testes existentes
@@ -102,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Redesign / base React shell | 0/TBD | Not started | - |
+| 1. Redesign / base React shell | 0/12 | Planned | - |
 | 2. Migrar testes existentes | 0/TBD | Not started | - |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
