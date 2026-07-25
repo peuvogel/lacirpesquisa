@@ -74,7 +74,7 @@ Each task was committed atomically:
 1. **Task 1: Wire Carregar na Estatística + multi-select gate** - `ebba9f4` (feat)
 2. **Task 2: Wire Usar no mapa + Mapas apply catalogVariableIds** - `def2de1` (feat)
 
-**Plan metadata:** (pending final docs commit)
+**Plan metadata:** `0de735b` (docs: complete plan)
 
 ## Files Created/Modified
 - `src/features/catalog/buildSessionDataset.ts` — MAX_LOADABLE_SELECTION + D-16 message polish
