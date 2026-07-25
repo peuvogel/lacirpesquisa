@@ -1,0 +1,5 @@
+Internacoes nacionais por ano de atendimento
+Periodo: 2019-2025
+Brasil;2019;2020;2021;2022;2023;2024;2025
+Nacional;120,4;125,8;130,2;134,9;138,1;142,7;145,5;149,2
+Fonte: SIH/SUS

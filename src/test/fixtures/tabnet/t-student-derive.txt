@@ -1,0 +1,11 @@
+Internacoes por regiao segundo ano de atendimento
+Periodo: 2020-2022
+Situacao da base de dados: 25/07/2026
+Regiao;2020;2021;2022
+Nordeste;120,4;125,8;130,2
+Sudeste;134,9;138,1;142,7
+Norte;112,3;115,5;118,9
+Centro-Oeste;98,7;101,2;104,5
+Sul;105,6;108,9;111,4
+Total;571,9;589,5;607,7
+Fonte: SIH/SUS

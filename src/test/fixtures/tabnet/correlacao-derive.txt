@@ -1,0 +1,10 @@
+Indicadores de saude por regiao
+Periodo: 2023
+Regiao;Taxa mortalidade;Taxa internacao
+Nordeste;3,45;12,8
+Sudeste;2,10;10,5
+Norte;4,87;15,2
+Centro-Oeste;2,50;9,8
+Sul;2,85;11,1
+Total;3,15;11,9
+Fonte: DATASUS
