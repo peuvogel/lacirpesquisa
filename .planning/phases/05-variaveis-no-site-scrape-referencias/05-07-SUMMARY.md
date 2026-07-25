@@ -68,7 +68,7 @@ completed: 2026-07-25
 1. **Task 1: Automated gate + VERIFICATION/VALIDATION docs** - `e4e9cae` (docs/fix)
 2. **Task 2: Human UAT — Variáveis classroom flow** - ⏳ awaiting human (`approved` / issues)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `584d56a` (docs: complete plan)
 
 ## Suite Counts
 
