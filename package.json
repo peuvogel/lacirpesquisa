@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run",
+    "pretest": "npm run catalog:validate",
+    "test:run": "npm run catalog:validate && vitest run",
     "typecheck": "tsc --noEmit",
     "catalog:build": "node scripts/catalog/build.mjs",
     "catalog:validate": "node scripts/catalog/validate.mjs"
