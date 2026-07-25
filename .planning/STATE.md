@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Human UAT pending (02-HUMAN-UAT.md)
+status: verifying
 stopped_at: Phase 3 context gathered
-last_updated: "2026-07-25T21:14:38.609Z"
+last_updated: "2026-07-25T21:28:01.959Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 29
+  completed_plans: 21
   percent: 33
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 
 Phase: 02 (migrar-testes-existentes) — AWAITING HUMAN UAT
 Plan: 8 of 8 (complete)
-Status: Human UAT pending (02-HUMAN-UAT.md)
+Status: Phase complete — ready for verification
 Last activity: 2026-07-25
 
 Progress: [██████████] 100% Phase 2 plans
@@ -87,9 +87,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T21:14:38.606Z
+Last session: 2026-07-25T21:28:01.957Z
 Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-testes-classicos-glm-novos/03-CONTEXT.md
+Resume file: None
 
 ## Performance Metrics
 
