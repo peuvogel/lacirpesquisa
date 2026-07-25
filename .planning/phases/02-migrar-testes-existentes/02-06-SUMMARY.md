@@ -81,7 +81,7 @@ Each task was committed atomically:
 2. **Task 2: Wire EstatisticaPage, sidebar/modal badges, and demo copy fix** - `5d72272` (feat)
 3. **Task 3: Mapas handoff routing, RTL test, and phase integration gate** - `aab6f62` (feat)
 
-**Plan metadata:** pending (docs commit)
+**Plan metadata:** `1674df3` (docs: complete plan)
 
 ## Files Created/Modified
 
