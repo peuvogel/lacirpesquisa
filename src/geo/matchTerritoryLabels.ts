@@ -1,10 +1,30 @@
 import { normalizeHeaderToken } from '@/shared/data-input/parseTabular';
-import { UF_LIST } from '@/routes/mapas/ufCodes';
+import { UF_LIST, type UfEntry } from '@/routes/mapas/ufCodes';
 import type { MatchReport, MatchResult, MuniEntry, TerritoryRef } from './types';
 
 const SIGLA_BY_NORMALIZED_NAME = new Map(
   UF_LIST.map((uf) => [normalizeHeaderToken(uf.name), uf.sigla]),
 );
+
+/** Common UF name variants beyond official IBGE names (MAP-02). */
+const UF_ALIASES: Record<string, string> = {
+  'distrito federal': 'DF',
+  'rio de janeiro': 'RJ',
+  'rio grande do sul': 'RS',
+  'rio grande do norte': 'RN',
+  'minas gerais': 'MG',
+  'mato grosso': 'MT',
+  'mato grosso do sul': 'MS',
+  'espirito santo': 'ES',
+  'sao paulo': 'SP',
+  'santa catarina': 'SC',
+};
+
+for (const [alias, sigla] of Object.entries(UF_ALIASES)) {
+  if (!SIGLA_BY_NORMALIZED_NAME.has(alias)) {
+    SIGLA_BY_NORMALIZED_NAME.set(alias, sigla);
+  }
+}
 
 const UF_BY_SIGLA = new Map(UF_LIST.map((uf) => [uf.sigla, uf]));
 
@@ -47,6 +67,40 @@ export function matchUfLabel(line: string): MatchResult {
   }
 
   return { status: 'unmatched', input: line };
+}
+
+const MAX_UF_PASTE_LINES = 100;
+
+export interface UfPasteResult {
+  matched: UfEntry[];
+  unmatched: string[];
+}
+
+/** Match multi-line UF paste text — sigla or normalized name (MAP-02). */
+export function matchUfPaste(text: string): UfPasteResult {
+  const lines = text.split(/\r?\n/).slice(0, MAX_UF_PASTE_LINES);
+  const matched: UfEntry[] = [];
+  const unmatched: string[] = [];
+  const seenSiglas = new Set<string>();
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const result = matchUfLabel(line);
+    if (result.status === 'matched') {
+      const sigla = result.territory.sigla!;
+      if (!seenSiglas.has(sigla)) {
+        seenSiglas.add(sigla);
+        const entry = UF_BY_SIGLA.get(sigla);
+        if (entry) matched.push(entry);
+      }
+    } else {
+      unmatched.push(trimmed);
+    }
+  }
+
+  return { matched, unmatched };
 }
 
 /** Match municipality name scoped by UF (MAP-04). */
