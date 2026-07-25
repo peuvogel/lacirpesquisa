@@ -68,7 +68,7 @@ Plans:
   3. User runs Prais-Winsten in the new shell with results matching v1.0 output
   4. Each migrated test shows an interpretation paragraph and supports PNG export like every other module
 
-**Plans**: 6 plans (5 waves)
+**Plans**: 8 plans (6 waves)
 Plans:
 
 - [x] 02-01-PLAN.md — Wave 0: Stats engine port, derive* parity tests, fixtures, chartjs-plugin-annotation install
@@ -77,6 +77,8 @@ Plans:
 - [x] 02-04-PLAN.md — Wave 3: Correlação Pearson/Spearman module (TEST-02)
 - [x] 02-05-PLAN.md — Wave 3: Prais-Winsten module (TEST-03) — parallel with 02-04
 - [x] 02-06-PLAN.md — Wave 4: Registry flip, EstatisticaPage routing, demo badge, Mapas handoff, integration gate
+- [ ] 02-07-PLAN.md — Wave 5 (gap): Shared deriveRecognizedColumnsFromTabular + session bootstrap fix (CR-01)
+- [ ] 02-08-PLAN.md — Wave 6 (gap): ColumnPreview confirm mapping (WR-01) + handoff Resultados integration test
 
 ### Phase 3: Testes clássicos + GLM novos
 
@@ -145,7 +147,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
-| 2. Migrar testes existentes | 6/6 | Complete   | 2026-07-25 |
+| 2. Migrar testes existentes | 6/8 | Gaps — CR-01 handoff | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
 | 5. Painel DataSUS / catálogo | 0/TBD | Not started | - |
