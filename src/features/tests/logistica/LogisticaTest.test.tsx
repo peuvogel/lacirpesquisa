@@ -1,0 +1,133 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { SessionProvider } from '@/shared/session/SessionProvider';
+import { LogisticaTest } from './LogisticaTest';
+
+const { ChartMock, destroySpy } = vi.hoisted(() => {
+  const destroySpy = vi.fn();
+  const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
+  });
+  const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
+    register: ReturnType<typeof vi.fn>;
+  };
+  ChartMock.register = vi.fn();
+  return { ChartMock, destroySpy };
+});
+
+vi.mock('chart.js', () => ({
+  Chart: ChartMock,
+  BarController: {},
+  LineController: {},
+  ScatterController: {},
+  LinearScale: {},
+  CategoryScale: {},
+  PointElement: {},
+  LineElement: {},
+  BarElement: {},
+  Legend: {},
+  Title: {},
+  Tooltip: {},
+  Filler: {},
+}));
+
+const IMBALANCED_PASTE = `desfecho_binario;dose
+${Array.from({ length: 96 }, () => '0;1').join('\n')}
+1;2
+1;3
+1;4
+1;5`;
+
+function renderLogistica() {
+  return render(
+    <SessionProvider>
+      <LogisticaTest />
+    </SessionProvider>,
+  );
+}
+
+describe('LogisticaTest', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    ChartMock.mockClear();
+    destroySpy.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('runs exemplo flow through Resultados with OR metrics and interpretation', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderLogistica();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
+    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
+    expect(screen.getByText(/OR \(dose\)/i)).toBeInTheDocument();
+
+    const prose = screen.getAllByText(/indicou associação|não encontrou associação|Odds ratio/i);
+    expect(prose.length).toBeGreaterThan(0);
+  });
+
+  it('shows rare events warning nudge on imbalanced paste', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderLogistica();
+
+    const textarea = screen.getByRole('textbox');
+    await user.clear(textarea);
+    await user.paste(IMBALANCED_PASTE);
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      const strip = screen.getByTestId('assumption-nudge-strip');
+      expect(strip.textContent).toMatch(/eventos raros/i);
+    });
+  });
+
+  it('shows soft reset alert when column role is adjusted after confirm', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderLogistica();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.selectOptions(screen.getByLabelText(/Papel da coluna desfecho_binario/i), 'ignorar');
+
+    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+  });
+});
