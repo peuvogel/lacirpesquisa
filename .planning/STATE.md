@@ -4,14 +4,14 @@ milestone: v2.0
 milestone_name: milestone
 status: Plan 01-09 executed — Mapas mock map, intersection panel, session mapSelection
 stopped_at: Completed 01-09-PLAN.md
-last_updated: "2026-07-25T18:27:00.000Z"
+last_updated: "2026-07-25T18:04:22.750Z"
 last_activity: 2026-07-25 — Plan 01-09 executed (BrazilMockMap, VariablePanel, computeVariableIntersection)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 8
-  percent: 67
+  completed_plans: 9
+  percent: 0
 ---
 
 # Project State
@@ -61,7 +61,8 @@ Progress: [███████░░░] 67%
 - [Phase 01]: TEST_REGISTRY is the single source of truth for sidebar and modal — Prevents Pitfall 4 drift between sidebar and modal roadmap
 - [Phase ?]: TEST_REGISTRY is the single source of truth for sidebar and modal — Prevents Pitfall 4 drift between sidebar and modal roadmap
 - [Phase 01]: IBGE Malhas SVG committed as sanitized brazilUfPaths data; cartogram fallback not needed
-- [Phase 01]: MapasPage publishes mapSelection to session for 01-11 Iniciar pesquisa handoff
+- [Phase 01]: Step 4 variable types editable per column (D-08 expanded) — React port improves on legacy read-only type summary
+- [Phase 01]: useDatasusWizard publishes DatasusSession via onSessionChange; no window.__LACIR_SHARED__ writes (01-10 wires SessionProvider)
 
 ### Pending Todos
 
@@ -73,7 +74,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T18:27:00.000Z
+Last session: 2026-07-25T18:04:22.748Z
 Stopped at: Completed 01-09-PLAN.md
 Resume file: None
 
@@ -87,4 +88,5 @@ Resume file: None
 | Phase 01 P05 | ~30 min | 3 tasks | 16 files |
 | Phase 01 P06 | 25min | 3 tasks | 8 files |
 | Phase 01-redesign-base-react-shell P07 | 25min | 3 tasks | 9 files |
+| Phase 01-redesign-base-react-shell P08 | 25min | 3 tasks | 8 files |
 | Phase 01-redesign-base-react-shell P09 | 25min | 3 tasks | 11 files |
