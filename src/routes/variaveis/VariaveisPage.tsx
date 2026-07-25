@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { EmptyState } from '@/components/EmptyState';
+import { useNavigate } from 'react-router-dom';
 import {
   filterCatalog,
   type CatalogFilters,
 } from '@/features/catalog/filterCatalog';
+import {
+  assertCompatibleSelection,
+  buildSessionDataset,
+} from '@/features/catalog/buildSessionDataset';
 import { loadCatalog, type LoadedCatalog } from '@/features/catalog/loadCatalog';
+import { resolveHint } from '@/features/catalog/suggestTestForVariable';
 import type { CatalogEntry } from '@/features/catalog/types';
+import { useSession } from '@/shared/session/SessionProvider';
+import { VariableDetailPanel } from './VariableDetailPanel';
 import { VariableFilters } from './VariableFilters';
 import { VariableList } from './VariableList';
 
@@ -18,6 +25,9 @@ const INITIAL_FILTERS: CatalogFilters = {
 };
 
 export function VariaveisPage() {
+  const navigate = useNavigate();
+  const { setDataset } = useSession();
+
   const [catalog, setCatalog] = useState<LoadedCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +36,8 @@ export function VariaveisPage() {
   const [selectedLoadableIds, setSelectedLoadableIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [estatisticaError, setEstatisticaError] = useState<string | null>(null);
+  const [loadingEstatistica, setLoadingEstatistica] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +66,7 @@ export function VariaveisPage() {
   }, []);
 
   const variables = catalog?.variables ?? [];
+  const packs = catalog?.packs ?? {};
 
   const sourceOptions = useMemo(
     () => [...new Set(variables.map((v) => v.sourceSystem))].sort(),
@@ -73,6 +86,17 @@ export function VariaveisPage() {
   const selected: CatalogEntry | null =
     variables.find((v) => v.id === selectedId) ?? null;
 
+  const loadSelection = useMemo(() => {
+    const fromChecks = variables.filter(
+      (v) => v.loadable && selectedLoadableIds.has(v.id),
+    );
+    if (fromChecks.length > 0) return fromChecks;
+    if (selected?.loadable) return [selected];
+    return [];
+  }, [variables, selectedLoadableIds, selected]);
+
+  const canLoadEstatistica = loadSelection.length > 0;
+
   function handleToggleLoadable(id: string) {
     setSelectedLoadableIds((prev) => {
       const next = new Set(prev);
@@ -80,6 +104,30 @@ export function VariaveisPage() {
       else next.add(id);
       return next;
     });
+    setEstatisticaError(null);
+  }
+
+  async function handleLoadEstatistica() {
+    if (!catalog || loadSelection.length === 0) return;
+    setLoadingEstatistica(true);
+    setEstatisticaError(null);
+    try {
+      assertCompatibleSelection(loadSelection, packs);
+      const dataset = buildSessionDataset(loadSelection, packs);
+      setDataset(dataset);
+      const hint = resolveHint(loadSelection[0]!);
+      navigate('/', {
+        state: {
+          activeTestId: hint.testId,
+        },
+      });
+    } catch (err: unknown) {
+      setEstatisticaError(
+        err instanceof Error ? err.message : 'Não foi possível carregar a seleção.',
+      );
+    } finally {
+      setLoadingEstatistica(false);
+    }
   }
 
   return (
@@ -116,24 +164,16 @@ export function VariaveisPage() {
           className="flex w-full min-h-[320px] flex-col rounded-xl border border-border bg-surface p-6 lg:w-[58%]"
           aria-label="Detalhe da variável"
         >
-          {selected ? (
-            <div className="space-y-2">
-              <h2 className="font-sans text-heading font-bold text-text">{selected.label}</h2>
-              <p className="font-sans text-sm text-text-muted">
-                {selected.sourceSystem} · {selected.tableOrIndicator} · {selected.period}
-              </p>
-              <p className="font-sans text-sm text-text-muted">
-                Painel completo de proveniência e teste sugerido em seguida.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-1 items-center justify-center">
-              <EmptyState
-                heading="Selecione uma variável"
-                body="Escolha um item na lista para ver a proveniência completa, o teste sugerido e as ações de carregamento."
-              />
-            </div>
-          )}
+          <VariableDetailPanel
+            entry={selected}
+            selectedLoadableCount={
+              selectedLoadableIds.size > 0 ? selectedLoadableIds.size : loadSelection.length
+            }
+            canLoadEstatistica={canLoadEstatistica}
+            loadError={estatisticaError}
+            loadingEstatistica={loadingEstatistica}
+            onLoadEstatistica={handleLoadEstatistica}
+          />
         </aside>
       </div>
     </div>
