@@ -2,15 +2,16 @@ import { cn } from '@/lib/utils';
 
 export interface MapGeoPathProps {
   d: string;
-  sigla: string;
+  territoryId: string;
   name: string;
   isHovered: boolean;
   isSelected: boolean;
   fill: string;
   glowClass?: string;
   groupBadge?: string;
-  onHover: (sigla: string | null) => void;
-  onToggle: (sigla: string) => void;
+  onHover: (territoryId: string | null) => void;
+  onToggle: (territoryId: string) => void;
+  onDrill?: (territoryId: string) => void;
 }
 
 /**
@@ -19,7 +20,7 @@ export interface MapGeoPathProps {
  */
 export function MapGeoPath({
   d,
-  sigla,
+  territoryId,
   name,
   isHovered,
   isSelected,
@@ -28,27 +29,29 @@ export function MapGeoPath({
   groupBadge,
   onHover,
   onToggle,
+  onDrill,
 }: MapGeoPathProps) {
   return (
     <path
-      key={sigla}
-      data-uf={sigla}
+      data-territory-id={territoryId}
+      data-uf={territoryId.length === 2 ? territoryId : undefined}
       d={d}
       role="button"
       tabIndex={0}
       aria-label={name}
       aria-pressed={isSelected}
-      onMouseEnter={() => onHover(sigla)}
+      onMouseEnter={() => onHover(territoryId)}
       onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(sigla)}
+      onFocus={() => onHover(territoryId)}
       onBlur={() => onHover(null)}
-      onClick={() => onToggle(sigla)}
+      onClick={() => onToggle(territoryId)}
+      onDoubleClick={() => onDrill?.(territoryId)}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
-          onToggle(sigla);
+          onToggle(territoryId);
         } else if (event.key === ' ' || event.key === 'Spacebar') {
           event.preventDefault();
-          onToggle(sigla);
+          onToggle(territoryId);
         }
       }}
       style={{ vectorEffect: 'non-scaling-stroke', fill }}

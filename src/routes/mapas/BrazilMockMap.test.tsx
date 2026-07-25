@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrazilMockMap } from './BrazilMockMap';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
@@ -181,5 +181,40 @@ describe('BrazilMapCanvas', () => {
     const ba = container.querySelector('[data-uf="BA"]');
     expect(ba).toHaveClass('lacir-map-glow');
     expect(ba).toHaveClass('stroke-accent');
+  });
+
+  it('drills into BA and loads municipality paths', async () => {
+    const onSetMapView = vi.fn();
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+        mapView={{ level: 'municipio', parentCode: 'BA', ufIbge: '29' }}
+        onSetMapView={onSetMapView}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('[data-territory-id]').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('returns to Brasil UF choropleth when mapView level is uf', () => {
+    render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+        mapView={{ level: 'uf' }}
+      />,
+    );
+    expect(screen.getAllByRole('button')).toHaveLength(27);
   });
 });

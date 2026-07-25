@@ -13,6 +13,7 @@ import { useSession } from '@/shared/session/SessionProvider';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
 import { buildUngroupedTerritories, GroupBar } from './GroupBar';
+import { MapBreadcrumb } from './MapBreadcrumb';
 import { MapLegendHint } from './MapLegendHint';
 import {
   createInitialMapAnalysisState,
@@ -136,6 +137,38 @@ export function MapasPage() {
     [groupMembership, markInteracted],
   );
 
+  const handlePasteTerritories = useCallback(
+    (territories: TerritoryRef[]) => {
+      markInteracted();
+      const ufSiglas = territories
+        .filter((t) => t.level === 'uf' && t.sigla)
+        .map((t) => t.sigla!);
+      if (ufSiglas.length > 0) {
+        handlePasteMatched(ufSiglas);
+      }
+      const muniIds = territories
+        .filter((t) => t.level === 'municipio')
+        .map((t) => t.ibgeCode);
+      if (muniIds.length > 0) {
+        setSelectedUFs((current) => {
+          const merged = [...current];
+          for (const id of muniIds) {
+            if (!merged.includes(id)) merged.push(id);
+          }
+          return merged;
+        });
+      }
+    },
+    [handlePasteMatched, markInteracted],
+  );
+
+  const handleSetMapView = useCallback(
+    (mapView: typeof state.mapView) => {
+      dispatch({ type: 'SET_MAP_VIEW', mapView });
+    },
+    [dispatch],
+  );
+
   const clearUngroupedSelection = useCallback(() => {
     setSelectedUFs([]);
     setHoveredUF(null);
@@ -210,6 +243,11 @@ export function MapasPage() {
 
       <div className="mt-8 flex gap-8">
         <section className="lacir-mapas-map w-[58%]" aria-label="Mapa do Brasil">
+          <MapBreadcrumb
+            className="mb-3"
+            mapView={state.mapView}
+            onNavigate={handleSetMapView}
+          />
           <BrazilMapCanvas
             hoveredUF={hoveredUF}
             selectedUFs={selectedUFs}
@@ -219,6 +257,8 @@ export function MapasPage() {
             onToggleUF={handleToggleUF}
             choroplethValues={choroplethValues}
             activeVariableId={activeVariableId}
+            mapView={state.mapView}
+            onSetMapView={handleSetMapView}
           />
           <ChoroplethLegend
             values={Object.values(choroplethValues)}
@@ -240,7 +280,13 @@ export function MapasPage() {
           </div>
 
           {contextPanelMode === 'paste' ? (
-            <TerritoryPastePanel onMatched={handlePasteMatched} />
+            <TerritoryPastePanel
+              onMatched={handlePasteMatched}
+              onMatchedTerritories={handlePasteTerritories}
+              activeUfScope={
+                state.mapView.level !== 'uf' ? state.mapView.parentCode : undefined
+              }
+            />
           ) : (
             <VariablePanel
               hoveredUF={hoveredUF}
