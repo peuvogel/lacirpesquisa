@@ -4,6 +4,7 @@ dist/
 *.log
 .env
 .env.local
+*.tsbuildinfo
 
 # Large reference / generated artifacts (keep out of git unless needed)
 jasp-desktop-development/
