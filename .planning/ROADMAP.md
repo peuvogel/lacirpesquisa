@@ -101,7 +101,7 @@ Plans:
 - [x] 03-02-PLAN.md — Wave A: Qui-quadrado TEST-04 (engine + UI + charts)
 - [x] 03-03-PLAN.md — Wave A: ANOVA+Tukey TEST-05 (parallel with 03-04)
 - [x] 03-04-PLAN.md — Wave A: Kruskal+Dunn TEST-06 (parallel with 03-03)
-- [ ] 03-05-PLAN.md — Wave A gate: registry + routes for classical tests; UX-02 integration
+- [x] 03-05-PLAN.md — Wave A gate: registry + routes for classical tests; UX-02 integration
 - [ ] 03-06-PLAN.md — Wave B: Poisson TEST-07 + overdispersion CTA + glmCoefForestChart
 - [ ] 03-07-PLAN.md — Wave B: Binomial Negativa TEST-08 (parallel with 03-08)
 - [ ] 03-08-PLAN.md — Wave B: Logística TEST-09 (parallel with 03-07)
@@ -167,7 +167,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
-| 3. Testes clássicos + GLM novos | 4/9 | In Progress|  |
+| 3. Testes clássicos + GLM novos | 5/9 | In Progress|  |
 | 4. Mapas como interface estatística | 0/TBD | Not started | - |
 | 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |
