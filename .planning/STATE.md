@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-07-25T22:49:45.016Z"
+stopped_at: Completed 05-06-PLAN.md
+last_updated: "2026-07-25T22:52:45.203Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 42
+  completed_plans: 43
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 05 (variaveis-no-site-scrape-referencias) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-07-25
 
@@ -94,6 +94,9 @@ Progress: discuss complete — planning next
 - [Phase ?]: hasCompleteProvenance blocks incomplete orphans in the detail panel (T-05-09)
 - [Phase ?]: Mapas metrics from catalogAnalysisData packs; alias mock.amputacoes/internacoes/obitos only
 - [Phase ?]: Default Mapas year = latest non-null; exclude nullYears from pickers (D-19)
+- [Phase 05]: Estatística navigate stays on '/' with state.activeTestId (no /estatistica route) — Router only exposes Estatística at /; matches ReviewAnalysisDialog
+- [Phase 05]: Mapas handoff APPLY_CATALOG_VARIABLE_IDS once then clear location.state; empty-UF shows full catalog checkboxes — Prevents re-apply loops and makes D-15 selection visible without UF preset
+- [Phase 05]: MAX_LOADABLE_SELECTION=12 for Variáveis multi-select (T-05-13) — Discretionary classroom bound from plan threat model
 
 ### Pending Todos
 
@@ -105,8 +108,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:49:34.834Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-07-25T22:52:42.246Z
+Stopped at: Completed 05-06-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -133,3 +136,4 @@ Resume file: None
 | Phase 05 P03 | 2min | 3 tasks | 8 files |
 | Phase 05 P04 | 3min | 2 tasks | 6 files |
 | Phase 05 P05 | 4min | 2 tasks | 21 files |
+| Phase 05 P06 | 2min | 2 tasks | 9 files |
