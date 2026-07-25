@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-07-25T22:42:45.093Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-07-25T22:45:22.078Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 45
-  completed_plans: 39
+  completed_plans: 40
   percent: 67
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 05 (variaveis-no-site-scrape-referencias) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-07-25
 
@@ -86,6 +86,9 @@ Progress: discuss complete — planning next
 - [Phase 05]: Pure validation lives in validate.mjs (exported) so CLI and vitest share one rule set
 - [Phase 05]: Shared CNES/pop metrics fail closed on divergence across packs (RESEARCH A2)
 - [Phase 05]: test:run explicitly chains catalog:validate; pretest covers npm test / vitest interactive
+- [Phase 05]: loadCatalog uses same-origin fetch('/data/catalog/...') with in-memory cache
+- [Phase 05]: buildSessionDataset left-joins onto first pack; assertCompatibleSelection enforces uf_codigo+ano
+- [Phase 05]: Zero new npm dependencies for catalog feature modules (05-03)
 
 ### Pending Todos
 
@@ -97,8 +100,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:42:45.090Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-07-25T22:45:22.076Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -122,3 +125,4 @@ Resume file: None
 | Phase 04-mapas-como-interface-estatistica P08 | 12min | 3 tasks | 3 files |
 | Phase 05 P01 | 2min | 2 tasks | 13 files |
 | Phase 05 P02 | 1min | 2 tasks | 4 files |
+| Phase 05 P03 | 2min | 3 tasks | 8 files |

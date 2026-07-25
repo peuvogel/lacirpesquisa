@@ -153,13 +153,13 @@ Plans:
   4. User loads curated/scraped datasets into Estatística/Mapas analysis without leaving the app for data collection
   5. Datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping
 
-**Plans:** 2/7 plans executed
+**Plans:** 3/7 plans executed
 
 Plans:
 
 - [x] 05-01-PLAN.md — Offline pipeline: package embolia/amputação packs + reference-seed → public/data/catalog
 - [x] 05-02-PLAN.md — CatalogEntry types + fail-closed catalog:validate + npm/pretest gate
-- [ ] 05-03-PLAN.md — TDD catalog modules: loadCatalog, filter, suggestTest, buildSessionDataset
+- [x] 05-03-PLAN.md — TDD catalog modules: loadCatalog, filter, suggestTest, buildSessionDataset
 - [ ] 05-04-PLAN.md — Variáveis UI: search/filter/list/detail + provenance + test hint
 - [ ] 05-05-PLAN.md — Mapas catalogAnalysisData swap; retire mock numerics/provenance for packs
 - [ ] 05-06-PLAN.md — Load handoff: Carregar na Estatística + Usar no mapa (multi-select D-16)
@@ -191,5 +191,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 9/9 | Complete   | 2026-07-25 |
 | 4. Mapas como interface estatística | 8/8 | Complete   | 2026-07-25 |
-| 5. Variáveis no site (scrape + referências) | 2/7 | In Progress|  |
+| 5. Variáveis no site (scrape + referências) | 3/7 | In Progress|  |
 | 6. Meta-análise | 0/TBD | Not started | - |
