@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UseExampleButton } from '@/features/tests/shared/UseExampleButton';
 import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
+import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useTabularInput } from '@/shared/data-input/useTabularInput';
 import type { DatasusSession } from '@/shared/data-input/useDatasusWizard';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
@@ -56,7 +57,11 @@ function initialLoadedFromSession(
   return {
     headers: sessionDataset.headers,
     rows: sessionDataset.rows,
-    recognizedColumns: {},
+    recognizedColumns: deriveRecognizedColumnsFromTabular(
+      sessionDataset.headers,
+      sessionDataset.rows,
+      TABULAR_OPTIONS,
+    ),
     sourceLabel: sessionDataset.sourceLabel,
   };
 }
@@ -116,7 +121,11 @@ export function TStudentTest() {
     sourceLabelRef.current = 'assistente DATASUS';
     setLoadedInput({
       ...converted,
-      recognizedColumns: {},
+      recognizedColumns: deriveRecognizedColumnsFromTabular(
+        converted.headers,
+        converted.rows,
+        TABULAR_OPTIONS,
+      ),
       sourceLabel: 'assistente DATASUS',
     });
   }
