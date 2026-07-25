@@ -48,10 +48,12 @@ describe('router', () => {
     expect(screen.getByRole('heading', { name: 'Em breve' })).toBeInTheDocument();
   });
 
-  it('renders the shared Em breve placeholder at /variaveis', () => {
+  it('renders the Variáveis catalog UI at /variaveis (not Em breve)', () => {
     renderAt('/variaveis');
     expect(screen.getByRole('heading', { name: 'Variáveis' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Em breve' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Em breve' })).not.toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Buscar' })).toBeInTheDocument();
+    expect(screen.getByRole('listbox', { name: 'Variáveis do catálogo' })).toBeInTheDocument();
   });
 
   it('renders the Mapas heading at /mapas', () => {
