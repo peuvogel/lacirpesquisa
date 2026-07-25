@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-06 executed and committed — FlowSteps stepper, useTabularInput hook, TabularInputPanel, ColumnPreviewTable, all green
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-07-25T17:54:20.313Z"
-last_activity: 2026-07-25 — Plan 01-06 executed (FlowSteps, useTabularInput, TabularInputPanel, ColumnPreviewTable)
+status: Plan 01-07 executed — TEST_REGISTRY, collapsible sidebar, Qual teste usar modal, Portal DATASUS in Estatística
+stopped_at: Completed 01-07-PLAN.md
+last_updated: "2026-07-25T18:02:00.000Z"
+last_activity: 2026-07-25 — Plan 01-07 executed (registry, sidebar, QualTesteModal, PortalDatasusLink)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 6
-  percent: 50
+  completed_plans: 7
+  percent: 58
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (6/12 plans complete)
+**Current focus:** Phase 1 — In progress (7/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01, 01-02, 01-03, 01-04, 01-05, 01-06 complete (12 plans total, wave-based execution) — 01-07+ still pending
-Status: Plan 01-06 executed and committed — FlowSteps stepper, useTabularInput hook, TabularInputPanel, ColumnPreviewTable, all green
-Last activity: 2026-07-25 — Plan 01-06 executed (FlowSteps, useTabularInput, TabularInputPanel, ColumnPreviewTable)
+Plan: 01-01 through 01-07 complete (12 plans total, wave-based execution) — 01-08+ still pending
+Status: Plan 01-07 executed — TEST_REGISTRY, collapsible sidebar, Qual teste usar modal, Portal DATASUS in Estatística
+Last activity: 2026-07-25 — Plan 01-07 executed (registry, sidebar, QualTesteModal, PortalDatasusLink)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 58%
 
 ## Accumulated Context
 
@@ -58,6 +58,8 @@ Progress: [█████░░░░░] 50%
 - [Phase 01]: useTabularInput reshapes RecognizedColumn objects to Record<string, number> (index-only); error shape passes through unreshaped per 01-PATTERNS.md
 - [Phase 01]: ColumnPreviewTable auto-detects column role from actual cell values, not from recognizedColumns/domain aliases, to stay generic across future test modules
 - [Phase 01]: TabularInputPanel textarea stays enabled during parsing (deviates from literal UI-SPEC disabled-while-parsing); inline status indicator lives in preview area instead
+- [Phase 01]: TEST_REGISTRY is the single source of truth for sidebar and modal — Prevents Pitfall 4 drift between sidebar and modal roadmap
+- [Phase ?]: TEST_REGISTRY is the single source of truth for sidebar and modal — Prevents Pitfall 4 drift between sidebar and modal roadmap
 
 ### Pending Todos
 
@@ -69,8 +71,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T17:54:20.311Z
-Stopped at: Completed 01-06-PLAN.md
+Last session: 2026-07-25T18:02:00.000Z
+Stopped at: Completed 01-07-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -82,3 +84,5 @@ Resume file: None
 | Phase 01 P02 | 40min | 2 tasks | 3 files |
 | Phase 01 P05 | ~30 min | 3 tasks | 16 files |
 | Phase 01 P06 | 25min | 3 tasks | 8 files |
+| Phase 01-redesign-base-react-shell P07 | 25min | 3 tasks | 9 files |
+| Phase 01-redesign-base-react-shell P07 | 25min | 3 tasks | 9 files |

@@ -53,7 +53,7 @@
 
 ### UX diferenciadores
 
-- [ ] **UX-01**: User can use a guided “qual teste usar?” decision tree that routes to the right test module
+- [x] **UX-01**: User can use a guided “qual teste usar?” decision tree that routes to the right test module
 - [ ] **UX-02**: User sees assumption-check nudges appropriate to the active test (e.g. normality hint, expected counts, overdispersion)
 
 ## Future Requirements
@@ -84,7 +84,7 @@
 | UI-04 | Phase 1 | Complete |
 | UI-05 | Phase 1 | Pending |
 | UI-06 | Phase 1 | Pending |
-| UX-01 | Phase 1 | Pending |
+| UX-01 | Phase 1 | Complete |
 | TEST-01 | Phase 2 | Pending |
 | TEST-02 | Phase 2 | Pending |
 | TEST-03 | Phase 2 | Pending |
