@@ -244,6 +244,7 @@ export function deriveDatasusDataset(input: RunFromDatasusInput): {
     }
     return {
       ok: true,
+      errors: [],
       dataset: {
         g1: derived.vectors.A,
         g2: derived.vectors.B,
@@ -268,6 +269,7 @@ export function deriveDatasusDataset(input: RunFromDatasusInput): {
 
   return {
     ok: true,
+    errors: [],
     dataset: {
       g1: derived.vectors.A,
       g2: derived.vectors.B,

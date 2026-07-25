@@ -21,6 +21,7 @@ import {
   runIndependentWelch,
   runPairedT,
   validateSampleSize,
+  type TStudentWelchResult,
 } from './tStudentEngine';
 
 const legacyStatsOracle = loadLegacyStatsOracle();
@@ -37,7 +38,7 @@ function displayParity(actual: number, expected: number, formatter: (v: number) 
 }
 
 function assertWelchParity(
-  actual: ReturnType<typeof runIndependentWelch>,
+  actual: TStudentWelchResult,
   expected: ReturnType<typeof safeWelch>,
 ) {
   expect(actual.n1).toBe(expected.n1);
@@ -149,7 +150,7 @@ describe('tStudentEngine differential parity vs module.js', () => {
 
     const portResult = runFromDatasusDerived('independent', derivedRaw.vectors);
     const legacyResult = safeWelch(derivedRaw.vectors.A, derivedRaw.vectors.B, legacyStatsOracle);
-    assertWelchParity(portResult, legacyResult);
+    assertWelchParity(portResult as TStudentWelchResult, legacyResult);
 
     const wrapped = deriveDatasusDataset({
       mode: 'independent',
@@ -193,6 +194,6 @@ describe('tStudentEngine differential parity vs module.js', () => {
 
     const result = runAnalysis('independent', independentDataset);
     const legacyResult = safeWelch(independentDataset.g1, independentDataset.g2, legacyStatsOracle);
-    assertWelchParity(result, legacyResult);
+    assertWelchParity(result as TStudentWelchResult, legacyResult);
   });
 });
