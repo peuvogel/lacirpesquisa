@@ -4,13 +4,13 @@ milestone: v2.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 2 plans verified — ready to execute
-last_updated: "2026-07-25T19:12:08.590Z"
+last_updated: "2026-07-25T19:15:36.886Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 13
+  completed_plans: 14
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 02 (migrar-testes-existentes) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-07-25
 
@@ -71,6 +71,9 @@ Progress: [██████████] 100%
 - [Phase 01]: beforeunload only via useLeaveWarning(hasData) with [hasData] deps — no useBlocker
 - [Phase 01]: LeaveWarningGuard structural route scoping instead of route-name conditionals
 - [Phase 01]: ClearDataButton onCleared resets TesteDemo tabular input and returns flow to Dados
+- [Phase 02-migrar-testes-existentes]: Chart factories return pure ChartData+Options; no imperative Chart() in factories
+- [Phase 02-migrar-testes-existentes]: Theme variant merge preserves scale title config via spread-before-grid override
+- [Phase 02-migrar-testes-existentes]: Demo stays on plain ResultsPanel; ResultsPanelWithCustomizer for migrated tests only (D-06)
 
 ### Pending Todos
 
@@ -82,7 +85,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T19:12:08.587Z
+Last session: 2026-07-25T19:15:33.290Z
 Stopped at: Phase 2 plans verified — ready to execute
 Resume file: None
 
