@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 2 gaps closed — awaiting human UAT; plan pivot logged (scrape+map stats UI)
-last_updated: "2026-07-25T19:50:00.000Z"
+status: Human UAT pending (02-HUMAN-UAT.md)
+stopped_at: Phase 3 context gathered
+last_updated: "2026-07-25T21:14:38.609Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
@@ -87,9 +87,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T19:50:00.000Z
-Stopped at: Plan pivot logged (scrape + map stats UI) — resume Phase 2 human UAT
-Resume file: .planning/phases/02-migrar-testes-existentes/02-HUMAN-UAT.md
+Last session: 2026-07-25T21:14:38.606Z
+Stopped at: Phase 3 context gathered
+Resume file: .planning/phases/03-testes-classicos-glm-novos/03-CONTEXT.md
 
 ## Performance Metrics
 
