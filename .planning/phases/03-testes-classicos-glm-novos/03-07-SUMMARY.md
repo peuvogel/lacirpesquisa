@@ -68,7 +68,7 @@ Each task was committed atomically:
 1. **Task 1: Port NB engine and golden tests** - `58217de` (feat)
 2. **Task 2: NB UI with handoff bootstrap and FlowSteps shell** - `83a57e2` (feat)
 
-**Plan metadata:** pending (docs commit)
+**Plan metadata:** `fdb6570` (docs: complete plan)
 
 ## Files Created/Modified
 

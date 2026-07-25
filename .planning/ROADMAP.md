@@ -104,7 +104,7 @@ Plans:
 - [x] 03-05-PLAN.md — Wave A gate: registry + routes for classical tests; UX-02 integration
 - [x] 03-06-PLAN.md — Wave B: Poisson TEST-07 + overdispersion CTA + glmCoefForestChart
 - [x] 03-07-PLAN.md — Wave B: Binomial Negativa TEST-08 (parallel with 03-08)
-- [ ] 03-08-PLAN.md — Wave B: Logística TEST-09 (parallel with 03-07)
+- [x] 03-08-PLAN.md — Wave B: Logística TEST-09 (parallel with 03-07)
 - [ ] 03-09-PLAN.md — Wave B gate: full verification; all six tests available
 
 ### Phase 4: Mapas como interface estatística
@@ -167,7 +167,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
-| 3. Testes clássicos + GLM novos | 7/9 | In Progress|  |
+| 3. Testes clássicos + GLM novos | 8/9 | In Progress|  |
 | 4. Mapas como interface estatística | 0/TBD | Not started | - |
 | 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |
