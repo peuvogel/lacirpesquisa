@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: Plan 01-01 executed and committed — Vite/React 19/TS/Tailwind v4 toolchain, vitest+RTL harness, shadcn/Radix primitives all green
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-07-25T17:13:27.524Z"
-last_activity: 2026-07-25 — Plan 01-01 executed (Vite/React/Tailwind v4 scaffold + shadcn primitives)
+status: Plan 01-04 executed and committed — chart theme, ChartCanvas lifecycle wrapper, PNG export hook (UI-04), pt-BR format helpers all green
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-07-25T17:23:46.454Z"
+last_activity: 2026-07-25 — Plan 01-04 executed (chartTheme/ChartCanvas/useChartExport/format.ts)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 1
-  percent: 8
+  completed_plans: 2
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — In progress (1/12 plans complete)
+**Current focus:** Phase 1 — In progress (2/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: 01-01 complete (12 plans total) — next: 01-02
-Status: Plan 01-01 executed and committed — Vite/React 19/TS/Tailwind v4 toolchain, vitest+RTL harness, shadcn/Radix primitives all green
-Last activity: 2026-07-25 — Plan 01-01 executed (Vite/React/Tailwind v4 scaffold + shadcn primitives)
+Plan: 01-01 and 01-04 complete (12 plans total, wave-based execution) — 01-02/01-03/01-05+ still pending
+Status: Plan 01-04 executed and committed — chart theme, ChartCanvas lifecycle wrapper, PNG export hook (UI-04), pt-BR format helpers all green
+Last activity: 2026-07-25 — Plan 01-04 executed (chartTheme/ChartCanvas/useChartExport/format.ts)
 
-Progress: [█░░░░░░░░░] 8%
+Progress: [██░░░░░░░░] 17%
 
 ## Accumulated Context
 
@@ -44,6 +44,8 @@ Progress: [█░░░░░░░░░] 8%
 - Não reinventar engines (JASP + MVP)
 - [Phase 1]: shadcn primitives generated on Radix (not Base UI) to match UI-SPEC accessibility assumptions
 - [Phase 1]: @vitejs/plugin-react@^6.0 used instead of plan's ^4.5 pin — required for vite@^8.1 peer compatibility
+- [Phase 1]: chartTheme.ts retints only COLORS.primary and COLORS.background to teal per D-16/UI-SPEC; all other v1.0 chart rgba literals ported unchanged
+- [Phase 1]: ChartCanvas owns Chart.js instance via one useEffect (destroy-before-recreate, destroy-on-unmount), replacing the legacy global Map registry
 
 ### Pending Todos
 
@@ -55,6 +57,12 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T17:12:53.714Z
+Last session: 2026-07-25T17:23:11.400Z
 Stopped at: Completed 01-01-PLAN.md
 Resume file: None
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Notes |
+|-------|------|----------|-------|
+| Phase 01 P04 | 15 min | 3 tasks | 7 files |
