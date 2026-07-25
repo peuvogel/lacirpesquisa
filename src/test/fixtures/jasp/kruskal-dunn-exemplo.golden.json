@@ -1,0 +1,45 @@
+{
+  "source": "textbook — Kruskal-Wallis H + Dunn Holm",
+  "inputFixture": "kruskal-dunn-exemplo.txt",
+  "displayPrecision": {
+    "p": "fmtP",
+    "effect": 3
+  },
+  "input": {
+    "groups": {
+      "A": [
+        12.3,
+        14.1,
+        10.9,
+        11.8,
+        13.5
+      ],
+      "B": [
+        18.2,
+        17.4,
+        19.1,
+        16.8,
+        20.3
+      ],
+      "C": [
+        24.5,
+        23.1,
+        25.8,
+        22.4,
+        26.2
+      ]
+    }
+  },
+  "expected": {
+    "h": 12.5,
+    "df": 2,
+    "p": 0.0019304541362277217,
+    "dunnFirst": {
+      "contrast": "A − B",
+      "groupA": "A",
+      "groupB": "B",
+      "statistic": -1.7677669529663687,
+      "pAdj": 0.15419974348708365
+    }
+  }
+}

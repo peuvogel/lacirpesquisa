@@ -1,0 +1,32 @@
+{
+  "source": "textbook — Pearson χ² + Cramér V (R unavailable; regenerate via scripts/oracle/generate-phase3-fixtures.R)",
+  "inputFixture": "qui-quadrado-exemplo.txt",
+  "displayPrecision": {
+    "p": "fmtP",
+    "effect": 3
+  },
+  "input": {
+    "table": [
+      [
+        3,
+        2
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        4,
+        1
+      ]
+    ]
+  },
+  "expected": {
+    "chi2": 1.6666666666666665,
+    "df": 2,
+    "p": 0.4345982085070783,
+    "cramersV": 0.3333333333333333,
+    "cellsBelow5": 6,
+    "pctBelow5": 100
+  }
+}

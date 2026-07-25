@@ -346,3 +346,286 @@ export const statsEngine = {
     return { n, rho, alpha: fit.alpha, beta, seBeta: fit.seBeta, p, df, t, ciBeta, apc, ciApc, classification };
   },
 };
+
+import jStat from 'jstat';
+
+const MAX_CONTINGENCY_DIM = 20;
+
+export interface ChiSquareIndependenceResult {
+  chi2: number;
+  df: number;
+  p: number;
+  cramersV: number;
+  expected: number[][];
+  cellsBelow5: number;
+  pctBelow5: number;
+}
+
+export interface GroupStats {
+  n: number;
+  mean: number;
+  sd: number;
+}
+
+export interface OneWayAnovaResult {
+  f: number;
+  dfBetween: number;
+  dfWithin: number;
+  p: number;
+  eta2: number;
+  msWithin: number;
+  groupStats: Record<string, GroupStats>;
+}
+
+export interface KruskalWallisResult {
+  h: number;
+  df: number;
+  p: number;
+}
+
+export interface PairwiseRow {
+  contrast: string;
+  groupA: string;
+  groupB: string;
+  statistic: number;
+  pAdj: number;
+  meanDiff?: number;
+  ci?: [number, number];
+}
+
+function assertContingencyTable(table: number[][]): void {
+  if (!table.length || !table[0]?.length) {
+    throw new Error('Tabela de contingência vazia.');
+  }
+  const rows = table.length;
+  const cols = table[0].length;
+  if (rows > MAX_CONTINGENCY_DIM || cols > MAX_CONTINGENCY_DIM) {
+    throw new Error(`Tabela de contingência excede ${MAX_CONTINGENCY_DIM}×${MAX_CONTINGENCY_DIM}.`);
+  }
+  for (const row of table) {
+    if (row.length !== cols) {
+      throw new Error('Tabela de contingência com larguras inconsistentes.');
+    }
+  }
+}
+
+function holmAdjust(pValues: number[]): number[] {
+  const indexed = pValues.map((p, index) => ({ p, index }));
+  indexed.sort((a, b) => a.p - b.p);
+  const m = pValues.length;
+  const adjusted = new Array<number>(m).fill(0);
+  let runningMax = 0;
+  indexed.forEach(({ p, index }, rank) => {
+    const adj = Math.min(1, (m - rank) * p);
+    runningMax = Math.max(runningMax, adj);
+    adjusted[index] = runningMax;
+  });
+  return adjusted;
+}
+
+export function runChiSquareIndependence(table: number[][]): ChiSquareIndependenceResult {
+  assertContingencyTable(table);
+  const rows = table.length;
+  const cols = table[0].length;
+  const rowTotals = table.map((row) => statsEngine.sum(row));
+  const colTotals = new Array<number>(cols).fill(0);
+  for (let column = 0; column < cols; column += 1) {
+    for (let row = 0; row < rows; row += 1) {
+      colTotals[column] += table[row][column];
+    }
+  }
+  const total = statsEngine.sum(rowTotals);
+  if (total <= 0) {
+    throw new Error('Tabela de contingência sem observações.');
+  }
+
+  const expected = table.map((row, rowIndex) =>
+    row.map((_, columnIndex) => (rowTotals[rowIndex] * colTotals[columnIndex]) / total),
+  );
+
+  let chi2 = 0;
+  let cellsBelow5 = 0;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < cols; column += 1) {
+      const observed = table[row][column];
+      const expectedCell = expected[row][column];
+      if (expectedCell < 5) cellsBelow5 += 1;
+      if (expectedCell > 0) {
+        chi2 += ((observed - expectedCell) ** 2) / expectedCell;
+      }
+    }
+  }
+
+  const df = (rows - 1) * (cols - 1);
+  const p = df > 0 ? 1 - jStat.chisquare.cdf(chi2, df) : 1;
+  const minDim = Math.min(rows - 1, cols - 1);
+  const cramersV = minDim > 0 && total > 0 ? Math.sqrt(chi2 / (total * minDim)) : 0;
+  const totalCells = rows * cols;
+  const pctBelow5 = totalCells > 0 ? (cellsBelow5 / totalCells) * 100 : 0;
+
+  return { chi2, df, p, cramersV, expected, cellsBelow5, pctBelow5 };
+}
+
+export function oneWayAnova(groups: Record<string, number[]>): OneWayAnovaResult {
+  const labels = Object.keys(groups);
+  if (labels.length < 2) {
+    throw new Error('ANOVA requer ao menos dois grupos.');
+  }
+
+  const groupStats: Record<string, GroupStats> = {};
+  let grandSum = 0;
+  let grandN = 0;
+  labels.forEach((label) => {
+    const values = groups[label];
+    if (!values.length) {
+      throw new Error(`Grupo "${label}" sem observações.`);
+    }
+    groupStats[label] = {
+      n: values.length,
+      mean: statsEngine.mean(values),
+      sd: statsEngine.sd(values),
+    };
+    grandSum += statsEngine.sum(values);
+    grandN += values.length;
+  });
+
+  const grandMean = grandSum / grandN;
+  const k = labels.length;
+  let ssBetween = 0;
+  let ssWithin = 0;
+  labels.forEach((label) => {
+    const { n, mean } = groupStats[label];
+    ssBetween += n * ((mean - grandMean) ** 2);
+    groups[label].forEach((value) => {
+      ssWithin += (value - mean) ** 2;
+    });
+  });
+
+  const dfBetween = k - 1;
+  const dfWithin = grandN - k;
+  if (dfWithin <= 0) {
+    throw new Error('ANOVA requer mais observações do que grupos.');
+  }
+
+  const msBetween = ssBetween / dfBetween;
+  const msWithin = ssWithin / dfWithin;
+  const f = msWithin > 0 ? msBetween / msWithin : NaN;
+  const p = Number.isFinite(f) ? 1 - jStat.centralF.cdf(f, dfBetween, dfWithin) : NaN;
+  const eta2 = ssBetween + ssWithin > 0 ? ssBetween / (ssBetween + ssWithin) : 0;
+
+  return { f, dfBetween, dfWithin, p, eta2, msWithin, groupStats };
+}
+
+export function kruskalWallis(groups: Record<string, number[]>): KruskalWallisResult {
+  const labels = Object.keys(groups);
+  if (labels.length < 2) {
+    throw new Error('Kruskal-Wallis requer ao menos dois grupos.');
+  }
+
+  const pooled: number[] = [];
+  const groupIndices: number[] = [];
+  labels.forEach((label, groupIndex) => {
+    groups[label].forEach((value) => {
+      pooled.push(value);
+      groupIndices.push(groupIndex);
+    });
+  });
+
+  const ranks = statsEngine.rank(pooled);
+  const n = pooled.length;
+  let h = 0;
+  labels.forEach((label, groupIndex) => {
+    const groupRanks = ranks.filter((_, index) => groupIndices[index] === groupIndex);
+    const rankSum = statsEngine.sum(groupRanks);
+    const groupN = groupRanks.length;
+    if (groupN > 0) {
+      h += (rankSum ** 2) / groupN;
+    }
+  });
+
+  h = (12 / (n * (n + 1))) * h - 3 * (n + 1);
+  const df = labels.length - 1;
+  const p = df > 0 ? 1 - jStat.chisquare.cdf(h, df) : 1;
+  return { h, df, p };
+}
+
+export function tukeyHsd(groups: Record<string, number[]>): PairwiseRow[] {
+  const labels = Object.keys(groups);
+  const arrays = labels.map((label) => groups[label]);
+  if (arrays.some((arr) => arr.length === 0)) {
+    throw new Error('Tukey HSD requer observações em todos os grupos.');
+  }
+
+  const anova = oneWayAnova(groups);
+  const raw = jStat.tukeyhsd(arrays);
+  const dfWithin = anova.dfWithin;
+  const qCrit = jStat.tukey.inv(0.95, labels.length, dfWithin);
+  const pooledSd = jStat.pooledstdev(arrays);
+
+  return raw.map(([[i, j], pAdj]) => {
+    const groupA = labels[i];
+    const groupB = labels[j];
+    const meanA = anova.groupStats[groupA].mean;
+    const meanB = anova.groupStats[groupB].mean;
+    const nA = anova.groupStats[groupA].n;
+    const nB = anova.groupStats[groupB].n;
+    const meanDiff = meanA - meanB;
+    const se = pooledSd * Math.sqrt((1 / nA + 1 / nB) / 2);
+    const margin = qCrit * se;
+    return {
+      contrast: `${groupA} − ${groupB}`,
+      groupA,
+      groupB,
+      statistic: meanDiff,
+      pAdj,
+      meanDiff,
+      ci: [meanDiff - margin, meanDiff + margin],
+    };
+  });
+}
+
+export function dunnPostHoc(groups: Record<string, number[]>): PairwiseRow[] {
+  const labels = Object.keys(groups);
+  if (labels.length < 2) {
+    throw new Error('Dunn requer ao menos dois grupos.');
+  }
+
+  const pooled: number[] = [];
+  const groupIndices: number[] = [];
+  labels.forEach((label, groupIndex) => {
+    groups[label].forEach((value) => {
+      pooled.push(value);
+      groupIndices.push(groupIndex);
+    });
+  });
+
+  const ranks = statsEngine.rank(pooled);
+  const n = pooled.length;
+  const meanRanks = labels.map((label, groupIndex) => {
+    const groupRankValues = ranks.filter((_, index) => groupIndices[index] === groupIndex);
+    return statsEngine.mean(groupRankValues);
+  });
+  const groupNs = labels.map((label) => groups[label].length);
+
+  const rows: PairwiseRow[] = [];
+  const rawP: number[] = [];
+  for (let i = 0; i < labels.length; i += 1) {
+    for (let j = i + 1; j < labels.length; j += 1) {
+      const varianceTerm = (n * (n + 1)) / 12;
+      const se = Math.sqrt(varianceTerm * ((1 / groupNs[i]) + (1 / groupNs[j])));
+      const z = se > 0 ? (meanRanks[i] - meanRanks[j]) / se : 0;
+      const p = 2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1));
+      rawP.push(p);
+      rows.push({
+        contrast: `${labels[i]} − ${labels[j]}`,
+        groupA: labels[i],
+        groupB: labels[j],
+        statistic: z,
+        pAdj: p,
+      });
+    }
+  }
+
+  const adjusted = holmAdjust(rawP);
+  return rows.map((row, index) => ({ ...row, pAdj: adjusted[index] }));
+}

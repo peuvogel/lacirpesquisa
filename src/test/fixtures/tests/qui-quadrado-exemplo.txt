@@ -1,0 +1,16 @@
+tratamento;desfecho
+A;sim
+A;sim
+A;sim
+A;nao
+A;nao
+B;sim
+B;sim
+B;nao
+B;nao
+B;nao
+C;sim
+C;sim
+C;sim
+C;sim
+C;nao

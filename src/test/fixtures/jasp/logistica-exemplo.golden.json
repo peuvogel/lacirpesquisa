@@ -1,0 +1,86 @@
+{
+  "source": "textbook — Logistic GLM Wald OR",
+  "inputFixture": "logistica-exemplo.txt",
+  "displayPrecision": {
+    "p": "fmtP",
+    "or": 3
+  },
+  "input": {
+    "y": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    "design": {
+      "terms": [
+        "(Intercept)",
+        "x"
+      ],
+      "matrix": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    }
+  },
+  "expected": {
+    "interceptOr": 39.43789090276655,
+    "idadeOr": 0.178532337035948,
+    "idadeP": 0.10117928414290489,
+    "converged": true
+  }
+}

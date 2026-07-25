@@ -1,0 +1,52 @@
+{
+  "source": "textbook — one-way ANOVA + jstat Tukey HSD",
+  "inputFixture": "anova-tukey-exemplo.txt",
+  "displayPrecision": {
+    "p": "fmtP",
+    "effect": 3
+  },
+  "input": {
+    "groups": {
+      "A": [
+        12.3,
+        14.1,
+        10.9,
+        11.8,
+        13.5
+      ],
+      "B": [
+        18.2,
+        17.4,
+        19.1,
+        16.8,
+        20.3
+      ],
+      "C": [
+        24.5,
+        23.1,
+        25.8,
+        22.4,
+        26.2
+      ]
+    }
+  },
+  "expected": {
+    "f": 83.88335974643422,
+    "dfBetween": 2,
+    "dfWithin": 12,
+    "p": 8.847727062111232e-8,
+    "eta2": 0.9332468210253119,
+    "tukeyFirst": {
+      "contrast": "A − B",
+      "groupA": "A",
+      "groupB": "B",
+      "statistic": -5.84,
+      "pAdj": 0.0000981032722352504,
+      "meanDiff": -5.84,
+      "ci": [
+        -8.287077241739645,
+        -3.392922758260354
+      ]
+    }
+  }
+}
