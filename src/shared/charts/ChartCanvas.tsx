@@ -16,6 +16,7 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { cn } from '@/lib/utils';
+import { ensureChartAnnotationsRegistered } from './chartAnnotationSetup';
 import { BASE_OPTS, mergeChartOptions } from './chartTheme';
 
 // Registered once at module scope. Chart.js is bundled from the npm
@@ -33,6 +34,7 @@ Chart.register(
   Tooltip,
   Filler,
 );
+ensureChartAnnotationsRegistered();
 
 export type ChartCanvasType = 'bar' | 'line' | 'scatter';
 

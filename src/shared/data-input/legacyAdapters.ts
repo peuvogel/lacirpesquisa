@@ -6,7 +6,8 @@
  *     `scoreDecodedText`, `latin1ToUtf8`, `repairMojibake`,
  *     `normalizeImportedText`, `normalizeImportedLabel`)
  *   - `readFileText`: lines 150-176
- *   - `Stats.parseNumber` / `Stats.mean`: lines 241-264
+ *   - Full `Stats` surface: delegated to `src/shared/stats/statsEngine.ts`
+ *     (ported from `assets/js/app.js:240-533`)
  *
  * Only `this.`-style method calls are converted to direct local function
  * calls and type annotations are added — no regex, threshold, or scoring
@@ -14,6 +15,7 @@
  * weighting is tuned, not stylistic).
  */
 
+import { statsEngine } from '../stats/statsEngine';
 import type { LegacyStatsAdapter, LegacyUtilsAdapter } from './types';
 
 export function hasLikelyMojibake(text: string): boolean {
@@ -91,31 +93,8 @@ export async function readFileText(file: File): Promise<string> {
     .sort((a, b) => scoreDecodedText(b) - scoreDecodedText(a))[0];
 }
 
-export function parseNumber(raw: unknown): number | null {
-  if (raw === null || raw === undefined) return null;
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-
-  let source = String(raw).trim();
-  if (!source) return null;
-
-  source = source.replace(/\s+/g, '');
-  if (source.includes(',') && source.includes('.')) {
-    if (source.lastIndexOf(',') > source.lastIndexOf('.')) {
-      source = source.replace(/\./g, '').replace(',', '.');
-    } else {
-      source = source.replace(/,/g, '');
-    }
-  } else if (source.includes(',') && !source.includes('.')) {
-    source = source.replace(',', '.');
-  }
-
-  const value = Number(source);
-  return Number.isFinite(value) ? value : null;
-}
-
-export function mean(values: number[]): number {
-  return values.reduce((acc, value) => acc + value, 0) / values.length;
-}
+export const parseNumber = statsEngine.parseNumber.bind(statsEngine);
+export const mean = statsEngine.mean.bind(statsEngine);
 
 export const legacyUtils: LegacyUtilsAdapter = {
   readFileText,
@@ -123,7 +102,4 @@ export const legacyUtils: LegacyUtilsAdapter = {
   normalizeImportedLabel,
 };
 
-export const legacyStats: LegacyStatsAdapter = {
-  parseNumber,
-  mean,
-};
+export const legacyStats: LegacyStatsAdapter = statsEngine;

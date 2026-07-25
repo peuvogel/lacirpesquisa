@@ -9,6 +9,13 @@
  * it is marked optional (`?`) here too, matching the exact branch that omits it.
  */
 
+import type {
+  OlsTransformedResult,
+  PearsonResult,
+  PraisWinstenResult,
+  WelchTResult,
+} from '../stats/statsEngine';
+
 // ---------------------------------------------------------------------------
 // Legacy adapter surface (the only legacy `utils`/`Stats` methods ported)
 // ---------------------------------------------------------------------------
@@ -16,6 +23,24 @@
 export interface LegacyStatsAdapter {
   parseNumber: (raw: unknown) => number | null;
   mean: (values: number[]) => number;
+  variance: (values: number[]) => number;
+  sd: (values: number[]) => number;
+  sum: (values: number[]) => number;
+  min: (values: number[]) => number;
+  max: (values: number[]) => number;
+  gammaln: (x: number) => number;
+  betacf: (a: number, b: number, x: number) => number;
+  ibeta: (x: number, a: number, b: number) => number;
+  tcdf: (t: number, df: number) => number;
+  tInv: (p: number, df: number) => number;
+  fisherCI: (r: number, n: number) => [number, number];
+  welchT: (a: number[], b: number[]) => WelchTResult;
+  pearson: (x: number[], y: number[]) => PearsonResult;
+  rank: (arr: number[]) => number[];
+  spearman: (x: number[], y: number[]) => PearsonResult;
+  olsTransformed: (c: number[], x: number[], y: number[]) => OlsTransformedResult;
+  estimateRho: (resid: number[]) => number;
+  praisWinsten: (years: number[], values: number[]) => PraisWinstenResult;
 }
 
 export interface LegacyUtilsAdapter {
