@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: Plan 01-04 executed and committed — chart theme, ChartCanvas lifecycle wrapper, PNG export hook (UI-04), pt-BR format helpers all green
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-07-25T17:23:46.454Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-07-25T17:27:26.705Z"
 last_activity: 2026-07-25 — Plan 01-04 executed (chartTheme/ChartCanvas/useChartExport/format.ts)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -46,6 +46,8 @@ Progress: [██░░░░░░░░] 17%
 - [Phase 1]: @vitejs/plugin-react@^6.0 used instead of plan's ^4.5 pin — required for vite@^8.1 peer compatibility
 - [Phase 1]: chartTheme.ts retints only COLORS.primary and COLORS.background to teal per D-16/UI-SPEC; all other v1.0 chart rgba literals ported unchanged
 - [Phase 1]: ChartCanvas owns Chart.js instance via one useEffect (destroy-before-recreate, destroy-on-unmount), replacing the legacy global Map registry
+- [Phase 01]: theme.css is the single source for LACIR tokens; shadcn --color-accent/--color-border/--color-destructive remap removed from index.css to avoid circular refs / silent teal override
+- [Phase 01]: :root carries dark values directly (app never toggles .dark class); shadcn primitives would otherwise render light-mode OKLCH grays
 
 ### Pending Todos
 
@@ -57,8 +59,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T17:23:11.400Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-07-25T17:27:26.703Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -66,3 +68,4 @@ Resume file: None
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
 | Phase 01 P04 | 15 min | 3 tasks | 7 files |
+| Phase 01 P02 | 40min | 2 tasks | 3 files |
