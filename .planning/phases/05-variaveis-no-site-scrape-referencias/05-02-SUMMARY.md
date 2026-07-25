@@ -72,7 +72,7 @@ Each task was committed atomically:
 2. **Task 1 (GREEN): types + validate.mjs** - `2da3f55` (feat)
 3. **Task 2: pretest / test:run wiring** - `a325472` (chore)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `f2309fb` (docs: complete plan)
 
 ## Files Created/Modified
 
