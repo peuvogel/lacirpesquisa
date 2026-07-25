@@ -71,7 +71,7 @@ Plans:
 **Plans**: 6 plans (5 waves)
 Plans:
 
-- [ ] 02-01-PLAN.md — Wave 0: Stats engine port, derive* parity tests, fixtures, chartjs-plugin-annotation install
+- [x] 02-01-PLAN.md — Wave 0: Stats engine port, derive* parity tests, fixtures, chartjs-plugin-annotation install
 - [ ] 02-02-PLAN.md — Wave 1: Chart factories, ChartCustomizer, ResultsPanelWithCustomizer, shared Configurar components
 - [ ] 02-03-PLAN.md — Wave 2: t de Student module (TEST-01) — engine, interpretation, FlowSteps UI
 - [ ] 02-04-PLAN.md — Wave 3: Correlação Pearson/Spearman module (TEST-02)
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
-| 2. Migrar testes existentes | 0/6 | Not started | - |
+| 2. Migrar testes existentes | 1/6 | In Progress|  |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
 | 5. Painel DataSUS / catálogo | 0/TBD | Not started | - |

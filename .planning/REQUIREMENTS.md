@@ -17,9 +17,9 @@
 
 ### Testes — migração
 
-- [ ] **TEST-01**: User can run t de Student in the new shell with parity to v1.0 outputs
-- [ ] **TEST-02**: User can run Correlação Pearson/Spearman in the new shell with parity to v1.0 outputs
-- [ ] **TEST-03**: User can run Prais-Winsten in the new shell with parity to v1.0 outputs
+- [x] **TEST-01**: User can run t de Student in the new shell with parity to v1.0 outputs
+- [x] **TEST-02**: User can run Correlação Pearson/Spearman in the new shell with parity to v1.0 outputs
+- [x] **TEST-03**: User can run Prais-Winsten in the new shell with parity to v1.0 outputs
 
 ### Testes — novos
 
@@ -85,9 +85,9 @@
 | UI-05 | Phase 1 | Complete |
 | UI-06 | Phase 1 | Complete |
 | UX-01 | Phase 1 | Complete |
-| TEST-01 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
-| TEST-03 | Phase 2 | Pending |
+| TEST-01 | Phase 2 | Complete |
+| TEST-02 | Phase 2 | Complete |
+| TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 3 | Pending |
 | TEST-05 | Phase 3 | Pending |
 | TEST-06 | Phase 3 | Pending |
