@@ -3,12 +3,16 @@ status: partial
 phase: 02-migrar-testes-existentes
 source: [02-VERIFICATION.md]
 started: 2026-07-25T19:41:56Z
-updated: 2026-07-25T19:41:56Z
+updated: 2026-07-25T19:55:00Z
 ---
 
 ## Current Test
 
-[awaiting human testing]
+number: 1
+name: Chart visual parity vs v1.0
+expected: |
+  Chart type, series, axis labels, and annotation overlays match v1.0 screenshots for t-Student, Correlação scatter, and Prais trend/residual charts (use exemplo data on each migrated test).
+awaiting: user response
 
 ## Tests
 
