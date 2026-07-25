@@ -19,9 +19,9 @@
   --popover-foreground: var(--color-text);
   --primary: var(--color-accent);
   --primary-foreground: #04120c;
-  --secondary: var(--color-surface);
+  --secondary: var(--color-elevated);
   --secondary-foreground: var(--color-text);
-  --muted: var(--color-surface);
+  --muted: var(--color-elevated);
   --muted-foreground: var(--color-text-muted);
   --accent: var(--color-elevated);
   --accent-foreground: var(--color-text);
@@ -36,13 +36,13 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.75rem;
-  --sidebar: var(--color-surface);
-  --sidebar-foreground: var(--color-text);
+  --sidebar: #09090b;
+  --sidebar-foreground: #f4f4f5;
   --sidebar-primary: var(--color-accent);
   --sidebar-primary-foreground: #04120c;
-  --sidebar-accent: var(--color-elevated);
-  --sidebar-accent-foreground: var(--color-text);
-  --sidebar-border: var(--color-border);
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: var(--color-accent);
 }
 
@@ -97,9 +97,9 @@
   --popover-foreground: var(--color-text);
   --primary: var(--color-accent);
   --primary-foreground: #04120c;
-  --secondary: var(--color-surface);
+  --secondary: var(--color-elevated);
   --secondary-foreground: var(--color-text);
-  --muted: var(--color-surface);
+  --muted: var(--color-elevated);
   --muted-foreground: var(--color-text-muted);
   --accent: var(--color-elevated);
   --accent-foreground: var(--color-text);
@@ -113,13 +113,13 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: var(--color-surface);
-  --sidebar-foreground: var(--color-text);
+  --sidebar: #09090b;
+  --sidebar-foreground: #f4f4f5;
   --sidebar-primary: var(--color-accent);
   --sidebar-primary-foreground: #04120c;
-  --sidebar-accent: var(--color-elevated);
-  --sidebar-accent-foreground: var(--color-text);
-  --sidebar-border: var(--color-border);
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: var(--color-accent);
 }
 
@@ -142,5 +142,17 @@
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+}
+
+/* Selected/eligible UF glow on map paths (04-UI-SPEC § Motion). */
+.lacir-map-glow {
+  filter: drop-shadow(0 0 6px rgba(32, 153, 120, 0.55))
+    drop-shadow(0 0 12px rgba(32, 153, 120, 0.25));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lacir-map-glow {
+    filter: drop-shadow(0 0 6px rgba(32, 153, 120, 0.55));
   }
 }

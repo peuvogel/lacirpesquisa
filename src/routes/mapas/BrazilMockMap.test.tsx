@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrazilMockMap } from './BrazilMockMap';
+import { BrazilMapCanvas } from './BrazilMapCanvas';
+import { getMockMetricByUf } from './mockAnalysisData';
 import { UF_LIST, getUfName } from './ufCodes';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -89,5 +91,95 @@ describe('BrazilMockMap', () => {
     expect(source).not.toMatch(/<script/i);
     expect(source).not.toMatch(/\son\w+\s*=/i);
     expect(source).not.toMatch(/href\s*=/i);
+  });
+});
+
+describe('BrazilMapCanvas', () => {
+  const mockMetrics = getMockMetricByUf('mock.internacoes');
+
+  it('renders exactly 27 interactive UF elements', () => {
+    render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+      />,
+    );
+    expect(screen.getAllByRole('button')).toHaveLength(27);
+  });
+
+  it('applies different choropleth fills when mock values differ', () => {
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+      />,
+    );
+
+    const sp = container.querySelector('[data-uf="SP"]');
+    const ac = container.querySelector('[data-uf="AC"]');
+    expect(sp?.getAttribute('style')).toContain('fill');
+    expect(ac?.getAttribute('style')).toContain('fill');
+    expect(sp?.getAttribute('style')).not.toBe(ac?.getAttribute('style'));
+  });
+
+  it('gives every UF an aria-label matching its state name', () => {
+    render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+      />,
+    );
+    for (const uf of UF_LIST) {
+      expect(screen.getByRole('button', { name: getUfName(uf.sigla) })).toBeInTheDocument();
+    }
+  });
+
+  it('calls onToggleUF when Enter is pressed on a focused path', async () => {
+    const user = userEvent.setup();
+    const onToggleUF = vi.fn();
+    render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={onToggleUF}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+      />,
+    );
+
+    const mg = screen.getByRole('button', { name: getUfName('MG') });
+    mg.focus();
+    await user.keyboard('{Enter}');
+    expect(onToggleUF).toHaveBeenCalledWith('MG');
+  });
+
+  it('applies lacir-map-glow and teal stroke to selected UFs', () => {
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={['BA']}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="mock.internacoes"
+      />,
+    );
+
+    const ba = container.querySelector('[data-uf="BA"]');
+    expect(ba).toHaveClass('lacir-map-glow');
+    expect(ba).toHaveClass('stroke-accent');
   });
 });
