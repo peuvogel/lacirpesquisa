@@ -1,0 +1,171 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useEffect, useState } from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { SessionProvider, useSession, type SessionDataset } from '@/shared/session/SessionProvider';
+import { BinomialNegativaTest } from './BinomialNegativaTest';
+
+const { ChartMock, destroySpy } = vi.hoisted(() => {
+  const destroySpy = vi.fn();
+  const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
+  });
+  const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
+    register: ReturnType<typeof vi.fn>;
+  };
+  ChartMock.register = vi.fn();
+  return { ChartMock, destroySpy };
+});
+
+vi.mock('chart.js', () => ({
+  Chart: ChartMock,
+  BarController: {},
+  LineController: {},
+  ScatterController: {},
+  LinearScale: {},
+  CategoryScale: {},
+  PointElement: {},
+  LineElement: {},
+  BarElement: {},
+  Legend: {},
+  Title: {},
+  Tooltip: {},
+  Filler: {},
+}));
+
+function renderBinomialNegativa(handoffRecognizedColumns?: Record<string, number>) {
+  return render(
+    <SessionProvider>
+      <BinomialNegativaTest handoffRecognizedColumns={handoffRecognizedColumns} />
+    </SessionProvider>,
+  );
+}
+
+function HandoffBootstrapHarness({
+  dataset,
+  handoffRecognizedColumns,
+}: {
+  dataset: SessionDataset;
+  handoffRecognizedColumns: Record<string, number>;
+}) {
+  const { setDataset } = useSession();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setDataset(dataset);
+    setReady(true);
+  }, [dataset, setDataset]);
+
+  if (!ready) return null;
+  return <BinomialNegativaTest handoffRecognizedColumns={handoffRecognizedColumns} />;
+}
+
+describe('BinomialNegativaTest', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    ChartMock.mockClear();
+    destroySpy.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('runs exemplo flow through Resultados with interpretation and PNG export', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderBinomialNegativa();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
+    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
+    expect(screen.getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
+
+    const prose = screen.getAllByText(/indicou associação|não encontrou associação|Pergunta analisada/i);
+    expect(prose.length).toBeGreaterThan(0);
+  });
+
+  it('bootstraps recognizedColumns from Poisson handoff on session restore', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const handoffColumns = { contagem: 0, preditor: 1 };
+
+    render(
+      <SessionProvider>
+        <HandoffBootstrapHarness
+          dataset={{
+            headers: ['contagem', 'exposicao'],
+            rows: [
+              ['8', '1,0'],
+              ['12', '1,0'],
+              ['15', '1,2'],
+              ['9', '1,2'],
+              ['18', '1,5'],
+              ['22', '1,5'],
+              ['14', '2,0'],
+              ['25', '2,0'],
+              ['30', '2,5'],
+              ['28', '2,5'],
+              ['35', '3,0'],
+              ['40', '3,0'],
+            ],
+            sourceLabel: 'handoff-poisson',
+            confirmedAt: Date.now(),
+          }}
+          handoffRecognizedColumns={handoffColumns}
+        />
+      </SessionProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    const detectedBadges = screen.getAllByText('detectado');
+    expect(detectedBadges.length).toBe(2);
+
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    expect(screen.getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
+  });
+
+  it('shows soft reset alert when column role is adjusted after confirm', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderBinomialNegativa();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await user.selectOptions(screen.getByLabelText(/Papel da coluna contagem/i), 'ignorar');
+
+    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+  });
+});
