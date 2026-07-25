@@ -16,7 +16,7 @@ v2.0 re-platforms the vanilla MVP calculator onto a React + Tailwind + shadcn/cu
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell (completed 2026-07-25)
-- [ ] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0
+- [x] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0 (completed 2026-07-25)
 - [ ] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges
 - [ ] **Phase 4: Mapas Brasil + estados** - Client-side Brazil/UF choropleth with drill-down into município/mesorregião/região de saúde, offline from bundled geo assets
 - [ ] **Phase 5: Painel DataSUS / catálogo** - Searchable catalog of classified public-health variables with official source links and suggested-test hints
@@ -76,7 +76,7 @@ Plans:
 - [x] 02-03-PLAN.md — Wave 2: t de Student module (TEST-01) — engine, interpretation, FlowSteps UI
 - [x] 02-04-PLAN.md — Wave 3: Correlação Pearson/Spearman module (TEST-02)
 - [x] 02-05-PLAN.md — Wave 3: Prais-Winsten module (TEST-03) — parallel with 02-04
-- [ ] 02-06-PLAN.md — Wave 4: Registry flip, EstatisticaPage routing, demo badge, Mapas handoff, integration gate
+- [x] 02-06-PLAN.md — Wave 4: Registry flip, EstatisticaPage routing, demo badge, Mapas handoff, integration gate
 
 ### Phase 3: Testes clássicos + GLM novos
 
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
-| 2. Migrar testes existentes | 5/6 | In Progress|  |
+| 2. Migrar testes existentes | 6/6 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 0/TBD | Not started | - |
 | 4. Mapas Brasil + estados | 0/TBD | Not started | - |
 | 5. Painel DataSUS / catálogo | 0/TBD | Not started | - |
