@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 gap plans ready (02-07, 02-08)
-last_updated: "2026-07-25T19:40:55.529Z"
+stopped_at: Phase 2 gaps closed — awaiting human UAT
+last_updated: "2026-07-25T19:42:02.041Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
@@ -85,9 +85,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T19:40:55.525Z
-Stopped at: Phase 2 gap plans ready (02-07, 02-08)
-Resume file: None
+Last session: 2026-07-25T19:42:02.039Z
+Stopped at: Phase 2 gaps closed — awaiting human UAT
+Resume file: .planning/phases/02-migrar-testes-existentes/02-HUMAN-UAT.md
 
 ## Performance Metrics
 
