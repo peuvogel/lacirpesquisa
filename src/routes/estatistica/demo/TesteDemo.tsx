@@ -199,7 +199,7 @@ export function TesteDemo() {
             <TabsContent value="paste" className="mt-4 space-y-3">
               <div>
                 <Button type="button" variant="outline" onClick={handleUseSampleData}>
-                  usar dados de exemplo
+                  Usar exemplo
                 </Button>
               </div>
               <TabularInputPanel {...tabular} showPreview={false} />

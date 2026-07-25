@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TestRegistryEntry } from '@/features/tests/registry';
+import { getTestBadgeLabel } from '@/features/tests/registry';
 
 export interface SidebarTestLinkProps {
   entry: TestRegistryEntry;
@@ -20,6 +21,8 @@ export interface SidebarTestLinkProps {
  */
 export function SidebarTestLink({ entry, active, onSelect }: SidebarTestLinkProps) {
   const isAvailable = entry.status === 'available';
+  const badgeLabel = getTestBadgeLabel(entry);
+  const isDemo = entry.id === 'demo';
 
   const content = (
     <>
@@ -28,10 +31,13 @@ export function SidebarTestLink({ entry, active, onSelect }: SidebarTestLinkProp
         <span className="font-sans text-sm font-normal text-text-muted">{entry.subtitle}</span>
       </span>
       <Badge
-        variant={isAvailable ? 'default' : 'outline'}
-        className={cn('shrink-0', isAvailable ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted')}
+        variant={isAvailable && !isDemo ? 'default' : 'outline'}
+        className={cn(
+          'shrink-0',
+          isAvailable && !isDemo ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted',
+        )}
       >
-        {isAvailable ? 'Disponível' : 'Em breve'}
+        {badgeLabel}
       </Badge>
     </>
   );

@@ -66,7 +66,7 @@ describe('TesteDemo', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderDemo();
 
-    await user.click(screen.getByRole('button', { name: 'usar dados de exemplo' }));
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
     await waitFor(() => {

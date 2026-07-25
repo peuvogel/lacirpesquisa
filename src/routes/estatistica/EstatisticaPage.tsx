@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { CorrelacaoTest } from '@/features/tests/correlacao/CorrelacaoTest';
+import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTest';
+import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
 import { isTestAvailable } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
@@ -7,12 +11,42 @@ import { PortalDatasusLink } from './PortalDatasusLink';
 import { QualTesteModal } from './QualTesteModal';
 import { Sidebar } from './Sidebar';
 
+export interface EstatisticaHandoffState {
+  activeTestId?: string;
+}
+
+function renderActiveTest(activeTestId: string) {
+  switch (activeTestId) {
+    case 'demo':
+      return <TesteDemo key={activeTestId} />;
+    case 't-student':
+      return <TStudentTest key={activeTestId} />;
+    case 'correlacao':
+      return <CorrelacaoTest key={activeTestId} />;
+    case 'prais-winsten':
+      return <PraisWinstenTest key={activeTestId} />;
+    default:
+      return null;
+  }
+}
+
 // Deliberate two-column layout (D-05). Plan 01-10 mounts the active test
 // module into #lacir-test-module-mount below — no placeholder copy here.
 export function EstatisticaPage() {
   const { hasData } = useSession();
+  const location = useLocation();
   const [activeTestId, setActiveTestId] = useState<string>('demo');
   const [qualTesteOpen, setQualTesteOpen] = useState(false);
+
+  useEffect(() => {
+    if (!hasData) return;
+
+    const handoff = location.state as EstatisticaHandoffState | null;
+    const handoffId = handoff?.activeTestId;
+    if (handoffId && isTestAvailable(handoffId)) {
+      setActiveTestId(handoffId);
+    }
+  }, [hasData, location.state]);
 
   function handleSelectTest(id: string) {
     if (isTestAvailable(id)) {
@@ -35,7 +69,7 @@ export function EstatisticaPage() {
           <PortalDatasusLink />
         </div>
         <div id="lacir-test-module-mount" data-active-test-id={activeTestId}>
-          {activeTestId === 'demo' ? <TesteDemo key={activeTestId} /> : null}
+          {renderActiveTest(activeTestId)}
         </div>
       </section>
       <QualTesteModal

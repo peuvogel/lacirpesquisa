@@ -27,7 +27,7 @@ describe('QualTesteModal', () => {
     expect(screen.getByText('Qual teste usar?')).toBeInTheDocument();
   });
 
-  it('recommends t de Student as inert after numérico + dois grupos independentes', async () => {
+  it('recommends t de Student as selectable after numérico + dois grupos independentes', async () => {
     const user = userEvent.setup();
     const { onSelectTest } = renderModal();
 
@@ -40,17 +40,13 @@ describe('QualTesteModal', () => {
     const recommendationSection = recommendationHeading.parentElement;
     expect(recommendationSection).not.toBeNull();
     expect(recommendationSection).toHaveTextContent('t de Student');
-    expect(recommendationSection).toHaveTextContent('Em breve');
-    expect(
-      recommendationSection?.querySelector('[aria-disabled="true"]'),
-    ).not.toBeNull();
-    expect(screen.queryByRole('button', { name: /t de Student/i })).not.toBeInTheDocument();
+    expect(recommendationSection).toHaveTextContent('Disponível');
 
-    const recommendationRow = recommendationSection?.querySelector('[aria-disabled="true"]');
-    if (recommendationRow) {
-      await user.click(recommendationRow);
-    }
-    expect(onSelectTest).not.toHaveBeenCalled();
+    const recommendationButton = recommendationSection!.querySelector('button');
+    expect(recommendationButton).not.toBeNull();
+    await user.click(recommendationButton!);
+
+    expect(onSelectTest).toHaveBeenCalledWith('t-student');
   });
 
   it('lists all ten registry titles in the roadmap section', async () => {

@@ -37,12 +37,21 @@ describe('Sidebar', () => {
     expect(onSelectTest).toHaveBeenCalledWith('demo');
   });
 
-  it('does not render t de Student as a button and ignores clicks on its row', async () => {
+  it('calls onSelectTest when t de Student is clicked', async () => {
     const user = userEvent.setup();
     const { onSelectTest } = renderSidebar();
 
-    expect(screen.queryByRole('button', { name: /t de Student/i })).not.toBeInTheDocument();
-    const row = screen.getByText('t de Student').closest('[aria-disabled="true"]');
+    await user.click(screen.getByRole('button', { name: /t de Student/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('t-student');
+  });
+
+  it('does not render qui-quadrado as a button and ignores clicks on its row', async () => {
+    const user = userEvent.setup();
+    const { onSelectTest } = renderSidebar();
+
+    expect(screen.queryByRole('button', { name: /Qui-quadrado/i })).not.toBeInTheDocument();
+    const row = screen.getByText('Qui-quadrado de independência').closest('[aria-disabled="true"]');
     expect(row).not.toBeNull();
     if (row) {
       await user.click(row);
@@ -50,15 +59,15 @@ describe('Sidebar', () => {
     expect(onSelectTest).not.toHaveBeenCalled();
   });
 
-  it('shows Disponível for demo and Em breve for unavailable rows', () => {
+  it('shows Demonstração for demo and Disponível for migrated available rows', () => {
     renderSidebar();
     const demoRow = screen.getByText('Teste demo').closest('button');
     expect(demoRow).not.toBeNull();
-    expect(demoRow).toHaveTextContent('Disponível');
+    expect(demoRow).toHaveTextContent('Demonstração');
 
-    const studentRow = screen.getByText('t de Student').closest('[aria-disabled="true"]');
+    const studentRow = screen.getByText('t de Student').closest('button');
     expect(studentRow).not.toBeNull();
-    expect(studentRow).toHaveTextContent('Em breve');
+    expect(studentRow).toHaveTextContent('Disponível');
   });
 
   it('calls onOpenQualTeste when Qual teste usar? is clicked', async () => {
