@@ -40,7 +40,7 @@
 - [x] **MAP-06**: User can analyze temporality on the map (select period / compare across time) as part of the statistical workflow
 - [x] **MAP-07**: User can group UFs into analysis groups, with presets for grandes regiões (Norte, Nordeste, Centro-Oeste, Sudeste, Sul) and custom groups
 - [x] **MAP-08**: User can select/group by macrorregiões de saúde (and related health-region geography) for analysis
-- [ ] **MAP-09**: User can select multiple diseases/agravos within the chosen territory groups and time window, then run statistical tests from that selection
+- [x] **MAP-09**: User can select multiple diseases/agravos within the chosen territory groups and time window, then run statistical tests from that selection
 - [x] **MAP-10**: Map analysis UX is didactic and intuitive (clear steps, plain-PT guidance, visible selection summary of territory × time × diseases × groups)
 
 ### Variáveis DataSUS (dados no site + referências)
@@ -110,7 +110,7 @@
 | MAP-06 | Phase 4 | Complete |
 | MAP-07 | Phase 4 | Complete |
 | MAP-08 | Phase 4 | Complete |
-| MAP-09 | Phase 4 | Pending |
+| MAP-09 | Phase 4 | Complete |
 | MAP-10 | Phase 4 | Complete |
 | CAT-01 | Phase 5 | Pending |
 | CAT-02 | Phase 5 | Pending |
