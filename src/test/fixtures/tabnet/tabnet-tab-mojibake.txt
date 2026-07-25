@@ -1,0 +1,5 @@
+MunicÃ­pio	RegiÃ£o	PopulaÃ§Ã£o	Ãbitos
+São Paulo	Sudeste	12325232	432
+Rio de Janeiro	Sudeste	6775561	210
+Salvador	Nordeste	2900319	150
+Fortaleza	Nordeste	2703391	98

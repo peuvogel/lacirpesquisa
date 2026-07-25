@@ -1,0 +1,9 @@
+Internações por Unidade da Federação segundo Ano de atendimento
+Período:2020-2023
+Situação da base de dados: 25/07/2026
+Unidade da Federação;Internações;Valor total;Taxa de mortalidade
+Rondônia;1.245;1.234.567,89;3,45
+Acre;876;987.654,32;2,10
+Amazonas;3.421;3.456.789,00;4,87
+Total;5.542;5.679.011,21;3,80
+Fonte: Ministério da Saúde - Sistema de Informações Hospitalares do SUS (SIH/SUS)

@@ -1,0 +1,5 @@
+Município,Taxa por 100k,Situação
+São Paulo,12,5,Alerta
+Rio de Janeiro,8,75,Estável
+Salvador,15,2,Crítico
+Total,12,15,-
