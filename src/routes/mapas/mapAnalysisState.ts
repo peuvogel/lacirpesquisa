@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useReducer } from 'react';
 import type { GeoLevel, MapViewState, TerritoryRef } from '@/geo/types';
 import { resolvePresetTerritories, type RegionPresetId } from '@/geo/territoryCatalog';
+import { getMockVariableById } from './mockAnalysisData';
+
+export const MAX_GROUPS = 10;
+export const MAX_TERRITORIES_PER_GROUP = 27;
 
 export type TimeMode = 'point' | 'range' | 'compare';
 
@@ -87,14 +91,20 @@ function mergeTerritories(existing: TerritoryRef[], incoming: TerritoryRef[]): T
     if (!seen.has(key)) {
       seen.add(key);
       merged.push(t);
+      if (merged.length >= MAX_TERRITORIES_PER_GROUP) break;
     }
   }
-  return merged;
+  return merged.slice(0, MAX_TERRITORIES_PER_GROUP);
+}
+
+function territoryLabel(t: TerritoryRef): string {
+  return t.sigla ?? t.name;
 }
 
 export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisAction): MapAnalysisState {
   switch (action.type) {
     case 'CREATE_GROUP': {
+      if (state.groups.length >= MAX_GROUPS) return state;
       const group = createEmptyGroup(action.name, action.territories ?? []);
       return {
         ...state,
@@ -182,27 +192,149 @@ export interface SummaryChip {
   kind: 'territory' | 'time' | 'variable' | 'group';
 }
 
-function buildSummaryChips(state: MapAnalysisState): SummaryChip[] {
-  const chips: SummaryChip[] = [];
+export type SelectionSummaryMode = 'empty' | 'partial' | 'complete';
+
+export interface SelectionSummary {
+  mode: SelectionSummaryMode;
+  headline: string;
+  hint?: string;
+  sentence?: string;
+  chips: SummaryChip[];
+}
+
+/** Plain-PT time segment for summary strip and handoff (Wave 6). */
+export function formatTimeSummary(time: GroupTimeConfig): string {
+  switch (time.mode) {
+    case 'point':
+      return time.point?.trim() ?? '';
+    case 'range':
+      if (time.start?.trim() && time.end?.trim()) {
+        return `${time.start}–${time.end}`;
+      }
+      return '';
+    case 'compare':
+      if (time.periodA?.trim() && time.periodB?.trim()) {
+        return `${time.periodA} vs ${time.periodB}`;
+      }
+      return '';
+    default:
+      return '';
+  }
+}
+
+function collectGroupTerritoryLabels(state: MapAnalysisState): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
   for (const group of state.groups) {
-    chips.push({ label: group.name, kind: 'group' });
-    if (group.territoryIds.length > 0) {
-      chips.push({
-        label: `${group.territoryIds.length} território(s)`,
-        kind: 'territory',
-      });
-    }
-    if (isTimeValid(group.time)) {
-      chips.push({ label: group.time.mode, kind: 'time' });
-    }
-    if (group.variableIds.length > 0) {
-      chips.push({
-        label: `${group.variableIds.length} variável(is)`,
-        kind: 'variable',
-      });
+    for (const t of group.territoryIds) {
+      const label = territoryLabel(t);
+      if (!seen.has(label)) {
+        seen.add(label);
+        labels.push(label);
+      }
     }
   }
-  return chips;
+  return labels;
+}
+
+function collectVariableLabels(state: MapAnalysisState): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  for (const group of state.groups) {
+    for (const id of group.variableIds) {
+      const variable = getMockVariableById(id);
+      const label = variable?.label ?? id;
+      if (!seen.has(label)) {
+        seen.add(label);
+        labels.push(label);
+      }
+    }
+  }
+  return labels;
+}
+
+function collectTimeSummaries(state: MapAnalysisState): string[] {
+  const summaries: string[] = [];
+  for (const group of state.groups) {
+    if (isTimeValid(group.time)) {
+      summaries.push(formatTimeSummary(group.time));
+    }
+  }
+  return [...new Set(summaries)];
+}
+
+export function deriveSelectionSummary(
+  state: MapAnalysisState,
+  ungroupedTerritories: TerritoryRef[] = [],
+): SelectionSummary {
+  const territoryLabels = collectGroupTerritoryLabels(state);
+  const ungroupedLabels = ungroupedTerritories.map(territoryLabel);
+  const allTerritoryLabels = [...new Set([...territoryLabels, ...ungroupedLabels])];
+  const groupCount = state.groups.length;
+  const timeSummaries = collectTimeSummaries(state);
+  const variableLabels = collectVariableLabels(state);
+
+  const hasGroups = groupCount > 0;
+  const hasUngrouped = ungroupedTerritories.length > 0;
+  const hasCompleteShape =
+    hasGroups &&
+    territoryLabels.length > 0 &&
+    state.groups.every((g) => g.territoryIds.length > 0 && isTimeValid(g.time) && g.variableIds.length > 0);
+
+  if (!hasGroups && !hasUngrouped) {
+    return {
+      mode: 'empty',
+      headline: 'Nada selecionado ainda',
+      hint: 'Clique nos estados no mapa para começar. Depois forme grupos e escolha período e agravos.',
+      chips: [],
+    };
+  }
+
+  if (hasCompleteShape) {
+    const segments = [
+      territoryLabels.join(', '),
+      groupCount === 1 ? '1 grupo' : `${groupCount} grupos`,
+      timeSummaries.join(', '),
+      variableLabels.join(', '),
+    ].filter(Boolean);
+    const sentence = segments.join(' · ');
+    const chips: SummaryChip[] = [
+      { label: territoryLabels.join(', '), kind: 'territory' },
+      { label: groupCount === 1 ? '1 grupo' : `${groupCount} grupos`, kind: 'group' },
+      ...timeSummaries.map((label) => ({ label, kind: 'time' as const })),
+      ...variableLabels.map((label) => ({ label, kind: 'variable' as const })),
+    ];
+    return { mode: 'complete', headline: sentence, sentence, chips };
+  }
+
+  if (hasUngrouped && !hasGroups) {
+    const count = ungroupedTerritories.length;
+    return {
+      mode: 'partial',
+      headline: `${count} estado(s) selecionado(s)`,
+      hint: 'Crie um grupo para definir período e doenças.',
+      chips: ungroupedLabels.map((label) => ({ label, kind: 'territory' })),
+    };
+  }
+
+  const partialHeadline =
+    allTerritoryLabels.length > 0
+      ? `${allTerritoryLabels.length} território(s) · ${groupCount} grupo(s)`
+      : `${groupCount} grupo(s)`;
+
+  return {
+    mode: 'partial',
+    headline: partialHeadline,
+    hint: 'Complete período e variáveis em todos os grupos.',
+    chips: [
+      ...allTerritoryLabels.map((label) => ({ label, kind: 'territory' as const })),
+      { label: groupCount === 1 ? '1 grupo' : `${groupCount} grupos`, kind: 'group' },
+    ],
+  };
+}
+
+function buildSummaryChips(state: MapAnalysisState): SummaryChip[] {
+  return deriveSelectionSummary(state).chips;
 }
 
 function collectAllTerritoryIds(state: MapAnalysisState): TerritoryRef[] {
