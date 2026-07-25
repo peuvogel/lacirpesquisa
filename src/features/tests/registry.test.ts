@@ -20,11 +20,19 @@ describe('TEST_REGISTRY', () => {
     }
   });
 
-  it('marks exactly four entries available: demo plus three Phase 2 tests', () => {
+  it('marks exactly seven entries available: demo, three Phase 2, and three Wave A classical tests', () => {
     const available = TEST_REGISTRY.filter((entry) => entry.status === 'available');
-    expect(available).toHaveLength(4);
+    expect(available).toHaveLength(7);
     expect(available.map((entry) => entry.id).sort()).toEqual(
-      ['correlacao', 'demo', 'prais-winsten', 't-student'].sort(),
+      [
+        'anova-tukey',
+        'correlacao',
+        'demo',
+        'kruskal-dunn',
+        'prais-winsten',
+        'qui-quadrado',
+        't-student',
+      ].sort(),
     );
   });
 
@@ -56,16 +64,20 @@ describe('getTestById', () => {
 });
 
 describe('isTestAvailable', () => {
-  it('is true for demo and the three Phase 2 migrated tests', () => {
+  it('is true for demo, Phase 2 migrated tests, and Wave A classical tests', () => {
     expect(isTestAvailable('demo')).toBe(true);
     expect(isTestAvailable('t-student')).toBe(true);
     expect(isTestAvailable('correlacao')).toBe(true);
     expect(isTestAvailable('prais-winsten')).toBe(true);
+    expect(isTestAvailable('qui-quadrado')).toBe(true);
+    expect(isTestAvailable('anova-tukey')).toBe(true);
+    expect(isTestAvailable('kruskal-dunn')).toBe(true);
   });
 
-  it('is false for phase 3 em-breve tests', () => {
-    expect(isTestAvailable('qui-quadrado')).toBe(false);
-    expect(isTestAvailable('anova-tukey')).toBe(false);
+  it('is false for Phase 3 GLM em-breve tests', () => {
+    expect(isTestAvailable('poisson')).toBe(false);
+    expect(isTestAvailable('binomial-negativa')).toBe(false);
+    expect(isTestAvailable('logistica')).toBe(false);
   });
 
   it('is false for an unknown id', () => {
@@ -86,9 +98,15 @@ describe('getTestBadgeLabel', () => {
     expect(getTestBadgeLabel(tStudent!)).toBe('Disponível');
   });
 
-  it('labels em-breve tests as Em breve', () => {
+  it('labels Wave A available tests as Disponível', () => {
     const anova = getTestById('anova-tukey');
     expect(anova).toBeDefined();
-    expect(getTestBadgeLabel(anova!)).toBe('Em breve');
+    expect(getTestBadgeLabel(anova!)).toBe('Disponível');
+  });
+
+  it('labels GLM em-breve tests as Em breve', () => {
+    const poisson = getTestById('poisson');
+    expect(poisson).toBeDefined();
+    expect(getTestBadgeLabel(poisson!)).toBe('Em breve');
   });
 });

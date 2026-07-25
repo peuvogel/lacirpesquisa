@@ -64,7 +64,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Qui-quadrado de independência',
     subtitle: 'Descubra se duas variáveis categóricas estão associadas ou se a diferença é só acaso.',
     group: 'Frequências e proporções',
-    status: 'em-breve',
+    status: 'available',
     phase: 3,
   },
   {
@@ -72,7 +72,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'ANOVA de uma via com Tukey',
     subtitle: 'Compare três ou mais grupos de uma vez e veja exatamente quais pares diferem entre si.',
     group: 'Comparação de médias',
-    status: 'em-breve',
+    status: 'available',
     phase: 3,
   },
   {
@@ -80,7 +80,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Kruskal-Wallis com Dunn',
     subtitle: 'Compare três ou mais grupos sem exigir distribuição normal, com comparações par a par.',
     group: 'Comparação de médias',
-    status: 'em-breve',
+    status: 'available',
     phase: 3,
   },
   {
