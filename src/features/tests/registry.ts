@@ -88,7 +88,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Regressão de Poisson',
     subtitle: 'Modele contagens de eventos e veja quais fatores influenciam a frequência com que acontecem.',
     group: 'Regressões e GLM',
-    status: 'em-breve',
+    status: 'available',
     phase: 3,
   },
   {
@@ -96,7 +96,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Regressão Binomial Negativa',
     subtitle: 'Modele contagens de eventos quando a variabilidade nos dados é maior do que o esperado.',
     group: 'Regressões e GLM',
-    status: 'em-breve',
+    status: 'available',
     phase: 3,
   },
   {
@@ -104,7 +104,7 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     title: 'Regressão Logística',
     subtitle: 'Estime a chance de um desfecho sim-ou-não a partir de vários fatores ao mesmo tempo.',
     group: 'Regressões e GLM',
-    status: 'em-breve',
+    status: 'available',
     phase: 3,
   },
 ];

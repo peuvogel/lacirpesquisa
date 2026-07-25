@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AnovaTukeyTest } from '@/features/tests/anova-tukey/AnovaTukeyTest';
+import { BinomialNegativaTest } from '@/features/tests/binomial-negativa/BinomialNegativaTest';
 import { CorrelacaoTest } from '@/features/tests/correlacao/CorrelacaoTest';
 import { KruskalDunnTest } from '@/features/tests/kruskal-dunn/KruskalDunnTest';
+import { LogisticaTest } from '@/features/tests/logistica/LogisticaTest';
+import { PoissonTest } from '@/features/tests/poisson/PoissonTest';
 import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTest';
 import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
 import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
@@ -58,6 +61,24 @@ function renderActiveTest({
           onNavigateTest={(testId) => onCrossTestHandoff(testId)}
         />
       );
+    case 'poisson':
+      return (
+        <PoissonTest
+          key={activeTestId}
+          onNavigateTest={(testId, recognizedColumns) =>
+            onCrossTestHandoff(testId, recognizedColumns)
+          }
+        />
+      );
+    case 'binomial-negativa':
+      return (
+        <BinomialNegativaTest
+          key={activeTestId}
+          handoffRecognizedColumns={handoffRecognizedColumns}
+        />
+      );
+    case 'logistica':
+      return <LogisticaTest key={activeTestId} />;
     default:
       return null;
   }

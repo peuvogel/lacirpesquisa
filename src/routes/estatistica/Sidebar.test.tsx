@@ -73,17 +73,31 @@ describe('Sidebar', () => {
     expect(onSelectTest).toHaveBeenCalledWith('kruskal-dunn');
   });
 
-  it('does not render poisson as a button and ignores clicks on its row', async () => {
+  it('calls onSelectTest when poisson is clicked', async () => {
     const user = userEvent.setup();
     const { onSelectTest } = renderSidebar();
 
-    expect(screen.queryByRole('button', { name: /Regressão de Poisson/i })).not.toBeInTheDocument();
-    const row = screen.getByText('Regressão de Poisson').closest('[aria-disabled="true"]');
-    expect(row).not.toBeNull();
-    if (row) {
-      await user.click(row);
-    }
-    expect(onSelectTest).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /Regressão de Poisson/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('poisson');
+  });
+
+  it('calls onSelectTest when binomial negativa is clicked', async () => {
+    const user = userEvent.setup();
+    const { onSelectTest } = renderSidebar();
+
+    await user.click(screen.getByRole('button', { name: /Regressão Binomial Negativa/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('binomial-negativa');
+  });
+
+  it('calls onSelectTest when logistica is clicked', async () => {
+    const user = userEvent.setup();
+    const { onSelectTest } = renderSidebar();
+
+    await user.click(screen.getByRole('button', { name: /Regressão Logística/i }));
+
+    expect(onSelectTest).toHaveBeenCalledWith('logistica');
   });
 
   it('shows category and title only  -  no didactic subtitle in the sidebar list', () => {

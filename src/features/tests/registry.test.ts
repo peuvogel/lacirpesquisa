@@ -20,15 +20,18 @@ describe('TEST_REGISTRY', () => {
     }
   });
 
-  it('marks exactly seven entries available: demo, three Phase 2, and three Wave A classical tests', () => {
+  it('marks exactly ten entries available: demo, three Phase 2, three Wave A classical, and three Wave B GLM tests', () => {
     const available = TEST_REGISTRY.filter((entry) => entry.status === 'available');
-    expect(available).toHaveLength(7);
+    expect(available).toHaveLength(10);
     expect(available.map((entry) => entry.id).sort()).toEqual(
       [
         'anova-tukey',
+        'binomial-negativa',
         'correlacao',
         'demo',
         'kruskal-dunn',
+        'logistica',
+        'poisson',
         'prais-winsten',
         'qui-quadrado',
         't-student',
@@ -36,16 +39,13 @@ describe('TEST_REGISTRY', () => {
     );
   });
 
-  it('keeps demo in the Demonstração group', () => {
-    expect(getTestById('demo')?.group).toBe('Demonstração');
+  it('has no em-breve entries remaining', () => {
+    const emBreve = TEST_REGISTRY.filter((entry) => entry.status === 'em-breve');
+    expect(emBreve).toHaveLength(0);
   });
 
-  it('assigns every em-breve entry to phase 2 or 3', () => {
-    const emBreve = TEST_REGISTRY.filter((entry) => entry.status === 'em-breve');
-    expect(emBreve.length).toBeGreaterThan(0);
-    for (const entry of emBreve) {
-      expect([2, 3]).toContain(entry.phase);
-    }
+  it('keeps demo in the Demonstração group', () => {
+    expect(getTestById('demo')?.group).toBe('Demonstração');
   });
 
   it('covers the demo plus all nine roadmap tests', () => {
@@ -64,7 +64,7 @@ describe('getTestById', () => {
 });
 
 describe('isTestAvailable', () => {
-  it('is true for demo, Phase 2 migrated tests, and Wave A classical tests', () => {
+  it('is true for demo, Phase 2 migrated tests, and all Phase 3 tests', () => {
     expect(isTestAvailable('demo')).toBe(true);
     expect(isTestAvailable('t-student')).toBe(true);
     expect(isTestAvailable('correlacao')).toBe(true);
@@ -72,12 +72,9 @@ describe('isTestAvailable', () => {
     expect(isTestAvailable('qui-quadrado')).toBe(true);
     expect(isTestAvailable('anova-tukey')).toBe(true);
     expect(isTestAvailable('kruskal-dunn')).toBe(true);
-  });
-
-  it('is false for Phase 3 GLM em-breve tests', () => {
-    expect(isTestAvailable('poisson')).toBe(false);
-    expect(isTestAvailable('binomial-negativa')).toBe(false);
-    expect(isTestAvailable('logistica')).toBe(false);
+    expect(isTestAvailable('poisson')).toBe(true);
+    expect(isTestAvailable('binomial-negativa')).toBe(true);
+    expect(isTestAvailable('logistica')).toBe(true);
   });
 
   it('is false for an unknown id', () => {
@@ -104,9 +101,9 @@ describe('getTestBadgeLabel', () => {
     expect(getTestBadgeLabel(anova!)).toBe('Disponível');
   });
 
-  it('labels GLM em-breve tests as Em breve', () => {
+  it('labels Wave B GLM available tests as Disponível', () => {
     const poisson = getTestById('poisson');
     expect(poisson).toBeDefined();
-    expect(getTestBadgeLabel(poisson!)).toBe('Em breve');
+    expect(getTestBadgeLabel(poisson!)).toBe('Disponível');
   });
 });
