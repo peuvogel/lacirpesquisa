@@ -1,9 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import * as registry from '@/features/tests/registry';
 import { SessionProvider, useSession, type SessionDataset } from '@/shared/session/SessionProvider';
-import { IniciarPesquisaModal } from './IniciarPesquisaModal';
+import { IniciarPesquisaModal, resolveHandoffTestId } from './IniciarPesquisaModal';
 
 const navigateMock = vi.fn();
 
@@ -48,9 +49,57 @@ function renderModal(
   return { onOpenChange };
 }
 
+async function continueWithValidPaste(user: ReturnType<typeof userEvent.setup>) {
+  fireEvent.change(screen.getByLabelText(TEXTAREA_LABEL), { target: { value: VALID_PASTE } });
+
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Continuar para Estatística' })).not.toBeDisabled();
+  });
+
+  await user.click(screen.getByRole('button', { name: 'Continuar para Estatística' }));
+}
+
+describe('resolveHandoffTestId', () => {
+  it('prefers the first non-demo suggestion when available', () => {
+    expect(
+      resolveHandoffTestId([
+        { testId: 'correlacao', rationale: 'corr' },
+        { testId: 'demo', rationale: 'demo' },
+      ]),
+    ).toBe('correlacao');
+  });
+
+  it('falls back to t-student when the primary suggestion is em-breve', () => {
+    expect(
+      resolveHandoffTestId([
+        { testId: 'anova-tukey', rationale: 'anova' },
+        { testId: 'demo', rationale: 'demo' },
+      ]),
+    ).toBe('t-student');
+  });
+
+  it('falls back to demo when t-student is unavailable', () => {
+    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 'demo');
+
+    expect(
+      resolveHandoffTestId([
+        { testId: 'anova-tukey', rationale: 'anova' },
+        { testId: 'demo', rationale: 'demo' },
+      ]),
+    ).toBe('demo');
+
+    spy.mockRestore();
+  });
+});
+
 describe('IniciarPesquisaModal', () => {
   beforeEach(() => {
     navigateMock.mockReset();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders the stub notice, suggested analyses, and collection links with noopener', () => {
@@ -61,6 +110,7 @@ describe('IniciarPesquisaModal', () => {
     expect(screen.getByText('t de Student')).toBeInTheDocument();
     expect(screen.getAllByText('Disponível').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Em breve').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Demonstração').length).toBeGreaterThanOrEqual(1);
 
     const link = screen.getByRole('link', { name: /TABNET — SIH\/SUS/i });
     expect(link).toHaveAttribute('target', '_blank');
@@ -80,7 +130,7 @@ describe('IniciarPesquisaModal', () => {
     });
   });
 
-  it('publishes parsed data to the session and navigates to Estatística on continue', async () => {
+  it('publishes parsed data and navigates with t-student handoff for two UFs', async () => {
     const user = userEvent.setup();
     let latestDataset: SessionDataset | null = null;
 
@@ -88,13 +138,7 @@ describe('IniciarPesquisaModal', () => {
       latestDataset = dataset;
     });
 
-    fireEvent.change(screen.getByLabelText(TEXTAREA_LABEL), { target: { value: VALID_PASTE } });
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Continuar para Estatística' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Continuar para Estatística' }));
+    await continueWithValidPaste(user);
 
     await waitFor(() => {
       expect(latestDataset).not.toBeNull();
@@ -103,8 +147,46 @@ describe('IniciarPesquisaModal', () => {
     expect(latestDataset!.headers).toEqual(['Município', 'Taxa por 100k', 'Situação']);
     expect(latestDataset!.rows).toHaveLength(2);
     expect(latestDataset!.sourceLabel).toBe('Mapas — SP, BA');
-    expect(navigateMock).toHaveBeenCalledWith('/');
+    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('navigates with correlacao handoff when one UF and two variables are selected', async () => {
+    const user = userEvent.setup();
+    renderModal({
+      selectedUFs: ['SP'],
+      selectedVariables: ['Internações por causa', 'Taxa por 100k'],
+    });
+
+    await continueWithValidPaste(user);
+
+    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'correlacao' } });
+  });
+
+  it('falls back to t-student when the primary suggestion is still em-breve', async () => {
+    const user = userEvent.setup();
+    renderModal({
+      selectedUFs: ['SP', 'BA', 'RJ'],
+      selectedVariables: ['Internações por causa'],
+    });
+
+    await continueWithValidPaste(user);
+
+    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
+  });
+
+  it('falls back to demo when t-student is unavailable', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 'demo');
+
+    renderModal({
+      selectedUFs: ['SP', 'BA', 'RJ'],
+      selectedVariables: ['Internações por causa'],
+    });
+
+    await continueWithValidPaste(user);
+
+    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'demo' } });
   });
 
   it('shows the same friendly Portuguese error as Estatística for junk paste', async () => {

@@ -109,7 +109,6 @@ describe('correlacaoEngine differential parity vs legacy Stats', () => {
     const yMetricKey = metrics[1].key;
 
     const derived = portNormalizer.deriveCorrelationPairs({
-      source,
       xSource: source,
       ySource: source,
       xMetricKey,

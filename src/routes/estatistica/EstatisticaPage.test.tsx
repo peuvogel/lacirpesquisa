@@ -82,5 +82,7 @@ describe('EstatisticaPage', () => {
       const mount = document.getElementById('lacir-test-module-mount');
       expect(mount).toHaveAttribute('data-active-test-id', 'correlacao');
     });
+
+    expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
   });
 });

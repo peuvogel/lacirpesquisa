@@ -9,14 +9,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getTestById } from '@/features/tests/registry';
+import { getTestBadgeLabel, getTestById, isTestAvailable } from '@/features/tests/registry';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import { useTabularInput } from '@/shared/data-input/useTabularInput';
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import { useSession } from '@/shared/session/SessionProvider';
 import { cn } from '@/lib/utils';
 import { getCollectionLinks } from './mockCollectionLinks';
-import { suggestResearchForSelection } from './suggestResearchForSelection';
+import { suggestResearchForSelection, type ResearchSuggestion } from './suggestResearchForSelection';
+
+/** Mapas → Estatística: suggested test if available, else t-student, else demo (T-02-07 whitelist). */
+export function resolveHandoffTestId(suggestions: ResearchSuggestion[]): string {
+  const primarySuggested = suggestions.find((suggestion) => suggestion.testId !== 'demo');
+  if (primarySuggested && isTestAvailable(primarySuggested.testId)) {
+    return primarySuggested.testId;
+  }
+  if (isTestAvailable('t-student')) {
+    return 't-student';
+  }
+  return 'demo';
+}
 
 /** Broad DATASUS-shaped aliases so junk paste errors while typical TABNET tables still load. */
 const MAPAS_TABULAR_OPTIONS: TabularInputOptions = {
@@ -55,6 +67,9 @@ function SuggestionRow({
   if (!entry) return null;
 
   const isAvailable = entry.status === 'available';
+  const badgeLabel = getTestBadgeLabel(entry);
+  const isDemo = entry.id === 'demo';
+
   const content = (
     <>
       <span className="flex min-w-0 flex-col items-start gap-0.5 text-left">
@@ -62,10 +77,13 @@ function SuggestionRow({
         <span className="font-sans text-sm font-normal text-text-muted">{rationale}</span>
       </span>
       <Badge
-        variant={isAvailable ? 'default' : 'outline'}
-        className={cn('shrink-0', isAvailable ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted')}
+        variant={isAvailable && !isDemo ? 'default' : 'outline'}
+        className={cn(
+          'shrink-0',
+          isAvailable && !isDemo ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted',
+        )}
       >
-        {isAvailable ? 'Disponível' : 'Em breve'}
+        {badgeLabel}
       </Badge>
     </>
   );
@@ -131,7 +149,7 @@ export function IniciarPesquisaModal({
       confirmedAt: Date.now(),
     });
     onOpenChange(false);
-    navigate('/');
+    navigate('/', { state: { activeTestId: resolveHandoffTestId(suggestions) } });
   }
 
   return (
