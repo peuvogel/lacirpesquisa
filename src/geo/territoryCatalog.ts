@@ -37,6 +37,13 @@ export const HEALTH_MACRO_CATALOG: readonly HealthMacroEntry[] = [
   },
 ];
 
+/** Preset pills for health macro-regions (MAP-08). */
+export const HEALTH_MACRO_PRESETS = HEALTH_MACRO_CATALOG.map((entry) => ({
+  id: entry.id,
+  label: entry.name.replace(/^Macro /, 'MR '),
+  tooltip: entry.name,
+}));
+
 const UF_BY_SIGLA: Record<string, UfEntry> = Object.fromEntries(UF_LIST.map((uf) => [uf.sigla, uf]));
 
 function ufToTerritory(uf: UfEntry): TerritoryRef {

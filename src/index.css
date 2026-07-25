@@ -156,3 +156,11 @@
     filter: drop-shadow(0 0 6px rgba(32, 153, 120, 0.55));
   }
 }
+
+/* Group bar drop zone highlight (04-UI-SPEC § Motion — 150ms ease-out). */
+.lacir-drop-target--active {
+  border-color: var(--color-accent) !important;
+  border-style: solid !important;
+  background: var(--color-accent-soft);
+  transition: border-color 150ms ease-out, background 150ms ease-out;
+}
