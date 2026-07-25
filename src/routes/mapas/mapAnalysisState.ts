@@ -5,6 +5,10 @@ import { getMockVariableById } from './mockAnalysisData';
 
 export const MAX_GROUPS = 10;
 export const MAX_TERRITORIES_PER_GROUP = 27;
+export const MIN_YEAR = 1990;
+export const MAX_YEAR = 2030;
+export const CAPACITATION_MIN_YEAR = 2000;
+export const CAPACITATION_MAX_YEAR = 2025;
 
 export type TimeMode = 'point' | 'range' | 'compare';
 
@@ -66,12 +70,27 @@ export function createInitialMapAnalysisState(): MapAnalysisState {
   };
 }
 
+export function clampYear(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || !/^\d+$/.test(trimmed)) return '';
+  const n = parseInt(trimmed, 10);
+  return String(Math.min(MAX_YEAR, Math.max(MIN_YEAR, n)));
+}
+
+export function isRangeTimeInvalid(time: GroupTimeConfig): boolean {
+  if (time.mode !== 'range' || !time.start?.trim() || !time.end?.trim()) return false;
+  const start = parseInt(time.start, 10);
+  const end = parseInt(time.end, 10);
+  if (Number.isNaN(start) || Number.isNaN(end)) return false;
+  return end < start;
+}
+
 function isTimeValid(time: GroupTimeConfig): boolean {
   switch (time.mode) {
     case 'point':
       return Boolean(time.point?.trim());
     case 'range':
-      return Boolean(time.start?.trim() && time.end?.trim());
+      return Boolean(time.start?.trim() && time.end?.trim() && !isRangeTimeInvalid(time));
     case 'compare':
       return Boolean(time.periodA?.trim() && time.periodB?.trim());
     default:
@@ -353,7 +372,8 @@ function collectAllTerritoryIds(state: MapAnalysisState): TerritoryRef[] {
 }
 
 export function deriveMapAnalysis(state: MapAnalysisState) {
-  const canReview = state.groups.some(isGroupComplete);
+  const canReview =
+    state.groups.length > 0 && state.groups.every(isGroupComplete);
   return {
     summaryChips: buildSummaryChips(state),
     canReview,

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clampYear,
   createInitialMapAnalysisState,
   deriveFlatMapSelection,
   deriveMapAnalysis,
   deriveSelectionSummary,
   formatTimeSummary,
   isGroupComplete,
+  isRangeTimeInvalid,
   mapAnalysisReducer,
   type MapAnalysisGroup,
   type MapAnalysisState,
@@ -154,6 +156,54 @@ describe('deriveMapAnalysis', () => {
 describe('formatTimeSummary', () => {
   it('formats range mode with en-dash', () => {
     expect(formatTimeSummary({ mode: 'range', start: '2018', end: '2022' })).toBe('2018–2022');
+  });
+
+  it('formats compare mode with vs separator', () => {
+    expect(
+      formatTimeSummary({ mode: 'compare', periodA: '2015-2019', periodB: '2020-2024' }),
+    ).toBe('2015-2019 vs 2020-2024');
+  });
+
+  it('formats point mode as year string', () => {
+    expect(formatTimeSummary({ mode: 'point', point: '2020' })).toBe('2020');
+  });
+});
+
+describe('MAP-06 time validation', () => {
+  it('detects invalid range when end is before start', () => {
+    expect(isRangeTimeInvalid({ mode: 'range', start: '2022', end: '2018' })).toBe(true);
+    expect(isRangeTimeInvalid({ mode: 'range', start: '2018', end: '2022' })).toBe(false);
+  });
+
+  it('clampYear rejects non-numeric and clamps to threat-model bounds', () => {
+    expect(clampYear('abc')).toBe('');
+    expect(clampYear('1980')).toBe('1990');
+    expect(clampYear('2040')).toBe('2030');
+    expect(clampYear('2020')).toBe('2020');
+  });
+
+  it('canReview requires every group complete, not just one', () => {
+    const state: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      groups: [
+        completeGroup(),
+        {
+          id: 'g2',
+          name: 'Grupo 2',
+          territoryIds: [sampleTerritory],
+          time: { mode: 'point' },
+          variableIds: [],
+        },
+      ],
+    };
+    expect(deriveMapAnalysis(state).canReview).toBe(false);
+  });
+
+  it('invalid range does not count as valid time for group completion', () => {
+    const group = completeGroup({
+      time: { mode: 'range', start: '2022', end: '2018' },
+    });
+    expect(isGroupComplete(group)).toBe(false);
   });
 });
 
