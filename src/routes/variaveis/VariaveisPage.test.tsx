@@ -27,7 +27,9 @@ function DatasetProbe() {
   const { dataset } = useSession();
   return (
     <div data-testid="dataset-probe">
-      {dataset ? `${dataset.sourceLabel}|${dataset.headers.length}|${dataset.rows.length}` : 'empty'}
+      {dataset
+        ? `${dataset.sourceLabel}|${dataset.headers.join(',')}|${dataset.rows.length}`
+        : 'empty'}
     </div>
   );
 }
@@ -165,6 +167,61 @@ describe('VariaveisPage', () => {
 
     const dataset = screen.getByTestId('dataset-probe').textContent ?? '';
     expect(dataset).toMatch(/Catálogo LACIR/);
+    expect(dataset).toMatch(/uf_codigo/);
+    expect(dataset).toMatch(/ano/);
     expect(dataset).not.toBe('empty');
+  });
+
+  it('loads multi-select embolia metrics with tidy UF×ano headers (D-16)', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const list = await screen.findByRole('listbox', { name: 'Variáveis do catálogo' });
+    await waitFor(() => {
+      expect(
+        within(list).getByLabelText(/Incluir Internações por embolia e trombose arteriais/i),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(
+      within(list).getByLabelText(/Incluir Internações por embolia e trombose arteriais/i),
+    );
+    await user.click(
+      within(list).getByLabelText(
+        /Incluir Óbitos hospitalares por embolia e trombose arteriais/i,
+      ),
+    );
+
+    await user.click(screen.getByRole('button', { name: /Carregar na Estatística \(2\)/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Estatística' })).toBeInTheDocument();
+    });
+
+    const dataset = screen.getByTestId('dataset-probe').textContent ?? '';
+    expect(dataset).toMatch(/Catálogo/);
+    expect(dataset).toMatch(/uf_codigo,uf,ano,/);
+    expect(dataset).toMatch(/Internações por embolia/);
+    expect(dataset).toMatch(/Óbitos hospitalares por embolia/);
+  });
+
+  it('disables Estatística load for reference-only selection', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const list = await screen.findByRole('listbox', { name: 'Variáveis do catálogo' });
+    await waitFor(() => {
+      expect(within(list).getByText(/morbidade hospitalar por local de internação/i)).toBeInTheDocument();
+    });
+
+    await user.click(
+      within(list).getByRole('button', {
+        name: /morbidade hospitalar por local de internação/i,
+      }),
+    );
+
+    const loadBtn = screen.getByRole('button', { name: 'Carregar na Estatística' });
+    expect(loadBtn).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Usar no mapa' })).toBeDisabled();
   });
 });

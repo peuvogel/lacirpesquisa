@@ -3,6 +3,9 @@ import type { CatalogEntry, PackFile, PackRow } from './types';
 
 const REQUIRED_JOIN_KEYS = ['uf_codigo', 'ano'] as const;
 
+/** Discretionary classroom bound (T-05-13) — keep multi-select joins tractable. */
+export const MAX_LOADABLE_SELECTION = 12;
+
 function cellValue(row: PackRow | undefined, columnKey: string): string {
   if (!row) return 'n/d';
   const v = row[columnKey];
@@ -28,8 +31,13 @@ export function assertCompatibleSelection(
   if (selected.length === 0) {
     throw new Error('Selecione ao menos uma variável carregável.');
   }
+  if (selected.length > MAX_LOADABLE_SELECTION) {
+    throw new Error(
+      `Selecione no máximo ${MAX_LOADABLE_SELECTION} variáveis carregáveis de uma vez.`,
+    );
+  }
   if (selected.some((e) => !e.loadable || !e.packId || !e.columnKey)) {
-    throw new Error('Só variáveis carregáveis podem ir para a Estatística.');
+    throw new Error('Só variáveis carregáveis podem ser carregadas.');
   }
 
   const packs: PackFile[] = [];
@@ -50,7 +58,7 @@ export function assertCompatibleSelection(
   for (const pack of uniquePacks) {
     if (!packHasJoinKeys(pack)) {
       throw new Error(
-        'Seleção incompatível: só é possível juntar packs com chaves uf_codigo e ano.',
+        'Seleção incompatível: as variáveis não compartilham a mesma chave UF × ano (uf_codigo, ano).',
       );
     }
   }
@@ -59,7 +67,7 @@ export function assertCompatibleSelection(
     const grains = new Set(uniquePacks.map((p) => p.grain));
     if (grains.size > 1) {
       throw new Error(
-        'Seleção incompatível: packs com granularidades diferentes não podem ser carregados juntos.',
+        'Seleção incompatível: as variáveis não compartilham a mesma chave UF × ano (granularidades diferentes).',
       );
     }
   }

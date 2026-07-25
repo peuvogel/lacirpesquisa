@@ -73,9 +73,19 @@ describe('assertCompatibleSelection', () => {
       packId: undefined,
       columnKey: undefined,
     };
-    expect(() => assertCompatibleSelection([refOnly], PACKS)).toThrow(
-      /carregáveis|Estatística/i,
+    expect(() => assertCompatibleSelection([refOnly], PACKS)).toThrow(/carregáveis/i);
+  });
+
+  it('rejects more than MAX_LOADABLE_SELECTION metrics', () => {
+    const many = Array.from({ length: 13 }, (_, i) =>
+      loadable({
+        id: `sih.embolia_trombose.extra_${i}`,
+        label: `Métrica ${i}`,
+        packId: 'sih.embolia_trombose_uf',
+        columnKey: 'internacoes_embolia_trombose_arteriais',
+      }),
     );
+    expect(() => assertCompatibleSelection(many, PACKS)).toThrow(/no máximo 12/i);
   });
 
   it('rejects incompatible grain (missing uf_codigo/ano keys)', () => {
@@ -167,6 +177,6 @@ describe('buildSessionDataset', () => {
         ],
         PACKS,
       ),
-    ).toThrow(/carregáveis|Estatística/i);
+    ).toThrow(/carregáveis/i);
   });
 });
