@@ -1,18 +1,42 @@
+import { useState } from 'react';
+import { isTestAvailable } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
+import { PortalDatasusLink } from './PortalDatasusLink';
+import { QualTesteModal } from './QualTesteModal';
+import { Sidebar } from './Sidebar';
 
-// Deliberate two-column skeleton (D-05). Plan 01-07 fills the sidebar,
-// registry, and "qual teste?" modal; plan 01-10 mounts the demo flow.
-// The empty <aside>/<section> below are stable mount points, not
-// placeholder copy a later plan must remember to delete.
+// Deliberate two-column layout (D-05). Plan 01-10 mounts the active test
+// module into #lacir-test-module-mount below — no placeholder copy here.
 export function EstatisticaPage() {
   const { hasData } = useSession();
+  const [activeTestId, setActiveTestId] = useState<string>('demo');
+  const [qualTesteOpen, setQualTesteOpen] = useState(false);
+
+  function handleSelectTest(id: string) {
+    if (isTestAvailable(id)) {
+      setActiveTestId(id);
+    }
+  }
 
   return (
     <div className="mx-auto flex max-w-[1520px] gap-8 px-6 py-8">
-      <aside className="lacir-sidebar w-[300px] shrink-0" aria-label="Testes disponíveis" />
+      <Sidebar
+        activeTestId={activeTestId}
+        onSelectTest={handleSelectTest}
+        onOpenQualTeste={() => setQualTesteOpen(true)}
+      />
       <section className="lacir-estatistica-main flex-1" data-has-session-data={hasData}>
-        <h1 className="font-sans text-display font-bold text-text">Estatística</h1>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="font-sans text-display font-bold text-text">Estatística</h1>
+          <PortalDatasusLink />
+        </div>
+        <div id="lacir-test-module-mount" data-active-test-id={activeTestId} />
       </section>
+      <QualTesteModal
+        open={qualTesteOpen}
+        onOpenChange={setQualTesteOpen}
+        onSelectTest={handleSelectTest}
+      />
     </div>
   );
 }
