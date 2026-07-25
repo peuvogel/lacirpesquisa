@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  deriveRecognizedColumnsFromRoles,
+  type TabularColumnRole,
+} from '@/shared/data-input/recognizedColumnsFromTabular';
+import type { TabularInputOptions } from '@/shared/data-input/types';
 
-export type ColumnRole = 'numerica' | 'categorica' | 'tempo' | 'ignorar';
+export type ColumnRole = TabularColumnRole;
 
 const ROLE_OPTIONS: Array<{ value: ColumnRole; label: string }> = [
   { value: 'numerica', label: 'Numérica' },
@@ -15,7 +20,12 @@ export interface ColumnPreviewTableProps {
   bodyRows: string[][];
   /** Domain key → column index, as produced by useTabularInput. */
   recognizedColumns: Record<string, number>;
-  onConfirm: (confirmed: { headers: string[]; rows: string[][] }) => void;
+  tabularOptions?: TabularInputOptions;
+  onConfirm: (confirmed: {
+    headers: string[];
+    rows: string[][];
+    recognizedColumns: Record<string, number>;
+  }) => void;
   maxPreviewRows?: number;
 }
 
@@ -62,6 +72,7 @@ export function ColumnPreviewTable({
   headers,
   bodyRows,
   recognizedColumns,
+  tabularOptions,
   onConfirm,
   maxPreviewRows = 8,
 }: ColumnPreviewTableProps) {
@@ -81,7 +92,10 @@ export function ColumnPreviewTable({
   }
 
   function handleConfirm() {
-    onConfirm({ headers, rows: bodyRows });
+    const confirmedRecognizedColumns = tabularOptions
+      ? deriveRecognizedColumnsFromRoles(roles, headers, tabularOptions)
+      : recognizedColumns;
+    onConfirm({ headers, rows: bodyRows, recognizedColumns: confirmedRecognizedColumns });
   }
 
   return (

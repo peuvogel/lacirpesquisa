@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseDelimitedRows } from './parseTabular';
-import { deriveRecognizedColumnsFromTabular } from './recognizedColumnsFromTabular';
+import { deriveRecognizedColumnsFromTabular, deriveRecognizedColumnsFromRoles } from './recognizedColumnsFromTabular';
 import { TABULAR_OPTIONS as correlacaoOptions } from '@/features/tests/correlacao/correlacaoConfig';
 import { TABULAR_OPTIONS as praisOptions } from '@/features/tests/prais-winsten/praisConfig';
 import { TABULAR_OPTIONS as tStudentOptions } from '@/features/tests/t-student/tStudentConfig';
@@ -68,5 +68,44 @@ describe('deriveRecognizedColumnsFromTabular', () => {
     const recognized = deriveRecognizedColumnsFromTabular(headers, rows, tStudentOptions);
 
     expect(recognized).toEqual({});
+  });
+});
+
+describe('deriveRecognizedColumnsFromRoles', () => {
+  it('assigns numeric columns to grupo_a/grupo_b via positionFallback for t-student', () => {
+    const headers = ['Identificador', 'Medida A', 'Medida B'];
+    const roles = ['categorica', 'numerica', 'numerica'] as const;
+    const recognized = deriveRecognizedColumnsFromRoles([...roles], headers, tStudentOptions);
+
+    expect(recognized.grupo_a).toBe(1);
+    expect(recognized.grupo_b).toBe(2);
+  });
+
+  it('maps tempo role to tempo and numeric columns to variavel_x/variavel_y for correlacao', () => {
+    const headers = ['id', 'variavel_x', 'variavel_y', 'observacao_opcional'];
+    const roles = ['categorica', 'numerica', 'numerica', 'ignorar'] as const;
+    const recognized = deriveRecognizedColumnsFromRoles([...roles], headers, correlacaoOptions);
+
+    expect(recognized.variavel_x).toBe(1);
+    expect(recognized.variavel_y).toBe(2);
+    expect(recognized.id).toBe(0);
+  });
+
+  it('maps tempo role to tempo key for prais-winsten', () => {
+    const headers = ['Ano', 'Internacoes'];
+    const roles = ['tempo', 'numerica'] as const;
+    const recognized = deriveRecognizedColumnsFromRoles([...roles], headers, praisOptions);
+
+    expect(recognized.tempo).toBe(0);
+    expect(recognized.variavel_y).toBe(1);
+  });
+
+  it('excludes columns marked ignorar from the mapping', () => {
+    const headers = ['id', 'variavel_x', 'variavel_y'];
+    const roles = ['categorica', 'ignorar', 'numerica'] as const;
+    const recognized = deriveRecognizedColumnsFromRoles([...roles], headers, correlacaoOptions);
+
+    expect(recognized.variavel_x).toBeUndefined();
+    expect(recognized.variavel_y).toBe(2);
   });
 });
