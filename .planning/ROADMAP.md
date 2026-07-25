@@ -125,7 +125,17 @@ Plans:
   9. User selects multiple diseases/agravos within the active territory × time × group context and proceeds to statistical tests
   10. The map flow stays didactic: clear steps, plain-PT guidance, and a visible summary of the current selection
 
-**Plans**: TBD
+**Plans**: 8 plans in 8 waves
+
+Plans:
+- [ ] 04-01-PLAN.md — Wave 0: geo fetch script, types, session model, CI fixtures (MAP-05/08 infra)
+- [ ] 04-02-PLAN.md — Wave 1: UF choropleth + legend (MAP-01)
+- [ ] 04-03-PLAN.md — Wave 2: territory paste UF matching (MAP-02)
+- [ ] 04-04-PLAN.md — Wave 3: GroupBar DnD + presets + summary strip (MAP-07/08/10)
+- [ ] 04-05-PLAN.md — Wave 4: drill-down + lazy topo + muni match (MAP-03/04/05)
+- [ ] 04-06-PLAN.md — Wave 5: GroupConfigPanel time + variables hybrid data (MAP-06)
+- [ ] 04-07-PLAN.md — Wave 6: ReviewAnalysisDialog + assemble table + suggest test (MAP-09)
+- [ ] 04-08-PLAN.md — Wave 7: phase gate verification (MAP-01…10)
 **UI hint**: yes
 
 ### Phase 5: Variáveis no site (scrape + referências)
