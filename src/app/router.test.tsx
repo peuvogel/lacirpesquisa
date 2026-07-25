@@ -1,0 +1,67 @@
+import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { SessionProvider } from '@/shared/session/SessionProvider';
+import { AppShell } from './AppShell';
+import { RouteError } from './RouteError';
+import { EstatisticaPage } from '../routes/estatistica/EstatisticaPage';
+import { MetaAnalisePage } from '../routes/meta-analise/MetaAnalisePage';
+import { VariaveisPage } from '../routes/variaveis/VariaveisPage';
+import { MapasPage } from '../routes/mapas/MapasPage';
+
+function buildRouter(initialPath: string) {
+  return createMemoryRouter(
+    [
+      {
+        element: <AppShell />,
+        errorElement: <RouteError />,
+        children: [
+          { path: '/', element: <EstatisticaPage /> },
+          { path: '/meta-analise', element: <MetaAnalisePage /> },
+          { path: '/variaveis', element: <VariaveisPage /> },
+          { path: '/mapas', element: <MapasPage /> },
+        ],
+      },
+    ],
+    { initialEntries: [initialPath] },
+  );
+}
+
+function renderAt(initialPath: string) {
+  const router = buildRouter(initialPath);
+  return render(
+    <SessionProvider>
+      <RouterProvider router={router} />
+    </SessionProvider>,
+  );
+}
+
+describe('router', () => {
+  it('renders the Estatística heading at / (landing route, D-04)', () => {
+    renderAt('/');
+    expect(screen.getByRole('heading', { name: 'Estatística' })).toBeInTheDocument();
+  });
+
+  it('renders the shared Em breve placeholder at /meta-analise', () => {
+    renderAt('/meta-analise');
+    expect(screen.getByRole('heading', { name: 'Meta-análise' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Em breve' })).toBeInTheDocument();
+  });
+
+  it('renders the shared Em breve placeholder at /variaveis', () => {
+    renderAt('/variaveis');
+    expect(screen.getByRole('heading', { name: 'Variáveis' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Em breve' })).toBeInTheDocument();
+  });
+
+  it('renders the Mapas heading at /mapas', () => {
+    renderAt('/mapas');
+    expect(screen.getByRole('heading', { name: 'Mapas' })).toBeInTheDocument();
+  });
+
+  it('renders the friendly error/fallback element for an unknown path, not a blank page', () => {
+    renderAt('/rota-que-nao-existe');
+    expect(screen.getByRole('heading', { name: 'Algo deu errado' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /voltar para estatística/i })).toBeInTheDocument();
+  });
+});
