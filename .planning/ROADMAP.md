@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0 (completed 2026-07-25)
 - [x] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges (completed 2026-07-25)
 - [x] **Phase 4: Mapas como interface estatística** - Brazil/UF + drill-down; temporalidade; grupos de UF com presets (N/NE/CO/SE/S); macrorregiões de saúde; multi-doença; fluxo didático território×tempo×grupo → testes (completed 2026-07-25)
-- [ ] **Phase 5: Variáveis no site (scrape + referências)** - Pipeline de curadoria/scrape versionado; catálogo classificado; **referência obrigatória** em cada variável; carregar dados no app sem sites externos na aula
+- [x] **Phase 5: Variáveis no site (scrape + referências)** - Pipeline de curadoria/scrape versionado; catálogo classificado; **referência obrigatória** em cada variável; carregar dados no app sem sites externos na aula (completed 2026-07-25)
 - [ ] **Phase 6: Meta-análise** - Fixed/random-effects pooling with forest plot, heterogeneity stats, funnel plot, and Egger's asymmetry check
 
 ## Phase Details
@@ -153,7 +153,7 @@ Plans:
   4. User loads curated/scraped datasets into Estatística/Mapas analysis without leaving the app for data collection
   5. Datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 
 Plans:
 
@@ -163,7 +163,7 @@ Plans:
 - [x] 05-04-PLAN.md — Variáveis UI: search/filter/list/detail + provenance + test hint
 - [x] 05-05-PLAN.md — Mapas catalogAnalysisData swap; retire mock numerics/provenance for packs
 - [x] 05-06-PLAN.md — Load handoff: Carregar na Estatística + Usar no mapa (multi-select D-16)
-- [ ] 05-07-PLAN.md — Phase gate: validate + full suite + VERIFICATION + human UAT
+- [x] 05-07-PLAN.md — Phase gate: validate + full suite + VERIFICATION + human UAT
 
 ### Phase 6: Meta-análise
 
@@ -191,5 +191,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 9/9 | Complete   | 2026-07-25 |
 | 4. Mapas como interface estatística | 8/8 | Complete   | 2026-07-25 |
-| 5. Variáveis no site (scrape + referências) | 6/7 | In Progress|  |
+| 5. Variáveis no site (scrape + referências) | 7/7 | Complete   | 2026-07-25 |
 | 6. Meta-análise | 0/TBD | Not started | - |
