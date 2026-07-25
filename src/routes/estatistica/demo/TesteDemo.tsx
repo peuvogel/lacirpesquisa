@@ -10,6 +10,7 @@ import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { fmtNumber } from '@/shared/format';
 import { useSession } from '@/shared/session/SessionProvider';
 import { ColumnPreviewTable } from '../ColumnPreviewTable';
+import { ClearDataButton } from '../ClearDataButton';
 import { ResultsPanel } from '../ResultsPanel';
 import { TabularInputPanel } from '../TabularInputPanel';
 import { DatasusWizardPanel } from '../datasus/DatasusWizardPanel';
@@ -111,6 +112,14 @@ export function TesteDemo() {
     setActiveStep('resultados');
   }
 
+  function handleClearData() {
+    tabular.reset();
+    setLoadedInput(null);
+    setConfirmedDataset(null);
+    setActiveStep('dados');
+    sourceLabelRef.current = 'colado';
+  }
+
   const canAdvance = useMemo(
     () => ({
       dados: true,
@@ -169,6 +178,7 @@ export function TesteDemo() {
         }}
         interpretation={interpretation}
         exportFilename="teste-demo-lacirstat.png"
+        actions={<ClearDataButton onCleared={handleClearData} />}
         />
       </div>
     );

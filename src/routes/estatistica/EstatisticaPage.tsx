@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { isTestAvailable } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
+import { LeaveWarningGuard } from './LeaveWarningGuard';
 import { TesteDemo } from './demo/TesteDemo';
 import { PortalDatasusLink } from './PortalDatasusLink';
 import { QualTesteModal } from './QualTesteModal';
@@ -20,7 +21,9 @@ export function EstatisticaPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1520px] gap-8 px-6 py-8">
+    <>
+      <LeaveWarningGuard />
+      <div className="mx-auto flex max-w-[1520px] gap-8 px-6 py-8">
       <Sidebar
         activeTestId={activeTestId}
         onSelectTest={handleSelectTest}
@@ -41,5 +44,6 @@ export function EstatisticaPage() {
         onSelectTest={handleSelectTest}
       />
     </div>
+    </>
   );
 }
