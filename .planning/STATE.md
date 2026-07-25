@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: "Context gathered — ready for `/gsd:plan-phase 1`"
-stopped_at: Phase 1 planned (12 plans, checker passed)
-last_updated: "2026-07-25T16:48:00.558Z"
-last_activity: 2026-07-25 — Phase 1 context gathered
+status: Plan 01-01 executed and committed — Vite/React 19/TS/Tailwind v4 toolchain, vitest+RTL harness, shadcn/Radix primitives all green
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-07-25T17:13:27.524Z"
+last_activity: 2026-07-25 — Plan 01-01 executed (Vite/React/Tailwind v4 scaffold + shadcn primitives)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 12
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 8
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 1 — Ready to plan (context gathered)
+**Current focus:** Phase 1 — In progress (1/12 plans complete)
 
 ## Current Position
 
 Phase: 1 of 6 (Redesign / base React shell)
-Plan: — (not yet planned)
-Status: Context gathered — ready for `/gsd:plan-phase 1`
-Last activity: 2026-07-25 — Phase 1 context gathered
+Plan: 01-01 complete (12 plans total) — next: 01-02
+Status: Plan 01-01 executed and committed — Vite/React 19/TS/Tailwind v4 toolchain, vitest+RTL harness, shadcn/Radix primitives all green
+Last activity: 2026-07-25 — Plan 01-01 executed (Vite/React/Tailwind v4 scaffold + shadcn primitives)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 8%
 
 ## Accumulated Context
 
@@ -42,6 +42,8 @@ Progress: [░░░░░░░░░░] 0%
 - Stub Teste demo na Fase 1; wizard modal; visual equilibrado teal
 - beforeunload só em Estatística com dados; sem banner
 - Não reinventar engines (JASP + MVP)
+- [Phase 1]: shadcn primitives generated on Radix (not Base UI) to match UI-SPEC accessibility assumptions
+- [Phase 1]: @vitejs/plugin-react@^6.0 used instead of plan's ^4.5 pin — required for vite@^8.1 peer compatibility
 
 ### Pending Todos
 
@@ -53,6 +55,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T16:48:00.553Z
-Stopped at: Phase 1 planned (12 plans, checker passed)
-Resume file: .planning/phases/01-redesign-base-react-shell/01-01-PLAN.md
+Last session: 2026-07-25T17:12:53.714Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None

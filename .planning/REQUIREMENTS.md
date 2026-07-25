@@ -8,7 +8,7 @@
 
 ### UI / Shell
 
-- [ ] **UI-01**: User sees a React LACIR portal shell with dark theme, teal accents, LACIR logo+name, and header nav: Estatística | Meta-análise | Variáveis | Mapas (no version/beta badge; DataSUS link lives inside Estatística)
+- [x] **UI-01**: User sees a React LACIR portal shell with dark theme, teal accents, LACIR logo+name, and header nav: Estatística | Meta-análise | Variáveis | Mapas (no version/beta badge; DataSUS link lives inside Estatística)
 - [ ] **UI-02**: User completes each test via a shared flow: Dados → Configurar → Resultados
 - [ ] **UI-03**: User can paste TABNET-style data (`;` delimiter, pt-BR decimal comma) and gets friendly validation errors
 - [ ] **UI-04**: User can download the active result chart as PNG
@@ -78,7 +78,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 1 | Pending |
+| UI-01 | Phase 1 | Complete |
 | UI-02 | Phase 1 | Pending |
 | UI-03 | Phase 1 | Pending |
 | UI-04 | Phase 1 | Pending |
