@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell (completed 2026-07-25)
 - [x] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0 (completed 2026-07-25)
 - [x] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges (completed 2026-07-25)
-- [ ] **Phase 4: Mapas como interface estatística** - Brazil/UF + drill-down; temporalidade; grupos de UF com presets (N/NE/CO/SE/S); macrorregiões de saúde; multi-doença; fluxo didático território×tempo×grupo → testes
+- [x] **Phase 4: Mapas como interface estatística** - Brazil/UF + drill-down; temporalidade; grupos de UF com presets (N/NE/CO/SE/S); macrorregiões de saúde; multi-doença; fluxo didático território×tempo×grupo → testes (completed 2026-07-25)
 - [ ] **Phase 5: Variáveis no site (scrape + referências)** - Pipeline de curadoria/scrape versionado; catálogo classificado; **referência obrigatória** em cada variável; carregar dados no app sem sites externos na aula
 - [ ] **Phase 6: Meta-análise** - Fixed/random-effects pooling with forest plot, heterogeneity stats, funnel plot, and Egger's asymmetry check
 
@@ -136,7 +136,7 @@ Plans:
 - [x] 04-05-PLAN.md — Wave 4: drill-down + lazy topo + muni match (MAP-03/04/05)
 - [x] 04-06-PLAN.md — Wave 5: GroupConfigPanel time + variables hybrid data (MAP-06)
 - [x] 04-07-PLAN.md — Wave 6: ReviewAnalysisDialog + assemble table + suggest test (MAP-09)
-- [ ] 04-08-PLAN.md — Wave 7: phase gate verification (MAP-01…10)
+- [x] 04-08-PLAN.md — Wave 7: phase gate verification (MAP-01…10)
 
 **UI hint**: yes
 
@@ -180,6 +180,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
 | 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
 | 3. Testes clássicos + GLM novos | 9/9 | Complete   | 2026-07-25 |
-| 4. Mapas como interface estatística | 7/8 | In Progress|  |
+| 4. Mapas como interface estatística | 8/8 | Complete   | 2026-07-25 |
 | 5. Variáveis no site (scrape + referências) | 0/TBD | Not started | - |
 | 6. Meta-análise | 0/TBD | Not started | - |

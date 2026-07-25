@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 4 context gathered
-last_updated: "2026-07-25T22:25:25.829Z"
+status: ready_for_verification
+stopped_at: Completed 04-08-PLAN.md
+last_updated: "2026-07-25T22:38:00.000Z"
 last_activity: 2026-07-25
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 37
-  completed_plans: 36
-  percent: 50
+  completed_plans: 37
+  percent: 67
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 4 — mapas como interface estatística
+**Current focus:** Phase 4 gate complete — human UX spot-check pending
 
 ## Current Position
 
-Phase: 03 (testes-classicos-glm-novos) — COMPLETE
-Plan: 9 of 9 (complete)
-Status: Phase complete — ready for verification
+Phase: 04 (mapas-como-interface-estatistica) — COMPLETE (automated gate)
+Plan: 8 of 8 (complete)
+Status: Ready for `/gsd:verify-work` — human didactic UX deferred (`human_needed`)
 Last activity: 2026-07-25
 
-Progress: [██████████] 100% Phase 3 plans
+Progress: [██████████] 100% Phase 4 plans
 
 ## Accumulated Context
 
@@ -79,6 +79,7 @@ Progress: [██████████] 100% Phase 3 plans
 - [Phase 03-testes-classicos-glm-novos]: All ten registry entries available — zero em-breve; Wave B GLM trio flipped in 03-09
 - [Phase 03-testes-classicos-glm-novos]: Poisson→NB handoff wired in EstatisticaPage via onCrossTestHandoff + recognizedColumns (D-20)
 - [Phase 03-testes-classicos-glm-novos]: Mapas 3-UF handoff now routes to anova-tukey since ANOVA is available
+- [Phase 04-mapas-como-interface-estatistica]: Phase 4 automated gate PASS (595 tests); human didactic UX deferred to human_needed
 
 ### Pending Todos
 
@@ -90,7 +91,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:25:25.826Z
+Last session: 2026-07-25T22:26:39.199Z
 Stopped at: Phase 4 context gathered
 Resume file: None
 
@@ -112,3 +113,4 @@ Resume file: None
 | Phase 02-migrar-testes-existentes P02 | 3min | 3 tasks | 21 files |
 | Phase 02-migrar-testes-existentes P06 | 8min | 3 tasks | 14 files |
 | Phase 03-testes-classicos-glm-novos P09 | 3min | 2 tasks | 10 files |
+| Phase 04-mapas-como-interface-estatistica P08 | 12min | 3 tasks | 3 files |
