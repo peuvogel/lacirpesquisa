@@ -86,7 +86,7 @@ completed: 2026-07-25
 2. **Task 1 GREEN:** `c42c635` — `feat(05-05): catalogAnalysisData pack metrics and aliases`
 3. **Task 2:** `a4356f2` — `feat(05-05): swap Mapas mocks for catalog packs`
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `16df55e` (docs: complete Mapas catalog swap plan)
 
 ## Files Created/Modified
 
