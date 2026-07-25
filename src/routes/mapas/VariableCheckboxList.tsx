@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import {
+  CATALOG_ANALYSIS_VARIABLES,
   getAnalysisVariableById,
   getCatalogVariableIdsByUf,
   type CatalogAnalysisVariable,
@@ -41,6 +42,20 @@ function resolveVariableRows(
   intersection: CatalogAnalysisVariable[];
   partial: Array<{ variable: CatalogAnalysisVariable; missingFrom: string[] }>;
 } {
+  // No UF lock yet (e.g. Variáveis → Mapas handoff): show full catalog list.
+  if (territorySiglas.length === 0) {
+    const intersection = CATALOG_ANALYSIS_VARIABLES.map((v) => ({ ...v }));
+    for (const id of pastedVariableIds) {
+      const variable = getAnalysisVariableById(id);
+      if (variable && !intersection.some((entry) => entry.id === id)) {
+        intersection.push({ ...variable, provenance: 'paste' });
+      } else if (!variable && !intersection.some((entry) => entry.id === id)) {
+        intersection.push({ id, label: id, provenance: 'paste' });
+      }
+    }
+    return { intersection, partial: [] };
+  }
+
   const variablesByUf = getCatalogVariableIdsByUf();
   const availability = computeVariableIntersection(territorySiglas, variablesByUf);
 

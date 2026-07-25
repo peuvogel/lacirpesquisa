@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { EmptyState } from '@/components/EmptyState';
 import {
   Sheet,
@@ -20,6 +21,7 @@ import { ReviewAnalysisDialog } from './ReviewAnalysisDialog';
 import {
   createInitialMapAnalysisState,
   deriveSelectionSummary,
+  resolveCatalogHandoffIds,
   useMapAnalysis,
 } from './mapAnalysisState';
 import {
@@ -30,6 +32,10 @@ import {
 } from '@/features/catalog/catalogAnalysisData';
 import { SelectionSummaryStrip } from './SelectionSummaryStrip';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
+
+export interface MapasLocationState {
+  catalogVariableIds?: string[];
+}
 
 type ContextPanelMode = 'explore' | 'paste' | 'group';
 
@@ -73,6 +79,8 @@ function territoriesToSiglas(territories: TerritoryRef[]): string[] {
 }
 
 export function MapasPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { setMapAnalysis, mapAnalysis } = useSession();
   const { state, dispatch, derived } = useMapAnalysis(mapAnalysis ?? undefined);
   const isTablet = useIsTabletViewport();
@@ -251,6 +259,21 @@ export function MapasPage() {
   useEffect(() => {
     setMapAnalysis(state);
   }, [state, setMapAnalysis]);
+
+  // Variáveis → Mapas handoff (D-15): apply once, then clear location.state.
+  useEffect(() => {
+    const navState = location.state as MapasLocationState | null;
+    const rawIds = navState?.catalogVariableIds;
+    if (!Array.isArray(rawIds) || rawIds.length === 0) return;
+
+    const resolved = resolveCatalogHandoffIds(rawIds);
+    if (resolved.length > 0) {
+      dispatch({ type: 'APPLY_CATALOG_VARIABLE_IDS', variableIds: resolved });
+      setHasInteracted(true);
+      setContextPanelMode('group');
+    }
+    navigate(location.pathname, { replace: true, state: null });
+  }, [dispatch, location.pathname, location.state, navigate]);
 
   useEffect(() => {
     if (state.activeGroupId && contextPanelMode !== 'paste') {

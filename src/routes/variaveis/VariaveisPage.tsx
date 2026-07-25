@@ -36,8 +36,9 @@ export function VariaveisPage() {
   const [selectedLoadableIds, setSelectedLoadableIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const [estatisticaError, setEstatisticaError] = useState<string | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
   const [loadingEstatistica, setLoadingEstatistica] = useState(false);
+  const [loadingMapas, setLoadingMapas] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,13 +105,13 @@ export function VariaveisPage() {
       else next.add(id);
       return next;
     });
-    setEstatisticaError(null);
+    setHandoffError(null);
   }
 
   async function handleLoadEstatistica() {
     if (!catalog || loadSelection.length === 0) return;
     setLoadingEstatistica(true);
-    setEstatisticaError(null);
+    setHandoffError(null);
     try {
       assertCompatibleSelection(loadSelection, packs);
       const dataset = buildSessionDataset(loadSelection, packs);
@@ -122,11 +123,31 @@ export function VariaveisPage() {
         },
       });
     } catch (err: unknown) {
-      setEstatisticaError(
+      setHandoffError(
         err instanceof Error ? err.message : 'Não foi possível carregar a seleção.',
       );
     } finally {
       setLoadingEstatistica(false);
+    }
+  }
+
+  async function handleLoadMapas() {
+    if (!catalog || loadSelection.length === 0) return;
+    setLoadingMapas(true);
+    setHandoffError(null);
+    try {
+      assertCompatibleSelection(loadSelection, packs);
+      navigate('/mapas', {
+        state: {
+          catalogVariableIds: loadSelection.map((entry) => entry.id),
+        },
+      });
+    } catch (err: unknown) {
+      setHandoffError(
+        err instanceof Error ? err.message : 'Não foi possível abrir a seleção no mapa.',
+      );
+    } finally {
+      setLoadingMapas(false);
     }
   }
 
@@ -170,9 +191,12 @@ export function VariaveisPage() {
               selectedLoadableIds.size > 0 ? selectedLoadableIds.size : loadSelection.length
             }
             canLoadEstatistica={canLoadEstatistica}
-            loadError={estatisticaError}
+            canLoadMapas={canLoadEstatistica}
+            loadError={handoffError}
             loadingEstatistica={loadingEstatistica}
+            loadingMapas={loadingMapas}
             onLoadEstatistica={handleLoadEstatistica}
+            onLoadMapas={handleLoadMapas}
           />
         </aside>
       </div>

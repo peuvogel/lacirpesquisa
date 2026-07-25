@@ -1,15 +1,21 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import {
+  getCatalogLabel,
+  getMetricByUf,
+} from '@/features/catalog/catalogAnalysisData';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { getUfName } from './ufCodes';
 import { MapasPage } from './MapasPage';
 
 const DEBOUNCE_MS = 300;
 
-function renderMapasPage() {
+function renderMapasPage(
+  initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/mapas'],
+) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>
       <SessionProvider>
         <MapasPage />
       </SessionProvider>
@@ -31,6 +37,33 @@ describe('MapasPage group workspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Norte' }));
     expect(screen.getByText(/7 território\(s\)/)).toBeInTheDocument();
+  });
+});
+
+describe('MapasPage catalogVariableIds handoff (D-15)', () => {
+  it('applies navigate state ids to the active group and checkbox list', async () => {
+    const internacoesId = 'sih.embolia_trombose.internacoes';
+    const label = getCatalogLabel(internacoesId);
+
+    renderMapasPage([
+      {
+        pathname: '/mapas',
+        state: {
+          catalogVariableIds: [internacoesId, 'unknown.not.in.catalog', 'ref.sih.nibr'],
+        },
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox', { name: label })).toBeChecked();
+    });
+
+    expect(screen.getByLabelText('Configuração de Catálogo')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: label })).toBeInTheDocument();
+
+    // Choropleth path still resolves pack metrics for the handed-off id.
+    const metrics = getMetricByUf(internacoesId);
+    expect(Object.keys(metrics).length).toBeGreaterThan(0);
   });
 });
 

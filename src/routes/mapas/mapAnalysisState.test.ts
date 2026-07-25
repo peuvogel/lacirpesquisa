@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyCatalogVariableIds,
   clampYear,
   createInitialMapAnalysisState,
   deriveFlatMapSelection,
@@ -9,6 +10,7 @@ import {
   isGroupComplete,
   isRangeTimeInvalid,
   mapAnalysisReducer,
+  resolveCatalogHandoffIds,
   type MapAnalysisGroup,
   type MapAnalysisState,
 } from './mapAnalysisState';
@@ -30,6 +32,42 @@ function completeGroup(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGr
     ...overrides,
   };
 }
+
+describe('applyCatalogVariableIds', () => {
+  it('creates a Catálogo group with resolved loadable IDs and UF layer', () => {
+    const next = applyCatalogVariableIds(createInitialMapAnalysisState(), [
+      'sih.embolia_trombose.internacoes',
+      'unknown.var',
+      'ref.sih.nibr',
+      'mock.obitos',
+    ]);
+    expect(next.groups).toHaveLength(1);
+    expect(next.groups[0]!.name).toBe('Catálogo');
+    expect(next.groups[0]!.variableIds).toEqual([
+      'sih.embolia_trombose.internacoes',
+      'sih.embolia_trombose.obitos',
+    ]);
+    expect(next.groups[0]!.time.mode).toBe('point');
+    expect(next.groups[0]!.time.point).toMatch(/^\d{4}$/);
+    expect(next.mapView.level).toBe('uf');
+    expect(next.provenance).toBe('catalog');
+  });
+
+  it('marks hybrid provenance when paste was already active', () => {
+    const base = createInitialMapAnalysisState();
+    const next = applyCatalogVariableIds(
+      { ...base, provenance: 'paste' },
+      ['sih.amputacao_mmii.internacoes'],
+    );
+    expect(next.provenance).toBe('hybrid');
+  });
+
+  it('ignores unknown ids in resolveCatalogHandoffIds', () => {
+    expect(resolveCatalogHandoffIds(['nope', 'sih.embolia_trombose.internacoes'])).toEqual([
+      'sih.embolia_trombose.internacoes',
+    ]);
+  });
+});
 
 describe('mapAnalysisReducer', () => {
   it('CREATE_GROUP adds a named group and sets active', () => {

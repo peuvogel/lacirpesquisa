@@ -16,9 +16,14 @@ function readCatalogJson(relativePath: string): unknown {
 
 function LocationProbe() {
   const location = useLocation();
+  const state = location.state as {
+    activeTestId?: string;
+    catalogVariableIds?: string[];
+  } | null;
+  const catalogIds = state?.catalogVariableIds?.join(',') ?? '';
   return (
     <div data-testid="location-probe">
-      {location.pathname}|{String((location.state as { activeTestId?: string } | null)?.activeTestId ?? '')}
+      {location.pathname}|{String(state?.activeTestId ?? '')}|{catalogIds}
     </div>
   );
 }
@@ -55,6 +60,15 @@ function renderPage(initialPath = '/variaveis') {
                 <h1>Estatística</h1>
                 <LocationProbe />
                 <DatasetProbe />
+              </>
+            }
+          />
+          <Route
+            path="/mapas"
+            element={
+              <>
+                <h1>Mapas</h1>
+                <LocationProbe />
               </>
             }
           />
@@ -223,5 +237,36 @@ describe('VariaveisPage', () => {
     const loadBtn = screen.getByRole('button', { name: 'Carregar na Estatística' });
     expect(loadBtn).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Usar no mapa' })).toBeDisabled();
+  });
+
+  it('navigates to Mapas with catalogVariableIds (D-15)', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const list = await screen.findByRole('listbox', { name: 'Variáveis do catálogo' });
+    await waitFor(() => {
+      expect(
+        within(list).getByLabelText(/Incluir Internações por embolia e trombose arteriais/i),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(
+      within(list).getByLabelText(/Incluir Internações por embolia e trombose arteriais/i),
+    );
+    await user.click(
+      within(list).getByLabelText(
+        /Incluir Óbitos hospitalares por embolia e trombose arteriais/i,
+      ),
+    );
+    await user.click(screen.getByRole('button', { name: /Usar no mapa \(2\)/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Mapas' })).toBeInTheDocument();
+    });
+
+    const location = screen.getByTestId('location-probe').textContent ?? '';
+    expect(location.startsWith('/mapas|')).toBe(true);
+    expect(location).toContain('sih.embolia_trombose.internacoes');
+    expect(location).toContain('sih.embolia_trombose.obitos');
   });
 });

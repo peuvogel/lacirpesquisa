@@ -1,7 +1,12 @@
 import { useCallback, useMemo, useReducer } from 'react';
 import type { GeoLevel, MapViewState, TerritoryRef } from '@/geo/types';
 import { resolvePresetTerritories, type RegionPresetId } from '@/geo/territoryCatalog';
-import { getCatalogLabel } from '@/features/catalog/catalogAnalysisData';
+import {
+  getCatalogLabel,
+  getCatalogVariableById,
+  getDefaultYearForVariable,
+} from '@/features/catalog/catalogAnalysisData';
+import { MAX_LOADABLE_SELECTION } from '@/features/catalog/buildSessionDataset';
 
 export type MapProvenance = 'catalog' | 'paste' | 'hybrid';
 
@@ -48,7 +53,71 @@ export type MapAnalysisAction =
   | { type: 'TOGGLE_GROUP_VARIABLE'; groupId: string; variableId: string }
   | { type: 'SET_MAP_VIEW'; mapView: MapViewState }
   | { type: 'MERGE_PRESET'; presetId: RegionPresetId; groupId?: string }
+  | { type: 'APPLY_CATALOG_VARIABLE_IDS'; variableIds: string[] }
   | { type: 'REPLACE_STATE'; state: MapAnalysisState };
+
+/**
+ * Resolve navigate-state catalog IDs to known loadable catalog entries (T-05-12).
+ * Unknown / reference-only IDs are ignored; selection is capped (T-05-13).
+ */
+export function resolveCatalogHandoffIds(rawIds: string[]): string[] {
+  const resolved: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of rawIds) {
+    const entry = getCatalogVariableById(raw);
+    if (!entry?.loadable) continue;
+    if (seen.has(entry.id)) continue;
+    seen.add(entry.id);
+    resolved.push(entry.id);
+    if (resolved.length >= MAX_LOADABLE_SELECTION) break;
+  }
+  return resolved;
+}
+
+/** Merge Variáveis → Mapas handoff IDs into active group (D-15). */
+export function applyCatalogVariableIds(
+  state: MapAnalysisState,
+  rawIds: string[],
+): MapAnalysisState {
+  const resolved = resolveCatalogHandoffIds(rawIds);
+  if (resolved.length === 0) return state;
+
+  let groups = [...state.groups];
+  let activeGroupId = state.activeGroupId;
+  const active = groups.find((g) => g.id === activeGroupId) ?? null;
+
+  if (!active) {
+    if (groups.length >= MAX_GROUPS) return state;
+    const group = createEmptyGroup('Catálogo');
+    groups = [...groups, group];
+    activeGroupId = group.id;
+  }
+
+  const targetId = activeGroupId!;
+  groups = groups.map((g) => {
+    if (g.id !== targetId) return g;
+    const variableIds = [...new Set([...g.variableIds, ...resolved])];
+    let time = g.time;
+    if (!isTimeValid(time)) {
+      const year = getDefaultYearForVariable(resolved[0]!);
+      if (year !== null) {
+        time = { mode: 'point', point: String(year) };
+      }
+    }
+    return { ...g, variableIds, time };
+  });
+
+  const provenance: MapProvenance =
+    state.provenance === 'paste' || state.provenance === 'hybrid' ? 'hybrid' : 'catalog';
+
+  return {
+    ...state,
+    groups,
+    activeGroupId: targetId,
+    provenance,
+    mapView: { ...state.mapView, level: 'uf' as GeoLevel },
+  };
+}
 
 let nextGroupCounter = 1;
 
@@ -199,6 +268,9 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
       }
       return mapAnalysisReducer(state, { type: 'CREATE_GROUP', territories });
     }
+
+    case 'APPLY_CATALOG_VARIABLE_IDS':
+      return applyCatalogVariableIds(state, action.variableIds);
 
     case 'REPLACE_STATE':
       return action.state;

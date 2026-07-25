@@ -11,9 +11,12 @@ export interface VariableDetailPanelProps {
   entry: CatalogEntry | null;
   selectedLoadableCount: number;
   canLoadEstatistica: boolean;
+  canLoadMapas?: boolean;
   loadError?: string | null;
   loadingEstatistica?: boolean;
+  loadingMapas?: boolean;
   onLoadEstatistica: () => void;
+  onLoadMapas?: () => void;
 }
 
 /** D-05 required provenance fields — refuse incomplete orphans in UI (T-05-09). */
@@ -37,9 +40,12 @@ export function VariableDetailPanel({
   entry,
   selectedLoadableCount,
   canLoadEstatistica,
+  canLoadMapas = canLoadEstatistica,
   loadError = null,
   loadingEstatistica = false,
+  loadingMapas = false,
   onLoadEstatistica,
+  onLoadMapas,
 }: VariableDetailPanelProps) {
   if (!entry) {
     return (
@@ -143,7 +149,7 @@ export function VariableDetailPanel({
       <div className="mt-auto flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap">
         <Button
           type="button"
-          disabled={!canLoadEstatistica || loadingEstatistica}
+          disabled={!canLoadEstatistica || loadingEstatistica || loadingMapas}
           onClick={onLoadEstatistica}
           className="bg-accent text-[#04120c] hover:bg-accent/90"
         >
@@ -153,8 +159,17 @@ export function VariableDetailPanel({
               ? `Carregar na Estatística (${selectedLoadableCount})`
               : 'Carregar na Estatística'}
         </Button>
-        <Button type="button" variant="ghost" disabled title="Disponível na próxima etapa (Mapas)">
-          Usar no mapa
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={!canLoadMapas || !onLoadMapas || loadingMapas || loadingEstatistica}
+          onClick={onLoadMapas}
+        >
+          {loadingMapas
+            ? 'Abrindo mapa…'
+            : selectedLoadableCount > 1
+              ? `Usar no mapa (${selectedLoadableCount})`
+              : 'Usar no mapa'}
         </Button>
       </div>
 
