@@ -53,3 +53,63 @@
   --text-data: 14px;
   --text-data--line-height: 1.55;
 }
+
+/* ===================================================
+   First-party D-15 accents (replaces @cult-ui this phase)
+   Exactly two accents, per 01-UI-SPEC.md § Component Inventory:
+   1. .lacir-header-grain — static texture, AppHeader only
+   2. .lacir-route-enter  — one-time route/area mount animation
+   =================================================== */
+@layer components {
+  .lacir-header-grain {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* Static grain (feTurbulence, alpha clamped to 4% via feColorMatrix)
+     layered under a soft teal radial wash. No animation — nothing here
+     needs a reduced-motion guard. */
+  .lacir-header-grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: radial-gradient(
+        ellipse 70% 100% at 50% -20%,
+        var(--color-accent-soft),
+        transparent 65%
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: no-repeat, repeat;
+    background-size: 100% 100%, 180px 180px;
+  }
+
+  .lacir-header-grain > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes lacirRouteEnter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .lacir-route-enter {
+    animation: lacirRouteEnter 220ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lacir-route-enter {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
