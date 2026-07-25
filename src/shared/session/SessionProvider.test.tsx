@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { createInitialMapAnalysisState } from '@/routes/mapas/mapAnalysisState';
 import { SessionProvider, useSession, type SessionDataset } from './SessionProvider';
 
 function renderSession() {
@@ -34,6 +35,7 @@ describe('SessionProvider / useSession', () => {
     expect(result.current.dataset).toBeNull();
     expect(result.current.datasusSession).toBeNull();
     expect(result.current.mapSelection).toBeNull();
+    expect(result.current.mapAnalysis).toBeNull();
   });
 
   it('flips hasData to true when a dataset is set', () => {
@@ -59,6 +61,7 @@ describe('SessionProvider / useSession', () => {
       result.current.setDataset(sampleDataset);
       result.current.setDatasusSession({ confirmedSources: [] });
       result.current.setMapSelection({ ufs: ['BA'], variables: ['obitos'] });
+      result.current.setMapAnalysis(createInitialMapAnalysisState());
     });
     expect(result.current.hasData).toBe(true);
 
@@ -69,6 +72,17 @@ describe('SessionProvider / useSession', () => {
     expect(result.current.dataset).toBeNull();
     expect(result.current.datasusSession).toBeNull();
     expect(result.current.mapSelection).toBeNull();
+    expect(result.current.mapAnalysis).toBeNull();
+    expect(result.current.hasData).toBe(false);
+  });
+
+  it('setMapAnalysis persists without flipping hasData (D-21)', () => {
+    const { result } = renderSession();
+    const analysis = createInitialMapAnalysisState();
+    act(() => {
+      result.current.setMapAnalysis(analysis);
+    });
+    expect(result.current.mapAnalysis).toEqual(analysis);
     expect(result.current.hasData).toBe(false);
   });
 
