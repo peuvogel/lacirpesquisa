@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -9,6 +9,33 @@ import {
   type SessionDataset,
 } from '@/shared/session/SessionProvider';
 import { EstatisticaPage } from './EstatisticaPage';
+
+const { ChartMock, destroySpy } = vi.hoisted(() => {
+  const destroySpy = vi.fn();
+  const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
+    return { destroy: destroySpy };
+  });
+  const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
+    register: ReturnType<typeof vi.fn>;
+  };
+  ChartMock.register = vi.fn();
+  return { ChartMock, destroySpy };
+});
+
+vi.mock('chart.js', () => ({
+  Chart: ChartMock,
+  BarController: {},
+  LineController: {},
+  ScatterController: {},
+  LinearScale: {},
+  CategoryScale: {},
+  PointElement: {},
+  LineElement: {},
+  BarElement: {},
+  Legend: {},
+  Tooltip: {},
+  Filler: {},
+}));
 
 function SeedSession({
   dataset,
@@ -35,6 +62,16 @@ function renderPage(initialEntries: Array<string | { pathname: string; state?: u
 }
 
 describe('EstatisticaPage', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    ChartMock.mockClear();
+    destroySpy.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('defaults to Teste demo on cold start', () => {
     renderPage();
     const mount = document.getElementById('lacir-test-module-mount');
@@ -84,5 +121,54 @@ describe('EstatisticaPage', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('session handoff completes correlacao analysis through Resultados', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const dataset: SessionDataset = {
+      headers: ['id', 'variavel_x', 'variavel_y', 'observacao_opcional'],
+      rows: [
+        ['UF1', '12,3', '45,2', ''],
+        ['UF2', '14,1', '43,8', ''],
+        ['UF3', '10,9', '48,0', ''],
+        ['UF4', '15,2', '42,7', ''],
+      ],
+      sourceLabel: 'Mapas — SP',
+      confirmedAt: Date.now(),
+    };
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/',
+            state: { activeTestId: 'correlacao' },
+          },
+        ]}
+      >
+        <SessionProvider>
+          <SeedSession dataset={dataset}>
+            <EstatisticaPage />
+          </SeedSession>
+        </SessionProvider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      const mount = document.getElementById('lacir-test-module-mount');
+      expect(mount).toHaveAttribute('data-active-test-id', 'correlacao');
+    });
+
+    expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+    });
+
+    expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
+    expect(screen.getByText('r de Pearson')).toBeInTheDocument();
+    expect(screen.queryByText(/Cada grupo precisa/i)).not.toBeInTheDocument();
   });
 });
