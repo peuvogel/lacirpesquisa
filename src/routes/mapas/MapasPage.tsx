@@ -1,20 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/EmptyState';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import type { TerritoryRef } from '@/geo/types';
 import { useSession } from '@/shared/session/SessionProvider';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
 import { buildUngroupedTerritories, GroupBar } from './GroupBar';
+import { GroupConfigPanel } from './GroupConfigPanel';
 import { MapBreadcrumb } from './MapBreadcrumb';
 import { MapLegendHint } from './MapLegendHint';
+import { MapPrimaryActionBar } from './MapPrimaryActionBar';
 import {
   createInitialMapAnalysisState,
   deriveFlatMapSelection,
@@ -24,9 +32,27 @@ import {
 import { getDefaultMockVariableId, getMockMetricByUf } from './mockAnalysisData';
 import { SelectionSummaryStrip } from './SelectionSummaryStrip';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
-import { VariablePanel } from './VariablePanel';
 
 type ContextPanelMode = 'explore' | 'paste' | 'group';
+
+const TABLET_BREAKPOINT = 1024;
+
+function useIsTabletViewport(): boolean {
+  const [isTablet, setIsTablet] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < TABLET_BREAKPOINT : false,
+  );
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const media = window.matchMedia(`(max-width: ${TABLET_BREAKPOINT - 1}px)`);
+    const update = () => setIsTablet(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  return isTablet;
+}
 
 function collectGroupMembership(
   groups: ReturnType<typeof useMapAnalysis>['state']['groups'],
@@ -51,6 +77,7 @@ function territoriesToSiglas(territories: TerritoryRef[]): string[] {
 export function MapasPage() {
   const { setMapSelection, setMapAnalysis, mapAnalysis } = useSession();
   const { state, dispatch, derived } = useMapAnalysis(mapAnalysis ?? undefined);
+  const isTablet = useIsTabletViewport();
 
   const [hoveredUF, setHoveredUF] = useState<string | null>(null);
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
@@ -58,8 +85,20 @@ export function MapasPage() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [contextPanelMode, setContextPanelMode] = useState<ContextPanelMode>('explore');
   const [clearAllOpen, setClearAllOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [groupSheetOpen, setGroupSheetOpen] = useState(false);
 
-  const activeVariableId = getDefaultMockVariableId();
+  const activeGroup = useMemo(
+    () => state.groups.find((group) => group.id === state.activeGroupId) ?? null,
+    [state.activeGroupId, state.groups],
+  );
+
+  const activeVariableId = useMemo(() => {
+    if (activeGroup?.variableIds[0]) return activeGroup.variableIds[0];
+    const firstWithVars = state.groups.find((group) => group.variableIds.length > 0);
+    return firstWithVars?.variableIds[0] ?? getDefaultMockVariableId();
+  }, [activeGroup, state.groups]);
+
   const choroplethValues = useMemo(() => getMockMetricByUf(activeVariableId), [activeVariableId]);
 
   const ungroupedTerritories = useMemo(
@@ -104,20 +143,29 @@ export function MapasPage() {
         const group = state.groups.find((g) =>
           g.territoryIds.some((t) => t.level === 'uf' && t.sigla === uf),
         );
-        if (group) dispatch({ type: 'SET_ACTIVE_GROUP', groupId: group.id });
+        if (group) {
+          dispatch({ type: 'SET_ACTIVE_GROUP', groupId: group.id });
+          setContextPanelMode('group');
+          if (isTablet) setGroupSheetOpen(true);
+        }
         return;
       }
       setSelectedUFs((current) =>
         current.includes(uf) ? current.filter((sigla) => sigla !== uf) : [...current, uf],
       );
     },
-    [dispatch, groupMembership, markInteracted, state.groups],
+    [dispatch, groupMembership, isTablet, markInteracted, state.groups],
   );
 
-  const handleGroupCreated = useCallback((siglas: string[]) => {
-    setSelectedUFs((current) => current.filter((sigla) => !siglas.includes(sigla)));
-    setHighlightedUFs([]);
-  }, []);
+  const handleGroupCreated = useCallback(
+    (siglas: string[]) => {
+      setSelectedUFs((current) => current.filter((sigla) => !siglas.includes(sigla)));
+      setHighlightedUFs([]);
+      setContextPanelMode('group');
+      if (isTablet) setGroupSheetOpen(true);
+    },
+    [isTablet],
+  );
 
   const handleHighlightTerritories = useCallback((territories: TerritoryRef[]) => {
     setHighlightedUFs(territoriesToSiglas(territories));
@@ -182,11 +230,18 @@ export function MapasPage() {
     setHoveredUF(null);
     setContextPanelMode('explore');
     setClearAllOpen(false);
+    setGroupSheetOpen(false);
+    setReviewOpen(false);
   }, [dispatch]);
 
-  const togglePasteMode = useCallback(() => {
-    setContextPanelMode((mode) => (mode === 'paste' ? 'explore' : 'paste'));
-  }, []);
+  const openPasteMode = useCallback(() => {
+    setContextPanelMode('paste');
+    if (isTablet) setGroupSheetOpen(true);
+  }, [isTablet]);
+
+  const handleReview = useCallback(() => {
+    if (derived.canReview) setReviewOpen(true);
+  }, [derived.canReview]);
 
   useEffect(() => {
     setMapAnalysis(state);
@@ -206,6 +261,18 @@ export function MapasPage() {
   }, [selectedUFs, setMapSelection, state]);
 
   useEffect(() => {
+    if (state.activeGroupId && contextPanelMode !== 'paste') {
+      setContextPanelMode('group');
+    }
+  }, [state.activeGroupId, contextPanelMode]);
+
+  useEffect(() => {
+    if (isTablet && state.activeGroupId && contextPanelMode === 'group') {
+      setGroupSheetOpen(true);
+    }
+  }, [contextPanelMode, isTablet, state.activeGroupId]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
 
@@ -222,9 +289,44 @@ export function MapasPage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [clearUngroupedSelection, state.groups.length]);
 
-  const flatSelection = deriveFlatMapSelection(state);
-  const panelSelectedUFs =
-    selectedUFs.length > 0 ? selectedUFs : activeGroupHighlight.length > 0 ? activeGroupHighlight : [];
+  const renderExplorePanel = () => (
+    <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-border bg-surface p-6">
+      <EmptyState
+        heading="Explore o mapa do Brasil"
+        body="Passe o mouse sobre um estado para ver o que está disponível. Clique para selecionar um ou mais estados e formar grupos de análise."
+      />
+    </div>
+  );
+
+  const renderContextBody = () => {
+    if (contextPanelMode === 'paste') {
+      return (
+        <TerritoryPastePanel
+          onMatched={handlePasteMatched}
+          onMatchedTerritories={handlePasteTerritories}
+          activeUfScope={state.mapView.level !== 'uf' ? state.mapView.parentCode : undefined}
+        />
+      );
+    }
+
+    if (contextPanelMode === 'group' && activeGroup) {
+      return <GroupConfigPanel group={activeGroup} dispatch={dispatch} />;
+    }
+
+    return renderExplorePanel();
+  };
+
+  const actionBar = (
+    <MapPrimaryActionBar
+      canReview={derived.canReview}
+      onReview={handleReview}
+      onPasteTerritories={openPasteMode}
+      onClearMap={() => setClearAllOpen(true)}
+      clearConfirmOpen={clearAllOpen}
+      onClearConfirmOpenChange={setClearAllOpen}
+      onConfirmClear={clearAllWork}
+    />
+  );
 
   return (
     <div className="mx-auto max-w-[1520px] px-6 py-8">
@@ -241,8 +343,8 @@ export function MapasPage() {
 
       <SelectionSummaryStrip className="mt-4" summary={summary} />
 
-      <div className="mt-8 flex gap-8">
-        <section className="lacir-mapas-map w-[58%]" aria-label="Mapa do Brasil">
+      <div className="mt-8 flex flex-col gap-8 lg:flex-row">
+        <section className="lacir-mapas-map w-full lg:w-[58%]" aria-label="Mapa do Brasil">
           <MapBreadcrumb
             className="mb-3"
             mapView={state.mapView}
@@ -267,69 +369,56 @@ export function MapasPage() {
           {!hasInteracted ? <MapLegendHint /> : null}
         </section>
 
-        <aside className="lacir-mapas-panel flex w-[42%] flex-col" aria-label="Painel contextual">
-          <div className="mb-3 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant={contextPanelMode === 'paste' ? 'default' : 'outline'}
-              size="sm"
-              onClick={togglePasteMode}
-            >
-              Colar territórios
-            </Button>
-          </div>
-
-          {contextPanelMode === 'paste' ? (
-            <TerritoryPastePanel
-              onMatched={handlePasteMatched}
-              onMatchedTerritories={handlePasteTerritories}
-              activeUfScope={
-                state.mapView.level !== 'uf' ? state.mapView.parentCode : undefined
-              }
-            />
-          ) : (
-            <VariablePanel
-              hoveredUF={hoveredUF}
-              selectedUFs={panelSelectedUFs}
-              selectedVariables={flatSelection?.variables ?? []}
-              onToggleVariable={() => undefined}
-              onClearSelection={clearUngroupedSelection}
-              onIniciarPesquisa={() => undefined}
-            />
-          )}
-
-          <div
-            className="mt-auto border-t border-border pt-4"
-            aria-label="Ações principais"
-          >
-            <Button type="button" disabled={!derived.canReview} className="w-full">
-              Revisar e analisar
-            </Button>
-            {!derived.canReview ? (
-              <p className="mt-2 font-sans text-xs text-text-muted">
-                Complete período e variáveis em todos os grupos antes de revisar.
-              </p>
-            ) : null}
-          </div>
-        </aside>
+        {!isTablet ? (
+          <aside className="lacir-mapas-panel flex w-full flex-col lg:w-[42%]" aria-label="Painel contextual">
+            {renderContextBody()}
+            <div className="mt-auto">{actionBar}</div>
+          </aside>
+        ) : (
+          <>
+            <div className="sticky bottom-0 z-20 rounded-xl border border-border bg-surface p-4 lg:hidden">
+              {actionBar}
+            </div>
+            <Sheet open={groupSheetOpen} onOpenChange={setGroupSheetOpen}>
+              <SheetContent side="right" className="w-full max-w-[480px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>
+                    {activeGroup ? activeGroup.name : 'Configurar grupo'}
+                  </SheetTitle>
+                  <SheetDescription>
+                    Defina período e variáveis para o grupo ativo.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="px-4 pb-6">
+                  {contextPanelMode === 'paste' ? (
+                    <TerritoryPastePanel
+                      onMatched={handlePasteMatched}
+                      onMatchedTerritories={handlePasteTerritories}
+                      activeUfScope={
+                        state.mapView.level !== 'uf' ? state.mapView.parentCode : undefined
+                      }
+                    />
+                  ) : activeGroup ? (
+                    <GroupConfigPanel group={activeGroup} dispatch={dispatch} className="border-0 p-0" />
+                  ) : (
+                    renderExplorePanel()
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </>
+        )}
       </div>
 
-      <Dialog open={clearAllOpen} onOpenChange={setClearAllOpen}>
-        <DialogContent showCloseButton={false} className="max-w-md">
+      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="max-w-lg" data-testid="review-analysis-dialog">
           <DialogHeader>
-            <DialogTitle>Limpar mapa</DialogTitle>
+            <DialogTitle>Revisar antes de analisar</DialogTitle>
             <DialogDescription>
-              Apagar grupos, seleções e dados colados desta sessão? Não dá para desfazer.
+              Confira territórios, grupos, período e variáveis. A LACIR sugere um teste — você pode
+              trocar antes de continuar.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setClearAllOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="button" variant="destructive" onClick={clearAllWork}>
-              Sim, apagar
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
