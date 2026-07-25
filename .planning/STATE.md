@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 4 gate complete — human UX spot-check pending
+**Current focus:** Phase 5 discuss complete — ready for plan-phase
 
 ## Current Position
 
-Phase: 04 (mapas-como-interface-estatistica) — COMPLETE (automated gate)
-Plan: 8 of 8 (complete)
-Status: Ready for `/gsd:verify-work` — human didactic UX deferred (`human_needed`)
+Phase: 05 (variaveis-no-site-scrape-referencias) — CONTEXT ready
+Plan: 0 of TBD
+Status: Ready for `/gsd:plan-phase 5`
 Last activity: 2026-07-25
 
-Progress: [██████████] 100% Phase 4 plans
+Progress: discuss complete — planning next
 
 ## Accumulated Context
 
