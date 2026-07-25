@@ -4,6 +4,7 @@ import { BrazilMockMap } from './BrazilMockMap';
 import { computeVariableIntersection } from './computeVariableIntersection';
 import { MapLegendHint } from './MapLegendHint';
 import { MOCK_VARIABLES_BY_UF } from './mockVariablesByUF';
+import { IniciarPesquisaModal } from './IniciarPesquisaModal';
 import { VariablePanel } from './VariablePanel';
 
 export function MapasPage() {
@@ -12,6 +13,7 @@ export function MapasPage() {
   const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [selectedVariables, setSelectedVariables] = useState<string[]>([]);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [pesquisaOpen, setPesquisaOpen] = useState(false);
 
   const markInteracted = useCallback(() => {
     setHasInteracted(true);
@@ -109,10 +111,16 @@ export function MapasPage() {
             selectedVariables={selectedVariables}
             onToggleVariable={handleToggleVariable}
             onClearSelection={clearSelection}
-            onIniciarPesquisa={() => {}}
+            onIniciarPesquisa={() => setPesquisaOpen(true)}
           />
         </aside>
       </div>
+      <IniciarPesquisaModal
+        open={pesquisaOpen}
+        onOpenChange={setPesquisaOpen}
+        selectedUFs={selectedUFs}
+        selectedVariables={selectedVariables}
+      />
     </div>
   );
 }
