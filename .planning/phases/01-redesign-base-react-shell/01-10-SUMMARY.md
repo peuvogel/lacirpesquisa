@@ -77,7 +77,7 @@ completed: 2026-07-25
 2. **Task 2: Shared results pattern** - `eb0d214` (feat)
 3. **Task 3: Assemble Teste demo and mount** - `4901a05` (feat)
 
-**Plan metadata:** `pending` (docs commit)
+**Plan metadata:** `df5959d` (docs: complete plan)
 
 ## Files Created/Modified
 

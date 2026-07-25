@@ -69,7 +69,7 @@ completed: 2026-07-25
 1. **Task 1: Mock research suggestions and official collection links** - `9982d0a` (feat)
 2. **Task 2: The Iniciar pesquisa modal and the handoff into Estatística** - `4968491` (feat)
 
-**Plan metadata:** `cdb28dc` (docs: complete plan)
+**Plan metadata:** `c8f87ae` (docs: complete plan)
 
 ## Files Created/Modified
 

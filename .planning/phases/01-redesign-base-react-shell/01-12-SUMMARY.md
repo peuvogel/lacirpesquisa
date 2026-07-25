@@ -69,7 +69,7 @@ completed: 2026-07-25
 1. **Task 1: The beforeunload hook, gated and closure-safe** - `67dd7d0` (feat)
 2. **Task 2: Route-scope the guard and add the Limpar dados action** - `0f788a4` (feat)
 
-**Plan metadata:** `0287a1b` (docs: complete plan)
+**Plan metadata:** `829462a` (docs: complete plan)
 
 ## Files Created/Modified
 
