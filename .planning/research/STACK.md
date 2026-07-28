@@ -1,173 +1,283 @@
 # Stack Research
 
-**Domain:** Client-side bioestatística/epidemiology teaching tool — React rewrite adding GLM-family hypothesis tests, meta-analysis, and Brazil choropleth maps, 100% browser (no backend)
-**Researched:** 2026-07-25
-**Confidence:** MEDIUM-HIGH (core framework/UI = HIGH, GLM/meta-analysis libraries = MEDIUM/LOW — see per-item notes)
+**Domain:** Hardening an existing DataSUS TabNet scraping pipeline (Python) + serving 1.1M+ Supabase/PostgREST rows to a Vite/React choropleth + safe PK migration on a 1.1M-row Postgres table
+**Researched:** 2026-07-28
+**Confidence:** HIGH — every "add this" and "don't add this" call below is grounded in either Context7-verified official docs, a currently-installed-tool version check on this machine, or a direct read of the exact code this milestone must harden.
 
-> Scope note: this file covers only the **additions/changes** needed for v2.0 (React rewrite, new stats tests, maps, DataSUS catalog, dark theme). It does not re-research the validated v1.0 stack (Chart.js survives as the charting engine; t-Student/Pearson/Spearman/Prais-Winsten math is already implemented and is out of scope here).
+> **Scope note:** this file supersedes the previous `.planning/research/STACK.md` (dated 2026-07-25, v2.0 research) for v3.0 purposes, but does **not** re-litigate it. That file's recommendations (React 19 + Vite 8 + Tailwind 4 + shadcn/ui, Chart.js 4 + `chartjs-chart-geo`/`chartjs-chart-error-bars`, `jstat` + `ml-matrix` + custom IRLS `glm.js`, the geodata/mapshaper pipeline, the meta-analysis module) are **already shipped and validated** per `.planning/PROJECT.md`'s "Estado herdado do v2.0" — do not re-research or second-guess them here. This file covers **only** the four new capabilities v3.0 adds: (a) a resilient/resumable Python scraping pipeline, (b) efficient large-table Supabase/PostgREST querying from the browser, (c) client-side caching for that data, and (c′) a safe primary-key migration on the Supabase tables.
 
-## Recommended Stack
+## TL;DR — the four calls that matter
 
-### Core Technologies
+1. **Python scraper: add zero pip packages.** The observed bug ("DNS failure logged as OK · 0 linhas, uploaded, cache deleted") is not a missing-library problem — it's two specific, findable code defects (below). Fix them with ~60 lines of stdlib (`sqlite3` + `urllib` + `time`/`random`), not `tenacity`.
+2. **Supabase JS: add zero new packages.** `@supabase/supabase-js` (already installed) already has everything needed — `.range()` and `count: 'exact'|'planned'|'estimated'`. The fix is a pagination *pattern*, applied to a query that already exists in this repo and is already at risk of silently truncating.
+3. **Client caching: add `@tanstack/react-query` v5.101.4.** This is the one genuine "yes, add a new dependency" recommendation in this document.
+4. **Postgres PK migration: add zero new tools.** Supabase CLI is already on this machine (v2.90.0). Use a native Postgres `ON UPDATE CASCADE` + one transaction. No `pg` npm package, no external migration framework.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| React | ^19.2.8 | UI runtime (replaces vanilla-JS module system) | Current stable line (patched weekly by the React team); required by shadcn/ui's React primitives and by cult-ui's Framer-Motion components. No app-router/RSC needed here — plain client SPA. |
-| Vite | ^8.1.5 | Dev server + bundler (already in use) | Already the project's build tool (`vite@^5` today); upgrading keeps HMR speed and gives first-class Tailwind v4 plugin support. No reason to switch to Next.js — this milestone is explicitly client-only/static, and a router-based meta-framework would add SSR concerns the project doesn't need. |
-| Tailwind CSS | ^4.3.x | Utility CSS + design tokens (dark theme, green accents) | v4's CSS-first config (`@import "tailwindcss"` + `@theme`) replaces `tailwind.config.js` and is required by current shadcn/ui + cult-ui installers. First-party `@tailwindcss/vite` plugin removes PostCSS boilerplate. |
-| shadcn/ui | CLI `shadcn@latest` (init `-t vite`) | Accessible, unstyled-by-default component primitives (Radix-based) copied into the repo | Not an npm dependency — a code generator. Fits "own your components" philosophy, pairs natively with Tailwind v4 tokens, and is the platform the `@cult-ui` registry itself targets. This is also the same CLI referenced by PROJECT.md ("shadcn MCP + registry cult-ui"). |
-| cult-ui (`@cult-ui` registry) | Registry-based, versioned per-component | Animated/composable UI accents (backgrounds, texture cards, hero effects) for the redesign | Curated, MIT-licensed, officially listed in the shadcn directory (accepted registry, Oct 2025). Installed per-component via `npx shadcn@latest add @cult-ui/<name>` after registering the registry URL in `components.json` — no separate package manager needed. |
-| Chart.js | ^4.5.x (already a dependency) | Base charting engine, extended for forest/funnel plots | Already validated in v1.0 for Pearson/Spearman/t-Student charts. Reusing it (rather than introducing D3/Recharts as a second charting stack) minimizes new surface area and lets forest/funnel plots share theming with existing charts. |
+---
 
-### Supporting Libraries — New Statistical Tests
+## Part (a) — Hardening the DataSUS TabNet scraper (Python)
 
-| Library | Version | Purpose | When to Use |
+### What's actually broken (read directly from the code, not inferred)
+
+`trabalhos datasus/scripts/coleta_sih_multi_disease.py::scrape_one()`:
+
+```python
+print(
+    f"OK {disease['id']}: {len(uf_rows)} UF rows · {len(muni_rows)} muni rows → {csv_path}",
+    flush=True,
+)
+if cleanup and not errors and len(uf_rows) > 0:
+    cleanup_raw(disease["id"])
+```
+
+The `print("OK …")` line does **not** check `errors` before printing "OK." If every measure failed (e.g. DNS resolution failure mid-run), `uf_rows`/`muni_rows` are empty lists, `errors` is non-empty, and the log still says `OK <disease>: 0 UF rows · 0 muni rows` — this is the exact line quoted in `.planning/PROJECT.md`. The `errors`-gated raw-cache cleanup on this line is actually *correct* (it does check `not errors`) — the bug is purely the misleading log line, but it's the one a human (or a "did it work" grep) trusts.
+
+`trabalhos datasus/scripts/scrape_upload_sih.py::main()` (the one `npm run scrape:overnight` actually drives, via `overnight_watchdog.sh`):
+
+```python
+uf_rows = load_csv_rows(coleta.OUT_ROOT / did / f"base_{did}_uf_2013_2025.csv")
+muni_rows = load_csv_rows(coleta.OUT_ROOT / did / f"base_{did}_muni_2013_2025.csv")
+upload_disease(did, uf_rows, muni_rows)     # posts 0 rows silently — post_ingest() returns 0 for an empty list, no error
+mark_uploaded(did, {...})                   # marks success unconditionally, even for 0 rows
+cleanup_raw(did)                            # deletes the raw cache unconditionally, even for 0 rows
+```
+
+**Nothing here checks `len(uf_rows) > 0` before marking uploaded and deleting the raw cache.** This is the "cache bruto foi apagado" data-loss bug. Also worth noting: `post_tabnet()` (the actual TabNet HTTP call in `coleta_sih_multi_disease.py`) has **zero retry logic** — a single `urllib.request.urlopen()` call, no backoff, nothing. All the retry/backoff that exists today (`post_ingest`'s 4-attempt loop with `time.sleep(2 ** attempt)`) is on the *upload* side only, not the *scrape* side, which is backwards given DNS/connectivity is the failure mode actually observed.
+
+### Recommendation: stdlib only, two new small modules
+
+| Technology | Version | Purpose | Why (specific failure prevented) |
+|------------|---------|---------|-----------------------------------|
+| Python `sqlite3` (stdlib) | bundled — confirmed present, Python 3.9.6 on this Mac | Durable ledger keyed by `(disease_id, measure, grain)`, 330×4×2 = 2,640 rows | Replaces the current *implicit* "done" logic split across two disconnected signals (`coleta.disease_done()` checking `metadata.json`+CSV existence, `scrape_upload_sih.already_uploaded()` checking a separate `uploaded.json` marker file). Two markers that can desync is exactly how "scraped-but-not-really, marked-uploaded-anyway" bugs like this one happen. One table, one row per unit of work, one status enum — `INSERT … ON CONFLICT(disease_id,measure,grain) DO UPDATE …` is an atomic transaction, so a kill -9 mid-write can't corrupt it the way a half-written `uploaded.json` can. |
+| Hand-written retry helper (stdlib `urllib.error`, `time`, `random`) | n/a | Retry+backoff wraps `post_tabnet()` (currently has none) and replaces the ad hoc loop already in `post_ingest()` | Consolidates the ONE retry policy this project actually needs (retry on `urllib.error.URLError` / `TimeoutError` / `ConnectionError` / `http.client.HTTPException`, exponential backoff + jitter, ~5 attempts) into one ~15-line function, reused at both call sites. Prevents the specific DNS-drop-mid-scrape failure mode by giving transient network errors a chance to clear before giving up loudly. |
+| macOS `caffeinate` (ships with the OS) | n/a | Wrap the overnight run so the Mac doesn't sleep mid-scrape | A multi-hour unattended run on a laptop (lid closed / display sleep / App Nap) is the most likely real-world cause of a stalled overnight job — `caffeinate -i` (or `-s` on AC power) prevents idle sleep for the life of the wrapped process. Zero install: it's a macOS system binary. |
+
+**Ledger schema** (new file, e.g. `trabalhos datasus/outputs/coleta_sih_multi/ledger.db`):
+
+```sql
+CREATE TABLE IF NOT EXISTS ledger (
+  disease_id  TEXT NOT NULL,
+  measure     TEXT NOT NULL,
+  grain       TEXT NOT NULL CHECK (grain IN ('uf','municipio')),
+  status      TEXT NOT NULL CHECK (status IN ('pending','scraped','uploaded','failed')) DEFAULT 'pending',
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  rows_written INTEGER,
+  last_error  TEXT,
+  updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (disease_id, measure, grain)
+);
+```
+
+State-machine rules the ledger must enforce (this is the actual fix, not the schema):
+- `failed` is set (and printed as `FAIL`, never `OK`) whenever the per-measure `errors` list is non-empty — **regardless of row count**.
+- `uploaded` is set — and only then is `cleanup_raw()` allowed to run — **after** comparing the ingest response's `upserted` count against the locally parsed row count. "OK" must mean *verified*, not *no exception happened to be thrown*.
+- A `rows == 0` result with an empty `errors` list is still suspicious for a `lista_morb` disease that's supposed to carry município grain (`coleta.disease_done()` already encodes this rule — reuse it, don't re-derive it) — treat as `failed`, not `uploaded`, unless a human has confirmed the zero is real.
+- `sqlite3 ledger.db "select status, count(*) from ledger group by status;"` is the entire "how's the overnight run going" dashboard — no new tooling needed, `sqlite3` ships with macOS.
+
+**Integration points** (concrete file changes):
+- New `trabalhos datasus/scripts/net.py` — the retry helper, imported by both `coleta_sih_multi_disease.py` (wrap `post_tabnet`) and `scrape_upload_sih.py` (replace the inline retry loop in `post_ingest`).
+- New `trabalhos datasus/scripts/ledger.py` — thin `sqlite3` wrapper (`mark(disease_id, measure, grain, status, **fields)`, `pending()`, `summary()`).
+- `coleta_sih_multi_disease.py::scrape_one()` — gate the `OK`/`FAIL` print on `errors`, call `ledger.mark(..., 'scraped', rows_written=len(uf_rows))` per grain.
+- `scrape_upload_sih.py::upload_disease()` / main loop — only call `mark_uploaded()`/`cleanup_raw()` after comparing uploaded counts to local counts; call `ledger.mark(..., 'uploaded')` at that point, `'failed'` otherwise.
+- `trabalhos datasus/scripts/launch_overnight.py` — change the `Popen` command from `["bash", str(SCRIPT)]` to `["caffeinate", "-i", "bash", str(SCRIPT)]`.
+- `trabalhos datasus/scripts/overnight_watchdog.sh` — the current "is this phase done" check (`grep -q "ALL DONE" <(tail -n 5 log)`) is a fragile text-grep. Once the ledger exists, prefer `sqlite3 ledger.db "select count(*) from ledger where status != 'uploaded'"` == 0 as the authoritative completion signal; keep the log grep only as a secondary sanity check.
+
+### Supervision on macOS: keep the current approach, don't add launchd
+
+The existing `launch_overnight.py` (detached `subprocess.Popen(..., start_new_session=True)` + PID file) + `overnight_watchdog.sh` (bash `while true` crash-restart loop) is already the right shape for this job: a manually-triggered, multi-hour, occasional (a few times per semester) batch run. **Do not migrate this to a macOS `launchd` LaunchAgent.** `launchd` earns its complexity for *permanently scheduled* or *always-on* daemons; for an ad hoc "run once when a student kicks it off before bed" job, a plist + `launchctl bootstrap`/`bootout` (whose exact invocation has changed across recent macOS versions) is strictly more moving parts for zero benefit, and harder for a non-infra team to debug than "read the log file." The one real gap — sleep/App Nap killing connectivity mid-run — is solved by `caffeinate`, not by a different supervisor.
+
+---
+
+## Part (b) — Serving 1.1M+ Supabase rows to the browser choropleth
+
+### The concrete row-limit fact (verified, not hand-waved)
+
+PostgREST — and therefore every Supabase project — caps the number of rows a single request can return at **1,000 by default** (`db-max-rows`, called "Max Rows" in Dashboard → Project Settings → API / Data API settings). A plain `.select()` with no `.range()`/`.limit()` does **not** error when there are more matching rows than the cap — it silently returns exactly 1,000 and nothing tells the caller it was truncated unless you asked for `count`. Community reports also note the dashboard "Max Rows" setting has intermittently failed to take effect after being raised — so pagination correctness should not depend on a dashboard toggle at all.
+
+**This repo already has a query at risk of hitting this today.** `src/features/catalog/fetchHandoffMetricLookup.ts` chunks município codes into batches of 80 and queries:
+
+```ts
+supabase.from('sih_metric_muni')
+  .select('disease_id,municipio_codigo,uf_codigo,ano,internacoes,obitos,valor_total,dias_permanencia,taxa_mortalidade')
+  .in('disease_id', diseaseList)
+  .in('municipio_codigo', chunk)   // up to 80 codes
+  // .in('ano', yearList) — only applied when req.year !== null
+```
+
+When a request's `year` is `null` ("all years"), no `ano` filter is applied. 80 municípios × 13 years (2013–2025) × N diseases already exceeds 1,000 rows for `N ≥ 1` disease with a `null` year, and any multi-disease overlay compounds it further. Today this silently returns a partial, effectively-arbitrary subset of município×year values with no error — the UI would show blank cells indistinguishable from "no data" for whatever got truncated. **This is a pre-existing latent bug, not a new-in-v3.0 risk** — it will get worse as município coverage goes from 10 diseases to 330.
+
+### Recommendation: pagination pattern, not a new dependency
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `@supabase/supabase-js` `.range(from, to)` | already installed (2.110.8; latest is 2.110.9, a no-op patch bump — no upgrade needed for this) | Loop-fetch any query whose result size isn't provably ≤1,000 rows | `.range()` is inclusive, zero-indexed pagination built into the client already in `package.json`. A small `selectAll()` helper (loop `.range(i, i+999)` until a page returns `< pageSize` rows) fixes the município-drilldown truncation risk without adding anything. |
+| `count: 'exact' \| 'planned' \| 'estimated'` (built into `@supabase/supabase-js`) | already installed | Verify row counts, e.g. for the Part-(c′) migration check | `exact` triggers a real `COUNT(*)` (correct but O(n) — noticeable on a 1.1M-row table if run per-request); `planned` reads the query-planner's `pg_class.reltuples` estimate (instant, imprecise); `estimated` is Supabase's hybrid (uses the fast estimate above a threshold, falls back to exact below it). Use `exact` only for narrow, already-filtered counts (e.g. "rows for disease X" — small); never run `count: 'exact'` unfiltered against `sih_metric_muni` on every page load. |
+
+**New file recommended:** `src/lib/supabasePaginate.ts` — a generic `selectAll<T>(build: (q) => q)` helper used by both `fetchHandoffMetricLookup.ts` (fix the existing latent bug above) and any new dynamic-map fetcher.
+
+### Does the choropleth need an RPC / Postgres function / materialized view? No — for the query you actually described.
+
+"27 UF values per disease×year" is, at most, 27 rows. `sih_metric_uf`'s primary key is `(disease_id, uf_codigo, ano)` — a plain `.select().eq('disease_id', x).eq('ano', y)` is already indexed (leading PK column matches `disease_id`) and returns ≤27 rows well under the 1,000 cap. **A materialized view here would be re-aggregating data that is already stored at exactly the grain needed** — `sih_metric_uf` *is* the pre-aggregated UF grain; there's nothing left to aggregate. It would also add real complexity for no benefit: materialized views have **no built-in Postgres RLS support**, so exposing one to the `anon` role would require either wrapping it in a `security_invoker` function or manually revoking/re-granting access — extra risk for a query this small doesn't need.
+
+An RPC (`create or replace function ...` + `supabase.rpc(...)`) *would* earn its place for one specific future shape not currently in scope: a município drill-down aggregated across **many years at once** for a whole UF (e.g. 853 municípios in Minas Gerais × 13 years = 11,089 raw rows — genuinely over the 1,000 cap even after fixing the pagination bug, and mostly wasted bandwidth if the UI only wants a per-year sum). If/when that access pattern is built, a `SELECT uf_codigo, ano, sum(internacoes) ... GROUP BY` server-side function returns rows-per-year instead of rows-per-município-per-year — genuinely fewer rows over the wire. **Don't build this speculatively** — the milestone's stated shape (choropleth by disease×year, drill-down by disease×UF×year) doesn't need it yet; add it only when a specific query is measured to need >1,000 rows of raw data to compute an aggregate the client currently does in JS.
+
+### Indexes
+
+`sih_metric_uf` PK `(disease_id, uf_codigo, ano)` and `sih_metric_muni` PK `(disease_id, municipio_codigo, ano)` + secondary index `sih_metric_muni_uf_ano (disease_id, uf_codigo, ano)` (documented in `docs/SUPABASE-CATALOG.md`) already match the two access patterns that matter: choropleth (`disease_id, ano`) and drill-down (`disease_id, uf_codigo, ano`). **Verify the secondary index actually exists on the live table** (`docs/SUPABASE-CATALOG.md` documents it as intent, not confirmed-applied) — this is a phase-9/10 verification action item, not a new research gap. No new indexes are needed for the Part-(c′) rename — it only changes column *values*, not the schema, so both indexes remain valid and are updated transparently (and cheaply, since each rename only touches the rows for one `disease_id`, not the whole table) by Postgres as part of the `UPDATE`.
+
+---
+
+## Part (c) — Client-side caching: add `@tanstack/react-query`
+
+This is the one clear "add a new dependency" call in this document.
+
+| Library | Version | Purpose | When to use |
 |---------|---------|---------|-------------|
-| `jstat` | ^1.9.6 | Probability distributions (normal, chi-square, F, t, Poisson) for p-values, CIs, and quantiles | Foundational dependency for **every** new test (chi-square, ANOVA, Kruskal-Wallis, GLM Wald/LR tests, meta-analysis CIs). Last published 2022 but the math doesn't go stale — distribution functions are pure, well-tested, and this is the most complete pure-JS distribution library available. |
-| `@stdlib/stats-chi2test` | latest (0.x) | Chi-square test of independence on contingency tables (with Yates' correction) | Qui-quadrado feature. Well-scoped, actively maintained as part of the large `stdlib` monorepo; avoids hand-rolling contingency-table math. |
-| `@stdlib/stats-anova1` | latest (0.x) | One-way ANOVA (F-test, sum of squares, p-value) | ANOVA feature. |
-| `@stdlib/stats-kruskal-test` | latest (0.x) | Kruskal-Wallis rank-sum test (nonparametric one-way ANOVA) | Kruskal-Wallis feature — the nonparametric companion the capacitação also teaches. |
-| `ml-matrix` | ^6.13.0 | Matrix ops (QR/Cholesky/SVD, solve, inverse) — linear-algebra backbone | **Required custom-build block** for Poisson regression, Logistic regression, and Negative Binomial regression (see note below — no turnkey JS package covers all three). Actively maintained by Zakodium/mljs, zero heavy transitive deps, browser-first. |
-| Custom IRLS GLM module (in-repo, ~150–250 LOC) | n/a | Poisson regression, Logistic (binomial) regression, Negative Binomial regression via Iteratively Reweighted Least Squares | See "GLM implementation note" below. Built on `ml-matrix` for the linear algebra and `jstat` for Wald/LR p-values. Validate outputs against JASP/R (`glm`, `MASS::glm.nb`) as the project's own oracle strategy already prescribes. |
+| `@tanstack/react-query` | **5.101.4** (latest v5, verified via `npm view` and Context7 `/tanstack/query`) | Parameterized cache + request dedup + honest loading/error/empty state for the *new* Supabase-backed map/metric queries | Wrap the new dynamic-choropleth fetch and the existing `fetchHandoffMetricLookup` call sites. **Not** a replacement for `loadCatalog.ts`. |
+| `@tanstack/react-query-devtools` | 5.101.4 (dev only) | Inspect cache state (which disease/year/UF combos are cached, stale, loading, errored) while building the Mapas feature | Dynamically imported so it's excluded from the production bundle; genuinely useful for a team debugging "why didn't the map update" without instrumenting print statements. |
 
-**GLM implementation note (important, MEDIUM/LOW confidence on 3rd-party options):** There is **no mature, actively-maintained npm package that does Poisson + Logistic + Negative Binomial regression together with a stable API**. Candidates evaluated:
-- `@tangent.to/ds` — has a unified `GLM` class covering `gaussian`/`binomial`/`poisson` families with a clean `.fit()/.predict()/.summary()` API and is browser-ESM by design (built on `ml-matrix` + `simple-statistics` itself). It does **not** advertise a negative-binomial family. Young package (first seen 2025), small community — treat as **LOW confidence**; worth a hands-on spike for logistic/Poisson only, with a fallback to the custom IRLS module if its output doesn't match the JASP oracle exactly.
-- `@stdlib/stats-base-dists-negative-binomial` — only distribution functions (pmf/cdf/quantile), **not** a regression fitter. Still useful inside a custom NB-regression implementation (μ/θ parameterization, dispersion estimation).
-- No viable package found for Negative Binomial regression specifically (this mirrors real-world scarcity — even in R, NB regression needs the specialized `MASS::glm.nb`, not the base `glm()`).
+**Why this, specifically, given the constraint "small dependency surface, medical students not infra engineers":**
 
-**Recommendation:** build one small, well-tested internal `glm.js` module (IRLS for Poisson/binomial families using canonical links; alternating IRLS + moment/ML dispersion estimation for Negative Binomial, à la `MASS::glm.nb`) on top of `ml-matrix`. This gives full control over the "interpretação breve" output the project's UX requires, keeps behavior consistent across all three regressions, and avoids a dependency on an unproven package for core coursework math. Budget real implementation + validation time for this — it is the highest-risk item in the whole stack.
+The milestone requires *"cache e estados de carregamento/vazio honestos"* across a choropleth where the user can rapidly change disease, year, UF drill-down, and multi-disease overlay (already shipped in v2.0 Phase 4). That's a **keyed** async-cache problem: many distinct `(disease, year, uf?)` combinations, each independently loading/cached/stale, with the very real risk of race conditions — user picks disease A, then quickly disease B; A's slower response arrives after B's and silently overwrites the UI with stale data for A. This is a well-known, easy-to-introduce bug class with `useEffect`+`useState`, and it's *exactly* what TanStack Query's `queryKey`-scoped caching and automatic stale-response handling exist to prevent.
 
-### Supporting Libraries — Meta-Analysis
+The existing hand-rolled cache in `src/features/catalog/loadCatalog.ts` is real, but solves a **different, much simpler** problem: one fixed cache key (there is exactly one manifest, one `variables.json`, and a fixed set of packs), same-origin static files, never invalidated. Extending that same pattern to a parameterized, high-cardinality (330 diseases × ~13 years × 27 UFs), retry-needing, race-condition-prone cache means re-implementing — by hand — the core of what TanStack Query already does correctly: keyed caching, in-flight de-dup, stale-response cancellation, garbage collection of unused entries, and three-state (loading/error/empty-vs-has-data) tracking per key. That's more code, and a subtler bug surface, than installing one ~13kB (gzipped, core) library that is also the single most common companion to `supabase-js` in the wider React ecosystem — meaning both official examples and AI-assisted development (which this team already leans on) are far more aligned with this pattern than with a bespoke cache.
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| Custom meta-analysis module (in-repo, ~150 LOC) | n/a | Fixed-effect (inverse-variance) + random-effects (DerSimonian-Laird) pooling, Cochran's Q, I², Egger's regression test for funnel asymmetry | **Recommended over any npm package** — see rationale below. Formulas are standard, well-documented (Cochrane Handbook / `metafor` source), and short enough to implement and unit-test directly against known R/`metafor` outputs (the project already plans to use JASP as a numerical oracle; `metafor` docs work the same way). |
-| `jstat` | ^1.9.6 (already listed above) | Normal quantiles (`jStat.normal(0,1).inv(...)`) for CIs, and Q/chi-square p-value for heterogeneity test | Reused from the stats section — no new dependency. |
-| `simple-statistics` | ^7.8.x | Simple linear regression (`ss.linearRegression`) for Egger's asymmetry test, plus general descriptive stats | Egger's test is literally a weighted OLS regression of standardized effect on precision — `simple-statistics` (0 dependencies, tiny, MIT) covers this without pulling in a heavier stats engine. |
-| `chartjs-chart-error-bars` | ^4.4.x | Forest-plot rendering: horizontal scatter + per-study confidence-interval bars, sized by weight | Built by the same maintainer as `chartjs-chart-geo` (sgratzl) — same quality bar, same Chart.js 4 major version. Renders each study as a point + CI line; the pooled-effect diamond can be drawn as a second dataset or a small canvas plugin. Keeps forest plots inside the existing Chart.js investment instead of introducing raw D3 for one feature. |
+**Integration points:**
+- New `src/lib/queryClient.ts` — singleton `QueryClient` with defaults tuned for this domain: `staleTime` generously long (this is static historical DataSUS data within a session — it does not change), `retry: 2`, `refetchOnWindowFocus: false` (this is a teaching tool, not a live dashboard).
+- Wrap the app root (wherever `<Header>`/route shell mounts, per `src/app/Header.tsx`) in `<QueryClientProvider client={queryClient}>`.
+- New `src/features/mapas/fetchChoroplethMetric.ts` (new file for the new dynamic-map capability) — `fetchUfMetric(diseaseId, year)` — wired via `useQuery({ queryKey: ['sih_metric_uf', diseaseId, year], queryFn })` in whichever component currently reads the static `catalogAnalysisData.ts` packs (the file `.planning/PROJECT.md` names as the "mapa não dinâmico" culprit).
+- `src/features/catalog/fetchHandoffMetricLookup.ts` — keep the function as a plain async helper; call it through `useQuery` at the call site (e.g. in `ReviewAnalysisDialog`) instead of ad hoc `useState`/`useEffect`, gaining dedup and cancellation for free.
+- **Do not touch `src/features/catalog/loadCatalog.ts`.** It's solving a different (simpler, already-correct) problem.
 
-**Why not an npm meta-analysis package:** `shukra` (network meta-analysis toolkit) is **GPL-2.0-licensed** — a copyleft license inappropriate to bundle into a client-side app whose own license/distribution model isn't GPL; it's also Node-oriented (designed for `<10ms` server requests, not audited for browser bundling). Other hits (`metaforge`, `prognostic-meta`, `moneuron/meta`) are **Python** projects or single-purpose research scripts distributed as GitHub ZIPs, not maintained npm packages — unacceptable supply-chain risk for a teaching tool that needs to keep working for years. A from-scratch module avoids all three problems and matches the "meta-análise didática, escopo reduzido" decision already logged in PROJECT.md.
+---
 
-**Funnel plot:** do **not** use `d3-funnel` or `funnel-graph-js` — despite the name, these render marketing/conversion funnels (top-to-bottom shrinking bars), not the statistical funnel plot (effect size vs. standard error scatter) needed here. Render the real funnel plot as a Chart.js `scatter` dataset (effect size on x, SE on inverted y) plus a small custom plugin/dataset for the pseudo-confidence-interval triangle — no dedicated library exists or is needed for this.
+## Part (c′) — Safe primary-key rename on `sih_disease` (330 rows) with FK-referencing children (`sih_metric_uf` 30k rows, `sih_metric_muni` 1.1M rows)
 
-### Supporting Libraries — Brazil Maps
+**Terminology check, because this matters for scoping:** this is a **data-value migration** (changing the *value* of ~20 primary key strings, e.g. `avc` → a correct slug), not a DDL "rename column" operation. `ALTER TABLE … RENAME COLUMN` is irrelevant here — don't let a phase plan reach for it.
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| `chartjs-chart-geo` | ^4.3.x | Choropleth rendering (`choropleth` chart type) with legends and d3-geo projections, built on Chart.js | **Primary recommendation.** Reuses the existing Chart.js dependency instead of adding a parallel SVG-mapping stack; same author/quality tier as `chartjs-chart-error-bars`. Handles UF-level and municipality-level choropleths identically (just more/smaller features) and ships a `ColorScale`/`ProjectionScale` for the heatmap legend the milestone asks for. Interactivity (click a UF → drill into its municípios) is doable via Chart.js's native `onClick`/`getElementsAtEventForMode`. |
-| `topojson-client` | ^3.1.0 | Decode TopoJSON → GeoJSON features in the browser | Peer dependency of `chartjs-chart-geo`'s bundled `ChartGeo.topojson` helper; also usable standalone if a raw d3-geo path is later needed. |
-| `d3-geo` | ^3.1.0 | Geographic projections (used internally by `chartjs-chart-geo`'s `projection` scale) | Transitive — don't hand-roll projections. |
-| `fuse.js` | ^7.5.0 | Fuzzy/typo-tolerant search for state and município name/sigla recognition | Directly serves the "reconhecimento de nomes/siglas" requirement — e.g. matching pasted DataSUS exports where município names have accent/case/typo variance ("Sao Paulo" vs "São Paulo"). Zero-dependency, ~8.6 kB gzip, works purely client-side against a bundled lookup table. |
-| `mapshaper` (CLI, dev-only) | ^0.7.x | Build-time simplification of IBGE municipal/mesoregion meshes into small static TopoJSON bundled with the app | **Dev dependency only — never shipped to the browser bundle.** See geodata sourcing strategy below. |
+### The actual constraint that makes this dangerous
 
-**Geodata sourcing strategy (client-only, offline-classroom-safe):**
-1. **Source of truth:** IBGE's official Malhas API (`https://servicodados.ibge.gov.br/api/v4/malhas/...` or `v3`) — free, CORS-enabled, no auth, returns GeoJSON or TopoJSON at any `intrarregiao` level (`UF`, `mesorregiao`, `microrregiao`, `municipio`) with a `qualidade` (simplification) parameter.
-2. **Do not fetch this API at runtime from the deployed app.** Practical sessions may run on flaky venue wifi, and the milestone's whole premise is client-cache-only/offline-friendly. Instead, fetch once at **build/dev time**, then run `mapshaper -simplify` to shrink the mesh (a national municipal-level GeoJSON can be tens of MB raw — Cochrane-grade simplification easily gets a usable web map under 1–2 MB) and commit the resulting static TopoJSON files under `src/assets/geo/`.
-3. **Regiões de saúde** are a SUS-specific aggregation not present in IBGE's Malhas API. Two options, in order of preference:
-   - Fetch the municipal mesh + the DTB (Divisão Territorial Brasileira) município→região-de-saúde mapping table (IBGE/DATASUS-sourced, republished e.g. by `lansaviniec/shapefile_das_regionais_de_saude_sus` as `DTB.csv`) and **dissolve municípios by região id at build time** with `mapshaper -dissolve`. This sidesteps any uncertainty about a third-party shapefile's redistribution license, since you're deriving the polygons yourself from IBGE's own municipal mesh plus a public lookup table.
-   - Alternatively, Fiocruz/Cidacs publishes an official-sourced "Macrorregiões e Regiões de Saúde do Brasil" shapefile dataset (DOI 10.57833/cidacs/b9jhvc, Ministério da Saúde data, updated 2025) — check its license terms before bundling; treat as **LOW confidence** until verified.
-4. Ship 4 static TopoJSON files (UF, mesorregião, município, região-de-saúde), each pre-simplified — this is what actually satisfies "100% browser, no backend" without depending on an external API's uptime during a lesson.
+`docs/SUPABASE-CATALOG.md`'s schema declares the FKs with no `ON UPDATE`/`ON DELETE` clause:
 
-## Development Tools
+```sql
+disease_id text references sih_disease(id)
+```
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| `@tailwindcss/vite` | First-party Tailwind v4 Vite plugin | Replaces PostCSS config entirely; add to `vite.config.ts` plugins array alongside `@vitejs/plugin-react`. |
-| `shadcn` CLI (`npx shadcn@latest`) | Scaffolds `components.json`, copies Radix-based components into `src/components/ui` | Not a runtime dependency. Configure `registries: { "@cult-ui": "https://cult-ui.com/r/{name}.json" }` in `components.json` once, then `npx shadcn@latest add @cult-ui/<component>` per component. |
-| `@types/node` (dev) | Needed for `path` resolution in `vite.config.ts` (`@/*` alias) | Only relevant if the project adopts TypeScript; skip if staying with JS + `jsconfig.json`. |
+That defaults to `ON UPDATE NO ACTION` — meaning a bare `UPDATE sih_disease SET id = 'novo_slug' WHERE id = 'avc'` will be **rejected immediately** by the FK constraint the instant it runs, because `sih_metric_uf`/`sih_metric_muni` rows still reference the old value at that point in the transaction (the constraint is not `DEFERRABLE`, so it's checked at statement end, not transaction end).
+
+### Recommended pattern: add `ON UPDATE CASCADE` once, permanently, then rename
+
+```sql
+-- 1. One-time schema hardening (find real constraint names first — see below).
+BEGIN;
+
+ALTER TABLE sih_metric_uf
+  DROP CONSTRAINT sih_metric_uf_disease_id_fkey,
+  ADD  CONSTRAINT sih_metric_uf_disease_id_fkey
+    FOREIGN KEY (disease_id) REFERENCES sih_disease(id) ON UPDATE CASCADE;
+
+ALTER TABLE sih_metric_muni
+  DROP CONSTRAINT sih_metric_muni_disease_id_fkey,
+  ADD  CONSTRAINT sih_metric_muni_disease_id_fkey
+    FOREIGN KEY (disease_id) REFERENCES sih_disease(id) ON UPDATE CASCADE;
+
+-- 2. The actual rename — one statement per (or one UPDATE ... FROM a mapping table for all ~20 at once).
+--    Postgres cascades this to matching rows in both child tables automatically, using the
+--    existing indexed disease_id lookup — it only touches rows for the renamed ids, not all 1.1M.
+UPDATE sih_disease SET id = 'infarto_cerebral' WHERE id = 'avc';
+-- … repeat for the ~19 other renames, or drive from a VALUES/temp-table mapping in one UPDATE ... FROM.
+
+COMMIT;
+```
+
+Why this beats the alternative (`INSERT new row → UPDATE children → DELETE old row`, done manually to dodge the FK check): it's fewer statements, it's the standard idiomatic Postgres answer to "I need to change a referenced key," and — deliberately — it's a **permanent** schema improvement. Taxonomy corrections are an ongoing concern for this project (apelidos, future Lista Morb updates per `PROJECT.md`), so `ON UPDATE CASCADE` being in place going forward removes the need to ever re-derive this dance. Leave `ON DELETE` at its default (`NO ACTION`/restrict) deliberately — you want an accidental `DELETE FROM sih_disease` to fail loudly, not silently cascade-delete 1.1M rows.
+
+**Before running any of this:**
+1. Find the real constraint names — don't assume the auto-generated `<table>_<column>_fkey` pattern:
+   ```sql
+   SELECT conname, conrelid::regclass FROM pg_constraint
+   WHERE contype = 'f' AND confrelid = 'sih_disease'::regclass;
+   ```
+2. Take a cheap safety-net backup (seconds, on a table this size): `CREATE TABLE sih_metric_muni_backup_20260728 AS TABLE sih_metric_muni;` (and the same for `sih_metric_uf`, `sih_disease`).
+3. Test the exact script against a local Supabase stack (`supabase start`) before running it against the live project.
+
+**Verification (no new tooling — reuse `@supabase/supabase-js` + service role, the same pattern already used in `scripts/catalog/uploadSihToSupabase.mjs`):** write a small `scripts/catalog/verifyDiseaseIdMigration.mjs` that, for each renamed id, compares `count: 'exact'` row totals before vs. after (`sih_metric_muni` where `disease_id = old_id` pre-migration must equal `sih_metric_muni` where `disease_id = new_id` post-migration), plus a whole-table row-count invariant (`SELECT count(*) FROM sih_metric_muni` must be numerically identical before and after — only values changed, no rows created or destroyed).
+
+**Tooling:** Supabase CLI (`supabase --version` → **2.90.0**, already installed via Homebrew on this machine) is sufficient — `supabase migration new rename_disease_ids_v3` produces a versioned, reviewable `.sql` file under `supabase/migrations/` (this repo doesn't have that directory yet; `scripts/catalog/sql/*.sql` is currently an ad hoc, unversioned, dashboard-pasted pattern — fine for one-off seed inserts, **not** appropriate for a migration this risky). No `pg` npm package, no external migration framework — the CLI already opens the Postgres connection needed for `db push` / `db execute`.
+
+This migration must run with the **service role** (or the Postgres owner role), never the anon key — consistent with the existing constraint that the client is read-only and all writes are offline/service-role only.
+
+---
 
 ## Installation
 
 ```bash
-# Core framework
-npm install react@^19 react-dom@^19
-npm install -D vite@^8 @vitejs/plugin-react tailwindcss @tailwindcss/vite
+# JS — the one new dependency
+npm install @tanstack/react-query
+npm install -D @tanstack/react-query-devtools
 
-# shadcn/ui + cult-ui (after `npx shadcn@latest init -t vite`)
-npx shadcn@latest add button card tabs dialog
-npx shadcn@latest add @cult-ui/texture-card @cult-ui/texture-button   # example accents
-
-# Existing charting engine (kept)
-npm install chart.js
-
-# New statistical tests
-npm install jstat simple-statistics ml-matrix
-npm install @stdlib/stats-chi2test @stdlib/stats-anova1 @stdlib/stats-kruskal-test
-npm install @stdlib/stats-base-dists-negative-binomial   # NB distribution fns for custom glm.js
-
-# Forest/funnel plotting (extends existing Chart.js)
-npm install chartjs-chart-error-bars
-
-# Maps
-npm install chartjs-chart-geo topojson-client d3-geo fuse.js
-
-# Build-time-only geodata tooling (NOT a runtime dependency)
-npm install -D mapshaper
+# Python — nothing to install. Zero third-party packages exist in this
+# project's Python side today (confirmed: `pip list` returns none of
+# tenacity/requests/httpx/urllib3 on this machine, Python 3.9.6). Keep it that way.
 ```
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|--------------------------|
-| Custom IRLS `glm.js` (ml-matrix + jstat) | `@tangent.to/ds` `GLM` class | If a quick spike shows its `binomial`/`poisson` output matches the JASP oracle exactly and you're comfortable depending on a <1-year-old, small-community package for two of the three regressions (still need custom code for Negative Binomial either way). |
-| `chartjs-chart-geo` (canvas, Chart.js-native) | `react-simple-maps` (SVG, d3-geo) | If deep pan/zoom, per-feature React event handlers, or SVG-level CSS styling become more important than reusing Chart.js — but the maintained upstream (`zcreativelabs/react-simple-maps`) still has no React 19 peer-dep support (open issue as of mid-2026); you'd need the community fork `@vnedyalk0v/react19-simple-maps` (single maintainer, <50 GitHub stars) or force-install with `--legacy-peer-deps`. |
-| Custom meta-analysis module | `shukra` | Never, for this project — GPL-2.0 license is incompatible with bundling into a client-distributed teaching app regardless of technical fit. |
-| Pre-bundled static TopoJSON (build-time `mapshaper`) | Runtime fetch from IBGE Malhas API | If the deployment target is guaranteed reliable internet (e.g., always-online hosted version for remote/async study) and smaller initial bundle size matters more than offline/flaky-wifi robustness during in-person capacitação sessions. |
-| Tailwind v4 (`@import "tailwindcss"`, CSS-first config) | Tailwind v3 (`tailwind.config.js`) | If the deployed environment must support browsers older than Safari 16.4/Chrome 111/Firefox 128 (v4 requires modern CSS `@property`/`color-mix()`) — unlikely for a university lab/classroom setting, but worth confirming lab PC browser versions. |
+| Recommended | Alternative | When to use the alternative instead |
+|-------------|-------------|--------------------------------------|
+| Stdlib retry helper (`urllib`+`time`+`random`) | `tenacity` 9.1.4 (verified current on PyPI) | If retry policies proliferate across many independent third-party HTTP integrations needing composable stop/wait/retry-on strategies. This project has exactly two call sites (TabNet scrape, Edge Function upload) — not enough surface to justify becoming the project's first pip dependency. |
+| `sqlite3` ledger (stdlib) | Plain JSONL append-only log | If an audit trail matters more than a queryable "current state," and you're willing to write a replay-to-compute-current-state reader. `sqlite3` gives you both (the table *is* the audit trail via `updated_at`, and it's directly queryable) for about the same amount of code. |
+| `@tanstack/react-query` | Hand-rolled keyed `Map` cache (extending the `loadCatalog.ts` pattern) | If the team wants literally zero new JS dependencies and is willing to hand-implement request de-dup, stale-response cancellation, and cache eviction (`gcTime`) themselves. Technically possible; a real increase in bug surface for the exact race-condition class described above. |
+| `ON UPDATE CASCADE` + one transaction | Manual `INSERT new → UPDATE children → DELETE old` dance | If you don't control the schema (can't `ALTER` the FK constraints) — not the case here; this project owns the Supabase schema outright. |
+| Supabase CLI migration file | Ad hoc SQL pasted into the dashboard SQL editor (current `scripts/catalog/sql/*.sql` pattern) | Fine for small, low-risk, easily-redone seed inserts. Not appropriate for an irreversible, 1.1M-row-touching PK value change — that needs to be reviewable and re-runnable against a local stack first. |
 
 ## What NOT to Use
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| Embedding R, JASP, WebR, or Pyodide/SciPy-in-browser | PROJECT.md explicitly scopes JASP as a **behavioral oracle only** ("não portar a UI QML/R do JASP"); WASM R/Python runtimes are 10s of MB downloads, slow to cold-start, and massive overkill for the didactic-scale datasets this tool targets | Pure-JS implementations (`jstat`, `@stdlib/*`, custom IRLS) validated numerically against JASP/R outputs during development, with no runtime R/Python dependency |
-| `shukra` for meta-analysis | GPL-2.0 license (copyleft) | Custom meta-analysis module (formulas are standard and short) |
-| `d3-funnel` / `funnel-graph-js` for the funnel plot | These are marketing/conversion funnel charts, not statistical funnel plots — completely different visualization despite the name collision | Chart.js `scatter` dataset (effect size × SE) + custom plugin |
-| A generic Node.js backend, database, or auth library (Express, Prisma, NextAuth, etc.) | Out of scope per PROJECT.md ("Backend / API server / banco de dados — deferred"; "Login, contas de usuário... — próximo ciclo") | Keep all state in React component state / `sessionStorage`-free memory only, per the "browser-cache-only, refresh loses data" constraint |
-| Full JASP-equivalent Bayesian module, or a general-purpose stats suite (e.g., porting `jamovi`/`pingouin`-style breadth) | Explicitly out of scope ("Suite bayesiana completa ou módulos JASP avançados além do escopo de meta-análise definido") | Implement only the named tests: chi-square, Poisson/NB/Logistic regression, ANOVA, Kruskal-Wallis, and the scoped meta-analysis (fixed/random, forest, I², funnel, basic asymmetry) |
-| Runtime-fetching the full-resolution IBGE municipal mesh (`qualidade=4`, no simplification) directly in the deployed app | Tens of MB GeoJSON payload, slow parse, plus a hard runtime dependency on an external government API's uptime during a live class | Pre-simplify with `mapshaper` at build time and bundle static TopoJSON assets (see geodata strategy above) |
-| Mixing multiple charting/mapping ecosystems (e.g., Chart.js *and* Recharts *and* raw D3 *and* react-simple-maps all at once) | Each adds its own theming system, bundle weight, and mental model — bad fit for a small teaching-tool codebase maintained by rotating ligantes | Standardize on the Chart.js family (`chart.js`, `chartjs-chart-error-bars`, `chartjs-chart-geo`) for all charts and maps |
+| Avoid | Why | Use instead |
+|-------|-----|--------------|
+| `tenacity` / `backoff` (pip) | Would be this project's **first** third-party Python dependency — requires a `requirements.txt` + `pip install`/venv onboarding step for a team with no existing Python dev-env habit (confirmed: zero packages installed today). The actual gap — `post_tabnet()` has zero retry — is a ~15-line stdlib function, not a policy engine. | Shared `retry()` helper in a new `trabalhos datasus/scripts/net.py`. |
+| `httpx` / `aiohttp` / any concurrent-request approach | The scraper's `REQUEST_DELAY_SEC`/`DISEASE_PAUSE_SEC` throttling exists *on purpose* to avoid hammering TabNet — `PROJECT.md`'s Out-of-Scope section explicitly cites TabNet ToS/instability as the reason live scraping is forbidden at all. Concurrency directly fights that constraint. | Keep sequential `urllib.request` calls; the ledger buys resumability, not throughput. |
+| macOS `launchd` LaunchAgent | Plist authoring + `launchctl bootstrap`/`bootout` (semantics changed across recent macOS releases) for a job triggered manually a handful of times per semester — not a permanently-scheduled daemon. More moving parts, harder to debug than a log file, for a team of medical students. | Keep the existing `subprocess.Popen(start_new_session=True)` + bash watchdog; add `caffeinate -i`. |
+| Raising the Supabase dashboard "Max Rows" above 1000 | Reported to sometimes not take effect after being changed (propagation bug); also raises the worst-case payload size for *every* anon-key query project-wide, working against the "read-only anon, minimal blast radius" posture already chosen for this app. | `.range()` pagination loop in a small `selectAll()` helper — correctness that doesn't depend on a dashboard toggle. |
+| A materialized view for the UF choropleth | `sih_metric_uf` already **is** the pre-aggregated UF grain (that's its entire purpose) — nothing left to aggregate. Materialized views also have no built-in RLS support in Postgres, adding a real security-review item for zero query-shape benefit here. | Plain indexed `.select().eq('disease_id', x).eq('ano', y)` — already ≤27 rows. |
+| `pg` (node-postgres) npm package, for running the PK-rename migration | Supabase CLI (already installed, v2.90.0) already opens a Postgres connection for `db push`/SQL execution — a second, npm-installed way to do the same thing for a single one-off script is pure duplication. | `supabase migration new` + `supabase db push`, or the SQL editor, wrapped in `BEGIN`/`COMMIT`. |
+| Migrating `src/features/catalog/loadCatalog.ts`'s static-JSON cache onto TanStack Query | Different, already-correct, already-simple problem: one fixed cache key, same-origin static files, never invalidated. Nothing to gain. | Leave it untouched; scope TanStack Query to the *new* parameterized Supabase queries only. |
 
 ## Stack Patterns by Variant
 
-**If the `@tangent.to/ds` GLM spike succeeds for Poisson/Logistic:**
-- Use it only for those two families; still hand-write Negative Binomial regression (no package covers it).
-- Keep `ml-matrix` and `jstat` as dependencies regardless — they're needed for ANOVA/meta-analysis linear algebra and distribution math either way, so there's no dependency-count savings from adopting `@tangent.to/ds`, only an implementation-time savings.
+**If a `(disease_id, measure, grain)` combo fails after all retry attempts:**
+- Ledger row → `status='failed'`, `last_error` populated, `attempts` incremented.
+- Runner prints `FAIL`, not `OK`, and moves on to the next combo.
+- Because: this is the exact regression this milestone exists to fix.
 
-**If browser support must extend to older devices (pre-Safari 16.4/Chrome 111):**
-- Pin Tailwind to `^3.4` (last v3 line) instead of v4, and use the classic PostCSS + `tailwind.config.js` setup. shadcn/ui's `init` CLI still supports v3 projects via its legacy installation path.
+**If TabNet legitimately returns zero rows for a combo:**
+- Only transition to `status='uploaded'` after comparing the ingest response's `upserted` count to the locally parsed row count, **and** confirming the per-measure `errors` list was empty.
+- Because: "OK" must mean *verified*, not *"no exception happened to fire this time."*
 
-**If the deployed environment has reliable, always-on internet (e.g., a hosted version outside the classroom):**
-- Fetch IBGE Malha API responses at runtime with a simple in-memory cache instead of bundling static TopoJSON, trading a larger first-load network request for smaller bundle size and always-current municipal boundaries (relevant since municipalities occasionally merge/split).
+**If a future map view needs a cross-year or cross-UF-group aggregate not already in `sih_metric_uf`:**
+- Add one small `SELECT … GROUP BY` Postgres function, called via `supabase.rpc(...)`.
+- Because: only earns its complexity when a query would otherwise pull more raw rows over the wire than needed just to sum client-side — not the case for the default disease×year choropleth today.
 
 ## Version Compatibility
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| `react@^19` | `react-dom@^19` (must match major) | shadcn/ui and cult-ui components assume matching react/react-dom majors. |
-| `react-simple-maps@3.x` | React ^16.8–18.x **only** | Confirmed incompatible peer-dep range with React 19 as of mid-2026 (open upstream issue); this is why `chartjs-chart-geo` is the primary map recommendation instead. |
-| `tailwindcss@^4` | `@tailwindcss/vite@^4` (matching major) | v4's Vite plugin and PostCSS plugin are separate packages (`@tailwindcss/vite` vs `@tailwindcss/postcss`) — for a Vite project, use the Vite plugin, not both. |
-| `chartjs-chart-geo@^4` / `chartjs-chart-error-bars@^4` | `chart.js@^4` | Both plugins target Chart.js 4.x controllers/scales API; do not mix with a Chart.js 3.x install. |
-| `@tangent.to/ds` | `ml-matrix@^6.12+`, `simple-statistics@^7.8+` | If adopted, it already vendors these as dependencies — check for duplicate/conflicting versions if you also install `ml-matrix` directly for the custom `glm.js` module. |
-| `mapshaper` (dev-only) | Node.js (any current LTS) | MPL-2.0 licensed; runs only in the build pipeline, never bundled into client JS, so its license has no bearing on the shipped app's license. |
+| Package A | Compatible with | Notes |
+|-----------|------------------|-------|
+| `@tanstack/react-query@5.101.4` | `react@19.2.8` (installed) | v5 requires React 18+; no known React 19 issues. |
+| `@supabase/supabase-js@2.110.8` (installed) | `@supabase/supabase-js@2.110.9` (latest) | One patch behind; nothing range/count-relevant changed. Upgrade opportunistically, not urgently. |
+| Python 3.9.6 (macOS system `python3`, confirmed on this machine) | stdlib `sqlite3` | Needs SQLite ≥3.24 for `ON CONFLICT DO UPDATE` (upsert) — modern macOS bundles a much newer SQLite than that, but confirm with `python3 -c "import sqlite3; print(sqlite3.sqlite_version)"` before relying on it. |
+| Supabase CLI 2.90.0 (installed) | Supabase-managed Postgres (15/17) | `ON UPDATE CASCADE` and non-`DEFERRABLE` FK checks are decades-old, stable Postgres behavior — no version risk. |
 
 ## Sources
 
-- `ui.shadcn.com/docs/installation/vite` — Vite + Tailwind v4 + shadcn/ui setup steps (HIGH confidence, official docs)
-- `cult-ui.com/docs/installation` + GitHub issue `shadcn-ui/ui#8590` — `@cult-ui` registry acceptance and `components.json` registry config (HIGH confidence, official docs + first-party GitHub issue)
-- `npmjs.com/package/jstat`, `github.com/jstat/jstat` — distribution function coverage (MEDIUM confidence — package unmaintained since 2022 but math is stable/verifiable)
-- `npmjs.com/package/@stdlib/stats-chi2test`, `-anova1`, `-kruskal-test`, `-base-dists-negative-binomial` — stdlib modular stats packages (HIGH confidence, official npm/GitHub docs with worked examples)
-- `npmjs.com/package/ml-matrix` (registry.npmjs.org, v6.13.0 published Jun 2026) — linear algebra library (HIGH confidence)
-- `npmjs.com/package/@tangent.to/ds`, `github.com/tangent-to/ds` — candidate GLM library (LOW confidence — young/small-community package, claims not independently verified)
-- `github.com/holub008/shukra` — license (GPL-2.0) and Node-targeted design confirmed directly from repo README (HIGH confidence for the license finding)
-- `github.com/mahmood726-cyber/metaforge`, `prognostic-meta`, `github.com/mo-shakiba/meta` — surveyed and rejected as non-npm/Python/single-purpose research code (MEDIUM confidence, GitHub README review)
-- `npmjs.com/package/chartjs-chart-error-bars`, `chartjs-chart-geo`, `sgratzl.com` docs — Chart.js ecosystem plugins for forest plots and choropleth maps (HIGH confidence, official docs + working code samples)
-- `github.com/zcreativelabs/react-simple-maps/issues/388`, `npmjs.com/package/@vnedyalk0v/react19-simple-maps` — React 19 incompatibility of the mainstream map library and the community fork's characteristics (HIGH confidence for the incompatibility, MEDIUM for fork adoption risk assessment)
-- `servicodados.ibge.gov.br/api/docs/malhas?versao=4`, `brazilvisible.org` IBGE Geociências writeup — official Malhas API parameters (formato/resolucao/intrarregiao/qualidade) (HIGH confidence, official API docs)
-- `github.com/lansaviniec/shapefile_das_regionais_de_saude_sus`, Fiocruz/Cidacs DOI `10.57833/cidacs/b9jhvc` — regiões de saúde geodata sourcing options (MEDIUM confidence — community/institutional sources, license terms not independently re-verified in this pass)
-- `github.com/mbloch/mapshaper` (npm registry, v0.7.46) — build-time simplification tool, MPL-2.0 (HIGH confidence)
-- `npmjs.com/package/fuse.js`, `fusejs.io` (v7.5.0) — fuzzy search for name/sigla recognition (HIGH confidence, official docs)
-- `npmjs.com/package/vite` (8.1.5), `npmjs.com/package/react` (19.2.8), `npmjs.com/package/tailwindcss` (4.3.3) — current version pins as of research date (HIGH confidence, npm registry direct)
+- Context7 `/supabase/postgrest-js` — verified `.range()` pagination semantics and the `count: 'exact' | 'planned' | 'estimated'` `Prefer` header contract (type signature + `Content-Range` parsing code read directly) — **HIGH** confidence.
+- Context7 `/tanstack/query` — verified v5 `QueryClientProvider` setup and `staleTime`/`gcTime` API surface — **HIGH** confidence.
+- WebSearch, "PostgREST db-max-rows default 1000 Supabase max rows setting dashboard" — confirmed the 1,000-row default and the Dashboard → Settings/Integrations → Data API → Max Rows location, and a community-reported case where raising it didn't take effect — **MEDIUM** confidence (community reports, not an official doc page fetched directly; the 1,000-row default itself is well-corroborated across multiple independent threads).
+- `npm view @tanstack/react-query version` / `npm view @supabase/supabase-js version` — **5.101.4** / **2.110.9** — **HIGH** confidence (npm registry, authoritative).
+- `pypi.org/pypi/tenacity/json` — **9.1.4** — cited only to make an informed "do not add" call — **HIGH** confidence.
+- Direct reading of this repo's own code — `coleta_sih_multi_disease.py`, `scrape_upload_sih.py`, `overnight_watchdog.sh`, `launch_overnight.py`, `scripts/catalog/uploadSihToSupabase.mjs`, `src/features/catalog/fetchHandoffMetricLookup.ts`, `src/features/catalog/loadCatalog.ts`, `src/lib/supabaseClient.ts`, `docs/SUPABASE-CATALOG.md`, `.planning/PROJECT.md` — root-caused both the "OK · 0 linhas" print bug and the unconditional-cleanup-after-upload bug, and found a live latent row-truncation risk in `fetchHandoffMetricLookup.ts` — **HIGH** confidence, primary source.
+- `pip list` + `python3 --version` on this machine — confirmed **zero** third-party Python packages currently installed, Python **3.9.6** — **HIGH** confidence.
+- `which supabase && supabase --version` — confirmed Supabase CLI **2.90.0** already installed via Homebrew — **HIGH** confidence.
 
 ---
-*Stack research for: Bioestatística LACIR v2.0 (React rewrite + stats suite + Brazil maps + DataSUS catalog + meta-analysis)*
-*Researched: 2026-07-25*
+*Stack research for: Bioestatística LACIR v3.0 — dados confiáveis + pesquisa dinâmica via Supabase (scraping pipeline, PostgREST querying, client caching, PK migration)*
+*Researched: 2026-07-28*

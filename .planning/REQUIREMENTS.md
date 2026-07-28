@@ -1,130 +1,152 @@
-# Requirements — Bioestatística LACIR v2.0
+# Requirements — Bioestatística LACIR v3.0
 
-**Milestone:** v2.0 Suite estatística + mapas DataSUS  
-**Defined:** 2026-07-25  
+**Milestone:** v3.0 Dados confiáveis + pesquisa dinâmica via Supabase
+**Defined:** 2026-07-28
 **Status:** Roadmap mapped — ready for planning
 
-## v2.0 Requirements
+## Contexto
 
-### UI / Shell
+Este milestone é corretivo antes de ser aditivo. O v2.0 entregou as cinco fases planejadas, mas o trabalho pós-Fase-5 seguiu sem commit e chegou aqui com defeitos **verificados** que tornam o produto incorreto, não apenas incompleto:
 
-- [x] **UI-01**: User sees a React LACIR portal shell with dark theme, teal accents, LACIR logo+name, and header nav: Estatística | Meta-análise | Variáveis | Mapas (no version/beta badge; DataSUS link lives inside Estatística)
-- [x] **UI-02**: User completes each test via a shared flow: Dados → Configurar → Resultados
-- [x] **UI-03**: User can paste TABNET-style data (`;` delimiter, pt-BR decimal comma) and gets friendly validation errors
-- [x] **UI-04**: User can download the active result chart as PNG
-- [x] **UI-05**: On Estatística only, if the user has already inputted data, the browser prompts before leaving/closing the page (no persistent refresh-loss banner)
-- [x] **UI-06**: User reads a brief plain-Portuguese interpretation under every test result
+- 20 agravos exibem dados de outra doença sob rótulo clínico convincente (`sih.avc.internacoes` é rotulado "Internações — AVC" e serve o código 163, "Outras doenças do olho e anexos")
+- o mapa promete 330 agravos no seletor e serve 10
+- "sem dado", "zero verdadeiro" e "menor balde da escala" pintam o mesmo pixel `#18181b`
+- uma consulta de município retorna 1.000 de 6.481 linhas, com HTTP 200 e sem erro
+- a suíte está vermelha (24/676) há tempo suficiente para ter parado de sinalizar regressão
 
-### Testes — migração
+Apuração em `.planning/notes/2026-07-28-taxonomia-corrompida-ground-truth.md` e `.planning/notes/2026-07-28-null-vs-zero-choropleth.md`.
 
-- [x] **TEST-01**: User can run t de Student in the new shell with parity to v1.0 outputs
-- [x] **TEST-02**: User can run Correlação Pearson/Spearman in the new shell with parity to v1.0 outputs
-- [x] **TEST-03**: User can run Prais-Winsten in the new shell with parity to v1.0 outputs
+O critério de sucesso não é "mais funcionalidades". É: **um estudante da liga consegue pesquisar qualquer um dos 330 agravos no mapa e levar aquele dado até um teste estatístico sem que nada no caminho minta para ele.**
 
-### Testes — novos
+## v3.0 Requirements
 
-- [x] **TEST-04**: User can run qui-quadrado de independência with effect size and expected-cell warning
-- [x] **TEST-05**: User can run one-way ANOVA with Tukey post-hoc
-- [x] **TEST-06**: User can run Kruskal-Wallis with Dunn post-hoc
-- [x] **TEST-07**: User can run Poisson regression with overdispersion check
-- [x] **TEST-08**: User can run Negative Binomial regression
-- [x] **TEST-09**: User can run Logistic regression reporting odds ratios with confidence intervals
+### Baseline / Saúde do código
 
-### Mapas (interface de análise estatística)
+- [ ] **QA-01**: `npm run typecheck` passa sem erros
+- [ ] **QA-02**: A suíte de testes passa integralmente, e passar é pré-condição de commit
+- [ ] **QA-03**: Nenhum teste fica vermelho "conhecido" — uma falha nova é distinguível de dívida herdada
+- [ ] **QA-04**: Registrar um teste novo sem ícone próprio não derruba o sidebar
 
-- [x] **MAP-01**: User can plot a Brazil choropleth heatmap by UF with legend
-- [x] **MAP-02**: User can paste territory labels as UF name or sigla and have them recognized
-- [x] **MAP-03**: User can drill into a selected state and view município, mesorregião, or região/macrorregião de saúde choropleths
-- [x] **MAP-04**: User gets municipality name matching scoped by UF plus a matched/unmatched report
-- [x] **MAP-05**: Maps work fully offline from bundled static geo assets (no runtime map/IBGE API dependency)
-- [x] **MAP-06**: User can analyze temporality on the map (select period / compare across time) as part of the statistical workflow
-- [x] **MAP-07**: User can group UFs into analysis groups, with presets for grandes regiões (Norte, Nordeste, Centro-Oeste, Sudeste, Sul) and custom groups
-- [x] **MAP-08**: User can select/group by macrorregiões de saúde (and related health-region geography) for analysis
-- [x] **MAP-09**: User can select multiple diseases/agravos within the chosen territory groups and time window, then run statistical tests from that selection
-- [x] **MAP-10**: Map analysis UX is didactic and intuitive (clear steps, plain-PT guidance, visible selection summary of territory × time × diseases × groups)
+### Integridade da taxonomia
 
-### Variáveis DataSUS (dados no site + referências)
+- [ ] **TAX-01**: Todo agravo tem `id`, `tabnetCode`, `cid` e `label` mutuamente consistentes, derivados da Lista Morb CID-10 oficial
+- [ ] **TAX-02**: A validação falha (fail-closed) quando `id ↔ tabnetCode ↔ label` divergem, no CLI e na suíte — o bug `avc` → 163 seria barrado
+- [ ] **TAX-03**: A migração preserva a contagem exata de linhas em `sih_disease` (330), `sih_metric_uf` (30.313) e `sih_metric_muni` (1.099.403), com integridade referencial verificada antes e depois
+- [ ] **TAX-04**: A migração é reversível e trata os ciclos de renomeação sem violar a chave primária
+- [ ] **TAX-05**: O estudante encontra um agravo pelo termo clínico da liga ("AVC", "TVP", "embolia pulmonar") via apelidos curados que resolvem para ids canônicos — o apelido nunca é gravado como chave de dado
+- [ ] **TAX-06**: Todo artefato derivado (packs, `variables.json`, seeds SQL, cópia no bundle) é **gerado** a partir da taxonomia canônica, não mantido à mão em paralelo
 
-- [x] **CAT-01**: User can search/browse a panel of public-health variables classified by type (categorical, numeric, ordinal, etc.)
-- [x] **CAT-02**: Every variable shows mandatory provenance/reference (source system, table/indicator, period covered, official citation/URL) — never orphan data
-- [x] **CAT-03**: User sees a suggested statistical test hint based on the variable's classified type
-- [x] **CAT-04**: User can load curated/scraped variable datasets into analysis directly in the app (no need to leave for TABNET during the classroom flow)
-- [x] **CAT-05**: Scraped/curated datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping during analysis
+### Pipeline de coleta
 
-### Meta-análise
+- [ ] **PIPE-01**: Uma falha de rede/DNS/parse é registrada como falha ruidosa, nunca como sucesso com 0 linhas
+- [ ] **PIPE-02**: Existe um ledger consultável que informa, por (agravo × medida × grão), se a combinação foi coletada, falhou ou nunca foi tentada — e o app consegue lê-lo
+- [ ] **PIPE-03**: A coleta é retomável: reexecutar após interrupção continua de onde parou, sem duplicar linhas
+- [ ] **PIPE-04**: O cache bruto só é descartado após o upload correspondente ser confirmado
+- [ ] **PIPE-05**: O operador consegue verificar que uma coleta capturou o que afirma ter capturado
+- [ ] **PIPE-06**: A coleta respeita limites de requisição do TabNet e sobrevive a execuções longas sem supervisão
 
-- [ ] **META-01**: User can pool study-level effects with fixed-effect and random-effects (DerSimonian-Laird) models
-- [ ] **META-02**: User can view/download a forest plot of study and pooled effects
-- [ ] **META-03**: User sees heterogeneity stats I², Q, and τ² with the pooled result
-- [ ] **META-04**: User can view a funnel plot and a basic asymmetry check (Egger's test)
+### Cobertura de dados
 
-### UX diferenciadores
+- [ ] **DATA-01**: As 4 medidas (Internações, Óbitos, Valor_total, Dias_permanência) estão coletadas para os 330 agravos no grão UF
+- [ ] **DATA-02**: As 4 medidas estão coletadas para os 330 agravos no grão município
+- [ ] **DATA-03**: `taxa_mortalidade` é derivável em todo o catálogo, não só nos 5 agravos atuais
+- [ ] **DATA-04**: Cada métrica servida ao app carrega a data em que foi coletada
 
-- [x] **UX-01**: User can use a guided “qual teste usar?” decision tree that routes to the right test module
-- [x] **UX-02**: User sees assumption-check nudges appropriate to the active test (e.g. normality hint, expected counts, overdispersion)
+### Mapas dinâmicos
+
+- [ ] **MAPA-01**: O estudante seleciona qualquer um dos 330 agravos e recebe resposta honesta — dado real, "carregando", ou "ainda não coletamos" — nunca clique morto nem mapa vazio sem explicação
+- [ ] **MAPA-02**: O choropleth em grão UF é servido ao vivo do Supabase, substituindo os 10 packs embutidos
+- [ ] **MAPA-03**: "Sem dado coletado", "zero verdadeiro" e "menor balde" são visualmente distintos no mapa e na legenda
+- [ ] **MAPA-04**: Um valor ausente nunca é coagido a 0 — nem no render, nem no domínio da escala, nem na legenda, nem na tabela montada
+- [ ] **MAPA-05**: O grão município é buscado sob demanda no drill-down, com carregamento restrito à região aberta
+- [ ] **MAPA-06**: Nenhuma consulta é truncada em silêncio — um resultado maior que o limite do PostgREST é paginado por completo ou falha alto
+- [ ] **MAPA-07**: Redrilhar o mesmo território/agravo/ano na mesma sessão não refaz a busca
+- [ ] **MAPA-08**: Trocar de agravo durante uma busca em voo nunca pinta o dado do agravo anterior sob o rótulo novo
+- [ ] **MAPA-09**: Sem Supabase configurado ou acessível, o app diz isso explicitamente na interface
+- [ ] **MAPA-10**: A proveniência (fonte, tabela, período, data de coleta, link oficial) fica visível para a métrica ativa durante a exploração, não só no diálogo de revisão
+
+### Fluxo pesquisa → estatística
+
+- [ ] **FLUXO-01**: O estudante leva a seleção do mapa (território × tempo × agravo × grupo) até um teste estatístico com a tabela montada corretamente a partir dos dados ao vivo
+- [ ] **FLUXO-02**: A proveniência sobrevive ao handoff e continua visível no resultado do teste
+- [ ] **FLUXO-03**: Valores ausentes chegam ao módulo estatístico como ausentes, e o módulo declara explicitamente o que fez com eles — nunca imputa em silêncio
+- [ ] **FLUXO-04**: O estudante é avisado quando a comparação montada é estatisticamente frágil (denominador pequeno, taxa instável)
+
+### Varredura de bugs
+
+- [ ] **BUG-01**: Os 9 módulos estatísticos rodam de ponta a ponta pelo fluxo atual sem erro
+- [ ] **BUG-02**: O catálogo de Variáveis navega, filtra e carrega sem rótulo enganoso
+- [ ] **BUG-03**: O fluxo de Mapas roda de ponta a ponta em uso didático real (UAT com a liga)
 
 ## Future Requirements
 
-- Login / contas de usuário e salvar projetos na nuvem
-- Backend / API persistente de sessão
-- Refresh contínuo/automatizado do pipeline de scrape (CI) além do bundle versionado do milestone
-- Suite bayesiana / trim-and-fill / GLM genérico / zero-inflated
-- Setor censitário / animações avançadas de mapa além da temporalidade didática (MAP-06)
+- Meta-análise didática: efeito fixo/aleatório, forest plot, I², funnel, teste de Egger (META-01…04, adiado do v2.0 para v3.1)
+- Comparação período A × período B renderizada no próprio choropleth (modelo de dados já existe, não consumido pelo mapa)
+- Small multiples para comparação multi-agravo/multi-período
+- Agrupamento por capítulo CID-10 para navegação exploratória
+- Atalho "mais usadas pela LACIR" e lista de usados recentemente no seletor
+- Favoritos entre sessões / contas de usuário
+- Refresh automatizado do pipeline em CI
 
 ## Out of Scope
 
 | Item | Reason |
 |------|--------|
-| Backend / database / auth de sessão | Análises client-only; scrape é pipeline de assets |
-| Embutir JASP ou runtime R | JASP is numeric/behavior oracle only |
-| Mapbox / Google Maps / tile APIs with keys | Offline classroom + no secrets in client |
-| Live runtime TABNET scraping during class | ToS/ops/instability; use versioned pipeline + provenance instead |
-| Full JASP UI clone | Didactic tabbed UX preferred |
+| Meta-análise | Pedido explícito: garantir primeiro que o resto funcione. Fase 6 do v2.0 volta em v3.1 |
+| Login / contas / escrita no Supabase | App permanece somente-leitura (anon + RLS); nenhum segredo de escrita no bundle |
+| Scraping do TabNet em tempo de aula | ToS e instabilidade; o app lê o Supabase, nunca o TabNet |
+| Supressão de contagens pequenas | SIH já é dado público agregado; esconder números oficiais divergiria da fonte que o produto ensina a ler |
+| Substituir silenciosamente um agravo sem dado pelo "mais próximo" | Antididático: o estudante concluiria errado sem saber da substituição |
+| Colaboração em tempo real no mapa | Exige identidade e escrita, ambas fora deste milestone |
+| Busca sobre o espaço completo do CID-10 | O produto se limita às 330 categorias da Lista Morb, o mesmo agrupamento do TabNet |
+| Grafo de proveniência estilo W3C-PROV | Feito para pesquisadores de proveniência, não para estudantes; a tira plana em PT é o nível certo |
+| Virtualização da lista de 330 agravos | O gargalo é relevância de busca, não custo de DOM; 330 linhas renderizam bem |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 1 | Complete |
-| UI-02 | Phase 1 | Complete |
-| UI-03 | Phase 1 | Complete |
-| UI-04 | Phase 1 | Complete |
-| UI-05 | Phase 1 | Complete |
-| UI-06 | Phase 1 | Complete |
-| UX-01 | Phase 1 | Complete |
-| TEST-01 | Phase 2 | Complete |
-| TEST-02 | Phase 2 | Complete |
-| TEST-03 | Phase 2 | Complete |
-| TEST-04 | Phase 3 | Complete |
-| TEST-05 | Phase 3 | Complete |
-| TEST-06 | Phase 3 | Complete |
-| TEST-07 | Phase 3 | Complete |
-| TEST-08 | Phase 3 | Complete |
-| TEST-09 | Phase 3 | Complete |
-| UX-02 | Phase 3 | Complete |
-| MAP-01 | Phase 4 | Complete |
-| MAP-02 | Phase 4 | Complete |
-| MAP-03 | Phase 4 | Complete |
-| MAP-04 | Phase 4 | Complete |
-| MAP-05 | Phase 4 | Complete |
-| MAP-06 | Phase 4 | Complete |
-| MAP-07 | Phase 4 | Complete |
-| MAP-08 | Phase 4 | Complete |
-| MAP-09 | Phase 4 | Complete |
-| MAP-10 | Phase 4 | Complete |
-| CAT-01 | Phase 5 | Complete |
-| CAT-02 | Phase 5 | Complete |
-| CAT-03 | Phase 5 | Complete |
-| CAT-04 | Phase 5 | Complete |
-| CAT-05 | Phase 5 | Complete |
-| META-01 | Phase 6 | Pending |
-| META-02 | Phase 6 | Pending |
-| META-03 | Phase 6 | Pending |
-| META-04 | Phase 6 | Pending |
+| QA-01 | Phase 7 | Pending |
+| QA-02 | Phase 7 | Pending |
+| QA-03 | Phase 7 | Pending |
+| QA-04 | Phase 7 | Pending |
+| TAX-01 | Phase 8 | Pending |
+| TAX-02 | Phase 8 | Pending |
+| TAX-03 | Phase 8 | Pending |
+| TAX-04 | Phase 8 | Pending |
+| TAX-05 | Phase 8 | Pending |
+| TAX-06 | Phase 8 | Pending |
+| PIPE-01 | Phase 9 | Pending |
+| PIPE-02 | Phase 9 | Pending |
+| PIPE-03 | Phase 9 | Pending |
+| PIPE-04 | Phase 9 | Pending |
+| PIPE-05 | Phase 9 | Pending |
+| PIPE-06 | Phase 9 | Pending |
+| DATA-01 | Phase 9 | Pending |
+| DATA-02 | Phase 9 | Pending |
+| DATA-03 | Phase 9 | Pending |
+| DATA-04 | Phase 9 | Pending |
+| MAPA-01 | Phase 10 | Pending |
+| MAPA-02 | Phase 10 | Pending |
+| MAPA-03 | Phase 10 | Pending |
+| MAPA-04 | Phase 10 | Pending |
+| MAPA-05 | Phase 10 | Pending |
+| MAPA-06 | Phase 10 | Pending |
+| MAPA-07 | Phase 10 | Pending |
+| MAPA-08 | Phase 10 | Pending |
+| MAPA-09 | Phase 10 | Pending |
+| MAPA-10 | Phase 10 | Pending |
+| FLUXO-01 | Phase 11 | Pending |
+| FLUXO-02 | Phase 11 | Pending |
+| FLUXO-03 | Phase 11 | Pending |
+| FLUXO-04 | Phase 11 | Pending |
+| BUG-01 | Phase 12 | Pending |
+| BUG-02 | Phase 12 | Pending |
+| BUG-03 | Phase 12 | Pending |
 
-**Coverage:** 36/36 requirements mapped ✓  
-**Orphaned requirements:** (none)  
+**Coverage:** 37/37 requirements mapped ✓
+**Orphaned requirements:** (none)
 **Phantom phase requirements:** (none)
 
 ---
-*Last updated: 2026-07-25 — pivot: scrape+referências (CAT-02/04/05) + mapa interface estatística (MAP-06..10)*
+*Last updated: 2026-07-28 — milestone v3.0 defined*
