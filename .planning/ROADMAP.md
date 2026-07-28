@@ -43,7 +43,16 @@ Numeração continua do v2.0, que terminou na Fase 6.
 
 **Notes**: Nenhum código de produção passa `layout="stepper"` — só `FlowSteps.test.tsx`. Decidir explicitamente se o modo stepper permanece como API pública ou é removido como código morto. `FlaskConical` é usado como fallback em `SidebarTestLink.tsx:53` e nunca importado: hoje é inalcançável porque os 9 ids têm ícone, mas é uma mina para o décimo.
 
-**Plans**: TBD
+**Plans**: 7 plans (5 waves)
+
+Plans:
+- [ ] 07-01-PLAN.md — Tipagem derivada do registry + os 2 erros de typecheck (QA-01, QA-04)
+- [ ] 07-02-PLAN.md — Helper de fluxo compartilhado + stub de canvas incondicional
+- [ ] 07-03-PLAN.md — Remoção do modo stepper e limpeza da API do FlowSteps
+- [ ] 07-04-PLAN.md — Reescrita scroll: anova-tukey, kruskal-dunn, logistica, binomial-negativa
+- [ ] 07-05-PLAN.md — Reescrita scroll: poisson, prais-winsten, qui-quadrado, TesteDemo
+- [ ] 07-06-PLAN.md — Landing/router separado + suíte verde e silenciosa
+- [ ] 07-07-PLAN.md — Gate: npm run gate, .githooks/ e ci.yml, com prova de bloqueio
 
 ### Phase 8: Taxonomia canônica + integridade
 

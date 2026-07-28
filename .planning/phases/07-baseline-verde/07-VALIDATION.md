@@ -1,7 +1,7 @@
 ---
 phase: 07
 slug: baseline-verde
-status: draft
+status: planned
 nyquist_compliant: false
 wave_0_complete: false
 created: 2026-07-28
@@ -44,13 +44,13 @@ Task IDs são preenchidos durante o planejamento; as linhas abaixo fixam o coman
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 1 | QA-01 | — | N/A | typecheck | `npm run typecheck` | ✅ script existe | ⬜ pending |
-| TBD | TBD | 1 | QA-04 | — | N/A | unit | `npx vitest run src/routes/estatistica/SidebarTestLink.test.tsx` | ❌ W0 — arquivo novo | ⬜ pending |
-| TBD | TBD | 1–2 | QA-02 | — | N/A | unit/integration | `npm run test:run` | 🔶 9 arquivos precisam reescrita | ⬜ pending |
-| TBD | TBD | 1–2 | QA-02 (SC#3) | — | N/A | integration (RTL) | `npm run test:run` — mesma jornada Dados→Configurar→Resultados nos 9 arquivos | 🔶 arquivos existem | ⬜ pending |
-| TBD | TBD | 2 | QA-02 (D-08, silêncio) | — | N/A | log assertion | `npx vitest run 2>&1 \| grep -c "Not implemented: HTMLCanvasElement"` → 0; `grep -c "was not wrapped in act"` → 0 | ✅ setup.ts existe (contém o probe defeituoso) | ⬜ pending |
-| TBD | TBD | 3 | QA-03 / SC#5 | T-07-01 | Hook não pode ser burlado silenciosamente; `--no-verify` é bypass conhecido e documentado | integration (git hook) | commit deliberadamente vermelho contra `.githooks/pre-commit` ativo → exit ≠ 0 e nenhum commit criado | ❌ W0 — hooks não existem | ⬜ pending |
-| TBD | TBD | 3 | QA-03 (D-18) | — | N/A | integration (git hook) | commit tocando só `.planning/` → completa em < 2s, sem rodar o gate | ❌ W0 | ⬜ pending |
+| 07-01 T3 | 07-01 | 1 | QA-01 | — | N/A | typecheck | `npm run typecheck` | ✅ script existe | ⬜ pending |
+| 07-01 T2 | 07-01 | 1 | QA-04 | — | N/A | unit | `npx vitest run src/routes/estatistica/SidebarTestLink.test.tsx` | ❌ W0 — arquivo novo | ⬜ pending |
+| 07-04 T1-T2 / 07-05 T1-T2 | 07-04, 07-05 | 3 | QA-02 | — | N/A | unit/integration | `npm run test:run` | 🔶 9 arquivos precisam reescrita | ⬜ pending |
+| 07-04 T1-T2 / 07-05 T1-T2 | 07-04, 07-05 | 3 | QA-02 (SC#3) | — | N/A | integration (RTL) | `npm run test:run` — mesma jornada Dados→Configurar→Resultados nos 9 arquivos | 🔶 arquivos existem | ⬜ pending |
+| 07-02 T2 / 07-06 T2 | 07-02, 07-06 | 1 e 4 | QA-02 (D-08, silêncio) | — | N/A | log assertion | `npx vitest run 2>&1 \| grep -c "Not implemented: HTMLCanvasElement"` → 0; `grep -c "was not wrapped in act"` → 0 | ✅ setup.ts existe (contém o probe defeituoso) | ⬜ pending |
+| 07-07 T3 | 07-07 | 5 | QA-03 / SC#5 | T-07-07-03, T-07-07-04 | Hook não pode ser burlado silenciosamente; `--no-verify` é bypass conhecido e documentado | integration (git hook) | commit deliberadamente vermelho contra `.githooks/pre-commit` ativo → exit ≠ 0 e nenhum commit criado | ❌ W0 — hooks não existem | ⬜ pending |
+| 07-07 T3 | 07-07 | 5 | QA-03 (D-18) | — | N/A | integration (git hook) | commit tocando só `.planning/` → completa em < 2s, sem rodar o gate | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
