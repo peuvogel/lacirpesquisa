@@ -1,12 +1,13 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.0
-milestone_name: Dados confiáveis + pesquisa dinâmica via Supabase
-status: planning
-last_updated: "2026-07-28T12:51:58.336Z"
-last_activity: 2026-07-28
+milestone_name: milestone
+status: Defining requirements
+stopped_at: Phase 7 context gathered
+last_updated: "2026-07-28T18:10:32.253Z"
+last_activity: 2026-07-28 — Milestone v3.0 started
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -107,9 +108,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-25T22:56:45.433Z
-Stopped at: Completed 05-07-PLAN.md (automated gate; UAT human_needed)
-Resume file: None
+Last session: 2026-07-28T18:10:32.249Z
+Stopped at: Phase 7 context gathered
+Resume file: .planning/phases/07-baseline-verde/07-CONTEXT.md
 
 ## Performance Metrics
 
