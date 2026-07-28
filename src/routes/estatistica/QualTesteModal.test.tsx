@@ -49,7 +49,7 @@ describe('QualTesteModal', () => {
     expect(onSelectTest).toHaveBeenCalledWith('t-student');
   });
 
-  it('lists all ten registry titles in the roadmap section', async () => {
+  it('lists all registry titles in the roadmap section', async () => {
     renderModal();
     for (const entry of TEST_REGISTRY) {
       expect(screen.getAllByText(entry.title).length).toBeGreaterThanOrEqual(1);
@@ -82,15 +82,15 @@ describe('QualTesteModal', () => {
     }
   });
 
-  it('calls onSelectTest(demo) and closes via Começar pelo Teste demo', async () => {
+  it('calls onSelectTest(t-student) and closes via Usar t de Student', async () => {
     const user = userEvent.setup();
     const { onOpenChange, onSelectTest } = renderModal();
 
     await user.click(screen.getByRole('button', { name: 'Numérico contínuo' }));
     await user.click(screen.getByRole('button', { name: 'Dois grupos independentes' }));
-    await user.click(screen.getByRole('button', { name: 'Começar pelo Teste demo' }));
+    await user.click(screen.getByRole('button', { name: 'Usar t de Student' }));
 
-    expect(onSelectTest).toHaveBeenCalledWith('demo');
+    expect(onSelectTest).toHaveBeenCalledWith('t-student');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 

@@ -154,11 +154,11 @@ export function TesteDemo() {
 
     const metrics = summaries.flatMap((summary) => [
       {
-        label: `${summary.label} — n`,
+        label: `${summary.label}: n`,
         value: String(summary.n),
       },
       {
-        label: `${summary.label} — média`,
+        label: `${summary.label}: média`,
         value: fmtNumber(summary.mean),
         hint: `DP = ${fmtNumber(summary.sd)}`,
       },

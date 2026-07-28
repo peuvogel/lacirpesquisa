@@ -269,7 +269,53 @@ async function main() {
     }
   }
 
-  // 3) Reference seed
+  // 3) Multi-disease packs (optional — skip when scrape CSV not ready yet)
+  const multiPackIds = Object.keys(PACK_SOURCES).filter(
+    (id) => id !== 'sih.embolia_trombose_uf' && id !== 'sih.amputacao_mmii_uf',
+  );
+  for (const packId of multiPackIds) {
+    const src = PACK_SOURCES[packId];
+    if (!src) continue;
+    let csvPath;
+    let metaPath;
+    try {
+      csvPath = corpusPath(src.csv);
+      metaPath = corpusPath(src.metadata);
+    } catch {
+      console.warn(`catalog:build skip ${packId}: path not allowlisted`);
+      continue;
+    }
+    if (!fs.existsSync(csvPath) || !fs.existsSync(metaPath)) {
+      console.warn(`catalog:build skip ${packId}: scrape CSV/metadata missing`);
+      continue;
+    }
+    const metadata = loadJson(metaPath);
+    const { headers, rows } = readCsvUtf8Sig(csvPath);
+    if (rows.length === 0) {
+      console.warn(`catalog:build skip ${packId}: empty CSV`);
+      continue;
+    }
+    const metricKeys = metricKeysForPack(columnMap, packId, headers, false);
+    packFiles[packId] = buildPack(packId, metricKeys, rows);
+    const years = yearsFromRows(rows);
+    manifestPacks.push({
+      packId,
+      grain: GRAIN,
+      sourceDir: path.relative(ROOT, path.join(CORPUS_DIR, src.sourceDir)),
+      rowCount: rows.length,
+      years,
+      keys: KEYS,
+    });
+    for (const entry of buildLoadableEntries(columnMap, packId, metadata, rows)) {
+      if (seenIds.has(entry.id)) {
+        throw new Error(`Duplicate catalog id: ${entry.id}`);
+      }
+      seenIds.add(entry.id);
+      variables.push(entry);
+    }
+  }
+
+  // 4) Reference seed
   for (const entry of referenceSeed) {
     if (!entry || typeof entry.id !== 'string') {
       throw new Error('reference-seed entry missing id');

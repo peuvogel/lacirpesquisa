@@ -52,6 +52,7 @@ export const METHOD_OPTIONS = [
 
 export type CorrelacaoMethod = (typeof METHOD_OPTIONS)[number]['id'];
 
+/** Display labels aligned with Datawrapper-style catalog names. */
 export const CHART_PRESET_LABELS = {
   scatter: 'Dispersão',
   rankScatter: 'Dispersão com ranks',
@@ -60,8 +61,8 @@ export const CHART_PRESET_LABELS = {
 
 export const CORRELACAO_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showRegressionLine', label: 'Linha de regressão' },
-  { id: 'highlightOutliers', label: 'Destacar possíveis outliers' },
-  { id: 'showEquation', label: 'Mostrar equação no gráfico' },
+  { id: 'highlightOutliers', label: 'Destacar outliers / gaps de posto' },
+  { id: 'showEquation', label: 'Mostrar equação / coeficiente no gráfico' },
 ];
 
 export const MAX_RESEARCH_QUESTION_LENGTH = 500;

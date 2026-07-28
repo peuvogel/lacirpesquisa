@@ -1,8 +1,6 @@
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import type { DidacticCard } from '@/features/tests/shared/DidacticCards';
 import type { AnnotationDefinition } from '@/shared/charts/useChartCustomizer';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
 export const TABULAR_OPTIONS: TabularInputOptions = {
   aliases: {
@@ -41,8 +39,24 @@ export const didacticCards: DidacticCard[] = [
   },
 ];
 
-const fixturePath = join(__dirname, '../../../test/fixtures/tests/kruskal-dunn-exemplo.txt');
-export const exampleText: string = readFileSync(fixturePath, 'utf8');
+/** Mirrors `src/test/fixtures/tests/kruskal-dunn-exemplo.txt` (browser-safe; no node:fs). */
+export const exampleText = `desfecho;grupo
+12,3;A
+14,1;A
+10,9;A
+11,8;A
+13,5;A
+18,2;B
+17,4;B
+19,1;B
+16,8;B
+20,3;B
+24,5;C
+23,1;C
+25,8;C
+22,4;C
+26,2;C
+`;
 
 export const CHART_PRESET_LABELS = {
   medians: 'Medianas por grupo',

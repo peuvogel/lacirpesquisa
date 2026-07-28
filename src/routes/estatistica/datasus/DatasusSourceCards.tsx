@@ -42,7 +42,7 @@ export function DatasusSourceCards({ sources, activeSourceId, onSelect, onRemove
               <Badge variant={state.tone}>{state.text}</Badge>
               <strong className="text-sm text-foreground">{source.fileName}</strong>
               <span className="text-xs text-muted-foreground">
-                {parsed?.diagnosis.formatType ?? '—'} · cabeçalho linha {(parsed?.headerRowIndex ?? 0) + 1}
+                {parsed?.diagnosis.formatType ?? 'n/d'} · cabeçalho linha {(parsed?.headerRowIndex ?? 0) + 1}
               </span>
             </button>
             <button

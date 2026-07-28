@@ -155,7 +155,7 @@ export function deriveDatasusDataset(input: RunFromDatasusInput): {
       y: derived.pairs.map((pair) => pair.y),
       labels: derived.pairs.map((pair) => pair.label),
       headers: [derived.xLabel || 'X', derived.yLabel || 'Y'],
-      method: 'pearson',
+      method: 'pearson' as CorrelacaoMethod,
     },
   };
 }

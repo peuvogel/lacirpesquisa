@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { HelpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { TEST_REGISTRY, type TestRegistryEntry } from '@/features/tests/registry';
 import { SidebarTestLink } from './SidebarTestLink';
 
-// Legacy .page-shell collapse breakpoint (assets/css/styles.css:1172-1174),
-// preserved so the "collapses below ~980px" behavior matches the MVP.
 const NARROW_MEDIA_QUERY = '(max-width: 980px)';
 
 function isNarrowViewport(): boolean {
@@ -30,15 +28,13 @@ export function groupTestsByGroup(entries: readonly TestRegistryEntry[]): Array<
 
 export interface SidebarProps {
   activeTestId: string | null;
-  /** Only ever called with an 'available' id (SidebarTestLink structurally excludes the rest). */
   onSelectTest: (id: string) => void;
   onOpenQualTeste: () => void;
 }
 
 /**
- * Collapsible 300px left sidebar (D-05) — Qual teste usar? trigger above a
- * TEST_REGISTRY-driven, grouped list. Collapse is a custom <aside> width
- * transition, not a shadcn sidebar block (01-RESEARCH.md Open Question 2).
+ * Black collapsible sidebar — category + test name only.
+ * Text is clipped instantly on collapse (no ghost copy during width tween).
  */
 export function Sidebar({ activeTestId, onSelectTest, onOpenQualTeste }: SidebarProps) {
   const [expanded, setExpanded] = useState(() => !isNarrowViewport());
@@ -59,52 +55,93 @@ export function Sidebar({ activeTestId, onSelectTest, onOpenQualTeste }: Sidebar
     <aside
       aria-label="Testes disponíveis"
       data-expanded={expanded}
+      data-state={expanded ? 'expanded' : 'collapsed'}
       className={cn(
-        'shrink-0 overflow-hidden border-r border-border transition-[width] duration-200 ease-out',
-        expanded ? 'w-[300px]' : 'w-[56px]',
+        'flex shrink-0 flex-col overflow-hidden border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)]',
+        'transition-[width] duration-150 ease-out',
+        expanded ? 'w-64' : 'w-12',
       )}
     >
-      <div className={cn('flex h-full flex-col gap-4 py-4', expanded ? 'px-4' : 'items-center px-2')}>
+      <div className="flex h-10 shrink-0 items-center gap-2 overflow-hidden px-2">
         <button
           type="button"
           onClick={() => setExpanded((prev) => !prev)}
           aria-expanded={expanded}
           aria-label={expanded ? 'Recolher lista de testes' : 'Expandir lista de testes'}
-          className="flex size-11 shrink-0 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-elevated hover:text-text focus-visible:outline-none"
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sidebar-ring)]"
         >
           {expanded ? (
-            <PanelLeftClose aria-hidden="true" className="size-5" />
+            <PanelLeftClose aria-hidden="true" className="size-4" />
           ) : (
-            <PanelLeftOpen aria-hidden="true" className="size-5" />
+            <PanelLeftOpen aria-hidden="true" className="size-4" />
           )}
         </button>
-
-        {expanded ? (
-          <>
-            <Button type="button" onClick={onOpenQualTeste} className="w-full">
-              Qual teste usar?
-            </Button>
-
-            <nav aria-label="Lista de testes" className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto">
-              {groups.map(([groupName, entries]) => (
-                <div key={groupName} className="flex flex-col gap-1.5">
-                  <h2 className="px-1 font-sans text-xs font-bold tracking-wide text-text-muted uppercase">
-                    {groupName}
-                  </h2>
-                  {entries.map((entry) => (
-                    <SidebarTestLink
-                      key={entry.id}
-                      entry={entry}
-                      active={entry.id === activeTestId}
-                      onSelect={onSelectTest}
-                    />
-                  ))}
-                </div>
-              ))}
-            </nav>
-          </>
-        ) : null}
+        <span
+          className={cn(
+            'truncate text-xs font-medium tracking-wide text-muted-foreground uppercase',
+            'transition-opacity duration-100',
+            expanded ? 'opacity-100' : 'pointer-events-none w-0 opacity-0',
+          )}
+          aria-hidden={!expanded}
+        >
+          Testes
+        </span>
       </div>
+
+      <div className="shrink-0 overflow-hidden px-2 pb-2">
+        {expanded ? (
+          <Button type="button" onClick={onOpenQualTeste} className="h-8 w-full text-sm">
+            Qual teste usar?
+          </Button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenQualTeste}
+            aria-label="Qual teste usar?"
+            title="Qual teste usar?"
+            className="mx-auto flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--sidebar-accent)] hover:text-[var(--color-accent)]"
+          >
+            <HelpCircle aria-hidden="true" className="size-4" />
+          </button>
+        )}
+      </div>
+
+      <nav
+        aria-label="Lista de testes"
+        className={cn(
+          'flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto px-2 pb-3',
+          !expanded && 'overflow-y-hidden',
+        )}
+      >
+        {groups.map(([groupName, entries]) => (
+          <div key={groupName} className="flex flex-col gap-0.5 py-1">
+            <h2
+              className={cn(
+                'flex h-7 items-center truncate px-2 text-xs font-medium text-muted-foreground',
+                'transition-opacity duration-100',
+                expanded ? 'opacity-100' : 'pointer-events-none h-0 overflow-hidden opacity-0',
+              )}
+            >
+              {groupName}
+            </h2>
+            {!expanded ? <span className="sr-only">{groupName}</span> : null}
+            <ul className="flex flex-col gap-0.5">
+              {entries.map((entry) => (
+                <li key={entry.id} className="overflow-hidden">
+                  <SidebarTestLink
+                    entry={entry}
+                    active={entry.id === activeTestId}
+                    onSelect={onSelectTest}
+                    showSubtitle={false}
+                    dense
+                    collapsed={!expanded}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
     </aside>
   );
 }

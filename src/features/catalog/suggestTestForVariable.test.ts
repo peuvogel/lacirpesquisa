@@ -25,7 +25,7 @@ const EXPECTED: Record<VariableType, string> = {
   numerica: 't-student',
   ordinal: 'kruskal-dunn',
   categorica: 'qui-quadrado',
-  texto: 'demo',
+  texto: 't-student',
 };
 
 describe('suggestTestForVariable', () => {
@@ -56,9 +56,9 @@ describe('resolveHint', () => {
     expect(resolved.rationale).toContain('Internações');
   });
 
-  it('keeps demo even when checking availability', () => {
+  it('falls back to t-student for texto variables', () => {
     const resolved = resolveHint(entry('texto', 'Notas metodológicas'));
-    expect(resolved.testId).toBe('demo');
-    expect(resolved.registry?.id).toBe('demo');
+    expect(resolved.testId).toBe('t-student');
+    expect(resolved.registry?.id).toBe('t-student');
   });
 });

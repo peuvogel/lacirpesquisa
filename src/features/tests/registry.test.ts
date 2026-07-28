@@ -20,15 +20,14 @@ describe('TEST_REGISTRY', () => {
     }
   });
 
-  it('marks exactly ten entries available: demo, three Phase 2, three Wave A classical, and three Wave B GLM tests', () => {
+  it('marks nine roadmap tests available', () => {
     const available = TEST_REGISTRY.filter((entry) => entry.status === 'available');
-    expect(available).toHaveLength(10);
+    expect(available).toHaveLength(9);
     expect(available.map((entry) => entry.id).sort()).toEqual(
       [
         'anova-tukey',
         'binomial-negativa',
         'correlacao',
-        'demo',
         'kruskal-dunn',
         'logistica',
         'poisson',
@@ -44,18 +43,15 @@ describe('TEST_REGISTRY', () => {
     expect(emBreve).toHaveLength(0);
   });
 
-  it('keeps demo in the Demonstração group', () => {
-    expect(getTestById('demo')?.group).toBe('Demonstração');
-  });
-
-  it('covers the demo plus all nine roadmap tests', () => {
-    expect(TEST_REGISTRY).toHaveLength(10);
+  it('does not include the removed demo entry', () => {
+    expect(getTestById('demo')).toBeUndefined();
+    expect(TEST_REGISTRY).toHaveLength(9);
   });
 });
 
 describe('getTestById', () => {
   it('resolves a known id', () => {
-    expect(getTestById('demo')?.title).toBe('Teste demo');
+    expect(getTestById('t-student')?.title).toBe('t de Student');
   });
 
   it('returns undefined for an unknown id', () => {
@@ -64,8 +60,7 @@ describe('getTestById', () => {
 });
 
 describe('isTestAvailable', () => {
-  it('is true for demo, Phase 2 migrated tests, and all Phase 3 tests', () => {
-    expect(isTestAvailable('demo')).toBe(true);
+  it('is true for migrated roadmap tests', () => {
     expect(isTestAvailable('t-student')).toBe(true);
     expect(isTestAvailable('correlacao')).toBe(true);
     expect(isTestAvailable('prais-winsten')).toBe(true);
@@ -77,33 +72,16 @@ describe('isTestAvailable', () => {
     expect(isTestAvailable('logistica')).toBe(true);
   });
 
-  it('is false for an unknown id', () => {
+  it('is false for demo and unknown ids', () => {
+    expect(isTestAvailable('demo')).toBe(false);
     expect(isTestAvailable('nope')).toBe(false);
   });
 });
 
 describe('getTestBadgeLabel', () => {
-  it('labels demo as Demonstração', () => {
-    const demo = getTestById('demo');
-    expect(demo).toBeDefined();
-    expect(getTestBadgeLabel(demo!)).toBe('Demonstração');
-  });
-
-  it('labels available migrated tests as Disponível', () => {
+  it('labels available tests as Disponível', () => {
     const tStudent = getTestById('t-student');
     expect(tStudent).toBeDefined();
     expect(getTestBadgeLabel(tStudent!)).toBe('Disponível');
-  });
-
-  it('labels Wave A available tests as Disponível', () => {
-    const anova = getTestById('anova-tukey');
-    expect(anova).toBeDefined();
-    expect(getTestBadgeLabel(anova!)).toBe('Disponível');
-  });
-
-  it('labels Wave B GLM available tests as Disponível', () => {
-    const poisson = getTestById('poisson');
-    expect(poisson).toBeDefined();
-    expect(getTestBadgeLabel(poisson!)).toBe('Disponível');
   });
 });

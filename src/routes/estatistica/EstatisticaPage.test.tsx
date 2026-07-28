@@ -73,22 +73,23 @@ describe('EstatisticaPage', () => {
     vi.useRealTimers();
   });
 
-  it('defaults to Teste demo on cold start', () => {
+  it('defaults to t de Student on cold start', () => {
     renderPage();
     const mount = document.getElementById('lacir-test-module-mount');
-    expect(mount).toHaveAttribute('data-active-test-id', 'demo');
+    expect(mount).toHaveAttribute('data-active-test-id', 't-student');
+    expect(screen.getByRole('heading', { name: 't de Student' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Usar exemplo' })).toBeInTheDocument();
   });
 
-  it('mounts t de Student when selected from the sidebar', async () => {
+  it('mounts correlação when selected from the sidebar', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: /t de Student/i }));
+    await user.click(screen.getByRole('button', { name: /Correlação/i }));
 
     const mount = document.getElementById('lacir-test-module-mount');
-    expect(mount).toHaveAttribute('data-active-test-id', 't-student');
-    expect(screen.getByRole('heading', { name: 'Cole ou envie seus dados' })).toBeInTheDocument();
+    expect(mount).toHaveAttribute('data-active-test-id', 'correlacao');
+    expect(screen.getByRole('heading', { name: /Correlação/i })).toBeInTheDocument();
   });
 
   it('applies handoff test id when session data is present', async () => {
@@ -121,7 +122,7 @@ describe('EstatisticaPage', () => {
       expect(mount).toHaveAttribute('data-active-test-id', 'correlacao');
     });
 
-    expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
   });
 
   it('session handoff completes correlacao analysis through Resultados', async () => {
@@ -160,15 +161,12 @@ describe('EstatisticaPage', () => {
       expect(mount).toHaveAttribute('data-active-test-id', 'correlacao');
     });
 
-    expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
-
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByText('r de Pearson')).toBeInTheDocument();
     expect(screen.queryByText(/Cada grupo precisa/i)).not.toBeInTheDocument();
   });
@@ -201,10 +199,9 @@ describe('EstatisticaPage', () => {
     await vi.advanceTimersByTimeAsync(200);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
     const desfechoSelect = screen.getByLabelText(/Papel da coluna desfecho/i);
     const grupoSelect = screen.getByLabelText(/Papel da coluna grupo/i);
     expect(desfechoSelect).toHaveValue('numerica');
@@ -213,7 +210,7 @@ describe('EstatisticaPage', () => {
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     });
 
     const kruskalButton = screen.queryByRole('button', { name: /Kruskal/i });
@@ -225,10 +222,9 @@ describe('EstatisticaPage', () => {
     expect(mount).toHaveAttribute('data-active-test-id', 'kruskal-dunn');
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByLabelText(/Papel da coluna desfecho/i)).toHaveValue('numerica');
     });
 
-    expect(screen.getByLabelText(/Papel da coluna desfecho/i)).toHaveValue('numerica');
     expect(screen.getByLabelText(/Papel da coluna grupo/i)).toHaveValue('categorica');
   });
 
@@ -258,17 +254,16 @@ describe('EstatisticaPage', () => {
     await vi.advanceTimersByTimeAsync(200);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
     expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
     expect(screen.getByLabelText(/Papel da coluna exposicao/i)).toHaveValue('numerica');
 
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     });
 
     const nbButtons = screen.getAllByRole('button', { name: 'Abrir Binomial Negativa' });
@@ -278,10 +273,9 @@ describe('EstatisticaPage', () => {
     expect(mount).toHaveAttribute('data-active-test-id', 'binomial-negativa');
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
     });
 
-    expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
     expect(screen.getByLabelText(/Papel da coluna exposicao/i)).toHaveValue('numerica');
     expect(screen.getAllByText('detectado').length).toBeGreaterThanOrEqual(2);
   });

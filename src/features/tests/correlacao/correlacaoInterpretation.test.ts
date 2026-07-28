@@ -114,18 +114,21 @@ describe('correlacaoInterpretation', () => {
 });
 
 describe('correlacaoCharts presets', () => {
-  it('exports at least 3 presets matching UI-SPEC labels', async () => {
-    const { correlacaoChartPresets } = await import('./correlacaoCharts');
+  it('exposes method-aware galleries for Pearson and Spearman', async () => {
+    const { buildCorrelacaoChartPresets } = await import('./correlacaoCharts');
     const { CHART_PRESET_LABELS } = await import('./correlacaoConfig');
-    expect(correlacaoChartPresets.length).toBeGreaterThanOrEqual(3);
-    const labels = correlacaoChartPresets.map((preset) => preset.label);
-    expect(labels).toContain(CHART_PRESET_LABELS.scatter);
-    expect(labels).toContain(CHART_PRESET_LABELS.rankScatter);
-    expect(labels).toContain(CHART_PRESET_LABELS.scatterWithFit);
+
+    const pearson = buildCorrelacaoChartPresets('pearson');
+    const spearman = buildCorrelacaoChartPresets('spearman');
+
+    expect(pearson.map((preset) => preset.id)).toEqual(['scatter', 'scatter-with-fit']);
+    expect(spearman.map((preset) => preset.id)).toEqual(['rank-scatter', 'scatter']);
+    expect(pearson.map((preset) => preset.label)).toContain(CHART_PRESET_LABELS.scatterWithFit);
+    expect(spearman.map((preset) => preset.label)).toContain(CHART_PRESET_LABELS.rankScatter);
   });
 
   it('regression overlay toggle produces annotation config when enabled', async () => {
-    const { correlacaoChartPresets } = await import('./correlacaoCharts');
+    const { buildCorrelacaoChartPresets } = await import('./correlacaoCharts');
     const { buildDatasetFromConfirmed, toEngineOutput } = await import('./correlacaoEngine');
     const exemploText = readFileSync(
       join(__dirname, '../../../test/fixtures/tests/correlacao-exemplo.txt'),
@@ -142,11 +145,39 @@ describe('correlacaoCharts presets', () => {
       method: 'pearson',
     });
     const output = toEngineOutput(dataset, 'pearson');
-    const preset = correlacaoChartPresets.find((item) => item.id === 'scatter');
+    const preset = buildCorrelacaoChartPresets('pearson').find((item) => item.id === 'scatter');
     expect(preset).toBeDefined();
     const chart = preset!.buildChart(output);
     const annotations = (chart.options as { plugins?: { annotation?: { annotations?: Record<string, unknown> } } })
       ?.plugins?.annotation?.annotations;
     expect(annotations?.showEquation).toBeDefined();
+    expect(chart.data.datasets.some((dataset) => String(dataset.label).includes('regressão'))).toBe(
+      true,
+    );
+  });
+
+  it('Spearman rank chart uses tied ranks and does not draw an OLS line', async () => {
+    const { buildCorrelacaoChartPresets } = await import('./correlacaoCharts');
+    const { toEngineOutput } = await import('./correlacaoEngine');
+    const output = toEngineOutput(
+      {
+        x: [1, 2, 2, 4, 5],
+        y: [5, 4, 4, 2, 1],
+        labels: ['a', 'b', 'c', 'd', 'e'],
+        headers: ['X', 'Y'],
+        method: 'spearman',
+      },
+      'spearman',
+    );
+    const rankPreset = buildCorrelacaoChartPresets('spearman').find((item) => item.id === 'rank-scatter');
+    expect(rankPreset).toBeDefined();
+    const chart = rankPreset!.buildChart(output);
+    expect(chart.data.datasets.some((dataset) => String(dataset.label).includes('regressão'))).toBe(
+      false,
+    );
+    const annotations = (chart.options as { plugins?: { annotation?: { annotations?: Record<string, unknown> } } })
+      ?.plugins?.annotation?.annotations;
+    const content = (annotations?.showEquation as { content?: string } | undefined)?.content;
+    expect(String(content)).toContain('ρ');
   });
 });

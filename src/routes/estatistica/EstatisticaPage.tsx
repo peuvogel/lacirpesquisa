@@ -9,10 +9,9 @@ import { PoissonTest } from '@/features/tests/poisson/PoissonTest';
 import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTest';
 import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
 import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
-import { isTestAvailable } from '@/features/tests/registry';
+import { getTestById, isTestAvailable } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
-import { TesteDemo } from './demo/TesteDemo';
 import { PortalDatasusLink } from './PortalDatasusLink';
 import { QualTesteModal } from './QualTesteModal';
 import { Sidebar } from './Sidebar';
@@ -34,8 +33,6 @@ function renderActiveTest({
   onCrossTestHandoff,
 }: RenderActiveTestProps) {
   switch (activeTestId) {
-    case 'demo':
-      return <TesteDemo key={activeTestId} />;
     case 't-student':
       return <TStudentTest key={activeTestId} />;
     case 'correlacao':
@@ -89,7 +86,7 @@ function renderActiveTest({
 export function EstatisticaPage() {
   const { hasData } = useSession();
   const location = useLocation();
-  const [activeTestId, setActiveTestId] = useState<string>('demo');
+  const [activeTestId, setActiveTestId] = useState<string>('t-student');
   const [handoffRecognizedColumns, setHandoffRecognizedColumns] = useState<
     Record<string, number> | undefined
   >();
@@ -122,6 +119,8 @@ export function EstatisticaPage() {
     }
   }
 
+  const pageTitle = getTestById(activeTestId)?.title ?? 'Estatística';
+
   return (
     <>
       <LeaveWarningGuard />
@@ -136,7 +135,7 @@ export function EstatisticaPage() {
           data-has-session-data={hasData}
         >
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <h1 className="font-sans text-display font-bold text-text">Estatística</h1>
+            <h1 className="font-sans text-display font-bold text-text">{pageTitle}</h1>
             <PortalDatasusLink />
           </div>
           <div id="lacir-test-module-mount" data-active-test-id={activeTestId}>

@@ -52,8 +52,10 @@ describe('loadGeoAsset', () => {
     await expect(loadMuniTopo('99')).rejects.toThrow(/Sem malha municipal/);
   });
 
-  it('throws for UF without committed asset', async () => {
-    await expect(loadMuniTopo('35')).rejects.toThrow(/Sem malha municipal/);
+  it('loads SP municipality topo (full UF set from fetch-geo-assets)', async () => {
+    const topo = await loadMuniTopo('35');
+    expect(topo.type).toBe('Topology');
+    expect(Object.keys(topo.objects).length).toBeGreaterThan(0);
   });
 });
 

@@ -7,7 +7,7 @@ import { TStudentTest } from './TStudentTest';
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
   const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
-    return { destroy: destroySpy };
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
   });
   const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
     register: ReturnType<typeof vi.fn>;
@@ -27,6 +27,7 @@ vi.mock('chart.js', () => ({
   LineElement: {},
   BarElement: {},
   Legend: {},
+  Title: {},
   Tooltip: {},
   Filler: {},
 }));
@@ -37,6 +38,14 @@ function renderTStudent() {
       <TStudentTest />
     </SessionProvider>,
   );
+}
+
+async function loadExample(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+  await vi.advanceTimersByTimeAsync(200);
+  await waitFor(() => {
+    expect(screen.getByText('Tabela pronta para configurar')).toBeInTheDocument();
+  });
 }
 
 describe('TStudentTest', () => {
@@ -50,18 +59,10 @@ describe('TStudentTest', () => {
     vi.useRealTimers();
   });
 
-  it('defaults to independent Welch mode label in Configurar', async () => {
+  it('defaults to independent Welch mode after loading example', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderTStudent();
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await loadExample(user);
 
     expect(screen.getByRole('radio', { name: /t independente \(Welch\)/i })).toHaveAttribute(
       'aria-checked',
@@ -72,23 +73,22 @@ describe('TStudentTest', () => {
   it('runs exemplo flow through Resultados with interpretation and PNG export', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderTStudent();
+    await loadExample(user);
 
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baixar gráfico (PNG)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Intervalo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Colunas agrupadas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Colunas' })).toBeInTheDocument();
+    expect(screen.getByText('Tipos de gráfico')).toBeInTheDocument();
+    expect(screen.getByLabelText('Dispersão')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Editar Intervalo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar Colunas agrupadas' })).toBeInTheDocument();
 
     const prose = screen.getAllByText(/Observou-se|Não se observou|Pergunta analisada/i);
     expect(prose.length).toBeGreaterThan(0);
@@ -100,22 +100,14 @@ describe('TStudentTest', () => {
   it('shows soft reset alert when switching to paired after confirm', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderTStudent();
+    await loadExample(user);
 
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
+      expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
     await user.click(screen.getByRole('radio', { name: /t pareado/i }));
 
     expect(screen.getByText('Modo alterado.')).toBeInTheDocument();

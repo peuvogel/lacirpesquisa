@@ -174,7 +174,7 @@ export function PraisWinstenTest() {
           <TabsContent value="trend" className="mt-4">
             <ResultsPanelWithCustomizer
               key="trend"
-              title="Prais-Winsten — resultados"
+              title="Prais-Winsten: resultados"
               presets={praisTrendPresets}
               defaultPresetId={getDefaultPraisPresetId('trend')}
               annotations={PRAIS_TREND_ANNOTATIONS}
@@ -184,7 +184,7 @@ export function PraisWinstenTest() {
           <TabsContent value="residual" className="mt-4">
             <ResultsPanelWithCustomizer
               key="residual"
-              title="Prais-Winsten — resíduos"
+              title="Prais-Winsten: resíduos"
               presets={praisResidualPresets}
               defaultPresetId={getDefaultPraisPresetId('residual')}
               annotations={PRAIS_RESIDUAL_ANNOTATIONS}

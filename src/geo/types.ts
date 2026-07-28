@@ -22,6 +22,9 @@ export interface MapViewState {
 export interface MuniEntry {
   id: string;
   nome: string;
+  /** IBGE mesorregião code (e.g. "2905"). */
+  mesoId?: string;
+  mesoNome?: string;
 }
 
 /** Result of matching a single territory label from paste input. */

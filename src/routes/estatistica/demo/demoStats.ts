@@ -56,7 +56,7 @@ export function pickAnalysisColumns(headers: string[], rows: string[][]): Analys
   let note: string | undefined;
   if (numericIndexes.length !== 1 || categoricalIndexes.length !== 1) {
     note =
-      'Usamos a primeira coluna categórica como grupo e a primeira numérica como medida — ajuste os papéis em Configurar se necessário.';
+      'Usamos a primeira coluna categórica como grupo e a primeira numérica como medida. Ajuste os papéis em Configurar se necessário.';
   }
 
   return { groupIndex, valueIndex, note };
@@ -128,7 +128,7 @@ export function buildDemoInterpretation(summaries: GroupSummary[]): string[] {
   }
 
   paragraphs.push(
-    'Este Teste demo descreve os números que você colou ou importou — ainda não realiza testes de significância. ' +
+    'Este Teste demo descreve os números que você colou ou importou. Ainda não realiza testes de significância. ' +
       'Quando os testes estatísticos forem migrados na próxima fase, eles aparecerão aqui com interpretação formal.',
   );
 

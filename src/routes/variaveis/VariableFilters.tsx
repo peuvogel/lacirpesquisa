@@ -33,9 +33,6 @@ export function VariableFilters({
   domainOptions,
   onChange,
 }: VariableFiltersProps) {
-  const loadableValue =
-    filters.loadable === true ? 'true' : filters.loadable === false ? 'false' : ALL;
-
   return (
     <div
       className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end"
@@ -51,8 +48,10 @@ export function VariableFilters({
           type="search"
           value={filters.query ?? ''}
           onChange={(e) => onChange({ ...filters, query: e.target.value })}
-          placeholder="Nome, id ou fonte…"
-          className="mt-1.5 flex h-9 w-full rounded-md border border-border bg-elevated px-3 font-sans text-sm text-text outline-none placeholder:text-text-muted focus-visible:ring-2 focus-visible:ring-accent"
+          placeholder="Buscar: embolia, SIH, amputação, SIDRA…"
+          autoComplete="off"
+          spellCheck={false}
+          className="mt-1.5 flex h-10 w-full rounded-xl border border-white/10 bg-elevated/80 px-3.5 font-sans text-sm text-text outline-none placeholder:text-text-muted backdrop-blur-sm transition-[box-shadow,border-color] duration-150 focus-visible:border-accent/50 focus-visible:ring-2 focus-visible:ring-accent/40"
         />
       </div>
 
@@ -88,22 +87,6 @@ export function VariableFilters({
         value={filters.domain || ALL}
         onValueChange={(v) => onChange({ ...filters, domain: v === ALL ? undefined : v })}
         options={domainOptions.map((d) => ({ value: d, label: d }))}
-      />
-
-      <FilterSelect
-        id="catalog-loadable"
-        label="Carregável"
-        value={loadableValue}
-        onValueChange={(v) =>
-          onChange({
-            ...filters,
-            loadable: v === ALL ? null : v === 'true',
-          })
-        }
-        options={[
-          { value: 'true', label: 'Sim' },
-          { value: 'false', label: 'Não (referência)' },
-        ]}
       />
     </div>
   );

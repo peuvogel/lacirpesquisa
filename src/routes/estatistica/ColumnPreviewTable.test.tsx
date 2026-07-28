@@ -18,11 +18,11 @@ describe('ColumnPreviewTable', () => {
       />,
     );
 
-    expect(screen.getByText('Município')).toBeInTheDocument();
-    expect(screen.getByText('Taxa')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Município')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Taxa')).toBeInTheDocument();
     // 1 header row + 8 preview body rows.
     expect(screen.getAllByRole('row')).toHaveLength(9);
-    expect(screen.getByText('Mostrando 8 de 10 linhas')).toBeInTheDocument();
+    expect(screen.getByText(/Mostrando 8 de 10 linhas/)).toBeInTheDocument();
   });
 
   it('disables the confirm CTA for a single-column input', () => {

@@ -17,6 +17,7 @@ const presets: ChartPreset<{ value: number }>[] = [
   {
     id: 'diff',
     label: 'Diferença de médias',
+    visualType: 'range',
     buildChart: () => ({
       type: 'scatter',
       data: sampleData,
@@ -28,6 +29,7 @@ const presets: ChartPreset<{ value: number }>[] = [
   {
     id: 'dist',
     label: 'Distribuição por grupo',
+    visualType: 'grouped-columns',
     buildChart: () => ({
       type: 'bar',
       data: sampleData,
@@ -57,7 +59,8 @@ describe('useChartCustomizer', () => {
 
     expect(result.current.state.chartTypePreset).toBe('diff');
     expect(result.current.chart.type).toBe('scatter');
-    expect(result.current.chart.ariaLabel).toBe('Gráfico de diferença');
+    expect(result.current.chart.ariaLabel).toBe('Intervalo');
+    expect(result.current.visibleCharts).toHaveLength(2);
   });
 
   it('switches preset and rebuilds chart', () => {
@@ -75,7 +78,7 @@ describe('useChartCustomizer', () => {
 
     expect(result.current.state.chartTypePreset).toBe('dist');
     expect(result.current.chart.type).toBe('bar');
-    expect(result.current.chart.ariaLabel).toBe('Gráfico de distribuição');
+    expect(result.current.chart.ariaLabel).toBe('Colunas agrupadas');
     expect(result.current.state.axisLabels.x).toBe('Grupo');
   });
 
@@ -100,7 +103,22 @@ describe('useChartCustomizer', () => {
 
     expect(result.current.state.chartTypePreset).toBe('diff');
     expect(result.current.state.axisLabels.x).toBe('Diferença');
-    expect(result.current.state.themeVariant).toBe('lacir');
+    expect(result.current.state.themeVariant).toBe('publication');
+  });
+
+  it('builds all presets into charts gallery', () => {
+    const { result } = renderHook(() =>
+      useChartCustomizer({
+        presets,
+        defaultPresetId: 'diff',
+        engineOutput: { value: 1 },
+      }),
+    );
+
+    expect(result.current.charts).toHaveLength(2);
+    expect(result.current.charts.map((c) => c.id)).toEqual(['diff', 'dist']);
+    expect(result.current.charts[0].chart.type).toBe('scatter');
+    expect(result.current.charts[1].chart.type).toBe('bar');
   });
 
   it('debounces option merge before emitting debouncedOptions', () => {

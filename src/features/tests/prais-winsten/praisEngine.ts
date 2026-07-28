@@ -309,7 +309,7 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
     },
     {
       label: 'Erro-padrão (β)',
-      value: Number.isFinite(model.seBeta) ? fmtNumber(model.seBeta, 4) : '—',
+      value: Number.isFinite(model.seBeta) ? fmtNumber(model.seBeta, 4) : 'n/d',
       hint: 'Usado no teste t e no intervalo de confiança.',
     },
     {

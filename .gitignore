@@ -10,4 +10,10 @@ dist/
 jasp-desktop-development/
 trabalhos datasus/build/
 trabalhos datasus/outputs/
-trabalhos datasus/spreadsheet_work/node_modules/
+trabalhos datasus/spreadsheet_work/
+trabalhos datasus/tools/
+trabalhos datasus/Congresso Vascular/
+
+# Editor/agent scratch
+.agents/
+.cursor/

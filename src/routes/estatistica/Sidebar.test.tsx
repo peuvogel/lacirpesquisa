@@ -10,7 +10,7 @@ function renderSidebar(overrides: Partial<Parameters<typeof Sidebar>[0]> = {}) {
 
   render(
     <Sidebar
-      activeTestId="demo"
+      activeTestId="t-student"
       onSelectTest={onSelectTest}
       onOpenQualTeste={onOpenQualTeste}
       {...overrides}
@@ -21,20 +21,16 @@ function renderSidebar(overrides: Partial<Parameters<typeof Sidebar>[0]> = {}) {
 }
 
 describe('Sidebar', () => {
-  it('renders all ten registry titles grouped in the list', () => {
+  it('renders all registry titles grouped in the list', () => {
     renderSidebar();
     for (const entry of TEST_REGISTRY) {
       expect(screen.getByText(entry.title)).toBeInTheDocument();
     }
   });
 
-  it('calls onSelectTest when Teste demo is clicked', async () => {
-    const user = userEvent.setup();
-    const { onSelectTest } = renderSidebar();
-
-    await user.click(screen.getByRole('button', { name: /Teste demo/i }));
-
-    expect(onSelectTest).toHaveBeenCalledWith('demo');
+  it('does not render the removed Teste demo', () => {
+    renderSidebar();
+    expect(screen.queryByText(/Teste demo/i)).not.toBeInTheDocument();
   });
 
   it('calls onSelectTest when t de Student is clicked', async () => {

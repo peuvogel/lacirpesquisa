@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrazilMockMap } from './BrazilMockMap';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
@@ -34,7 +34,9 @@ describe('BrazilMockMap', () => {
     expect(onHoverUF).toHaveBeenCalledWith('SP');
 
     await user.unhover(sp);
-    expect(onHoverUF).toHaveBeenCalledWith(null);
+    await waitFor(() => {
+      expect(onHoverUF).toHaveBeenCalledWith(null);
+    });
   });
 
   it('calls onToggleUF on click', async () => {
@@ -123,11 +125,11 @@ describe('BrazilMapCanvas', () => {
       />,
     );
 
-    const sp = container.querySelector('[data-uf="SP"]');
-    const ac = container.querySelector('[data-uf="AC"]');
-    expect(sp?.getAttribute('style')).toContain('fill');
-    expect(ac?.getAttribute('style')).toContain('fill');
-    expect(sp?.getAttribute('style')).not.toBe(ac?.getAttribute('style'));
+    const spPaint = container.querySelector('[data-uf="SP"][data-layer="paint"]');
+    const acPaint = container.querySelector('[data-uf="AC"][data-layer="paint"]');
+    expect(spPaint?.getAttribute('fill')).toBeTruthy();
+    expect(acPaint?.getAttribute('fill')).toBeTruthy();
+    expect(spPaint?.getAttribute('fill')).not.toBe(acPaint?.getAttribute('fill'));
   });
 
   it('gives every UF an aria-label matching its state name', () => {
@@ -166,7 +168,7 @@ describe('BrazilMapCanvas', () => {
     expect(onToggleUF).toHaveBeenCalledWith('MG');
   });
 
-  it('applies lacir-map-glow and teal stroke to selected UFs', () => {
+  it('marks selected UFs with aria-pressed and outer-selection filter (no per-UF glow)', () => {
     const { container } = render(
       <BrazilMapCanvas
         hoveredUF={null}
@@ -178,12 +180,35 @@ describe('BrazilMapCanvas', () => {
       />,
     );
 
-    const ba = container.querySelector('[data-uf="BA"]');
-    expect(ba).toHaveClass('lacir-map-glow');
-    expect(ba).toHaveClass('stroke-accent');
+    const ba = screen.getByRole('button', { name: getUfName('BA') });
+    expect(ba).toHaveAttribute('aria-pressed', 'true');
+    expect(ba).not.toHaveClass('lacir-map-glow');
+    expect(container.querySelector('filter#lacir-group-outer-0')).toBeTruthy();
+    expect(container.querySelector('[data-selection-filter="lacir-group-outer-0"]')).toBeTruthy();
   });
 
-  it('drills into BA and loads municipality paths', async () => {
+  it('uses the next group palette color for a pending selection', () => {
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={['BA']}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={{}}
+        activeVariableId={null}
+        pendingGroupIndex={1}
+        groupMembership={{
+          SP: { groupIndex: 0, groupName: 'Grupo 1' },
+        }}
+      />,
+    );
+
+    expect(container.querySelector('[data-selection-filter="lacir-group-outer-1"]')).toBeTruthy();
+    const baPaint = container.querySelector('[data-uf="BA"][data-layer="paint"]');
+    expect(baPaint?.getAttribute('fill')).toContain('59, 130, 246');
+  });
+
+  it('zooms into BA with municipality paths while Brazil SVG stays mounted', async () => {
     const onSetMapView = vi.fn();
     const { container } = render(
       <BrazilMapCanvas
@@ -198,9 +223,19 @@ describe('BrazilMapCanvas', () => {
       />,
     );
 
+    expect(
+      screen.getByRole('group', { name: /Zoom em Bahia/i }),
+    ).toBeInTheDocument();
+    expect(container.querySelector('[data-uf="BA"][data-layer="paint"]')).toBeTruthy();
+    expect(container.querySelector('[data-uf="SP"][data-layer="paint"]')).toBeTruthy();
+
     await waitFor(() => {
+      expect(container.querySelector('[data-layer="drill-features"]')).toBeTruthy();
       expect(container.querySelectorAll('[data-territory-id]').length).toBeGreaterThan(0);
     });
+
+    // Neighbor UFs are painted but not interactive hit targets.
+    expect(screen.queryByRole('button', { name: 'São Paulo' })).not.toBeInTheDocument();
   });
 
   it('returns to Brasil UF choropleth when mapView level is uf', () => {
@@ -216,5 +251,33 @@ describe('BrazilMapCanvas', () => {
       />,
     );
     expect(screen.getAllByRole('button')).toHaveLength(27);
+  });
+
+  it('exposes selected municipalities as clickable hits on Brazil view', async () => {
+    const onToggleDrillFeature = vi.fn();
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={mockMetrics}
+        activeVariableId="sih.embolia_trombose.internacoes"
+        mapView={{ level: 'uf' }}
+        selectedMunicipioIds={['2927408']}
+        onToggleDrillFeature={onToggleDrillFeature}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-layer="selected-munis-hit"]')).toBeTruthy();
+    });
+
+    const hit = container.querySelector(
+      '[data-layer="selected-munis-hit"] [data-territory-id="2927408"]',
+    );
+    expect(hit).toBeTruthy();
+    fireEvent.click(hit!);
+    expect(onToggleDrillFeature).toHaveBeenCalledWith('2927408');
   });
 });

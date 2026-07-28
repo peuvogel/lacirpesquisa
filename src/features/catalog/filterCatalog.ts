@@ -12,11 +12,21 @@ export interface CatalogFilters {
 function matchesQuery(entry: CatalogEntry, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
-  return (
-    entry.label.toLowerCase().includes(q) ||
-    entry.id.toLowerCase().includes(q) ||
-    entry.sourceSystem.toLowerCase().includes(q)
-  );
+  const haystack = [
+    entry.label,
+    entry.id,
+    entry.sourceSystem,
+    entry.sourceName,
+    entry.domain,
+    entry.tableOrIndicator,
+    entry.period,
+    entry.methodologyNotes,
+    ...(entry.aliases ?? []),
+  ]
+    .join(' ')
+    .toLowerCase();
+  // Support multi-token search (all tokens must match).
+  return q.split(/\s+/).every((token) => haystack.includes(token));
 }
 
 /** Pure CAT-01 search/filter over catalog entries (D-11). */

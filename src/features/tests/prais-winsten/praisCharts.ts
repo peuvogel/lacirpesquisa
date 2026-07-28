@@ -18,6 +18,7 @@ export function buildPraisTrendPresets(): ChartPreset<PraisEngineOutput>[] {
     {
       id: 'trend',
       label: CHART_PRESET_LABELS.trend,
+      visualType: 'multiple-lines',
       buildChart: (output) => {
         const pointLabels = output.dataset.orderedRows.map((row) => row.timeLabel);
         const { data, options } = buildTimeseriesChartData(
@@ -62,6 +63,7 @@ export function buildPraisResidualPresets(): ChartPreset<PraisEngineOutput>[] {
     {
       id: 'residual',
       label: CHART_PRESET_LABELS.residual,
+      visualType: 'column',
       buildChart: (output) => {
         const pointLabels = output.dataset.orderedRows.map((row) => row.timeLabel);
         const { data, options } = buildResidualBarChartData(

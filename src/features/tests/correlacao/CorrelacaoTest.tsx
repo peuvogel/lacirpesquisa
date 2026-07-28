@@ -1,23 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UseExampleButton } from '@/features/tests/shared/UseExampleButton';
 import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useTabularInput } from '@/shared/data-input/useTabularInput';
-import type { DatasusSession } from '@/shared/data-input/useDatasusWizard';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useSession } from '@/shared/session/SessionProvider';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
-import { DatasusWizardPanel } from '@/routes/estatistica/datasus/DatasusWizardPanel';
-import { datasusNormalizedToTabular } from '@/routes/estatistica/demo/datasusToTabular';
 import {
   CorrelacaoConfigPanel,
   CorrelacaoValidationAlert,
   type CorrelacaoLoadedInput,
 } from './CorrelacaoConfigPanel';
-import { buildDefaultCorrelacaoDatasusKnobs } from './CorrelacaoDatasusKnobs';
 import {
   exampleText,
   MAX_RESEARCH_QUESTION_LENGTH,
@@ -25,26 +20,22 @@ import {
   type CorrelacaoMethod,
 } from './correlacaoConfig';
 import {
-  correlacaoChartPresets,
+  buildCorrelacaoChartPresets,
   CORRELACAO_CHART_ANNOTATIONS,
   getDefaultCorrelacaoChartPreset,
 } from './correlacaoCharts';
 import {
   buildDatasetFromConfirmed,
   buildMetrics,
-  deriveDatasusDataset,
   toEngineOutput,
   validatePairs,
-  type DatasusKnobState,
 } from './correlacaoEngine';
 import { buildCorrelacaoInterpretation } from './correlacaoInterpretation';
-import { datasusSourcesFromSession } from './correlacaoDatasusUtils';
 
 interface ConfirmedDataset {
   headers: string[];
   rows: string[][];
   sourceLabel: string;
-  isDatasus: boolean;
   recognizedColumns: Record<string, number>;
 }
 
@@ -68,16 +59,8 @@ function initialStepFromSession(sessionDataset: ReturnType<typeof useSession>['d
   return sessionDataset ? 'configurar' : 'dados';
 }
 
-const EMPTY_DATASUS_KNOBS: DatasusKnobState = {
-  xSourceId: '',
-  ySourceId: '',
-  xMetricKey: '',
-  yMetricKey: '',
-  timeKey: '',
-};
-
 export function CorrelacaoTest() {
-  const { dataset: sessionDataset, setDataset, setDatasusSession } = useSession();
+  const { dataset: sessionDataset, setDataset } = useSession();
   const tabular = useTabularInput(TABULAR_OPTIONS);
   const sourceLabelRef = useRef('colado');
 
@@ -86,12 +69,9 @@ export function CorrelacaoTest() {
     initialLoadedFromSession(sessionDataset),
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [inputTab, setInputTab] = useState<'paste' | 'datasus'>('paste');
   const [method, setMethod] = useState<CorrelacaoMethod>('pearson');
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
   const [researchQuestion, setResearchQuestion] = useState('');
-  const [datasusSession, setLocalDatasusSession] = useState<DatasusSession | null>(null);
-  const [datasusKnobs, setDatasusKnobs] = useState<DatasusKnobState>(EMPTY_DATASUS_KNOBS);
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -102,32 +82,13 @@ export function CorrelacaoTest() {
         recognizedColumns: tabular.recognizedColumns,
         sourceLabel: sourceLabelRef.current,
       });
+      setActiveStep((step) => (step === 'dados' ? 'configurar' : step));
     }
   }, [tabular.status, tabular.headers, tabular.bodyRows, tabular.recognizedColumns]);
 
   function handleUseExample() {
     sourceLabelRef.current = 'exemplo';
     tabular.setRawText(exampleText);
-  }
-
-  function handleDatasusSessionChange(session: DatasusSession) {
-    setDatasusSession(session);
-    setLocalDatasusSession(session);
-    setDatasusKnobs(buildDefaultCorrelacaoDatasusKnobs(session));
-    const confirmed = session.confirmedSources[0];
-    if (!confirmed?.normalized?.ok) return;
-
-    const converted = datasusNormalizedToTabular(confirmed.normalized);
-    sourceLabelRef.current = 'assistente DATASUS';
-    setLoadedInput({
-      ...converted,
-      recognizedColumns: deriveRecognizedColumnsFromTabular(
-        converted.headers,
-        converted.rows,
-        TABULAR_OPTIONS,
-      ),
-      sourceLabel: 'assistente DATASUS',
-    });
   }
 
   function handleMethodChange(nextMethod: CorrelacaoMethod) {
@@ -137,9 +98,6 @@ export function CorrelacaoTest() {
       setShowSoftReset(true);
       if (activeStep === 'resultados') setActiveStep('configurar');
     }
-    setDatasusKnobs(
-      datasusSession ? buildDefaultCorrelacaoDatasusKnobs(datasusSession) : EMPTY_DATASUS_KNOBS,
-    );
     setMethod(nextMethod);
   }
 
@@ -149,15 +107,12 @@ export function CorrelacaoTest() {
     recognizedColumns: Record<string, number>;
   }) {
     const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
-    const isDatasus = sourceLabel.toLowerCase().includes('datasus');
-    const nextDataset: ConfirmedDataset = {
+    setConfirmedDataset({
       headers: confirmed.headers,
       rows: confirmed.rows,
       sourceLabel,
-      isDatasus,
       recognizedColumns: confirmed.recognizedColumns,
-    };
-    setConfirmedDataset(nextDataset);
+    });
     setShowSoftReset(false);
     setDataset({
       headers: confirmed.headers,
@@ -172,9 +127,6 @@ export function CorrelacaoTest() {
     tabular.reset();
     setLoadedInput(null);
     setConfirmedDataset(null);
-    setLocalDatasusSession(null);
-    setDatasusSession(null);
-    setDatasusKnobs(EMPTY_DATASUS_KNOBS);
     setShowSoftReset(false);
     setActiveStep('dados');
     sourceLabelRef.current = 'colado';
@@ -193,51 +145,18 @@ export function CorrelacaoTest() {
     if (!confirmedDataset || !loadedInput) return null;
 
     const alphaNumber = Number(alpha);
-    let validationErrors: string[] = [];
-    let engineOutput = null;
-
-    if (confirmedDataset.isDatasus && datasusSession) {
-      const sources = datasusSourcesFromSession(datasusSession);
-      const xSource = sources.find((source) => source.id === datasusKnobs.xSourceId) ?? sources[0];
-      const ySource = sources.find((source) => source.id === datasusKnobs.ySourceId) ?? sources[0];
-
-      if (!xSource || !ySource) {
-        validationErrors = ['Confirme uma base DATASUS para montar a correlação.'];
-      } else {
-        const derived = deriveDatasusDataset({
-          xSource,
-          ySource,
-          knobs: datasusKnobs,
-        });
-        if (!derived.ok || !derived.dataset) {
-          validationErrors = derived.errors ?? ['Não foi possível derivar os pares DATASUS.'];
-        } else {
-          const dataset = { ...derived.dataset, method };
-          validationErrors = validatePairs(dataset);
-          if (!validationErrors.length) {
-            engineOutput = toEngineOutput(dataset, method);
-          }
-        }
-      }
-    } else {
-      const dataset = buildDatasetFromConfirmed({
-        headers: confirmedDataset.headers,
-        rows: confirmedDataset.rows,
-        recognizedColumns: confirmedDataset.recognizedColumns,
-        method,
-      });
-      validationErrors = validatePairs(dataset);
-      if (!validationErrors.length) {
-        engineOutput = toEngineOutput(dataset, method);
-      }
-    }
-
+    const dataset = buildDatasetFromConfirmed({
+      headers: confirmedDataset.headers,
+      rows: confirmedDataset.rows,
+      recognizedColumns: confirmedDataset.recognizedColumns,
+      method,
+    });
+    const validationErrors = validatePairs(dataset);
     if (validationErrors.length) {
-      return <CorrelacaoValidationAlert message={validationErrors[0]} />;
+      return <CorrelacaoValidationAlert message={validationErrors[0]!} />;
     }
 
-    if (!engineOutput) return null;
-
+    const engineOutput = toEngineOutput(dataset, method);
     const metrics = buildMetrics(engineOutput.result, method, engineOutput.headers);
     const interpretation = buildCorrelacaoInterpretation(
       engineOutput,
@@ -247,10 +166,11 @@ export function CorrelacaoTest() {
 
     return (
       <ResultsPanelWithCustomizer
-        title="Correlação — resultados"
+        key={`correlacao-${method}`}
+        title="Correlação: resultados"
         metrics={metrics}
         engineOutput={engineOutput}
-        presets={correlacaoChartPresets}
+        presets={buildCorrelacaoChartPresets(method)}
         defaultPresetId={getDefaultCorrelacaoChartPreset(method)}
         annotations={CORRELACAO_CHART_ANNOTATIONS}
         interpretation={interpretation}
@@ -258,15 +178,7 @@ export function CorrelacaoTest() {
         actions={<ClearDataButton onCleared={handleClearData} />}
       />
     );
-  }, [
-    confirmedDataset,
-    loadedInput,
-    method,
-    alpha,
-    researchQuestion,
-    datasusSession,
-    datasusKnobs,
-  ]);
+  }, [confirmedDataset, loadedInput, method, alpha, researchQuestion]);
 
   return (
     <FlowSteps
@@ -274,20 +186,9 @@ export function CorrelacaoTest() {
       onStepChange={setActiveStep}
       canAdvance={canAdvance}
       dados={
-        <div className="space-y-4">
-          <Tabs value={inputTab} onValueChange={(value) => setInputTab(value as 'paste' | 'datasus')}>
-            <TabsList>
-              <TabsTrigger value="paste">Colar ou enviar</TabsTrigger>
-              <TabsTrigger value="datasus">Assistente DATASUS</TabsTrigger>
-            </TabsList>
-            <TabsContent value="paste" className="mt-4 space-y-3">
-              <UseExampleButton onClick={handleUseExample} />
-              <TabularInputPanel {...tabular} showPreview={false} />
-            </TabsContent>
-            <TabsContent value="datasus" className="mt-4">
-              <DatasusWizardPanel onSessionChange={handleDatasusSessionChange} />
-            </TabsContent>
-          </Tabs>
+        <div className="space-y-3">
+          <UseExampleButton onClick={handleUseExample} />
+          <TabularInputPanel {...tabular} showPreview={false} />
         </div>
       }
       configurar={
@@ -301,20 +202,16 @@ export function CorrelacaoTest() {
             researchQuestion={researchQuestion}
             onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
-            isDatasus={loadedInput.sourceLabel.toLowerCase().includes('datasus')}
-            datasusSession={datasusSession}
-            datasusKnobs={datasusKnobs}
-            onDatasusKnobsChange={setDatasusKnobs}
             onConfirm={handleConfigureConfirm}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">Carregue dados na etapa Dados para continuar.</p>
+          <p className="text-sm text-muted-foreground">Cole os dados acima para continuar.</p>
         )
       }
       resultados={
         resultsContent ?? (
           <p className="text-sm text-muted-foreground">
-            Confirme a tabela em Configurar para ver métricas, gráfico e interpretação.
+            Confirme a tabela para ver métricas, gráfico e interpretação.
           </p>
         )
       }

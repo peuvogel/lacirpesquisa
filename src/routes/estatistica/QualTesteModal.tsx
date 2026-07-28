@@ -213,6 +213,7 @@ export function QualTesteModal({ open, onOpenChange, onSelectTest }: QualTesteMo
                   entry={primaryEntry}
                   active={false}
                   onSelect={handleSelectAvailable}
+                  showSubtitle
                 />
                 {alternativeEntry ? (
                   <div className="mt-3">
@@ -223,20 +224,27 @@ export function QualTesteModal({ open, onOpenChange, onSelectTest }: QualTesteMo
                       entry={alternativeEntry}
                       active={false}
                       onSelect={handleSelectAvailable}
+                      showSubtitle
                     />
                   </div>
                 ) : null}
                 {primaryEntry.status === 'em-breve' ? (
                   <p className="mt-2 font-sans text-sm text-text-muted">
-                    Este teste chega na fase {primaryEntry.phase} da LACIR — enquanto isso, explore o
-                    fluxo com o Teste demo.
+                    Este teste chega na fase {primaryEntry.phase} da LACIR. Enquanto isso, comece pelo
+                    t de Student.
                   </p>
                 ) : null}
               </div>
 
-              <Button type="button" onClick={() => handleSelectAvailable('demo')}>
-                Começar pelo Teste demo
-              </Button>
+              {primaryEntry.status === 'available' ? (
+                <Button type="button" onClick={() => handleSelectAvailable(primaryEntry.id)}>
+                  Usar {primaryEntry.title}
+                </Button>
+              ) : (
+                <Button type="button" onClick={() => handleSelectAvailable('t-student')}>
+                  Começar pelo t de Student
+                </Button>
+              )}
 
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="ghost" onClick={handleBack}>
@@ -263,6 +271,7 @@ export function QualTesteModal({ open, onOpenChange, onSelectTest }: QualTesteMo
                       entry={entry}
                       active={false}
                       onSelect={handleSelectAvailable}
+                      showSubtitle
                     />
                   ))}
                 </div>

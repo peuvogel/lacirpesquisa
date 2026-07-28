@@ -38,21 +38,21 @@ export function suggestTestForVariable(entry: CatalogEntry): TestHint {
     case 'texto':
     default:
       return {
-        testId: 'demo',
-        rationale: `"${label}" é descritiva/textual — use o fluxo de dados para preparar colunas antes de um teste formal.`,
+        testId: 't-student',
+        rationale: `"${label}" é descritiva/textual — prepare colunas numéricas e use o t de Student para comparar grupos.`,
       };
   }
 }
 
-/** Resolve hint against TEST_REGISTRY; fall back to demo when unavailable (D-13). */
+/** Resolve hint against TEST_REGISTRY; fall back to t-student when unavailable. */
 export function resolveHint(entry: CatalogEntry): TestHint & { registry?: TestRegistryEntry } {
   const hint = suggestTestForVariable(entry);
   const registry = getTestById(hint.testId);
-  if (!registry || (hint.testId !== 'demo' && !isTestAvailable(hint.testId))) {
+  if (!registry || !isTestAvailable(hint.testId)) {
     return {
-      testId: 'demo',
-      rationale: 'Nenhum teste disponível para este tipo ainda — explore o fluxo demonstração.',
-      registry: getTestById('demo'),
+      testId: 't-student',
+      rationale: 'Nenhum teste específico disponível para este tipo — comece pelo t de Student.',
+      registry: getTestById('t-student'),
     };
   }
   return { ...hint, registry };

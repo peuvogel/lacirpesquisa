@@ -3,9 +3,11 @@ import {
   buildRankScatterChartData,
   buildScatterChartData,
   buildScatterWithFitChartData,
+  buildSpearmanRankDiagnostics,
 } from '@/shared/charts/chartFactories/scatterChart';
 import { mergeChartOptions } from '@/shared/charts/chartTheme';
-import { fmtNumber, fmtSigned } from '@/shared/format';
+import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
+import { statsEngine } from '@/shared/stats/statsEngine';
 import {
   CHART_PRESET_LABELS,
   CORRELACAO_ANNOTATIONS,
@@ -24,90 +26,158 @@ function scatterDataset(output: CorrelacaoEngineOutput) {
   };
 }
 
-function withEquationAnnotation(output: CorrelacaoEngineOutput, options: ReturnType<typeof buildScatterChartData>['options']) {
-  const { pearson, headers } = output;
-  const sign = pearson.slope >= 0 ? '+' : '-';
-  const equation = `${headers[1]} = ${fmtNumber(pearson.intercept, 2)} ${sign} ${fmtNumber(Math.abs(pearson.slope), 2)} x ${headers[0]}`;
+function coefLabel(output: CorrelacaoEngineOutput): string {
+  if (output.method === 'spearman') {
+    return `ρ = ${fmtSigned(output.spearman.coef, 3)}  ·  p = ${fmtP(output.spearman.p)}`;
+  }
+  return `r = ${fmtSigned(output.pearson.coef, 3)}  ·  p = ${fmtP(output.pearson.p)}`;
+}
+
+function withCoefAnnotation(
+  output: CorrelacaoEngineOutput,
+  options: ReturnType<typeof buildScatterChartData>['options'],
+  xValue: number,
+  yValue: number,
+  extraLines: string[] = [],
+) {
+  const content = extraLines.length ? [...extraLines, coefLabel(output)] : coefLabel(output);
+
   return mergeChartOptions(options, {
+    layout: { padding: { top: 36, right: 20, bottom: 10, left: 12 } },
     plugins: {
       annotation: {
         annotations: {
           showEquation: {
             type: 'label',
-            xValue: 'center',
-            yValue: 'start',
-            content: equation,
-            font: { size: 11 },
+            xValue,
+            yValue,
+            content,
+            color: '#334155',
+            backgroundColor: 'rgba(255,255,255,0.92)',
+            borderRadius: 4,
+            padding: 6,
+            font: { size: 11, family: "'Sora', 'Helvetica Neue', sans-serif" },
+            yAdjust: 14,
+            xAdjust: 0,
+            position: 'start',
+            clip: false,
             display: true,
           },
         },
       },
     },
-  });
+    scales: {
+      y: { grace: '14%' },
+      x: { grace: '6%' },
+    },
+  } as Parameters<typeof mergeChartOptions>[1]);
 }
 
-export function buildCorrelacaoChartPresets(): ChartPreset<CorrelacaoEngineOutput>[] {
-  return [
-    {
-      id: 'scatter',
-      label: CHART_PRESET_LABELS.scatter,
-      buildChart: (output) => {
-        const { data, options } = buildScatterChartData(
-          scatterDataset(output),
-          output.pearson,
-          output.outlierFlags,
-        );
-        return {
-          type: 'scatter',
-          data,
-          options: withEquationAnnotation(output, options),
-          ariaLabel: CHART_PRESET_LABELS.scatter,
-        };
-      },
-      defaultAxisLabels: { x: 'variavel_x', y: 'variavel_y' },
-      annotationKeys: ['showRegressionLine', 'highlightOutliers', 'showEquation'],
+function withPearsonEquation(
+  output: CorrelacaoEngineOutput,
+  options: ReturnType<typeof buildScatterChartData>['options'],
+) {
+  const { headers, x, y } = output;
+  const midX = (Math.min(...x) + Math.max(...x)) / 2;
+  const minY = Math.min(...y);
+  const extra: string[] = [];
+
+  if (output.method === 'pearson') {
+    const { pearson } = output;
+    const sign = pearson.slope >= 0 ? '+' : '-';
+    extra.push(
+      `${headers[1]} = ${fmtNumber(pearson.intercept, 2)} ${sign} ${fmtNumber(Math.abs(pearson.slope), 2)} × ${headers[0]}`,
+    );
+  }
+
+  return withCoefAnnotation(output, options, midX, minY, extra);
+}
+
+export function buildCorrelacaoChartPresets(
+  method: CorrelacaoMethod = 'pearson',
+): ChartPreset<CorrelacaoEngineOutput>[] {
+  const scatter: ChartPreset<CorrelacaoEngineOutput> = {
+    id: 'scatter',
+    label: CHART_PRESET_LABELS.scatter,
+    visualType: 'scatter',
+    buildChart: (output) => {
+      const { data, options } = buildScatterChartData(
+        scatterDataset(output),
+        output.method === 'pearson' ? output.pearson : null,
+        output.outlierFlags,
+        { includeRegressionLine: output.method === 'pearson' },
+      );
+      return {
+        type: 'scatter',
+        data,
+        options: withPearsonEquation(output, options),
+        ariaLabel: CHART_PRESET_LABELS.scatter,
+      };
     },
-    {
-      id: 'rank-scatter',
-      label: CHART_PRESET_LABELS.rankScatter,
-      buildChart: (output) => {
-        const { data, options } = buildRankScatterChartData(scatterDataset(output));
-        return {
-          type: 'scatter',
-          data,
-          options,
-          ariaLabel: CHART_PRESET_LABELS.rankScatter,
-        };
-      },
-      defaultAxisLabels: { x: 'Posto de X', y: 'Posto de Y' },
-      annotationKeys: ['highlightOutliers'],
+    defaultAxisLabels: { x: '', y: '' },
+    annotationKeys:
+      method === 'pearson'
+        ? ['showRegressionLine', 'highlightOutliers', 'showEquation']
+        : ['highlightOutliers', 'showEquation'],
+  };
+
+  const rankScatter: ChartPreset<CorrelacaoEngineOutput> = {
+    id: 'rank-scatter',
+    label: CHART_PRESET_LABELS.rankScatter,
+    visualType: 'dot',
+    buildChart: (output) => {
+      const diagnostics = buildSpearmanRankDiagnostics(output.x, output.y);
+      const { data, options } = buildRankScatterChartData(scatterDataset(output), diagnostics);
+      const ranksX = statsEngine.rank(output.x);
+      const ranksY = statsEngine.rank(output.y);
+      const midX = (Math.min(...ranksX) + Math.max(...ranksX)) / 2;
+      const minY = Math.min(...ranksY);
+      return {
+        type: 'scatter',
+        data,
+        options: withCoefAnnotation(output, options, midX, minY),
+        ariaLabel: CHART_PRESET_LABELS.rankScatter,
+      };
     },
-    {
-      id: 'scatter-with-fit',
-      label: CHART_PRESET_LABELS.scatterWithFit,
-      buildChart: (output) => {
-        const { data, options } = buildScatterWithFitChartData(
-          output.x,
-          output.y,
-          output.pearson,
-          output.labels,
-          output.headers,
-        );
-        return {
-          type: 'scatter',
-          data,
-          options: withEquationAnnotation(output, options),
-          ariaLabel: CHART_PRESET_LABELS.scatterWithFit,
-        };
-      },
-      defaultAxisLabels: { x: 'variavel_x', y: 'variavel_y' },
-      annotationKeys: ['showRegressionLine', 'highlightOutliers', 'showEquation'],
+    defaultAxisLabels: { x: '', y: '' },
+    annotationKeys: ['highlightOutliers', 'showEquation'],
+  };
+
+  const scatterWithFit: ChartPreset<CorrelacaoEngineOutput> = {
+    id: 'scatter-with-fit',
+    label: CHART_PRESET_LABELS.scatterWithFit,
+    visualType: 'lines',
+    buildChart: (output) => {
+      // OLS fit is only meaningful for Pearson; Spearman uses rank-scatter instead.
+      const fit = output.pearson;
+      const { data, options } = buildScatterWithFitChartData(
+        output.x,
+        output.y,
+        fit,
+        output.labels,
+        output.headers,
+        output.outlierFlags,
+      );
+      return {
+        type: 'scatter',
+        data,
+        options: withPearsonEquation(output, options),
+        ariaLabel: CHART_PRESET_LABELS.scatterWithFit,
+      };
     },
-  ];
+    defaultAxisLabels: { x: '', y: '' },
+    annotationKeys: ['showRegressionLine', 'highlightOutliers', 'showEquation'],
+  };
+
+  if (method === 'spearman') {
+    return [rankScatter, scatter];
+  }
+  return [scatter, scatterWithFit];
 }
 
 export function getDefaultCorrelacaoChartPreset(method: CorrelacaoMethod): string {
   return method === 'spearman' ? 'rank-scatter' : 'scatter';
 }
 
-export const correlacaoChartPresets = buildCorrelacaoChartPresets();
+/** @deprecated Prefer buildCorrelacaoChartPresets(method) for method-aware galleries. */
+export const correlacaoChartPresets = buildCorrelacaoChartPresets('pearson');

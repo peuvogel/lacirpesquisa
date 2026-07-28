@@ -17,7 +17,7 @@ describe('ChoroplethLegend', () => {
 
     expect(screen.getByText('Intensidade no mapa')).toBeInTheDocument();
     expect(screen.getByText('Internações por embolia e trombose arteriais')).toBeInTheDocument();
-    expect(screen.getByText('Catálogo LACIR')).toBeInTheDocument();
+    expect(screen.queryByText('Catálogo LACIR')).not.toBeInTheDocument();
   });
 
   it('renders at least three legend ticks with Baixo and Alto labels', () => {

@@ -66,6 +66,15 @@ describe('catalogAnalysisData', () => {
     expect(years).toEqual([...years].sort((a, b) => a - b));
   });
 
+  it('getCatalogTimeSeriesYears works for multi-disease packs (numeric cells)', () => {
+    const years = getCatalogTimeSeriesYears('sih.avc.internacoes');
+    expect(years.length).toBeGreaterThanOrEqual(10);
+    expect(years[0]).toBeLessThanOrEqual(2013);
+    expect(years[years.length - 1]!).toBeGreaterThanOrEqual(2020);
+    const byUf = getMetricByUfAndYear('sih.avc.internacoes', years[0]!);
+    expect(Object.keys(byUf).length).toBeGreaterThan(0);
+  });
+
   it('getCatalogTimeSeriesYears for densidade médicos excludes 2022 and 2023', () => {
     const years = getCatalogTimeSeriesYears('cnes.medicos_vasculares_por_100k');
     expect(years).not.toContain(2022);

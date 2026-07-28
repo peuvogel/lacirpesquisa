@@ -39,10 +39,10 @@ function group(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGroup {
 }
 
 describe('suggestResearchForSelection', () => {
-  it('returns only demo for an empty selection', () => {
+  it('returns t-student for an empty selection', () => {
     const result = suggestResearchForSelection({ groups: [] });
     expect(result).toHaveLength(1);
-    expect(result[0]?.testId).toBe('demo');
+    expect(result[0]?.testId).toBe('t-student');
   });
 
   it('resolves every testId in the registry and filters unavailable tests', () => {
@@ -62,13 +62,12 @@ describe('suggestResearchForSelection', () => {
 
     for (const groups of scenarios) {
       const result = suggestResearchForSelection({ groups });
-      expect(result.some((entry) => entry.testId === 'demo')).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
       for (const entry of result) {
         expect(getTestById(entry.testId)).toBeDefined();
         expect(entry.rationale.trim().length).toBeGreaterThan(0);
-        if (entry.testId !== 'demo') {
-          expect(isTestAvailable(entry.testId)).toBe(true);
-        }
+        expect(isTestAvailable(entry.testId)).toBe(true);
+        expect(entry.testId).not.toBe('demo');
       }
     }
   });

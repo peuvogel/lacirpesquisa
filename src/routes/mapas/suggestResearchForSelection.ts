@@ -76,7 +76,7 @@ function filterAvailableSuggestions(suggestions: ResearchSuggestion[]): Research
 
   for (const suggestion of suggestions) {
     if (seen.has(suggestion.testId)) continue;
-    if (suggestion.testId !== 'demo' && !isTestAvailable(suggestion.testId)) continue;
+    if (!isTestAvailable(suggestion.testId)) continue;
     seen.add(suggestion.testId);
     filtered.push(suggestion);
   }
@@ -84,18 +84,28 @@ function filterAvailableSuggestions(suggestions: ResearchSuggestion[]): Research
   return filtered;
 }
 
-function appendDemoFallback(
+function appendDefaultFallback(
   suggestions: ResearchSuggestion[],
   groupCount: number,
   territoryCount: number,
   variableCount: number,
 ): ResearchSuggestion[] {
   const deduped = filterAvailableSuggestions(suggestions);
-  deduped.push({
-    testId: 'demo',
-    rationale: `Explore o fluxo Dados → Configurar → Resultados com ${groupCount} grupo(s), ${territoryCount} território(s) e ${variableCount} variável(is) selecionados.`,
-  });
-  return deduped;
+  if (!deduped.some((s) => s.testId === 't-student') && isTestAvailable('t-student')) {
+    deduped.push({
+      testId: 't-student',
+      rationale: `Com ${groupCount} grupo(s), ${territoryCount} território(s) e ${variableCount} variável(is), o t de Student é um bom ponto de partida para comparar médias.`,
+    });
+  }
+  return deduped.length
+    ? deduped
+    : [
+        {
+          testId: 't-student',
+          rationale:
+            'Selecione territórios e variáveis no mapa. O t de Student compara médias entre dois grupos.',
+        },
+      ];
 }
 
 /** Group-aware suggestion engine for MAP-09 review handoff (D-20). */
@@ -110,9 +120,9 @@ export function suggestResearchForSelection(input: SuggestResearchInput): Resear
   if (groupCount === 0) {
     return [
       {
-        testId: 'demo',
+        testId: 't-student',
         rationale:
-          'Selecione estados e variáveis no mapa para ver análises sugeridas. Enquanto isso, o Teste demo mostra o fluxo completo da LACIR.',
+          'Selecione estados e variáveis no mapa para ver análises sugeridas. O t de Student compara médias entre dois grupos.',
       },
     ];
   }
@@ -198,7 +208,7 @@ export function suggestResearchForSelection(input: SuggestResearchInput): Resear
     }
   }
 
-  return appendDemoFallback(suggestions, groupCount, territoryCount, variableCount);
+  return appendDefaultFallback(suggestions, groupCount, territoryCount, variableCount);
 }
 
 /** Legacy flat UF/variable selection adapter (Phase 1 IniciarPesquisaModal). */

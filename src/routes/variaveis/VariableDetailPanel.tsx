@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { resolveHint } from '@/features/catalog/suggestTestForVariable';
 import type { CatalogEntry } from '@/features/catalog/types';
 import { SuggestedTestCard } from '@/routes/mapas/SuggestedTestCard';
-import { cn } from '@/lib/utils';
 import { VARIABLE_TYPE_LABELS } from './VariableFilters';
 
 export interface VariableDetailPanelProps {
@@ -78,15 +77,6 @@ export function VariableDetailPanel({
           <Badge variant="outline" className="font-sans text-[11px]">
             {VARIABLE_TYPE_LABELS[entry.variableType]}
           </Badge>
-          <Badge
-            variant={entry.loadable ? 'default' : 'outline'}
-            className={cn(
-              'font-sans text-[11px]',
-              entry.loadable ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted',
-            )}
-          >
-            {entry.loadable ? 'Carregável' : 'Referência'}
-          </Badge>
         </div>
         <p className="font-sans text-sm text-text-muted">Domínio: {entry.domain}</p>
       </header>
@@ -102,10 +92,6 @@ export function VariableDetailPanel({
           <ProvenanceField label="Período" value={entry.period} />
           <ProvenanceField label="Tipo" value={VARIABLE_TYPE_LABELS[entry.variableType]} />
           <ProvenanceField label="Domínio" value={entry.domain} />
-          <ProvenanceField
-            label="Carregável"
-            value={entry.loadable ? 'Sim' : 'Não (somente referência)'}
-          />
           <div className="sm:col-span-2">
             <dt className="font-sans text-[11px] uppercase tracking-wide text-text-muted">
               URL oficial

@@ -2,16 +2,13 @@ import { isTestAvailable } from '@/features/tests/registry';
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import type { ResearchSuggestion } from './suggestResearchForSelection';
 
-/** Mapas → Estatística: suggested test if available, else t-student, else demo (T-04-07 whitelist). */
+/** Mapas → Estatística: first available suggestion, else t-student. */
 export function resolveHandoffTestId(suggestions: ResearchSuggestion[]): string {
-  const primarySuggested = suggestions.find((suggestion) => suggestion.testId !== 'demo');
-  if (primarySuggested && isTestAvailable(primarySuggested.testId)) {
+  const primarySuggested = suggestions.find((suggestion) => isTestAvailable(suggestion.testId));
+  if (primarySuggested) {
     return primarySuggested.testId;
   }
-  if (isTestAvailable('t-student')) {
-    return 't-student';
-  }
-  return 'demo';
+  return isTestAvailable('t-student') ? 't-student' : (suggestions[0]?.testId ?? 't-student');
 }
 
 /** Broad DATASUS-shaped aliases so junk paste errors while typical TABNET tables still load. */
@@ -28,6 +25,9 @@ export const MAPAS_TABULAR_OPTIONS: TabularInputOptions = {
       'Óbitos',
       'Óbitos hospitalares',
       'Óbitos hospitalares por embolia e trombose arteriais',
+      'Valor total',
+      'Dias de permanência',
+      'Taxa de mortalidade (%)',
       'Quantidade',
       'Valor',
       'Nascidos vivos',
@@ -35,9 +35,10 @@ export const MAPAS_TABULAR_OPTIONS: TabularInputOptions = {
     grupo: ['Grupo'],
     periodo: ['Período'],
   },
+  // Grupo is enough for two-sample tests; medida covers the numeric column(s).
   requiredKeys: ['territorio', 'medida'],
   numericKeys: ['medida'],
-  expectedFormatLabel: 'Território; Medida numérica',
+  expectedFormatLabel: 'Território; Grupo; Medida numérica',
 };
 
 /** Rejects unknown or unavailable test ids before navigation (T-04-07-01). */

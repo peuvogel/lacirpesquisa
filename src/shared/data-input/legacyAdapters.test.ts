@@ -8,7 +8,7 @@ describe('legacyAdapters.parseNumber', () => {
     ['1.234,56', 1234.56],
     ['1,5', 1.5],
     ['1.5', 1.5],
-    ['—', null],
+    ['—', null], // TABNET missing-value glyph (input only; UI displays n/d)
     ['', null],
     ['abc', null],
     ['12%', null],

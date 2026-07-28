@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-25T22:39:52.901Z",
-  "catalogEntryCount": 32,
+  "generatedAt": "2026-07-26T02:12:19.720Z",
+  "catalogEntryCount": 71,
   "packs": [
     {
       "packId": "sih.embolia_trombose_uf",
@@ -33,6 +33,214 @@
       "packId": "sih.amputacao_mmii_uf",
       "grain": "uf_ano",
       "sourceDir": "trabalhos datasus/outputs/coleta_vascular_amputacao",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.avc_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/avc",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.ait_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/ait",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.doencas_arterias_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/doencas_arterias",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.aneurisma_aorta_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/aneurisma_aorta",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.embolia_pulmonar_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/embolia_pulmonar",
+      "rowCount": 337,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.flebites_tromboflebites_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/flebites_tromboflebites",
+      "rowCount": 350,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.varizes_mmii_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/varizes_mmii",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.outras_doencas_vasculares_uf",
+      "grain": "uf_ano",
+      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/outras_doencas_vasculares",
       "rowCount": 351,
       "years": [
         2013,

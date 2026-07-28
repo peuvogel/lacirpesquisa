@@ -2,56 +2,186 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { createChoroplethScale } from '@/geo/choroplethScale';
-import {
-  loadHealthMacroTopo,
-  loadMesoTopo,
-  loadMuniTopo,
-} from '@/geo/loadGeoAsset';
+import { loadMesoTopo, loadMuniTopo } from '@/geo/loadGeoAsset';
+import { municipalityIdsForMeso } from '@/geo/mesoMembership';
 import {
   filterFeaturesByUfPrefix,
-  projectFeaturesToPaths,
-  projectTopoToPaths,
+  projectFeaturesToBrazilUfPaths,
+  projectTopoToBrazilUfPaths,
   topoToFeatures,
   type ProjectedPath,
 } from '@/geo/projectGeoToSvg';
+import { healthMacrosForUf } from '@/geo/healthMacroIds';
+import {
+  HEALTH_MACRO_CATALOG,
+  municipalityIdsForHealthMacro,
+} from '@/geo/territoryCatalog';
 import type { GeoLevel, MapViewState } from '@/geo/types';
 import { BRAZIL_UF_GROUP_TRANSFORM, BRAZIL_UF_PATHS, BRAZIL_UF_VIEWBOX } from './brazilUfPaths';
 import { getUfName, UF_LIST } from './ufCodes';
+import { DraggableUfPath } from './DraggableUfPath';
+import {
+  groupColor,
+  groupHoverFill,
+  groupMuniHoverFill,
+  groupMuniSelectionFill,
+  groupSelectionFill,
+} from './groupPalette';
 import { MapGeoPath } from './MapGeoPath';
+import { UfHoverDrillLupa } from './UfHoverDrillLupa';
+import { paddedViewBoxFromBBox, useAnimatedViewBox } from './useAnimatedViewBox';
+import { useFadingSelection } from './useFadingSelection';
 import type { BrazilMockMapProps } from './BrazilMockMap';
+
+const UF_DESELECT_FADE_MS = 420;
 
 export interface BrazilMapCanvasProps extends BrazilMockMapProps {
   choroplethValues: Record<string, number>;
   activeVariableId: string | null;
   mapView?: MapViewState;
   onSetMapView?: (view: MapViewState) => void;
+  /** Drag UF shapes into group slots (requires parent DndContext). */
+  enableShapeDrag?: boolean;
+  /** Municípios selected (drill click, mesorregião / macrorregião presets). */
+  selectedMunicipioIds?: readonly string[];
+  /** Municípios already assigned to analysis groups (paint with group colors). */
+  groupMunicipioMembership?: Record<string, { groupIndex: number; groupName: string }>;
+  /** Toggle a feature on the drilled map (município / meso / macrorregião). */
+  onToggleDrillFeature?: (featureId: string) => void;
+  /** Whether a drilled feature is fully selected. */
+  isDrillFeatureSelected?: (featureId: string) => boolean;
+  /**
+   * Palette index for the selection currently being built (next group).
+   * After group 1 (index 0) exists, drafting group 2 uses index 1 (blue), etc.
+   */
+  pendingGroupIndex?: number;
+}
+
+const EMPTY_MUNI_MEMBERSHIP: Record<string, { groupIndex: number; groupName: string }> = {};
+
+function drillFeatureGroupMembership(
+  featureId: string,
+  level: GeoLevel,
+  membership: Record<string, { groupIndex: number; groupName: string }>,
+): { groupIndex: number; groupName: string } | null {
+  if (level === 'municipio') return membership[featureId] ?? null;
+  const ids =
+    level === 'meso'
+      ? municipalityIdsForMeso(featureId)
+      : level === 'health-macro'
+        ? municipalityIdsForHealthMacro(featureId)
+        : [];
+  if (ids.length === 0) return null;
+  const first = membership[ids[0]!];
+  if (!first) return null;
+  return ids.every((id) => membership[id]?.groupIndex === first.groupIndex) ? first : null;
 }
 
 const SURFACE_FILL = '#18181b';
-const ACCENT_BORDER_FILL = 'rgba(23, 121, 94, 0.45)';
-const DRILL_VIEWBOX = '0 0 800 600';
+const NEIGHBOR_FILL = '#121214';
+const MUNI_HOVER_STROKE = 'rgba(255,255,255,0.28)';
+const PARALLAX_MAX = 6;
+/** Stable default — inline `= []` would re-trigger municipio paint effects every render. */
+const EMPTY_MUNICIPIO_IDS: readonly string[] = [];
 
 function ufIbgeForSigla(sigla: string): string | undefined {
   return UF_LIST.find((uf) => uf.sigla === sigla)?.ibgeCode;
 }
 
-async function loadDrillPaths(
+/** Matches BRAZIL_UF_GROUP_TRANSFORM scale(0.0001,-0.0001). */
+const UF_PATH_SCALE_X = 0.0001;
+const UF_PATH_SCALE_Y = -0.0001;
+
+type BBox = { x: number; y: number; width: number; height: number };
+
+/**
+ * path.getBBox() is in raw path units (before the UF group transform).
+ * The SVG viewBox is in post-transform space — convert or the camera zooms to nowhere.
+ */
+function localPathBBoxToViewBox(box: BBox): BBox {
+  const x1 = box.x * UF_PATH_SCALE_X;
+  const x2 = (box.x + box.width) * UF_PATH_SCALE_X;
+  const y1 = box.y * UF_PATH_SCALE_Y;
+  const y2 = (box.y + box.height) * UF_PATH_SCALE_Y;
+  return {
+    x: Math.min(x1, x2),
+    y: Math.min(y1, y2),
+    width: Math.abs(x2 - x1),
+    height: Math.abs(y2 - y1),
+  };
+}
+
+function approximateBBoxFromPath(d: string): BBox | null {
+  const nums = d.match(/-?\d+(?:\.\d+)?/g)?.map(Number);
+  if (!nums || nums.length < 4) return null;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    const x = nums[i]! * UF_PATH_SCALE_X;
+    const y = nums[i + 1]! * UF_PATH_SCALE_Y;
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+  if (!Number.isFinite(minX) || maxX <= minX || maxY <= minY) return null;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function viewBoxBBoxForUf(sigla: string, pathEl?: SVGPathElement | null): BBox | null {
+  try {
+    if (pathEl && typeof pathEl.getBBox === 'function') {
+      const live = pathEl.getBBox();
+      if (live.width > 0 && live.height > 0) {
+        return localPathBBoxToViewBox(live);
+      }
+    }
+  } catch {
+    // jsdom / detached
+  }
+  const d = BRAZIL_UF_PATHS.find((p) => p.sigla === sigla)?.d;
+  return d ? approximateBBoxFromPath(d) : null;
+}
+
+async function loadDrillPathsBrazilCrs(
   level: Exclude<GeoLevel, 'uf'>,
   ufIbge: string,
 ): Promise<ProjectedPath[]> {
   switch (level) {
     case 'municipio': {
       const topo = await loadMuniTopo(ufIbge);
-      return projectTopoToPaths(topo);
+      return projectTopoToBrazilUfPaths(topo);
     }
     case 'meso': {
       const topo = await loadMesoTopo();
       const features = filterFeaturesByUfPrefix(topoToFeatures(topo), ufIbge);
-      return projectFeaturesToPaths(features);
+      return projectFeaturesToBrazilUfPaths(features);
     }
     case 'health-macro': {
-      const topo = await loadHealthMacroTopo();
-      return projectTopoToPaths(topo);
+      // Sample health-macro TopoJSON is stubby / misaligned with Brazil UF CRS.
+      // Paint macros as their constituent municipalities (same CRS as municipio drill).
+      const macros = healthMacrosForUf(ufIbge);
+      if (macros.length === 0) return [];
+      const topo = await loadMuniTopo(ufIbge);
+      const muniPaths = projectTopoToBrazilUfPaths(topo);
+      const byId = new Map(muniPaths.map((path) => [path.id, path]));
+      const nameById = new Map(HEALTH_MACRO_CATALOG.map((entry) => [entry.id, entry.name]));
+      const out: ProjectedPath[] = [];
+      for (const macro of macros) {
+        const nome = nameById.get(macro.id) ?? macro.id;
+        for (const muniId of macro.municipalityIds) {
+          const path = byId.get(muniId);
+          if (!path?.d) continue;
+          out.push({
+            id: macro.id,
+            d: path.d,
+            properties: { ...path.properties, nome, muniId, codarea: macro.id },
+          });
+        }
+      }
+      return out;
     }
     default:
       return [];
@@ -59,8 +189,8 @@ async function loadDrillPaths(
 }
 
 /**
- * UF map canvas with choropleth fills and MAP-03 drill-down ladder.
- * Sub-UF geo loads lazily via dynamic import (D-19 / MAP-05).
+ * UF map canvas with choropleth fills and MAP-03 drill-down.
+ * Lupa zoom keeps Brazil in frame (neighbors visible, not selectable).
  */
 export function BrazilMapCanvas({
   hoveredUF,
@@ -73,13 +203,59 @@ export function BrazilMapCanvas({
   activeVariableId,
   mapView = { level: 'uf' },
   onSetMapView,
+  enableShapeDrag = false,
+  selectedMunicipioIds = EMPTY_MUNICIPIO_IDS,
+  groupMunicipioMembership = EMPTY_MUNI_MEMBERSHIP,
+  onToggleDrillFeature,
+  isDrillFeatureSelected,
+  pendingGroupIndex = 0,
 }: BrazilMapCanvasProps) {
   const [drillPaths, setDrillPaths] = useState<ProjectedPath[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const [drillError, setDrillError] = useState<string | null>(null);
   const loadTokenRef = useRef(0);
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const preferReducedMotion =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const pendingColor = groupColor(pendingGroupIndex);
+  const hoverFill = groupHoverFill(pendingGroupIndex);
+  const selectionFill = groupSelectionFill(pendingGroupIndex);
+  const muniSelectedFill = groupMuniSelectionFill(pendingGroupIndex);
+  const muniHoverFill = groupMuniHoverFill(pendingGroupIndex);
+  const selectionFilterId = `lacir-group-outer-${pendingGroupIndex % 10}`;
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const paintPathRefs = useRef<Map<string, SVGPathElement>>(new Map());
+  const hoverClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lupaPinnedRef = useRef(false);
+  const muniCacheRef = useRef<Map<string, ProjectedPath[]>>(new Map());
+
+  const [lupaPos, setLupaPos] = useState<{ x: number; y: number } | null>(null);
+  const [hoverMuni, setHoverMuni] = useState<{
+    sigla: string;
+    paths: ProjectedPath[];
+  } | null>(null);
+  const [selectedMuniPaths, setSelectedMuniPaths] = useState<ProjectedPath[]>([]);
+  const [cameraTarget, setCameraTarget] = useState(BRAZIL_UF_VIEWBOX);
+
+  const selectedMuniSet = useMemo(() => new Set(selectedMunicipioIds), [selectedMunicipioIds]);
+  const paintMuniIds = useMemo(() => {
+    const ids = new Set(selectedMunicipioIds);
+    for (const id of Object.keys(groupMunicipioMembership)) ids.add(id);
+    return [...ids];
+  }, [groupMunicipioMembership, selectedMunicipioIds]);
+  const paintMuniSet = useMemo(() => new Set(paintMuniIds), [paintMuniIds]);
 
   const isDrilled = mapView.level !== 'uf' && Boolean(mapView.ufIbge);
+  const focusSigla = isDrilled ? (mapView.parentCode ?? null) : null;
+
+  const animatedViewBox = useAnimatedViewBox(cameraTarget, {
+    durationMs: 780,
+    reduceMotion: preferReducedMotion,
+  });
 
   const scale = useMemo(() => {
     const values = Object.values(choroplethValues);
@@ -99,6 +275,108 @@ export function BrazilMapCanvas({
     [onSetMapView],
   );
 
+  const handleHoverUF = useCallback(
+    (sigla: string | null) => {
+      if (hoverClearTimer.current) {
+        clearTimeout(hoverClearTimer.current);
+        hoverClearTimer.current = null;
+      }
+      if (sigla) {
+        onHoverUF(sigla);
+        return;
+      }
+      if (lupaPinnedRef.current) return;
+      hoverClearTimer.current = setTimeout(() => {
+        if (!lupaPinnedRef.current) onHoverUF(null);
+      }, 160);
+    },
+    [onHoverUF],
+  );
+
+  const loadBrazilUfMunis = useCallback(async (sigla: string): Promise<ProjectedPath[]> => {
+    const cached = muniCacheRef.current.get(sigla);
+    if (cached) return cached;
+    const ibge = ufIbgeForSigla(sigla);
+    if (!ibge) return [];
+    const topo = await loadMuniTopo(ibge);
+    const paths = projectTopoToBrazilUfPaths(topo);
+    muniCacheRef.current.set(sigla, paths);
+    return paths;
+  }, []);
+
+  // Camera target: full Brasil or padded zoom on focused UF (viewBox space).
+  useEffect(() => {
+    if (!isDrilled || !focusSigla) {
+      setCameraTarget(BRAZIL_UF_VIEWBOX);
+      return;
+    }
+    const box = viewBoxBBoxForUf(focusSigla, paintPathRefs.current.get(focusSigla));
+    setCameraTarget(box ? paddedViewBoxFromBBox(box, 0.38, 3.2) : BRAZIL_UF_VIEWBOX);
+  }, [focusSigla, isDrilled]);
+
+  useEffect(() => {
+    if (isDrilled || !hoveredUF) {
+      setHoverMuni(null);
+      setLupaPos(null);
+      return;
+    }
+
+    const pathEl = paintPathRefs.current.get(hoveredUF);
+    const container = containerRef.current;
+    if (!pathEl || !container) return;
+
+    const bbox = pathEl.getBBox();
+    const ctm = pathEl.getScreenCTM();
+    const containerRect = container.getBoundingClientRect();
+    if (ctm) {
+      const cx = bbox.x + bbox.width / 2;
+      const cy = bbox.y + bbox.height / 2;
+      const screen = new DOMPoint(cx, cy).matrixTransform(ctm);
+      setLupaPos({
+        x: screen.x - containerRect.left,
+        y: screen.y - containerRect.top,
+      });
+    }
+
+    let cancelled = false;
+    loadBrazilUfMunis(hoveredUF)
+      .then((paths) => {
+        if (!cancelled) setHoverMuni({ sigla: hoveredUF, paths });
+      })
+      .catch(() => {
+        if (!cancelled) setHoverMuni(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hoveredUF, isDrilled, loadBrazilUfMunis]);
+
+  // Paint selected + grouped municípios on Brazil when not in contextual drill.
+  useEffect(() => {
+    if (isDrilled || paintMuniSet.size === 0) {
+      setSelectedMuniPaths((prev) => (prev.length === 0 ? prev : []));
+      return;
+    }
+    const ufPrefixes = new Set(
+      [...paintMuniSet].map((id) => id.slice(0, 2)).filter(Boolean),
+    );
+    const siglas = UF_LIST.filter((u) => ufPrefixes.has(u.ibgeCode)).map((u) => u.sigla);
+    let cancelled = false;
+    Promise.all(siglas.map((s) => loadBrazilUfMunis(s)))
+      .then((groups) => {
+        if (cancelled) return;
+        setSelectedMuniPaths(groups.flat().filter((p) => paintMuniSet.has(p.id)));
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedMuniPaths([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isDrilled, loadBrazilUfMunis, paintMuniSet]);
+
+  // Drill features in the same CRS as Brazil UF paths (selectable when zoomed).
   useEffect(() => {
     if (!isDrilled || !mapView.ufIbge) {
       setDrillPaths([]);
@@ -111,7 +389,7 @@ export function BrazilMapCanvas({
     setDrillLoading(true);
     setDrillError(null);
 
-    loadDrillPaths(mapView.level as Exclude<GeoLevel, 'uf'>, mapView.ufIbge)
+    loadDrillPathsBrazilCrs(mapView.level as Exclude<GeoLevel, 'uf'>, mapView.ufIbge)
       .then((paths) => {
         if (token !== loadTokenRef.current) return;
         setDrillPaths(paths);
@@ -127,130 +405,477 @@ export function BrazilMapCanvas({
       });
   }, [isDrilled, mapView.level, mapView.ufIbge]);
 
-  if (isDrilled) {
-    const ufSigla = mapView.parentCode ?? '';
+  const ungroupedSelected = useMemo(
+    () => selectedUFs.filter((sigla) => !groupMembership[sigla]),
+    [groupMembership, selectedUFs],
+  );
 
-    return (
-      <div className="relative">
-        {drillLoading ? (
-          <div
-            role="status"
-            aria-live="polite"
-            className="flex aspect-[4/3] items-center justify-center rounded-lg border border-border bg-surface"
-          >
-            <p className="font-sans text-sm text-text-muted">Carregando mapa…</p>
-          </div>
-        ) : null}
+  const fadingSelection = useFadingSelection(ungroupedSelected, {
+    durationMs: UF_DESELECT_FADE_MS,
+    reduceMotion: preferReducedMotion,
+  });
+  const fadingUfSiglas = useMemo(() => [...fadingSelection.keys()], [fadingSelection]);
 
-        {drillError ? (
-          <Alert variant="destructive" className="mb-3">
-            <AlertTitle>Não foi possível carregar o mapa</AlertTitle>
-            <AlertDescription>
-              <p>{drillError}</p>
-              {onSetMapView ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => onSetMapView({ level: 'uf' })}
-                >
-                  Voltar ao mapa do Brasil
-                </Button>
-              ) : null}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+  const groupsByIndex = useMemo(() => {
+    const map = new Map<number, string[]>();
+    for (const [sigla, membership] of Object.entries(groupMembership)) {
+      const list = map.get(membership.groupIndex) ?? [];
+      list.push(sigla);
+      map.set(membership.groupIndex, list);
+    }
+    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+  }, [groupMembership]);
 
-        {!drillLoading && !drillError ? (
-          <svg
-            role="group"
-            aria-label={`Mapa de ${getUfName(ufSigla)} por ${mapView.level}`}
-            viewBox={DRILL_VIEWBOX}
-            className="h-auto w-full"
-          >
-            {drillPaths.map((path) => {
-              const name = String(path.properties.nome ?? path.id);
-              const metric = choroplethValues[path.id];
-              const fill =
-                scale && metric !== undefined ? scale(metric) : SURFACE_FILL;
+  const pathBySigla = useMemo(
+    () => Object.fromEntries(BRAZIL_UF_PATHS.map((p) => [p.sigla, p.d])),
+    [],
+  );
 
-              return (
-                <MapGeoPath
-                  key={path.id}
-                  d={path.d}
-                  territoryId={path.id}
-                  name={name}
-                  isHovered={hoveredUF === path.id}
-                  isSelected={selectedUFs.includes(path.id)}
-                  fill={fill}
-                  onHover={onHoverUF}
-                  onToggle={onToggleUF}
-                />
-              );
-            })}
-          </svg>
-        ) : null}
+  const handleParallax = useCallback(
+    (event: React.MouseEvent<SVGSVGElement>) => {
+      if (preferReducedMotion || isDrilled) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const nx = (event.clientX - rect.left) / rect.width - 0.5;
+      const ny = (event.clientY - rect.top) / rect.height - 0.5;
+      setParallax({ x: nx * PARALLAX_MAX, y: ny * PARALLAX_MAX });
+    },
+    [isDrilled, preferReducedMotion],
+  );
 
-        {drillPaths.length === 0 && !drillLoading && !drillError ? (
-          <p className="mt-2 font-sans text-xs text-text-muted">
-            Sem geometrias para este nível no conjunto de amostra. Escolha Município para Bahia ou
-            volte ao mapa do Brasil.
-          </p>
-        ) : null}
-      </div>
-    );
-  }
+  const muniOverlay =
+    !isDrilled && hoverMuni && hoverMuni.sigla === hoveredUF ? hoverMuni : null;
+
+  const emptyHint =
+    mapView.level === 'health-macro'
+      ? 'Ainda não há macrorregiões de saúde para este estado (amostra didática disponível na Bahia).'
+      : 'Sem geometrias para este nível. Volte ao Brasil ou rode o fetch de malhas municipais.';
 
   return (
-    <svg
-      role="group"
-      aria-label="Mapa do Brasil por unidade federativa"
-      viewBox={BRAZIL_UF_VIEWBOX}
-      className="h-auto w-full"
-    >
-      <g transform={BRAZIL_UF_GROUP_TRANSFORM}>
-        {BRAZIL_UF_PATHS.map(({ sigla, d }) => {
-          const membership = groupMembership[sigla];
-          const isUngroupedSelected = selectedUFs.includes(sigla);
-          const isHighlighted = highlightedUFs.includes(sigla);
-          const isSelected = isUngroupedSelected || isHighlighted || Boolean(membership);
-          const isHovered = hoveredUF === sigla;
-          const metric = choroplethValues[sigla];
-          const fill =
-            scale && metric !== undefined
-              ? scale(metric)
-              : isSelected
-                ? ACCENT_BORDER_FILL
-                : SURFACE_FILL;
+    <div ref={containerRef} className="relative">
+      {drillError ? (
+        <Alert variant="destructive" className="mb-3">
+          <AlertTitle>Não foi possível carregar o mapa</AlertTitle>
+          <AlertDescription>
+            <p>{drillError}</p>
+            {onSetMapView ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => onSetMapView({ level: 'uf' })}
+              >
+                Voltar ao mapa do Brasil
+              </Button>
+            ) : null}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
-          const glowClass =
-            isUngroupedSelected && !membership
-              ? 'lacir-map-glow lacir-map-glow--eligible'
-              : membership || isHighlighted
-                ? 'lacir-map-glow'
-                : undefined;
+      <svg
+        role="group"
+        aria-label={
+          isDrilled && focusSigla
+            ? `Zoom em ${getUfName(focusSigla)} — ${mapView.level}`
+            : 'Mapa do Brasil por unidade federativa'
+        }
+        viewBox={animatedViewBox}
+        className="h-auto w-full will-change-transform"
+        onMouseMove={handleParallax}
+        onMouseLeave={() => {
+          setParallax({ x: 0, y: 0 });
+          if (!isDrilled) handleHoverUF(null);
+        }}
+        style={{
+          transform:
+            preferReducedMotion || isDrilled
+              ? undefined
+              : `perspective(900px) rotateX(${-parallax.y * 0.35}deg) rotateY(${parallax.x * 0.35}deg) translate(${parallax.x * 0.4}px, ${parallax.y * 0.4}px)`,
+          transition: preferReducedMotion || isDrilled ? undefined : 'transform 120ms ease-out',
+        }}
+      >
+        <defs>
+          {GROUP_PALETTE_FILTERS}
+          {BRAZIL_UF_PATHS.map(({ sigla, d }) => (
+            <clipPath key={`clip-${sigla}`} id={`lacir-uf-clip-${sigla}`}>
+              <path d={d} />
+            </clipPath>
+          ))}
+        </defs>
 
-          return (
-            <MapGeoPath
-              key={sigla}
-              d={d}
-              territoryId={sigla}
-              name={getUfName(sigla)}
-              isHovered={isHovered}
-              isSelected={isSelected}
-              fill={fill}
-              glowClass={glowClass}
-              groupBadge={
-                membership ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}` : undefined
-              }
-              onHover={onHoverUF}
-              onToggle={onToggleUF}
-              onDrill={onSetMapView ? handleDrillUF : undefined}
-            />
-          );
-        })}
-      </g>
-    </svg>
+        <g
+          transform={`${BRAZIL_UF_GROUP_TRANSFORM}${
+            isDrilled ? '' : ` translate(${parallax.x * 0.15} ${parallax.y * 0.15})`
+          }`}
+        >
+          {BRAZIL_UF_PATHS.map(({ sigla, d }) => {
+            const membership = groupMembership[sigla];
+            const isUngroupedSelected = ungroupedSelected.includes(sigla);
+            const isFadingOut = fadingSelection.has(sigla) && !isUngroupedSelected;
+            const isFocus = focusSigla === sigla;
+            const isNeighbor = isDrilled && !isFocus;
+            const isHovered = !isDrilled && hoveredUF === sigla;
+            const metric = choroplethValues[sigla];
+            let fill = SURFACE_FILL;
+            if (isNeighbor) {
+              fill = NEIGHBOR_FILL;
+            } else if (isFocus && isDrilled) {
+              fill = '#151518';
+            } else if (scale && metric !== undefined) {
+              fill = scale(metric);
+            } else if (membership) {
+              fill = groupColor(membership.groupIndex).fill;
+            } else if (isUngroupedSelected) {
+              fill = selectionFill;
+            } else if (isHovered) {
+              fill = hoverFill;
+            }
+            const inComposite = !isDrilled && Boolean(membership || isUngroupedSelected);
+            return (
+              <path
+                key={`paint-${sigla}`}
+                ref={(node) => {
+                  if (node) paintPathRefs.current.set(sigla, node);
+                  else paintPathRefs.current.delete(sigla);
+                }}
+                data-uf={sigla}
+                data-layer="paint"
+                d={d}
+                fill={fill}
+                opacity={isNeighbor ? 0.42 : 1}
+                stroke={
+                  isFocus && isDrilled
+                    ? pendingColor.stroke
+                    : inComposite
+                      ? 'transparent'
+                      : isHovered
+                        ? pendingColor.stroke
+                        : isNeighbor
+                          ? 'rgba(255,255,255,0.08)'
+                          : undefined
+                }
+                className={
+                  isFocus && isDrilled
+                    ? 'pointer-events-none [stroke-width:1.8px] transition-[fill,opacity,stroke] duration-300'
+                    : inComposite
+                      ? '[stroke-width:0px] pointer-events-none transition-[fill,opacity] duration-300'
+                      : isFadingOut
+                        ? 'pointer-events-none stroke-border-strong [stroke-width:1px] transition-[fill,stroke,opacity] ease-out'
+                        : isHovered
+                          ? 'pointer-events-none [stroke-width:1.5px] transition-[fill,stroke,opacity] duration-150'
+                          : 'pointer-events-none stroke-border-strong [stroke-width:1px] transition-[fill,stroke,opacity] duration-300'
+                }
+                style={{
+                  vectorEffect: 'non-scaling-stroke',
+                  transitionDuration: isFadingOut ? `${UF_DESELECT_FADE_MS}ms` : undefined,
+                }}
+                aria-hidden
+              />
+            );
+          })}
+
+          {/* Municípios do UF em hover — paint only; selected ones are interactive below */}
+          {muniOverlay ? (
+            <g
+              className="pointer-events-none"
+              aria-hidden
+              clipPath={`url(#lacir-uf-clip-${muniOverlay.sigla})`}
+            >
+              {muniOverlay.paths
+                .filter((path) => !paintMuniSet.has(path.id))
+                .map((path) => (
+                  <path
+                    key={`muni-${path.id}`}
+                    d={path.d}
+                    fill={muniHoverFill}
+                    stroke={MUNI_HOVER_STROKE}
+                    strokeWidth={0.7}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+            </g>
+          ) : null}
+
+          {!isDrilled
+            ? groupsByIndex.map(([groupIndex, siglas]) => (
+                <g
+                  key={`group-outline-${groupIndex}`}
+                  filter={`url(#lacir-group-outer-${groupIndex % 10})`}
+                  className="pointer-events-none"
+                  aria-hidden
+                >
+                  {siglas.map((sigla) => {
+                    const d = pathBySigla[sigla];
+                    if (!d) return null;
+                    const membership = groupMembership[sigla]!;
+                    return (
+                      <path
+                        key={`go-${sigla}`}
+                        d={d}
+                        fill={groupColor(membership.groupIndex).fill}
+                        className="[stroke-width:0px] stroke-transparent"
+                      />
+                    );
+                  })}
+                </g>
+              ))
+            : null}
+
+          {!isDrilled && (ungroupedSelected.length > 0 || fadingUfSiglas.length > 0) ? (
+            <g
+              filter={`url(#${selectionFilterId})`}
+              className="pointer-events-none"
+              aria-hidden
+              data-selection-filter={selectionFilterId}
+            >
+              {ungroupedSelected.map((sigla) => {
+                const d = pathBySigla[sigla];
+                if (!d) return null;
+                return (
+                  <path
+                    key={`so-${sigla}`}
+                    d={d}
+                    fill={selectionFill}
+                    opacity={1}
+                    className="[stroke-width:0px] stroke-transparent transition-opacity ease-out"
+                    style={{ transitionDuration: `${UF_DESELECT_FADE_MS}ms` }}
+                  />
+                );
+              })}
+              {fadingUfSiglas.map((sigla) => {
+                if (ungroupedSelected.includes(sigla)) return null;
+                const d = pathBySigla[sigla];
+                if (!d) return null;
+                return (
+                  <path
+                    key={`so-fade-${sigla}`}
+                    d={d}
+                    fill={selectionFill}
+                    opacity={fadingSelection.get(sigla) ?? 0}
+                    className="[stroke-width:0px] stroke-transparent transition-opacity ease-out"
+                    style={{ transitionDuration: `${UF_DESELECT_FADE_MS}ms` }}
+                    data-fading-uf={sigla}
+                  />
+                );
+              })}
+            </g>
+          ) : null}
+
+          {/* Drill layer: municípios / mesos / macros — selecionáveis */}
+          {isDrilled && focusSigla && drillPaths.length > 0 ? (
+            <g clipPath={`url(#lacir-uf-clip-${focusSigla})`} data-layer="drill-features">
+              {drillPaths.map((path) => {
+                const name = String(path.properties.nome ?? path.id);
+                const metric = choroplethValues[path.id];
+                const membership = drillFeatureGroupMembership(
+                  path.id,
+                  mapView.level,
+                  groupMunicipioMembership,
+                );
+                const isSelected =
+                  Boolean(membership) ||
+                  (isDrillFeatureSelected?.(path.id) ??
+                    (mapView.level === 'municipio' && selectedMuniSet.has(path.id)));
+                const isHovered = hoveredUF === path.id;
+                let fill = 'rgba(255,255,255,0.04)';
+                if (scale && metric !== undefined) fill = scale(metric);
+                else if (membership) fill = groupMuniSelectionFill(membership.groupIndex);
+                else if (isSelected) fill = muniSelectedFill;
+                else if (isHovered) fill = hoverFill;
+                const pathKey = String(path.properties.muniId ?? path.id);
+
+                return (
+                  <MapGeoPath
+                    key={`drill-${path.id}-${pathKey}`}
+                    d={path.d}
+                    territoryId={path.id}
+                    name={name}
+                    isHovered={isHovered}
+                    isSelected={isSelected}
+                    fill={fill}
+                    accentStroke={
+                      membership ? groupColor(membership.groupIndex).stroke : pendingColor.stroke
+                    }
+                    hideStroke={false}
+                    glowClass="stroke-white/25 [stroke-width:0.55px]"
+                    onHover={onHoverUF}
+                    onToggle={onToggleDrillFeature ?? onToggleUF}
+                    groupBadge={
+                      membership
+                        ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </g>
+          ) : null}
+
+          {/* UF hit targets — only when not drilled (neighbors stay non-interactive) */}
+          {!isDrilled
+            ? BRAZIL_UF_PATHS.map(({ sigla, d }) => {
+                const membership = groupMembership[sigla];
+                const isUngroupedSelected = ungroupedSelected.includes(sigla);
+                const isSelected = isUngroupedSelected || Boolean(membership);
+                const isPreview =
+                  highlightedUFs.includes(sigla) && !isUngroupedSelected && !membership;
+                const shapeProps = {
+                  d,
+                  territoryId: sigla,
+                  name: getUfName(sigla),
+                  isHovered: hoveredUF === sigla,
+                  isSelected,
+                  isPreview,
+                  hideStroke: true as const,
+                  fill: 'transparent',
+                  accentStroke: pendingColor.stroke,
+                  groupBadge: membership
+                    ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
+                    : undefined,
+                  onHover: handleHoverUF,
+                  onToggle: onToggleUF,
+                  onDrill: onSetMapView ? handleDrillUF : undefined,
+                };
+
+                if (enableShapeDrag && isUngroupedSelected) {
+                  return (
+                    <DraggableUfPath
+                      key={`hit-${sigla}`}
+                      {...shapeProps}
+                      enableShapeDrag
+                      dragSiglas={ungroupedSelected}
+                    />
+                  );
+                }
+
+                return <MapGeoPath key={`hit-${sigla}`} {...shapeProps} />;
+              })
+            : null}
+
+          {/*
+            Selected municípios on Brazil view — above UF hits so the user can
+            deselect without zooming into the state.
+          */}
+          {!isDrilled && selectedMuniPaths.length > 0 && onToggleDrillFeature ? (
+            <g data-layer="selected-munis-hit">
+              {selectedMuniPaths.map((path) => {
+                const name = String(path.properties.nome ?? path.id);
+                const membership = groupMunicipioMembership[path.id];
+                return (
+                  <MapGeoPath
+                    key={`sel-muni-hit-${path.id}`}
+                    d={path.d}
+                    territoryId={path.id}
+                    name={name}
+                    isHovered={false}
+                    isSelected
+                    fill={
+                      membership
+                        ? groupMuniSelectionFill(membership.groupIndex)
+                        : muniSelectedFill
+                    }
+                    accentStroke={
+                      membership
+                        ? groupColor(membership.groupIndex).stroke
+                        : pendingColor.stroke
+                    }
+                    hideStroke={false}
+                    glowClass="stroke-white/40 [stroke-width:0.7px]"
+                    onHover={() => {}}
+                    onToggle={onToggleDrillFeature}
+                    groupBadge={
+                      membership
+                        ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </g>
+          ) : !isDrilled && selectedMuniPaths.length > 0 ? (
+            <g className="pointer-events-none" aria-hidden>
+              {selectedMuniPaths.map((path) => {
+                const membership = groupMunicipioMembership[path.id];
+                return (
+                  <path
+                    key={`sel-muni-${path.id}`}
+                    d={path.d}
+                    fill={
+                      membership
+                        ? groupMuniSelectionFill(membership.groupIndex)
+                        : muniSelectedFill
+                    }
+                    stroke="rgba(255,255,255,0.35)"
+                    strokeWidth={0.8}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
+              })}
+            </g>
+          ) : null}
+        </g>
+      </svg>
+
+      {isDrilled && drillLoading ? (
+        <p
+          role="status"
+          className="pointer-events-none absolute inset-x-0 top-3 text-center font-sans text-xs text-text-muted"
+        >
+          Carregando malha…
+        </p>
+      ) : null}
+
+      {isDrilled && drillPaths.length === 0 && !drillLoading && !drillError ? (
+        <p className="mt-2 font-sans text-xs text-text-muted">{emptyHint}</p>
+      ) : null}
+
+      {isDrilled && onSetMapView ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onSetMapView({ level: 'uf' })}
+          className="absolute left-3 top-3 z-20 h-8 rounded-full border border-white/10 bg-elevated/85 px-3 font-sans text-[11px] text-text-muted backdrop-blur-sm hover:text-text"
+        >
+          ← Zoom out
+        </Button>
+      ) : null}
+
+      {!isDrilled && onSetMapView && lupaPos ? (
+        <UfHoverDrillLupa
+          ufSigla={hoveredUF}
+          x={lupaPos.x}
+          y={lupaPos.y}
+          onDrill={handleDrillUF}
+          onHoverChange={(active) => {
+            lupaPinnedRef.current = active;
+            if (!active) handleHoverUF(null);
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
+
+const GROUP_PALETTE_FILTERS = Array.from({ length: 10 }, (_, index) => {
+  const color = groupColor(index);
+  return (
+    <filter
+      key={index}
+      id={`lacir-group-outer-${index}`}
+      x="-8%"
+      y="-8%"
+      width="116%"
+      height="116%"
+    >
+      <feMorphology in="SourceAlpha" operator="dilate" radius="1.6" result="dilated" />
+      <feFlood floodColor={color.stroke} result="color" />
+      <feComposite in="color" in2="dilated" operator="in" result="outline" />
+      <feComposite in="outline" in2="SourceAlpha" operator="out" result="ring" />
+      <feMerge>
+        <feMergeNode in="ring" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  );
+});

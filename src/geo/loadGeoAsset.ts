@@ -36,7 +36,7 @@ const MUNI_LOADERS: Record<string, () => Promise<{ default: Topology }>> = Objec
 );
 
 const MESO_LOADER = (): Promise<{ default: Topology }> =>
-  import('@/geo/topo/br-meso.sample.json') as unknown as Promise<{ default: Topology }>;
+  import('@/geo/topo/br-meso.json') as unknown as Promise<{ default: Topology }>;
 
 /** Didactic BA sample — full MS/SUS health-macro.json ships after manual fetch + mapshaper. */
 const HEALTH_MACRO_LOADER = (): Promise<{ default: Topology }> =>

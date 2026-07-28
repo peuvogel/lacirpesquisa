@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent, type DragEvent } from 'react';
+import { Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import type { UseTabularInputResult } from '@/shared/data-input/useTabularInput';
@@ -13,10 +14,8 @@ export interface TabularInputPanelProps extends UseTabularInputResult {
 }
 
 /**
- * Textarea + file dropzone + friendly error Alert (UI-03). Purely
- * presentational: the useTabularInput result is passed in as props by the
- * caller (the demo stub in 01-10, the wizard panel in 01-08), so this
- * component owns no parsing logic of its own.
+ * Textarea + file dropzone + friendly error Alert.
+ * On successful parse, shows a clear visual OK state (morph target for scroll flow).
  */
 export function TabularInputPanel({
   status,
@@ -62,6 +61,8 @@ export function TabularInputPanel({
     onConfirm?.(confirmed);
   }
 
+  const loadedOk = status === 'loaded';
+
   return (
     <div className="space-y-4">
       {status === 'idle' ? (
@@ -69,43 +70,74 @@ export function TabularInputPanel({
           <h2 className="text-lg font-bold text-foreground">Cole ou envie seus dados</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Cole uma tabela copiada do DataSUS/TABNET, digite valores separados por <code>;</code> ou envie um
-            arquivo <code>.csv</code>/<code>.xlsx</code>. Detectamos as colunas automaticamente — você confirma
-            antes de continuar.
+            arquivo <code>.csv</code>/<code>.xlsx</code>. Detectamos as colunas automaticamente.
           </p>
         </div>
       ) : null}
 
-      <textarea
-        aria-label="Cole aqui os dados copiados do DataSUS/TABNET"
-        value={rawText}
-        onChange={handleTextareaChange}
-        rows={10}
-        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-        style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-data)', lineHeight: 'var(--text-data--line-height)' }}
-      />
+      {loadedOk ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3"
+        >
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Check aria-hidden="true" className="size-4" />
+          </span>
+          <div>
+            <p className="text-sm font-bold text-foreground">Dados reconhecidos</p>
+            <p className="text-sm text-muted-foreground">
+              {bodyRows.length} linhas · {headers.length} colunas. Ajuste a tabela abaixo e clique em Analisar
+              dados.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <textarea
+            aria-label="Cole aqui os dados copiados do DataSUS/TABNET"
+            value={rawText}
+            onChange={handleTextareaChange}
+            rows={10}
+            className={cn(
+              'w-full rounded-lg border bg-background px-3 py-2 text-foreground transition-colors',
+              status === 'error' ? 'border-destructive' : 'border-border',
+            )}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'var(--text-data)',
+              lineHeight: 'var(--text-data--line-height)',
+            }}
+          />
 
-      <label
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        data-drag-over={isDragOver ? 'true' : undefined}
-        className={cn(
-          'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground transition-colors',
-          isDragOver && 'border-primary bg-primary/10 text-primary',
-        )}
-      >
-        <span>Arraste um arquivo .csv/.xlsx aqui ou clique para selecionar</span>
-        <input
-          type="file"
-          accept={ACCEPTED_FILE_TYPES}
-          onChange={handleFileInputChange}
-          className="sr-only"
-          aria-label="Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)"
-        />
-      </label>
+          <label
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            data-drag-over={isDragOver ? 'true' : undefined}
+            className={cn(
+              'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground transition-colors',
+              isDragOver && 'border-primary bg-primary/10 text-primary',
+            )}
+          >
+            <span>Arraste um arquivo .csv/.xlsx aqui ou clique para selecionar</span>
+            <input
+              type="file"
+              accept={ACCEPTED_FILE_TYPES}
+              onChange={handleFileInputChange}
+              className="sr-only"
+              aria-label="Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)"
+            />
+          </label>
+        </>
+      )}
 
       {status === 'parsing' ? (
-        <div role="status" aria-live="polite" className="rounded-lg border border-border px-3 py-4 text-sm text-muted-foreground">
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-border px-3 py-4 text-sm text-muted-foreground"
+        >
           Analisando os dados…
         </div>
       ) : null}
@@ -116,7 +148,7 @@ export function TabularInputPanel({
             <AlertTitle>Não conseguimos reconhecer esses dados</AlertTitle>
             <AlertDescription>
               <p>
-                Confira se há pelo menos duas colunas e tente novamente — aceitamos texto colado do DataSUS/TABNET,{' '}
+                Confira se há pelo menos duas colunas e tente novamente. Aceitamos texto colado do DataSUS/TABNET,{' '}
                 <code>;</code>, vírgula decimal, CSV ou Excel.
               </p>
               <details className="mt-2">
@@ -139,12 +171,6 @@ export function TabularInputPanel({
           recognizedColumns={recognizedColumns}
           onConfirm={handleConfirm}
         />
-      ) : null}
-
-      {status === 'loaded' && !showPreview ? (
-        <p className="text-sm text-muted-foreground">
-          Dados reconhecidos — avance para <strong>Configurar</strong> para revisar colunas e confirmar.
-        </p>
       ) : null}
     </div>
   );

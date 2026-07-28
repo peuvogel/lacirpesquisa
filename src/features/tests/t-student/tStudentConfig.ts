@@ -58,6 +58,7 @@ export const CHART_PRESET_LABELS = {
 export const T_STUDENT_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showConfidenceIntervals', label: 'Mostrar intervalos de confiança' },
   { id: 'showMeanValues', label: 'Mostrar valor das médias' },
+  { id: 'showPValue', label: 'Mostrar valor de p das comparações' },
 ];
 
 export const MAX_RESEARCH_QUESTION_LENGTH = 500;

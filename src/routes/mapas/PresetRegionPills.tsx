@@ -44,9 +44,11 @@ export function PresetRegionPills({
             onMouseEnter={() =>
               onHighlightPreset?.(resolvePresetTerritories(preset.id as RegionPresetId))
             }
+            onMouseLeave={() => onHighlightPreset?.([])}
             onFocus={() =>
               onHighlightPreset?.(resolvePresetTerritories(preset.id as RegionPresetId))
             }
+            onBlur={() => onHighlightPreset?.([])}
             onClick={() =>
               onApplyPreset(
                 resolvePresetTerritories(preset.id as RegionPresetId),
@@ -70,9 +72,11 @@ export function PresetRegionPills({
                 onMouseEnter={() =>
                   onHighlightPreset?.(resolveHealthMacroTerritories(preset.id))
                 }
+                onMouseLeave={() => onHighlightPreset?.([])}
                 onFocus={() =>
                   onHighlightPreset?.(resolveHealthMacroTerritories(preset.id))
                 }
+                onBlur={() => onHighlightPreset?.([])}
                 onClick={() =>
                   onApplyPreset(resolveHealthMacroTerritories(preset.id), preset.label)
                 }

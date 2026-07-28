@@ -7,8 +7,7 @@
  *
  * Evolved from the legacy `tests-manifest.json` shape: `path`/dynamic-import
  * fields are dropped entirely. Vite's static import graph replaces the old
- * fetch-then-import() machinery — plan 01-10 wires the demo module via a
- * static import keyed on `id`, not a runtime-fetched path.
+ * fetch-then-import() machinery — modules are keyed on `id`.
  */
 
 export type TestStatus = 'available' | 'em-breve';
@@ -27,14 +26,6 @@ export interface TestRegistryEntry {
 }
 
 export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
-  {
-    id: 'demo',
-    title: 'Teste demo',
-    subtitle: 'Prova de conceito do fluxo Dados → Configurar → Resultados',
-    group: 'Demonstração',
-    status: 'available',
-    phase: 1,
-  },
   {
     id: 't-student',
     title: 't de Student',
@@ -117,9 +108,8 @@ export function isTestAvailable(id: string): boolean {
   return getTestById(id)?.status === 'available';
 }
 
-/** Sidebar/modal badge copy — demo is demonstração, not a real significance test (D-17). */
+/** Sidebar/modal badge copy. */
 export function getTestBadgeLabel(entry: TestRegistryEntry): string {
   if (entry.status === 'em-breve') return 'Em breve';
-  if (entry.id === 'demo') return 'Demonstração';
   return 'Disponível';
 }

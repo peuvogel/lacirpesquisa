@@ -22,7 +22,7 @@ export function Header() {
       style={BLUR_CHROME}
     >
       <div className="mx-auto flex h-16 max-w-[1520px] items-center gap-6 px-6">
-        <NavLink to="/" end aria-label="LACIR — página inicial">
+        <NavLink to="/" end aria-label="LACIR: página inicial">
           <LogoLockup />
         </NavLink>
         <nav aria-label="Navegação principal" className="flex items-center gap-6">

@@ -7,6 +7,7 @@ describe('MapBreadcrumb', () => {
   it('shows Brasil as current at UF level', () => {
     render(<MapBreadcrumb mapView={{ level: 'uf' }} onNavigate={() => {}} />);
     expect(screen.getByText('Brasil')).toBeInTheDocument();
+    expect(screen.getByText('Unidades federativas')).toBeInTheDocument();
     expect(screen.queryByText(/Bahia/)).not.toBeInTheDocument();
   });
 
@@ -43,11 +44,22 @@ describe('MapBreadcrumb', () => {
         onNavigate={onNavigate}
       />,
     );
-    await user.click(screen.getByRole('tab', { name: 'Macrorregião de saúde' }));
+    await user.click(screen.getByRole('tab', { name: 'Macrorregiões de saúde' }));
     expect(onNavigate).toHaveBeenCalledWith({
       level: 'health-macro',
       parentCode: 'BA',
       ufIbge: '29',
     });
+  });
+
+  it('hides health-macro tab when UF has no sample macros', () => {
+    render(
+      <MapBreadcrumb
+        mapView={{ level: 'municipio', parentCode: 'SP', ufIbge: '35' }}
+        onNavigate={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('tab', { name: 'Macrorregiões de saúde' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Municípios' })).toBeInTheDocument();
   });
 });

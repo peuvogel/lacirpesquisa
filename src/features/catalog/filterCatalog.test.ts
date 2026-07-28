@@ -96,7 +96,7 @@ describe('filterCatalog', () => {
 
   it('combines search with filters', () => {
     const result = filterCatalog(FIXTURES, {
-      query: 'sih',
+      query: 'embolia internacoes',
       variableType: 'contagem',
       loadable: true,
     });

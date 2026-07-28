@@ -6,8 +6,16 @@
  */
 import type { CatalogEntry, PackFile } from './types';
 import variablesJson from '../../../public/data/catalog/variables.json';
-import emboliaPackJson from '../../../public/data/catalog/packs/sih.embolia_trombose_uf.json';
-import amputacaoPackJson from '../../../public/data/catalog/packs/sih.amputacao_mmii_uf.json';
+import emboliaTrombosePackJson from '../../../public/data/catalog/packs/sih.embolia_trombose_uf.json';
+import amputacaoMmiiPackJson from '../../../public/data/catalog/packs/sih.amputacao_mmii_uf.json';
+import aitPackJson from '../../../public/data/catalog/packs/sih.ait_uf.json';
+import aneurismaAortaPackJson from '../../../public/data/catalog/packs/sih.aneurisma_aorta_uf.json';
+import avcPackJson from '../../../public/data/catalog/packs/sih.avc_uf.json';
+import doencasArteriasPackJson from '../../../public/data/catalog/packs/sih.doencas_arterias_uf.json';
+import emboliaPulmonarPackJson from '../../../public/data/catalog/packs/sih.embolia_pulmonar_uf.json';
+import flebitesTromboflebitesPackJson from '../../../public/data/catalog/packs/sih.flebites_tromboflebites_uf.json';
+import outrasDoencasVascularesPackJson from '../../../public/data/catalog/packs/sih.outras_doencas_vasculares_uf.json';
+import varizesMmiiPackJson from '../../../public/data/catalog/packs/sih.varizes_mmii_uf.json';
 
 /** Analysis variable shown in Mapas checkboxes / choropleth (catalog or paste overlay). */
 export interface CatalogAnalysisVariable {
@@ -28,8 +36,16 @@ export const VARIABLE_ID_ALIASES: Readonly<Record<string, string>> = {
 
 const CATALOG_ENTRIES = variablesJson as CatalogEntry[];
 const PACKS: Record<string, PackFile> = {
-  'sih.embolia_trombose_uf': emboliaPackJson as PackFile,
-  'sih.amputacao_mmii_uf': amputacaoPackJson as PackFile,
+  'sih.embolia_trombose_uf': emboliaTrombosePackJson as PackFile,
+  'sih.amputacao_mmii_uf': amputacaoMmiiPackJson as PackFile,
+  'sih.ait_uf': aitPackJson as PackFile,
+  'sih.aneurisma_aorta_uf': aneurismaAortaPackJson as PackFile,
+  'sih.avc_uf': avcPackJson as PackFile,
+  'sih.doencas_arterias_uf': doencasArteriasPackJson as PackFile,
+  'sih.embolia_pulmonar_uf': emboliaPulmonarPackJson as PackFile,
+  'sih.flebites_tromboflebites_uf': flebitesTromboflebitesPackJson as PackFile,
+  'sih.outras_doencas_vasculares_uf': outrasDoencasVascularesPackJson as PackFile,
+  'sih.varizes_mmii_uf': varizesMmiiPackJson as PackFile,
 };
 
 const ENTRIES_BY_ID = new Map(CATALOG_ENTRIES.map((entry) => [entry.id, entry]));
@@ -98,6 +114,16 @@ export function getAnalysisVariableById(
   return toAnalysisVariable(entry);
 }
 
+/** Coerce pack cells that were serialized as numeric strings (multi-disease packs). */
+function coercePackNumber(raw: unknown): number | null {
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    const n = Number(raw);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
 /**
  * Years with at least one non-null pack cell for the metric.
  * Excludes entry.nullYears (D-19) even if yearsAvailable lists them.
@@ -114,11 +140,17 @@ export function getCatalogTimeSeriesYears(variableId: string): number[] {
 
   const yearsWithData = new Set<number>();
   for (const row of pack.rows) {
-    if (nullYearSet.has(row.ano)) continue;
-    const raw = row[entry.columnKey];
-    if (typeof raw === 'number' && Number.isFinite(raw)) {
-      yearsWithData.add(row.ano);
+    const ano = coercePackNumber(row.ano);
+    if (ano === null || nullYearSet.has(ano)) continue;
+    if (coercePackNumber(row[entry.columnKey]) !== null) {
+      yearsWithData.add(ano);
     }
+  }
+
+  // Prefer years that actually have numeric cells; if cells were all strings and
+  // still empty after coerce, fall back to catalog metadata for that pack.
+  if (yearsWithData.size === 0 && fromEntry && fromEntry.length > 0) {
+    return [...fromEntry].sort((a, b) => a - b);
   }
 
   if (fromEntry && fromEntry.length > 0) {
@@ -144,12 +176,10 @@ function metricForYear(
 
   const out: Record<string, number> = {};
   for (const row of pack.rows) {
-    if (row.ano !== year) continue;
+    if (coercePackNumber(row.ano) !== year) continue;
     const sigla = String(row.uf);
-    const raw = row[entry.columnKey];
-    if (typeof raw === 'number' && Number.isFinite(raw)) {
-      out[sigla] = raw;
-    }
+    const value = coercePackNumber(row[entry.columnKey]);
+    if (value !== null) out[sigla] = value;
   }
   return out;
 }

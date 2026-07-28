@@ -5,24 +5,40 @@
 
 import fs from 'node:fs';
 
-/** Metric / numeric columns expected across embolia + amputação bases. */
+/** Metric / numeric columns expected across SIH / CNES / SIDRA bases. */
 const KNOWN_NUMERIC_COLUMNS = new Set([
   'ano',
   'medicos_vasculares_sus',
   'populacao',
   'medicos_vasculares_por_100k',
+  // multi-disease SIH packs (generic column names)
+  'internacoes',
+  'obitos',
+  'valor_total',
+  'dias_permanencia',
+  'taxa_mortalidade',
+  'media_permanencia',
+  'taxa_internacao',
+  // embolia dedicated columns
   'internacoes_embolia_trombose_arteriais',
   'obitos_embolia_trombose_arteriais',
   'dias_permanencia_embolia_trombose_arteriais',
   'taxa_mortalidade_pct',
   'media_permanencia_calculada',
   'taxa_internacao_por_100k',
+  // amputação dedicated columns
   'internacoes_amputacao_mmii',
   'obitos_amputacao_mmii',
   'taxa_mortalidade_sih_pct',
   'letalidade_calculada_pct',
   'taxa_internacao_amputacao_mmii_por_100k',
 ]);
+
+/** True for known metric keys or clear numeric SIH/CNES suffixes. */
+function isNumericColumn(key) {
+  if (KNOWN_NUMERIC_COLUMNS.has(key) || key === 'ano') return true;
+  return /^(internacoes|obitos|valor_|dias_|taxa_|media_|populacao|medicos_)/.test(key);
+}
 
 /**
  * @param {string} filePath absolute path to CSV
@@ -57,7 +73,7 @@ export function readCsvUtf8Sig(filePath) {
         row[key] = null;
         continue;
       }
-      if (KNOWN_NUMERIC_COLUMNS.has(key) || key === 'ano') {
+      if (isNumericColumn(key)) {
         const n = Number(raw);
         row[key] = Number.isFinite(n) ? n : null;
       } else {

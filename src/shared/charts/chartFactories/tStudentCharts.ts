@@ -29,7 +29,7 @@ function groupStats(arr: number[]): GroupStats {
   return { mean, std, q1, median, q3, min: sorted[0], max: sorted[n - 1], n };
 }
 
-/** Port of renderTStudentDiffChart — mean difference + IC95%. */
+/** Mean difference + IC95% — forest-style effect estimate on white canvas. */
 export function buildTStudentDiffChartData(
   result: WelchResult,
   _labels?: string[],
@@ -45,16 +45,21 @@ export function buildTStudentDiffChartData(
         data: [{ x: diff, y: 0 }],
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
-        pointRadius: 8,
-        pointHoverRadius: 10,
+        pointRadius: 7,
+        pointHoverRadius: 9,
+        pointStyle: 'circle',
         showLine: false,
       },
       {
-        label: 'Intervalo de Confiança',
-        data: [{ x: low, y: 0 }, { x: high, y: 0 }],
-        borderColor: COLORS.primary,
-        borderWidth: 2,
-        pointRadius: 4,
+        label: 'Intervalo de confiança',
+        data: [
+          { x: low, y: 0 },
+          { x: high, y: 0 },
+        ],
+        borderColor: COLORS.primarySolid,
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 0,
         showLine: true,
         fill: false,
       },
@@ -64,32 +69,52 @@ export function buildTStudentDiffChartData(
   const options = mergeChartOptions(BASE_OPTS, {
     indexAxis: 'y',
     plugins: {
+      legend: { display: true },
       tooltip: {
         callbacks: {
-          title: () => 'Estimativa de Efeito',
+          title: () => 'Estimativa de efeito',
           label: (item) => {
             if (item.datasetIndex === 0) return `Diferença: ${fmtSigned(diff, 3)}`;
             return `IC95%: [${fmtNumber(low, 3)}, ${fmtNumber(high, 3)}]`;
           },
         },
       },
+      annotation: {
+        annotations: {
+          zeroLine: {
+            type: 'line',
+            xMin: 0,
+            xMax: 0,
+            borderColor: 'rgba(100, 116, 139, 0.45)',
+            borderWidth: 1,
+            borderDash: [4, 4],
+          },
+        },
+      },
     },
     scales: {
       x: {
-        title: { display: true, text: 'Diferença das Médias', color: COLORS.label },
+        title: {
+          display: true,
+          text: 'Diferença das médias',
+          color: COLORS.label,
+          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+        },
+        grid: { color: COLORS.grid, drawTicks: false },
       },
       y: {
         display: false,
         min: -1,
         max: 1,
+        grid: { display: false },
       },
     },
-  });
+  } as ChartOptions);
 
   return { data, options };
 }
 
-/** Port of renderTStudentDistChart — mean bars per group. */
+/** Distribution summary bars per group — solid Datawrapper-like columns. */
 export function buildTStudentDistChartData(
   groupA: number[],
   groupB: number[],
@@ -105,17 +130,20 @@ export function buildTStudentDistChartData(
       {
         label: 'Média',
         data: [sA.mean, sB.mean],
-        backgroundColor: [COLORS.blueLight, COLORS.primaryLight],
-        borderColor: [COLORS.blue, COLORS.primary],
-        borderWidth: 2,
-        borderRadius: 8,
+        backgroundColor: [COLORS.blueSolid, COLORS.primarySolid],
+        borderWidth: 0,
+        borderRadius: 3,
         borderSkipped: false,
+        maxBarThickness: 56,
+        categoryPercentage: 0.55,
+        barPercentage: 0.85,
       },
     ],
   };
 
   const options = mergeChartOptions(BASE_OPTS, {
     plugins: {
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (item) => {
@@ -132,8 +160,18 @@ export function buildTStudentDistChartData(
       },
     },
     scales: {
+      x: {
+        grid: { display: false },
+        border: { display: false },
+      },
       y: {
-        title: { display: true, text: 'Valor médio', color: COLORS.label, font: { size: 12 } },
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Valor médio',
+          color: COLORS.label,
+          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+        },
       },
     },
   });
@@ -141,7 +179,7 @@ export function buildTStudentDistChartData(
   return { data, options };
 }
 
-/** Bar chart of group means — customizer preset. */
+/** Simple means bar chart — customizer preset. */
 export function buildTStudentMeansBarChartData(
   result: { m1: number; m2: number },
   labels: [string, string] = ['Grupo A', 'Grupo B'],
@@ -152,17 +190,20 @@ export function buildTStudentMeansBarChartData(
       {
         label: 'Média',
         data: [result.m1, result.m2],
-        backgroundColor: [COLORS.blueLight, COLORS.primaryLight],
-        borderColor: [COLORS.blue, COLORS.primary],
-        borderWidth: 2,
-        borderRadius: 8,
+        backgroundColor: [COLORS.blueSolid, COLORS.primarySolid],
+        borderWidth: 0,
+        borderRadius: 3,
         borderSkipped: false,
+        maxBarThickness: 56,
+        categoryPercentage: 0.55,
+        barPercentage: 0.85,
       },
     ],
   };
 
   const options = mergeChartOptions(BASE_OPTS, {
     plugins: {
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (item) => `Média: ${fmtNumber(item.parsed.y, 3)}`,
@@ -170,8 +211,18 @@ export function buildTStudentMeansBarChartData(
       },
     },
     scales: {
+      x: {
+        grid: { display: false },
+        border: { display: false },
+      },
       y: {
-        title: { display: true, text: 'Valor médio', color: COLORS.label, font: { size: 12 } },
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Valor médio',
+          color: COLORS.label,
+          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+        },
       },
     },
   });

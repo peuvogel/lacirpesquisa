@@ -6,9 +6,9 @@ describe('fmtNumber', () => {
     expect(fmtNumber(1234.5678)).toBe('1.234,568');
   });
 
-  it('returns the em-dash for non-finite input', () => {
-    expect(fmtNumber(NaN)).toBe('—');
-    expect(fmtNumber(undefined)).toBe('—');
+  it('returns n/d for non-finite input', () => {
+    expect(fmtNumber(NaN)).toBe('n/d');
+    expect(fmtNumber(undefined)).toBe('n/d');
   });
 
   it('respects a custom digits argument', () => {
@@ -25,8 +25,8 @@ describe('fmtP', () => {
     expect(fmtP(0.0321)).toBe('0,0321');
   });
 
-  it('returns the em-dash for non-finite input', () => {
-    expect(fmtP(NaN)).toBe('—');
+  it('returns n/d for non-finite input', () => {
+    expect(fmtP(NaN)).toBe('n/d');
   });
 });
 
@@ -43,7 +43,7 @@ describe('fmtSigned', () => {
     expect(fmtSigned(0)).toBe('0,000');
   });
 
-  it('returns the em-dash for non-finite input', () => {
-    expect(fmtSigned(NaN)).toBe('—');
+  it('returns n/d for non-finite input', () => {
+    expect(fmtSigned(NaN)).toBe('n/d');
   });
 });

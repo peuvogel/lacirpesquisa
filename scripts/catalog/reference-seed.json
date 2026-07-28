@@ -89,7 +89,9 @@
     "officialUrl": "https://relatorioaps.saude.gov.br/",
     "methodologyNotes": "Portal oficial de relatórios APS (cobertura AB/APS, ACS, saúde bucal). Substitui o mock.cobertura_aps didático como referência; pack loadable ainda não empacotado — use paste ou portal.",
     "loadable": false,
-    "aliases": ["mock.cobertura_aps"]
+    "aliases": [
+      "mock.cobertura_aps"
+    ]
   },
   {
     "id": "ref.sidra.6579",
@@ -206,32 +208,6 @@
     "period": "2008–presente",
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/fibr.def",
     "methodologyNotes": "Morbidade por causas externas. Destacado no GUIA/catalogos TABNET; sem pack v1.",
-    "loadable": false
-  },
-  {
-    "id": "ref.lacir.projetos",
-    "label": "Planilha de projetos LACIR × DataSUS",
-    "variableType": "texto",
-    "domain": "meta",
-    "sourceSystem": "LACIR",
-    "sourceName": "outputs/lacir_projetos — PLANILHA_PROJETOS_LACIR_DATASUS",
-    "tableOrIndicator": "PLANILHA_PROJETOS_LACIR_DATASUS.xlsx",
-    "period": "trabalhos da liga",
-    "officialUrl": "https://datasus.saude.gov.br/",
-    "methodologyNotes": "Inventário de projetos da liga (não é série tidada UF×ano). Mantido como referência-only por D-01.3 — não forçar pack sem inventar células.",
-    "loadable": false
-  },
-  {
-    "id": "ref.guia.mapeamento",
-    "label": "GUIA — mapeamento de dados disponíveis (LACIR)",
-    "variableType": "texto",
-    "domain": "meta",
-    "sourceSystem": "LACIR",
-    "sourceName": "GUIA_MAPEAMENTO_DADOS_DISPONIVEIS.md",
-    "tableOrIndicator": "trabalhos datasus/GUIA_MAPEAMENTO_DADOS_DISPONIVEIS.md",
-    "period": "documento vivo do corpus",
-    "officialUrl": "https://datasus.saude.gov.br/",
-    "methodologyNotes": "Guia interno que indexa fontes TABNET, OpenDataSUS, IBGE, e-Gestor, ANS, Atlas e Ipea usadas na curadoria deste catálogo.",
     "loadable": false
   }
 ]

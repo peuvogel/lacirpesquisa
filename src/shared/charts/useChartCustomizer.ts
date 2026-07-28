@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartData, ChartOptions } from 'chart.js';
 import type { ChartCanvasType } from './ChartCanvas';
 import { COLORS, mergeChartOptions } from './chartTheme';
+import { getChartTypeLabel, type ChartVisualType } from './chartTypeCatalog';
 
 export type ThemeVariant = 'lacir' | 'neutral' | 'publication';
 
@@ -15,16 +16,29 @@ export interface ChartProps {
 export interface ChartPreset<T = unknown> {
   id: string;
   label: string;
+  /** Datawrapper-style catalog id used by the checkbox picker. */
+  visualType: ChartVisualType;
   buildChart: (engineOutput: T) => ChartProps;
   defaultAxisLabels?: { x: string; y: string };
   annotationKeys?: string[];
 }
 
+export interface BuiltChart<T = unknown> {
+  id: string;
+  label: string;
+  visualType: ChartVisualType;
+  chart: ChartProps;
+  preset: ChartPreset<T>;
+}
+
 export interface CustomizerState {
+  /** Chart focused for axis edits / primary export highlight. */
   chartTypePreset: string;
   axisLabels: { x: string; y: string };
   annotationToggles: Record<string, boolean>;
   themeVariant: ThemeVariant;
+  /** Which available presets are shown in the gallery. */
+  visiblePresetIds: Record<string, boolean>;
 }
 
 export interface AnnotationDefinition {
@@ -32,13 +46,23 @@ export interface AnnotationDefinition {
   label: string;
 }
 
+export interface ChartPresetOption {
+  id: string;
+  label: string;
+  visualType: ChartVisualType;
+}
+
 const MAX_AXIS_LABEL_LENGTH = 120;
 const DEBOUNCE_MS = 150;
 
-const THEME_VARIANTS: Record<ThemeVariant, { label: string; gridOpacity: string; primaryOverride?: string }> = {
-  lacir: { label: 'LACIR padrão', gridOpacity: COLORS.grid },
-  neutral: { label: 'Neutro alto contraste', gridOpacity: 'rgba(255,255,255,0.12)', primaryOverride: '#94a3b8' },
-  publication: { label: 'Publicação clara', gridOpacity: 'rgba(255,255,255,0.15)' },
+/** Accent variants on always-white canvas (publication default). */
+const THEME_VARIANTS: Record<
+  ThemeVariant,
+  { label: string; gridOpacity: string; primaryOverride?: string }
+> = {
+  publication: { label: 'Publicação (branco)', gridOpacity: COLORS.grid },
+  lacir: { label: 'Teal LACIR', gridOpacity: COLORS.grid, primaryOverride: COLORS.primarySolid },
+  neutral: { label: 'Neutro alto contraste', gridOpacity: 'rgba(15, 23, 42, 0.12)', primaryOverride: '#475569' },
 };
 
 function sanitizeAxisLabel(value: string): string {
@@ -48,43 +72,54 @@ function sanitizeAxisLabel(value: string): string {
 function applyThemeVariant(options: ChartOptions, variant: ThemeVariant): ChartOptions {
   const theme = THEME_VARIANTS[variant];
   const gridColor = theme.gridOpacity;
-
   const baseScales = options.scales as Record<string, Record<string, unknown>> | undefined;
 
   return mergeChartOptions(options, {
     scales: {
-      x: { ...(baseScales?.x ?? {}), grid: { color: gridColor } },
-      y: { ...(baseScales?.y ?? {}), grid: { color: gridColor } },
+      x: { ...(baseScales?.x ?? {}), grid: { color: gridColor, drawTicks: false } },
+      y: { ...(baseScales?.y ?? {}), grid: { color: gridColor, drawTicks: false } },
     },
   });
 }
 
-function applyAnnotationToggles(
-  options: ChartOptions,
-  toggles: Record<string, boolean>,
-  definitions: AnnotationDefinition[],
+function applyAxisLabels(
+  options: ChartOptions | undefined,
+  axisLabels: { x: string; y: string },
 ): ChartOptions {
-  const annotations: Record<string, unknown> = {
-    ...(options.plugins?.annotation as { annotations?: Record<string, unknown> } | undefined)?.annotations,
-  };
+  let merged = mergeChartOptions(options ?? {}, {});
+  const xTitle = sanitizeAxisLabel(axisLabels.x);
+  const yTitle = sanitizeAxisLabel(axisLabels.y);
 
-  for (const def of definitions) {
-    if (toggles[def.id] === false && annotations[def.id]) {
-      const { [def.id]: _removed, ...rest } = annotations;
-      Object.assign(annotations, rest);
-      delete annotations[def.id];
-    }
-  }
+  if (!xTitle && !yTitle) return merged;
 
-  if (Object.keys(annotations).length === 0) {
-    return options;
-  }
-
-  return mergeChartOptions(options, {
-    plugins: {
-      annotation: { annotations: annotations as Record<string, unknown> },
+  return mergeChartOptions(merged, {
+    scales: {
+      ...(xTitle
+        ? {
+            x: {
+              title: {
+                display: true,
+                text: xTitle,
+                color: COLORS.label,
+                font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+              },
+            },
+          }
+        : {}),
+      ...(yTitle
+        ? {
+            y: {
+              title: {
+                display: true,
+                text: yTitle,
+                color: COLORS.label,
+                font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+              },
+            },
+          }
+        : {}),
     },
-  } as ChartOptions);
+  });
 }
 
 export interface UseChartCustomizerOptions<T> {
@@ -94,16 +129,22 @@ export interface UseChartCustomizerOptions<T> {
   annotations?: AnnotationDefinition[];
 }
 
-export interface UseChartCustomizerResult {
+export interface UseChartCustomizerResult<T = unknown> {
   state: CustomizerState;
+  /** Active/focused chart (backward compatible). */
   chart: ChartProps;
+  /** All built presets (visibility applied separately). */
+  charts: BuiltChart<T>[];
+  /** Presets currently checked in the type picker. */
+  visibleCharts: BuiltChart<T>[];
   debouncedOptions: ChartOptions | undefined;
   setChartTypePreset: (id: string) => void;
   setAxisLabel: (axis: 'x' | 'y', value: string) => void;
   setAnnotationToggle: (id: string, value: boolean) => void;
   setThemeVariant: (variant: ThemeVariant) => void;
+  setPresetVisible: (id: string, visible: boolean) => void;
   resetToDefault: () => void;
-  mergeCustomizerIntoOptions: (baseOptions?: ChartOptions) => ChartOptions;
+  mergeCustomizerIntoOptions: (baseOptions?: ChartOptions, axisLabels?: { x: string; y: string }) => ChartOptions;
 }
 
 export function useChartCustomizer<T>({
@@ -111,13 +152,17 @@ export function useChartCustomizer<T>({
   defaultPresetId,
   engineOutput,
   annotations = [],
-}: UseChartCustomizerOptions<T>): UseChartCustomizerResult {
+}: UseChartCustomizerOptions<T>): UseChartCustomizerResult<T> {
   const defaultPreset = presets.find((p) => p.id === defaultPresetId) ?? presets[0];
 
   const buildDefaultState = useCallback((): CustomizerState => {
     const toggles: Record<string, boolean> = {};
     for (const def of annotations) {
       toggles[def.id] = true;
+    }
+    const visiblePresetIds: Record<string, boolean> = {};
+    for (const preset of presets) {
+      visiblePresetIds[preset.id] = true;
     }
     return {
       chartTypePreset: defaultPreset.id,
@@ -126,71 +171,72 @@ export function useChartCustomizer<T>({
         y: defaultPreset.defaultAxisLabels?.y ?? '',
       },
       annotationToggles: toggles,
-      themeVariant: 'lacir',
+      themeVariant: 'publication',
+      visiblePresetIds,
     };
-  }, [annotations, defaultPreset]);
+  }, [annotations, defaultPreset, presets]);
 
   const [state, setState] = useState<CustomizerState>(buildDefaultState);
   const [debouncedOptions, setDebouncedOptions] = useState<ChartOptions | undefined>(undefined);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const activePreset = presets.find((p) => p.id === state.chartTypePreset) ?? defaultPreset;
-
   const mergeCustomizerIntoOptions = useCallback(
-    (baseOptions?: ChartOptions): ChartOptions => {
-      let merged = mergeChartOptions(baseOptions ?? {}, {});
-
-      const xTitle = sanitizeAxisLabel(state.axisLabels.x);
-      const yTitle = sanitizeAxisLabel(state.axisLabels.y);
-
-      if (xTitle || yTitle) {
-        merged = mergeChartOptions(merged, {
-          scales: {
-            ...(xTitle
-              ? { x: { title: { display: true, text: xTitle, color: COLORS.label, font: { size: 12 } } } }
-              : {}),
-            ...(yTitle
-              ? { y: { title: { display: true, text: yTitle, color: COLORS.label, font: { size: 12 } } } }
-              : {}),
-          },
-        });
-      }
-
+    (baseOptions?: ChartOptions, axisLabels?: { x: string; y: string }): ChartOptions => {
+      // Annotations stay on by default; per-chart toggles are applied in applyChartOverrides.
+      let merged = applyAxisLabels(baseOptions, axisLabels ?? state.axisLabels);
       merged = applyThemeVariant(merged, state.themeVariant);
-      merged = applyAnnotationToggles(merged, state.annotationToggles, annotations);
-
       return merged;
     },
-    [state.axisLabels, state.annotationToggles, state.themeVariant, annotations],
+    [state.axisLabels, state.themeVariant],
   );
 
-  const baseChart = useMemo(
-    () => activePreset.buildChart(engineOutput),
-    [activePreset, engineOutput],
+  const charts: BuiltChart<T>[] = useMemo(() => {
+    return presets.map((preset) => {
+      const base = preset.buildChart(engineOutput);
+      const axisLabels =
+        preset.id === state.chartTypePreset
+          ? state.axisLabels
+          : {
+              x: preset.defaultAxisLabels?.x ?? '',
+              y: preset.defaultAxisLabels?.y ?? '',
+            };
+      const label = getChartTypeLabel(preset.visualType) || preset.label;
+      return {
+        id: preset.id,
+        label,
+        visualType: preset.visualType,
+        preset,
+        chart: {
+          ...base,
+          ariaLabel: label,
+          options: mergeCustomizerIntoOptions(base.options, axisLabels),
+        },
+      };
+    });
+  }, [presets, engineOutput, state.chartTypePreset, state.axisLabels, mergeCustomizerIntoOptions]);
+
+  const visibleCharts = useMemo(
+    () => charts.filter((item) => state.visiblePresetIds[item.id] !== false),
+    [charts, state.visiblePresetIds],
   );
 
-  const mergedOptions = useMemo(
-    () => mergeCustomizerIntoOptions(baseChart.options),
-    [baseChart.options, mergeCustomizerIntoOptions],
-  );
+  const chart: ChartProps = useMemo(() => {
+    const focused =
+      visibleCharts.find((c) => c.id === state.chartTypePreset) ??
+      visibleCharts[0] ??
+      charts[0];
+    return focused.chart;
+  }, [charts, visibleCharts, state.chartTypePreset]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setDebouncedOptions(mergedOptions);
+      setDebouncedOptions(chart.options);
     }, DEBOUNCE_MS);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [mergedOptions]);
-
-  const chart: ChartProps = useMemo(
-    () => ({
-      ...baseChart,
-      options: debouncedOptions ?? mergedOptions,
-    }),
-    [baseChart, debouncedOptions, mergedOptions],
-  );
+  }, [chart.options]);
 
   const setChartTypePreset = useCallback(
     (id: string) => {
@@ -226,6 +272,33 @@ export function useChartCustomizer<T>({
     setState((prev) => ({ ...prev, themeVariant: variant }));
   }, []);
 
+  const setPresetVisible = useCallback((id: string, visible: boolean) => {
+    setState((prev) => {
+      const nextVisible = { ...prev.visiblePresetIds, [id]: visible };
+      const stillVisible = Object.entries(nextVisible).some(([, on]) => on);
+      // Keep at least one chart visible.
+      if (!visible && !stillVisible) {
+        return prev;
+      }
+      const nextFocus =
+        !visible && prev.chartTypePreset === id
+          ? (Object.entries(nextVisible).find(([, on]) => on)?.[0] ?? prev.chartTypePreset)
+          : prev.chartTypePreset;
+      const focusPreset = presets.find((p) => p.id === nextFocus);
+      return {
+        ...prev,
+        visiblePresetIds: nextVisible,
+        chartTypePreset: nextFocus,
+        axisLabels: focusPreset
+          ? {
+              x: focusPreset.defaultAxisLabels?.x ?? prev.axisLabels.x,
+              y: focusPreset.defaultAxisLabels?.y ?? prev.axisLabels.y,
+            }
+          : prev.axisLabels,
+      };
+    });
+  }, [presets]);
+
   const resetToDefault = useCallback(() => {
     setState(buildDefaultState());
   }, [buildDefaultState]);
@@ -233,11 +306,14 @@ export function useChartCustomizer<T>({
   return {
     state,
     chart,
+    charts,
+    visibleCharts,
     debouncedOptions,
     setChartTypePreset,
     setAxisLabel,
     setAnnotationToggle,
     setThemeVariant,
+    setPresetVisible,
     resetToDefault,
     mergeCustomizerIntoOptions,
   };

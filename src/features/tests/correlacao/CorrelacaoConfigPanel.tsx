@@ -1,6 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
-import type { DatasusSession } from '@/shared/data-input/useDatasusWizard';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { ModeChoiceCard } from '@/features/tests/shared/ModeChoiceCard';
@@ -13,8 +12,6 @@ import {
   TABULAR_OPTIONS,
   type CorrelacaoMethod,
 } from './correlacaoConfig';
-import type { DatasusKnobState } from './correlacaoEngine';
-import { CorrelacaoDatasusKnobs } from './CorrelacaoDatasusKnobs';
 
 export interface CorrelacaoLoadedInput {
   headers: string[];
@@ -32,10 +29,6 @@ export interface CorrelacaoConfigPanelProps {
   researchQuestion: string;
   onResearchQuestionChange: (value: string) => void;
   showSoftReset: boolean;
-  isDatasus: boolean;
-  datasusSession: DatasusSession | null;
-  datasusKnobs: DatasusKnobState;
-  onDatasusKnobsChange: (knobs: DatasusKnobState) => void;
   onConfirm: (confirmed: {
     headers: string[];
     rows: string[][];
@@ -52,10 +45,6 @@ export function CorrelacaoConfigPanel({
   researchQuestion,
   onResearchQuestionChange,
   showSoftReset,
-  isDatasus,
-  datasusSession,
-  datasusKnobs,
-  onDatasusKnobsChange,
   onConfirm,
 }: CorrelacaoConfigPanelProps) {
   return (
@@ -80,23 +69,23 @@ export function CorrelacaoConfigPanel({
 
       <DidacticCards cards={didacticCards} />
 
-      {isDatasus && datasusSession ? (
-        <CorrelacaoDatasusKnobs
-          session={datasusSession}
-          knobs={datasusKnobs}
-          onChange={onDatasusKnobsChange}
-        />
-      ) : null}
-
       <div className="space-y-3">
-        <h2 className="text-lg font-bold text-foreground">Revise as colunas antes de analisar</h2>
-        <p className="text-sm text-muted-foreground">Fonte: {loadedInput.sourceLabel}.</p>
+        <div
+          role="status"
+          className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm"
+        >
+          <p className="font-bold text-foreground">Tabela pronta para configurar</p>
+          <p className="text-muted-foreground">
+            Fonte: {loadedInput.sourceLabel}. Clique nas células ou nos nomes das colunas para ajustar.
+          </p>
+        </div>
         <ColumnPreviewTable
           headers={loadedInput.headers}
           bodyRows={loadedInput.rows}
           recognizedColumns={loadedInput.recognizedColumns}
           tabularOptions={TABULAR_OPTIONS}
           onConfirm={onConfirm}
+          editable
         />
       </div>
     </div>

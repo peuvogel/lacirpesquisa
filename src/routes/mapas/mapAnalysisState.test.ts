@@ -10,6 +10,7 @@ import {
   isGroupComplete,
   isRangeTimeInvalid,
   mapAnalysisReducer,
+  normalizeMapAnalysisState,
   resolveCatalogHandoffIds,
   type MapAnalysisGroup,
   type MapAnalysisState,
@@ -66,6 +67,33 @@ describe('applyCatalogVariableIds', () => {
     expect(resolveCatalogHandoffIds(['nope', 'sih.embolia_trombose.internacoes'])).toEqual([
       'sih.embolia_trombose.internacoes',
     ]);
+  });
+});
+
+describe('normalizeMapAnalysisState', () => {
+  it('backfills sharedTime and periodScope from legacy session shapes', () => {
+    const legacy = {
+      groups: [
+        {
+          id: 'g1',
+          name: 'BA',
+          territoryIds: [sampleTerritory],
+          time: { mode: 'range' as const, start: '2015-01', end: '2019-12' },
+          variableIds: ['sih.embolia_trombose.internacoes'],
+        },
+      ],
+      activeGroupId: 'g1',
+      mapView: { level: 'uf' as const },
+      provenance: 'catalog' as const,
+    };
+    const next = normalizeMapAnalysisState(legacy);
+    expect(next.sharedTime).toEqual(legacy.groups[0]!.time);
+    expect(next.periodScope).toBe('shared');
+  });
+
+  it('isTimeValid tolerates undefined time', () => {
+    expect(isRangeTimeInvalid(undefined)).toBe(false);
+    expect(formatTimeSummary(undefined)).toBe('');
   });
 });
 
@@ -135,6 +163,119 @@ describe('mapAnalysisReducer', () => {
       variableId: 'obitos',
     });
     expect(state.groups[0]!.variableIds).not.toContain('obitos');
+  });
+
+  it('TOGGLE_DISEASE_ALL_GROUPS applies the same disease to every group', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'CREATE_GROUP',
+      territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
+    });
+
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_DISEASE_ALL_GROUPS',
+      diseaseId: 'embolia_trombose',
+    });
+
+    expect(state.groups).toHaveLength(2);
+    for (const group of state.groups) {
+      expect(group.variableIds).toContain('sih.embolia_trombose.internacoes');
+    }
+
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_DISEASE_ALL_GROUPS',
+      diseaseId: 'embolia_trombose',
+    });
+    for (const group of state.groups) {
+      expect(group.variableIds).not.toContain('sih.embolia_trombose.internacoes');
+    }
+  });
+
+  it('CREATE_GROUP seeds disease catalog ids from the active group', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_DISEASE_ALL_GROUPS',
+      diseaseId: 'embolia_trombose',
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'CREATE_GROUP',
+      territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
+    });
+
+    expect(state.groups[1]!.variableIds).toContain('sih.embolia_trombose.internacoes');
+  });
+
+  it('SET_SHARED_TIME syncs every group while scope is shared', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'CREATE_GROUP',
+      territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
+    });
+    const time = { mode: 'range' as const, start: '2015-01', end: '2019-12' };
+    state = mapAnalysisReducer(state, { type: 'SET_SHARED_TIME', time });
+
+    expect(state.sharedTime).toEqual(time);
+    expect(state.groups[0]!.time).toEqual(time);
+    expect(state.groups[1]!.time).toEqual(time);
+  });
+
+  it('PREPARE_PERIOD_COMPARE clones one group into pré × pós pandemia', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_DISEASE_ALL_GROUPS',
+      diseaseId: 'embolia_trombose',
+    });
+    state = mapAnalysisReducer(state, { type: 'PREPARE_PERIOD_COMPARE' });
+
+    expect(state.periodScope).toBe('per-group');
+    expect(state.groups).toHaveLength(2);
+    expect(state.groups[0]!.name).toMatch(/Pré-pandemia/i);
+    expect(state.groups[1]!.name).toMatch(/Pós-pandemia/i);
+    expect(state.groups[0]!.territoryIds).toEqual(state.groups[1]!.territoryIds);
+    expect(state.groups[0]!.time.start?.startsWith('20')).toBe(true);
+    expect(state.groups[1]!.time.start?.startsWith('20')).toBe(true);
+    const endA = parseInt(state.groups[0]!.time.end!.slice(0, 4), 10);
+    const startB = parseInt(state.groups[1]!.time.start!.slice(0, 4), 10);
+    expect(endA).toBeLessThan(startB);
+  });
+
+  it('per-group SET_GROUP_TIME does not overwrite the other group', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'CREATE_GROUP',
+      territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
+    });
+    state = mapAnalysisReducer(state, { type: 'SET_PERIOD_SCOPE', scope: 'per-group' });
+    const timeA = { mode: 'range' as const, start: '2015-01', end: '2019-12' };
+    const timeB = { mode: 'range' as const, start: '2020-01', end: '2023-12' };
+    state = mapAnalysisReducer(state, {
+      type: 'SET_GROUP_TIME',
+      groupId: state.groups[0]!.id,
+      time: timeA,
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'SET_GROUP_TIME',
+      groupId: state.groups[1]!.id,
+      time: timeB,
+    });
+
+    expect(state.groups[0]!.time).toEqual(timeA);
+    expect(state.groups[1]!.time).toEqual(timeB);
   });
 });
 

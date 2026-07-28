@@ -22,24 +22,22 @@ const peTerritory = {
 };
 
 describe('SelectionSummaryStrip', () => {
-  it('renders empty state copy verbatim from UI-SPEC', () => {
+  it('empty state has no instructional CTA headline', () => {
     const summary = deriveSelectionSummary(createInitialMapAnalysisState(), []);
-    render(<SelectionSummaryStrip summary={summary} />);
-
-    expect(screen.getByText('Nada selecionado ainda')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Clique nos estados no mapa para começar. Depois forme grupos e escolha período e agravos.',
-      ),
-    ).toBeInTheDocument();
+    expect(summary.mode).toBe('empty');
+    expect(summary.headline).toBe('');
+    expect(summary.hint).toBeUndefined();
   });
 
-  it('renders partial state when territories selected but no groups', () => {
-    const summary = deriveSelectionSummary(createInitialMapAnalysisState(), [baTerritory, peTerritory]);
-    render(<SelectionSummaryStrip summary={summary} />);
-
-    expect(screen.getByText('2 estado(s) selecionado(s)')).toBeInTheDocument();
-    expect(screen.getByText('Crie um grupo para definir período e doenças.')).toBeInTheDocument();
+  it('ungrouped selection has no “Crie um grupo…” CTA strip copy', () => {
+    const summary = deriveSelectionSummary(createInitialMapAnalysisState(), [
+      baTerritory,
+      peTerritory,
+    ]);
+    expect(summary.mode).toBe('partial');
+    expect(summary.headline).toBe('');
+    expect(summary.hint).toBeUndefined();
+    expect(summary.chips).toHaveLength(2);
   });
 
   it('renders complete sentence when all segments present', () => {
@@ -79,8 +77,20 @@ describe('SelectionSummaryStrip', () => {
     expect(summary.sentence).toContain('Internações por embolia e trombose arteriais');
   });
 
-  it('has aria-live polite on container', () => {
-    const summary = deriveSelectionSummary(createInitialMapAnalysisState(), []);
+  it('has aria-live polite on container when shown', () => {
+    const state: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      groups: [
+        {
+          id: 'g1',
+          name: 'Grupo 1',
+          territoryIds: [baTerritory],
+          time: { mode: 'range', start: '2018', end: '2022' },
+          variableIds: ['sih.embolia_trombose.internacoes'],
+        },
+      ],
+    };
+    const summary = deriveSelectionSummary(state, []);
     render(<SelectionSummaryStrip summary={summary} />);
 
     expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');

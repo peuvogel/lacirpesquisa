@@ -1,10 +1,6 @@
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import type { DidacticCard } from '@/features/tests/shared/DidacticCards';
 import type { AnnotationDefinition } from '@/shared/charts/useChartCustomizer';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-const fixturePath = join(__dirname, '../../../test/fixtures/tests/logistica-exemplo.txt');
 
 export const TABULAR_OPTIONS: TabularInputOptions = {
   aliases: {
@@ -52,7 +48,21 @@ export const didacticCards: DidacticCard[] = [
   },
 ];
 
-export const exampleText: string = readFileSync(fixturePath, 'utf8');
+/** Mirrors `src/test/fixtures/tests/logistica-exemplo.txt` (browser-safe; no node:fs). */
+export const exampleText = `desfecho_binario;dose
+1;1
+0;2
+1;1
+0;3
+0;2
+1;3
+1;2
+0;4
+1;1
+0;3
+0;2
+1;2
+`;
 
 export const CHART_PRESET_LABELS = {
   forest: 'Odds ratios (IC95%)',

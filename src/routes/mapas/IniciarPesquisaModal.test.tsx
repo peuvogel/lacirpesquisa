@@ -60,37 +60,24 @@ async function continueWithValidPaste(user: ReturnType<typeof userEvent.setup>) 
 }
 
 describe('resolveHandoffTestId', () => {
-  it('prefers the first non-demo suggestion when available', () => {
+  it('prefers the first available suggestion', () => {
     expect(
       resolveHandoffTestId([
         { testId: 'correlacao', rationale: 'corr' },
-        { testId: 'demo', rationale: 'demo' },
+        { testId: 't-student', rationale: 't' },
       ]),
     ).toBe('correlacao');
   });
 
   it('falls back to t-student when the primary suggestion is unavailable', () => {
-    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id !== 'anova-tukey');
+    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 't-student');
 
     expect(
       resolveHandoffTestId([
         { testId: 'anova-tukey', rationale: 'anova' },
-        { testId: 'demo', rationale: 'demo' },
+        { testId: 't-student', rationale: 't' },
       ]),
     ).toBe('t-student');
-
-    spy.mockRestore();
-  });
-
-  it('falls back to demo when t-student is unavailable', () => {
-    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 'demo');
-
-    expect(
-      resolveHandoffTestId([
-        { testId: 'anova-tukey', rationale: 'anova' },
-        { testId: 'demo', rationale: 'demo' },
-      ]),
-    ).toBe('demo');
 
     spy.mockRestore();
   });
@@ -110,11 +97,10 @@ describe('IniciarPesquisaModal', () => {
     renderModal();
 
     expect(screen.getByText(/Este fluxo legado será removido/i)).toBeInTheDocument();
-    expect(screen.getByText('Teste demo')).toBeInTheDocument();
+    expect(screen.queryByText('Teste demo')).not.toBeInTheDocument();
     expect(screen.getByText('t de Student')).toBeInTheDocument();
     expect(screen.getAllByText('Disponível').length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Demonstração').length).toBeGreaterThanOrEqual(1);
 
     const link = screen.getByRole('link', { name: /TABNET: SIH\/SUS/i });
     expect(link).toHaveAttribute('target', '_blank');
@@ -179,9 +165,9 @@ describe('IniciarPesquisaModal', () => {
     expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'anova-tukey' } });
   });
 
-  it('falls back to demo when t-student is unavailable', async () => {
+  it('falls back to t-student when anova is unavailable', async () => {
     const user = userEvent.setup();
-    vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 'demo');
+    vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 't-student');
 
     renderModal({
       selectedUFs: ['SP', 'BA', 'RJ'],
@@ -190,7 +176,7 @@ describe('IniciarPesquisaModal', () => {
 
     await continueWithValidPaste(user);
 
-    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'demo' } });
+    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
   });
 
   it('shows the same friendly Portuguese error as Estatística for junk paste', async () => {

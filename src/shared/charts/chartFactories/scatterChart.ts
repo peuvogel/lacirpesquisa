@@ -1,4 +1,5 @@
 import type { ChartData, ChartOptions } from 'chart.js';
+import { statsEngine } from '@/shared/stats/statsEngine';
 import { BASE_OPTS, COLORS, mergeChartOptions } from '../chartTheme';
 import { fmtNumber } from '@/shared/format';
 
@@ -18,12 +19,27 @@ export interface SpearmanDiagnostics {
   topRankRows?: Array<{ index: number }>;
 }
 
-/** Port of renderScatterChart — Pearson scatter with optional outliers. */
+export function buildSpearmanRankDiagnostics(
+  x: number[],
+  y: number[],
+  limit = 4,
+): SpearmanDiagnostics {
+  const rx = statsEngine.rank(x);
+  const ry = statsEngine.rank(y);
+  const gaps = rx
+    .map((rankX, index) => ({ index, gap: Math.abs(rankX - ry[index]) }))
+    .sort((a, b) => b.gap - a.gap);
+  return { topRankRows: gaps.slice(0, limit) };
+}
+
+/** Pearson (or raw) scatter with optional OLS fit and outlier markers. */
 export function buildScatterChartData(
   dataset: ScatterDataset,
-  pearson?: PearsonResult,
+  pearson?: PearsonResult | null,
   outlierFlags?: boolean[],
+  options?: { includeRegressionLine?: boolean },
 ): { data: ChartData; options: ChartOptions } {
+  const includeRegressionLine = options?.includeRegressionLine !== false && Boolean(pearson);
   const minX = Math.min(...dataset.x);
   const maxX = Math.max(...dataset.x);
   const xPad = (maxX - minX || 1) * 0.1;
@@ -40,14 +56,17 @@ export function buildScatterChartData(
 
   const datasets: ChartData['datasets'] = [];
 
-  if (pearson) {
+  if (includeRegressionLine && pearson) {
     const rxMin = minX - xPad;
     const rxMax = maxX + xPad;
     const ryMin = pearson.intercept + pearson.slope * rxMin;
     const ryMax = pearson.intercept + pearson.slope * rxMax;
     datasets.push({
       label: 'Linha de regressão',
-      data: [{ x: rxMin, y: ryMin }, { x: rxMax, y: ryMax }],
+      data: [
+        { x: rxMin, y: ryMin },
+        { x: rxMax, y: ryMax },
+      ],
       type: 'line' as const,
       borderColor: COLORS.primary,
       borderWidth: 2.5,
@@ -64,11 +83,11 @@ export function buildScatterChartData(
         ? `${dataset.headers[0]} × ${dataset.headers[1]}`
         : 'Pontos',
     data: normal.map((p) => ({ x: p.x, y: p.y, label: p.label })),
-    backgroundColor: COLORS.blueLight,
+    backgroundColor: COLORS.blueSolid,
     borderColor: COLORS.blue,
-    borderWidth: 2,
-    pointRadius: 6,
-    pointHoverRadius: 9,
+    borderWidth: 1,
+    pointRadius: 5,
+    pointHoverRadius: 7,
     order: 1,
   });
 
@@ -76,7 +95,7 @@ export function buildScatterChartData(
     datasets.push({
       label: 'Possíveis outliers',
       data: outliers.map((p) => ({ x: p.x, y: p.y, label: p.label })),
-      backgroundColor: COLORS.dangerLight,
+      backgroundColor: COLORS.danger,
       borderColor: COLORS.danger,
       borderWidth: 2,
       pointRadius: 7,
@@ -87,7 +106,8 @@ export function buildScatterChartData(
 
   const data: ChartData = { datasets };
 
-  const options = mergeChartOptions(BASE_OPTS, {
+  const chartOptions = mergeChartOptions(BASE_OPTS, {
+    layout: { padding: { top: 28, right: 20, bottom: 10, left: 12 } },
     plugins: {
       tooltip: {
         callbacks: {
@@ -108,6 +128,7 @@ export function buildScatterChartData(
           color: COLORS.label,
           font: { size: 12 },
         },
+        grace: '6%',
       },
       y: {
         title: {
@@ -116,42 +137,37 @@ export function buildScatterChartData(
           color: COLORS.label,
           font: { size: 12 },
         },
+        grace: '12%',
       },
     },
   });
 
-  return { data, options };
+  return { data, options: chartOptions };
 }
 
-/** Port of renderRankScatterChart — Spearman rank scatter. */
+/** Spearman rank scatter using tied average ranks (same as the coefficient). */
 export function buildRankScatterChartData(
   dataset: ScatterDataset,
   diagnostics?: SpearmanDiagnostics,
 ): { data: ChartData; options: ChartOptions } {
-  const highlighted = new Set(
-    (diagnostics?.topRankRows || []).slice(0, 4).map((r) => r.index),
-  );
+  const rx = statsEngine.rank(dataset.x);
+  const ry = statsEngine.rank(dataset.y);
+  const highlighted = new Set((diagnostics?.topRankRows || []).slice(0, 4).map((r) => r.index));
 
-  const sortedByX = [...dataset.x.map((v, i) => ({
-    x: v,
-    y: dataset.y[i],
-    rx: 0,
-    ry: 0,
+  const points = dataset.x.map((_, i) => ({
+    x: rx[i],
+    y: ry[i],
     label: dataset.labels?.[i] || `${i + 1}`,
     idx: i,
-  }))].sort((a, b) => a.x - b.x);
-  sortedByX.forEach((p, ri) => { p.rx = ri + 1; });
-  const sortedByY = [...sortedByX].sort((a, b) => a.y - b.y);
-  sortedByY.forEach((p, ri) => { p.ry = ri + 1; });
-  const points = sortedByX;
+  }));
 
   const normal = points.filter((p) => !highlighted.has(p.idx));
   const high = points.filter((p) => highlighted.has(p.idx));
 
   const datasets: ChartData['datasets'] = [
     {
-      label: 'Ranks (X → Y)',
-      data: normal.map((p) => ({ x: p.rx, y: p.ry, label: p.label })),
+      label: 'Postos (X → Y)',
+      data: normal.map((p) => ({ x: p.x, y: p.y, label: p.label })),
       backgroundColor: COLORS.tealLight,
       borderColor: COLORS.teal,
       borderWidth: 2,
@@ -163,7 +179,7 @@ export function buildRankScatterChartData(
   if (high.length) {
     datasets.push({
       label: 'Maior diferença de ranks',
-      data: high.map((p) => ({ x: p.rx, y: p.ry, label: p.label })),
+      data: high.map((p) => ({ x: p.x, y: p.y, label: p.label })),
       backgroundColor: COLORS.dangerLight,
       borderColor: COLORS.danger,
       borderWidth: 2,
@@ -173,15 +189,18 @@ export function buildRankScatterChartData(
   }
 
   const data: ChartData = { datasets };
+  const xTitle = `Posto de ${dataset.headers?.[0] || 'X'}`;
+  const yTitle = `Posto de ${dataset.headers?.[1] || 'Y'}`;
 
-  const options = mergeChartOptions(BASE_OPTS, {
+  const chartOptions = mergeChartOptions(BASE_OPTS, {
+    layout: { padding: { top: 28, right: 20, bottom: 10, left: 12 } },
     plugins: {
       tooltip: {
         callbacks: {
           title: () => '',
           label: (item) => {
             const r = item.raw as { label?: string; x: number; y: number };
-            return `${r.label || ''}  posto X: ${r.x}, posto Y: ${r.y}`;
+            return `${r.label || ''}  posto X: ${fmtNumber(r.x, 1)}, posto Y: ${fmtNumber(r.y, 1)}`;
           },
         },
       },
@@ -190,35 +209,37 @@ export function buildRankScatterChartData(
       x: {
         title: {
           display: true,
-          text: `Posto de ${dataset.headers?.[0] || 'X'}`,
+          text: xTitle,
           color: COLORS.label,
           font: { size: 12 },
         },
+        grace: '6%',
       },
       y: {
         title: {
           display: true,
-          text: `Posto de ${dataset.headers?.[1] || 'Y'}`,
+          text: yTitle,
           color: COLORS.label,
           font: { size: 12 },
         },
+        grace: '12%',
       },
     },
   });
 
-  return { data, options };
+  return { data, options: chartOptions };
 }
 
-/** Scatter with regression line overlay — customizer preset. */
+/** Scatter with forced regression line overlay. */
 export function buildScatterWithFitChartData(
   x: number[],
   y: number[],
-  regressionLine?: PearsonResult,
+  regressionLine?: PearsonResult | null,
   labels?: string[],
   headers?: [string, string],
+  outlierFlags?: boolean[],
 ): { data: ChartData; options: ChartOptions } {
-  return buildScatterChartData(
-    { x, y, labels, headers },
-    regressionLine,
-  );
+  return buildScatterChartData({ x, y, labels, headers }, regressionLine, outlierFlags, {
+    includeRegressionLine: true,
+  });
 }

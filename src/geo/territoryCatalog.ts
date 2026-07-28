@@ -1,4 +1,6 @@
 import { UF_LIST, type UfEntry } from '@/routes/mapas/ufCodes';
+import { HEALTH_MACRO_IDS, healthMacroMunicipalityIds } from './healthMacroIds';
+import { municipioNome } from './municipioNames';
 import type { TerritoryRef } from './types';
 
 /** IBGE grande região presets (D-07). */
@@ -20,22 +22,22 @@ export interface HealthMacroEntry {
   municipalityIds: string[];
 }
 
+const HEALTH_MACRO_NAMES: Record<string, string> = {
+  'ba-macro-1': 'Macro Bahia Norte',
+  'ba-macro-2': 'Macro Bahia Sul',
+};
+
 /**
  * Didactic sample health macros for BA — full crosswalk ships with health-macro.json
  * after build-time MS/SUS fetch. Wave 0 uses static refs for preset resolution tests.
  */
-export const HEALTH_MACRO_CATALOG: readonly HealthMacroEntry[] = [
-  {
-    id: 'ba-macro-1',
-    name: 'Macro Bahia Norte',
-    municipalityIds: ['2900108', '2900207', '2927408'],
-  },
-  {
-    id: 'ba-macro-2',
-    name: 'Macro Bahia Sul',
-    municipalityIds: ['2910800', '2921005'],
-  },
-];
+export const HEALTH_MACRO_CATALOG: readonly HealthMacroEntry[] = HEALTH_MACRO_IDS.map(
+  (entry) => ({
+    id: entry.id,
+    name: HEALTH_MACRO_NAMES[entry.id] ?? entry.id,
+    municipalityIds: [...entry.municipalityIds],
+  }),
+);
 
 /** Preset pills for health macro-regions (MAP-08). */
 export const HEALTH_MACRO_PRESETS = HEALTH_MACRO_CATALOG.map((entry) => ({
@@ -72,8 +74,26 @@ export function resolveHealthMacroTerritories(macroId: string): TerritoryRef[] {
   return macro.municipalityIds.map((ibgeCode) => ({
     level: 'municipio' as const,
     ibgeCode,
-    name: ibgeCode,
+    name: municipioNome(ibgeCode),
+    sigla: ufSiglaForMunicipio(ibgeCode),
   }));
+}
+
+/** Municipality IBGE codes belonging to a health macro (empty if unknown). */
+export function municipalityIdsForHealthMacro(macroId: string): string[] {
+  return healthMacroMunicipalityIds(macroId);
+}
+
+/** Didactic sample macros exist for BA (29) only — hide the tab elsewhere. */
+export function healthMacrosAvailableForUf(ufIbge: string): boolean {
+  return HEALTH_MACRO_IDS.some((entry) =>
+    entry.municipalityIds.some((id) => id.startsWith(ufIbge)),
+  );
+}
+
+function ufSiglaForMunicipio(ibgeCode: string): string | undefined {
+  const prefix = ibgeCode.slice(0, 2);
+  return UF_LIST.find((uf) => uf.ibgeCode === prefix)?.sigla;
 }
 
 /** Lookup UF entry by sigla or IBGE code. */

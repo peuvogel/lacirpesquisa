@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
 
 export interface MapGeoPathProps {
@@ -6,40 +8,58 @@ export interface MapGeoPathProps {
   name: string;
   isHovered: boolean;
   isSelected: boolean;
+  isPreview?: boolean;
+  isDragging?: boolean;
+  /** Hide per-UF stroke (outer contour comes from parent SVG filter). */
+  hideStroke?: boolean;
   fill: string;
+  /** Stroke / focus accent for the pending group palette. */
+  accentStroke?: string;
   glowClass?: string;
   groupBadge?: string;
   onHover: (territoryId: string | null) => void;
   onToggle: (territoryId: string) => void;
   onDrill?: (territoryId: string) => void;
+  pathRef?: (node: SVGPathElement | null) => void;
+  dragListeners?: DraggableSyntheticListeners;
+  dragAttributes?: DraggableAttributes;
 }
 
-/**
- * Shared SVG path primitive for UF and drill-down maps (UI-SPEC MapGeoPath states).
- * Preserves BrazilMockMap a11y contract: role=button, aria-pressed, keyboard toggle.
- */
 export function MapGeoPath({
   d,
   territoryId,
   name,
   isHovered,
   isSelected,
+  isPreview = false,
+  isDragging = false,
+  hideStroke = false,
   fill,
+  accentStroke = '#209978',
   glowClass,
   groupBadge,
   onHover,
   onToggle,
   onDrill,
+  pathRef,
+  dragListeners,
+  dragAttributes,
 }: MapGeoPathProps) {
+  const canShapeDrag = Boolean(dragListeners);
+
   return (
     <path
+      ref={pathRef}
       data-territory-id={territoryId}
       data-uf={territoryId.length === 2 ? territoryId : undefined}
       d={d}
+      {...(dragListeners ?? {})}
+      {...(dragAttributes ?? {})}
       role="button"
       tabIndex={0}
       aria-label={name}
       aria-pressed={isSelected}
+      aria-grabbed={canShapeDrag ? isDragging : undefined}
       onMouseEnter={() => onHover(territoryId)}
       onMouseLeave={() => onHover(null)}
       onFocus={() => onHover(territoryId)}
@@ -54,14 +74,22 @@ export function MapGeoPath({
           onToggle(territoryId);
         }
       }}
-      style={{ vectorEffect: 'non-scaling-stroke', fill }}
+      style={
+        {
+          vectorEffect: 'non-scaling-stroke',
+          fill,
+          ['--lacir-path-accent']: accentStroke,
+        } as CSSProperties
+      }
       className={cn(
-        'cursor-pointer stroke-border-strong outline-none transition-colors',
-        '[stroke-width:1px]',
+        'outline-none transition-[stroke,filter,opacity,fill] duration-150 ease-out',
+        hideStroke ? '[stroke-width:0px] stroke-transparent' : '[stroke-width:1px] stroke-border-strong',
+        canShapeDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
         isHovered && !isSelected && 'opacity-90',
-        isSelected && 'stroke-accent [stroke-width:2px] lacir-map-glow',
+        isDragging && 'opacity-35',
+        isPreview && !isSelected && 'lacir-map-glow--preview',
         glowClass,
-        'focus-visible:stroke-accent focus-visible:[stroke-width:2px]',
+        'focus-visible:[stroke-width:2px] focus-visible:stroke-[var(--lacir-path-accent)]',
       )}
     >
       {groupBadge ? <title>{groupBadge}</title> : null}

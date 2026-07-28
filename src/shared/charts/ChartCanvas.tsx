@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import {
   BarController,
   BarElement,
@@ -11,16 +11,18 @@ import {
   LineElement,
   PointElement,
   ScatterController,
+  Title,
   Tooltip,
   type ChartData,
+  type ChartEvent,
   type ChartOptions,
+  type LegendItem,
 } from 'chart.js';
 import { cn } from '@/lib/utils';
 import { ensureChartAnnotationsRegistered } from './chartAnnotationSetup';
-import { BASE_OPTS, mergeChartOptions } from './chartTheme';
+import type { ChartClickTarget } from './chartOverrides';
+import { BASE_OPTS, mergeChartOptions, whiteBackgroundPlugin } from './chartTheme';
 
-// Registered once at module scope. Chart.js is bundled from the npm
-// dependency (never a CDN specifier) so this resolves at build time.
 Chart.register(
   BarController,
   LineController,
@@ -31,8 +33,10 @@ Chart.register(
   LineElement,
   BarElement,
   Legend,
+  Title,
   Tooltip,
   Filler,
+  whiteBackgroundPlugin,
 );
 ensureChartAnnotationsRegistered();
 
@@ -45,16 +49,87 @@ export interface ChartCanvasProps {
   ariaLabel: string;
   className?: string;
   onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
+  onChartInteract?: (target: ChartClickTarget) => void;
+}
+
+function attachInteractHandlers(
+  merged: ChartOptions,
+  interactRef: MutableRefObject<((target: ChartClickTarget) => void) | undefined>,
+): ChartOptions {
+  const legendOnClick = (_event: ChartEvent, legendItem: LegendItem) => {
+    const datasetIndex = legendItem.datasetIndex ?? 0;
+    interactRef.current?.({ kind: 'dataset', datasetIndex });
+  };
+
+  return {
+    ...merged,
+    devicePixelRatio: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2),
+    onClick: (event, elements, chart) => {
+      if (elements.length > 0) {
+        const el = elements[0];
+        interactRef.current?.({
+          kind: 'element',
+          datasetIndex: el.datasetIndex,
+          index: el.index,
+        });
+        return;
+      }
+
+      const x = event.x;
+      const y = event.y;
+      if (typeof x === 'number' && typeof y === 'number') {
+        const area = chart.chartArea;
+        const labelCount = chart.data.labels?.length ?? 0;
+        const xScale = chart.scales.x;
+
+        if (y < area.top) {
+          interactRef.current?.({ kind: 'title' });
+          return;
+        }
+
+        if (
+          xScale &&
+          labelCount > 0 &&
+          y > area.bottom &&
+          x >= area.left &&
+          x <= area.right
+        ) {
+          const raw = xScale.getValueForPixel(x);
+          const index = typeof raw === 'number' ? Math.round(raw) : Number.NaN;
+          if (Number.isFinite(index) && index >= 0 && index < labelCount) {
+            interactRef.current?.({ kind: 'category', index });
+            return;
+          }
+        }
+      }
+
+      interactRef.current?.({ kind: 'chart' });
+    },
+    plugins: {
+      ...(merged.plugins ?? {}),
+      legend: {
+        ...(merged.plugins?.legend ?? {}),
+        onClick: legendOnClick,
+      },
+    },
+  };
 }
 
 /**
- * Owns a single Chart.js instance for its lifetime: React's mount/unmount
- * replaces the legacy global Map-based registry (chart-manager.js:91-105).
- * The instance is destroyed before being recreated whenever type/data/options
- * change, and destroyed again on unmount — no canvas context is ever leaked.
+ * Compact on-screen chart. Updates in place without re-animating bars on each edit.
  */
-export function ChartCanvas({ type, data, options, ariaLabel, className, onCanvasReady }: ChartCanvasProps) {
+export function ChartCanvas({
+  type,
+  data,
+  options,
+  ariaLabel,
+  className,
+  onCanvasReady,
+  onChartInteract,
+}: ChartCanvasProps) {
   const chartRef = useRef<Chart | null>(null);
+  const interactRef = useRef(onChartInteract);
+  interactRef.current = onChartInteract;
   const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
 
   const setCanvasRef = useCallback(
@@ -65,25 +140,51 @@ export function ChartCanvas({ type, data, options, ariaLabel, className, onCanva
     [onCanvasReady],
   );
 
+  // Create / recreate only when canvas or chart type changes.
   useEffect(() => {
     if (!canvasEl) return;
 
     chartRef.current?.destroy();
+    const merged = attachInteractHandlers(mergeChartOptions(BASE_OPTS, options), interactRef);
+
     chartRef.current = new Chart(canvasEl, {
       type,
       data,
-      options: mergeChartOptions(BASE_OPTS, options),
+      options: merged,
     });
 
     return () => {
       chartRef.current?.destroy();
       chartRef.current = null;
     };
-  }, [canvasEl, type, data, options]);
+    // Intentionally omit data/options — updated in the effect below without destroy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount/type only
+  }, [canvasEl, type]);
+
+  // Live updates (title, colors, annotations) without replay animation.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !canvasEl) return;
+
+    const merged = attachInteractHandlers(mergeChartOptions(BASE_OPTS, options), interactRef);
+    chart.config.options = merged;
+    chart.data = data;
+    chart.update('none');
+  }, [canvasEl, data, options]);
 
   return (
-    <div className={cn('relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-[#121917]', className)}>
-      <canvas ref={setCanvasRef} role="img" aria-label={ariaLabel} className="h-full w-full" />
+    <div
+      className={cn(
+        'relative mx-auto h-[220px] w-full overflow-hidden rounded-xl bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.08)] sm:h-[250px]',
+        className,
+      )}
+    >
+      <canvas
+        ref={setCanvasRef}
+        role="img"
+        aria-label={ariaLabel}
+        className="h-full w-full cursor-pointer bg-white"
+      />
     </div>
   );
 }

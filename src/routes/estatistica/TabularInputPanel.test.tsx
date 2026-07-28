@@ -67,7 +67,7 @@ describe('TabularInputPanel', () => {
     expect(screen.getByText(/Use o modelo/)).toBeInTheDocument();
   });
 
-  it('renders a pasted script-like cell as inert literal text — no element is created, nothing executes (T-01-XSS)', async () => {
+  it('renders a pasted script-like cell as inert literal text  -  no element is created, nothing executes (T-01-XSS)', async () => {
     render(<Harness />);
     const textarea = screen.getByLabelText(TEXTAREA_LABEL);
 
@@ -76,7 +76,7 @@ describe('TabularInputPanel', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('<img src=x onerror=alert(1)>')).toBeInTheDocument();
     });
     expect(document.querySelector('img')).toBeNull();
     expect(document.querySelectorAll('script')).toHaveLength(0);

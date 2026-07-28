@@ -13,10 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { fetchHandoffMetricLookup } from '@/features/catalog/fetchHandoffMetrics';
+import { getCatalogLabel } from '@/features/catalog/catalogAnalysisData';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useSession } from '@/shared/session/SessionProvider';
 import { assembleHandoffTable, type PasteHandoffData } from './assembleHandoffTable';
-import { getCatalogLabel } from '@/features/catalog/catalogAnalysisData';
 import type { MapAnalysisGroup, MapProvenance, SelectionSummary } from './mapAnalysisState';
 import {
   guardHandoffTestId,
@@ -53,6 +54,30 @@ function collectVariableLabelsForLinks(groups: MapAnalysisGroup[]): string[] {
   return labels;
 }
 
+function resolveGroupYear(group: MapAnalysisGroup): number | null {
+  const t = group.time;
+  switch (t.mode) {
+    case 'point': {
+      if (!t.point?.trim()) return null;
+      const y = parseInt(t.point, 10);
+      return Number.isNaN(y) ? null : y;
+    }
+    case 'range': {
+      if (!t.end?.trim()) return null;
+      const y = parseInt(t.end, 10);
+      return Number.isNaN(y) ? null : y;
+    }
+    case 'compare': {
+      const matches = t.periodB?.match(/\d{4}/g);
+      if (!matches?.length) return null;
+      const y = parseInt(matches[matches.length - 1]!, 10);
+      return Number.isNaN(y) ? null : y;
+    }
+    default:
+      return null;
+  }
+}
+
 export function ReviewAnalysisDialog({
   open,
   onOpenChange,
@@ -73,7 +98,7 @@ export function ReviewAnalysisDialog({
   );
 
   const primarySuggestion = useMemo(
-    () => suggestions.find((s) => s.testId !== 'demo') ?? suggestions[0],
+    () => suggestions[0],
     [suggestions],
   );
 
@@ -87,9 +112,26 @@ export function ReviewAnalysisDialog({
   async function handleConfirm() {
     setIsConfirming(true);
     try {
+      const metricLookup =
+        provenance === 'paste'
+          ? null
+          : await fetchHandoffMetricLookup(
+              groups.map((group) => ({
+                variableIds: group.variableIds,
+                territories: group.territoryIds.map((t) => ({
+                  level: t.level,
+                  ibgeCode: t.ibgeCode,
+                  sigla: t.sigla,
+                })),
+                year: resolveGroupYear(group),
+              })),
+            );
+
       const { headers, rows, sourceLabel } = assembleHandoffTable(groups, {
         pasteData,
         provenance,
+        metricLookup,
+        testId: effectiveTestId,
       });
 
       if (headers.length < 2 || rows.length === 0) return;

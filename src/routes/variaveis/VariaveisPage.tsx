@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   filterCatalog,
   type CatalogFilters,
@@ -66,7 +67,13 @@ export function VariaveisPage() {
     };
   }, []);
 
-  const variables = catalog?.variables ?? [];
+  const variables = useMemo(
+    () =>
+      (catalog?.variables ?? []).filter(
+        (v) => v.sourceSystem !== 'LACIR' && v.domain !== 'meta',
+      ),
+    [catalog],
+  );
   const packs = catalog?.packs ?? {};
 
   const sourceOptions = useMemo(
@@ -151,24 +158,37 @@ export function VariaveisPage() {
     }
   }
 
+  const reduceMotion = useReducedMotion();
+
   return (
-    <div className="mx-auto max-w-[1520px] px-6 py-8">
-      <h1 className="font-sans text-display font-bold text-text">Variáveis</h1>
+    <motion.div
+      className="lacir-page-enter mx-auto max-w-[1520px] px-6 py-8"
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+    >
+      <h1 className="font-sans text-display font-bold tracking-tight text-text">Variáveis</h1>
       <p className="mt-2 max-w-2xl font-sans text-body text-text-muted">
-        Catálogo curado com proveniência obrigatória. Busque, filtre e selecione variáveis
-        para a aula — sem abrir TABNET durante a prática.
+        Catálogo curado com proveniência obrigatória. Busque, filtre e carregue na Estatística ou
+        no Mapa — tudo no site, sem TABNET na aula.
       </p>
 
-      <div className="mt-6">
+      <div className="mt-6 rounded-2xl border border-white/10 bg-surface/50 p-4 backdrop-blur-md">
         <VariableFilters
           filters={filters}
           sourceOptions={sourceOptions}
           domainOptions={domainOptions}
           onChange={setFilters}
         />
+        <p className="mt-2 font-sans text-xs text-text-muted">
+          {loading ? 'Carregando…' : `${filtered.length} de ${variables.length} variáveis`}
+          {selectedLoadableIds.size > 0
+            ? ` · ${selectedLoadableIds.size} selecionada(s) para carregar`
+            : null}
+        </p>
       </div>
 
-      <div className="mt-8 flex flex-col gap-8 lg:flex-row">
+      <div className="mt-8 flex flex-col gap-6 lg:flex-row">
         <div className="w-full lg:w-[42%]">
           <VariableList
             entries={filtered}
@@ -182,7 +202,7 @@ export function VariaveisPage() {
         </div>
 
         <aside
-          className="flex w-full min-h-[320px] flex-col rounded-xl border border-border bg-surface p-6 lg:w-[58%]"
+          className="flex min-h-[320px] w-full flex-col rounded-2xl border border-white/10 bg-surface/70 p-6 shadow-lg backdrop-blur-xl lg:w-[58%]"
           aria-label="Detalhe da variável"
         >
           <VariableDetailPanel
@@ -200,6 +220,6 @@ export function VariaveisPage() {
           />
         </aside>
       </div>
-    </div>
+    </motion.div>
   );
 }

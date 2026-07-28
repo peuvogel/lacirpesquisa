@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HEALTH_MACRO_CATALOG,
+  healthMacrosAvailableForUf,
   REGION_PRESETS,
   resolveHealthMacroTerritories,
   resolvePresetTerritories,
@@ -39,5 +40,10 @@ describe('territoryCatalog', () => {
 
   it('returns empty for unknown health macro', () => {
     expect(resolveHealthMacroTerritories('unknown')).toEqual([]);
+  });
+
+  it('health macros sample is available for BA only', () => {
+    expect(healthMacrosAvailableForUf('29')).toBe(true);
+    expect(healthMacrosAvailableForUf('35')).toBe(false);
   });
 });

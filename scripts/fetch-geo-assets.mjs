@@ -82,9 +82,40 @@ async function fetchNameTable(ufIbge) {
   const sigla = UF_SIGLA_BY_IBGE[ufIbge];
   const url = `${IBGE_LOCALIDADES}/estados/${ufIbge}/municipios`;
   const data = await fetchJson(url);
-  const table = data.map((m) => ({ id: String(m.id), nome: m.nome }));
+  const table = data.map((m) => {
+    const meso = m.microrregiao?.mesorregiao;
+    return {
+      id: String(m.id),
+      nome: m.nome,
+      mesoId: meso?.id != null ? String(meso.id) : undefined,
+      mesoNome: meso?.nome,
+    };
+  });
   await fs.writeFile(path.join(NAME_DIR, `muni-${sigla}.json`), JSON.stringify(table));
   console.log(`  muni-${sigla}.json (${table.length} entries)`);
+  return table;
+}
+
+/** Build mesoCode → municipality IBGE ids (+ labels) from enriched name tables. */
+async function writeMesoMembership(allTables) {
+  /** @type {Record<string, { label: string, ufSigla: string, municipalityIds: string[] }>} */
+  const byMeso = {};
+  for (const { sigla, table } of allTables) {
+    for (const row of table) {
+      if (!row.mesoId) continue;
+      if (!byMeso[row.mesoId]) {
+        byMeso[row.mesoId] = {
+          label: row.mesoNome || `Mesorregião ${row.mesoId}`,
+          ufSigla: sigla,
+          municipalityIds: [],
+        };
+      }
+      byMeso[row.mesoId].municipalityIds.push(row.id);
+    }
+  }
+  const out = path.join(ROOT, 'src/geo/mesoMembership.json');
+  await fs.writeFile(out, `${JSON.stringify(byMeso, null, 2)}\n`);
+  console.log(`  mesoMembership.json (${Object.keys(byMeso).length} mesorregiões)`);
 }
 
 function parseArgs(argv) {
@@ -110,10 +141,31 @@ async function main() {
   console.log('Fetching geo assets…');
 
   const ufList = opts.allUfs ? ALL_UF_IBGE : opts.ufs;
+  const nameTables = [];
 
   for (const ufIbge of ufList) {
     await fetchMuniTopo(ufIbge);
-    if (opts.names) await fetchNameTable(ufIbge);
+    if (opts.names) {
+      const table = await fetchNameTable(ufIbge);
+      nameTables.push({ sigla: UF_SIGLA_BY_IBGE[ufIbge], table });
+    }
+  }
+
+  if (opts.names) {
+    // When only refreshing names for a subset, still merge with existing tables for membership.
+    if (!opts.allUfs && nameTables.length < ALL_UF_IBGE.length) {
+      for (const ufIbge of ALL_UF_IBGE) {
+        const sigla = UF_SIGLA_BY_IBGE[ufIbge];
+        if (nameTables.some((t) => t.sigla === sigla)) continue;
+        try {
+          const raw = await fs.readFile(path.join(NAME_DIR, `muni-${sigla}.json`), 'utf8');
+          nameTables.push({ sigla, table: JSON.parse(raw) });
+        } catch {
+          /* missing table — skip */
+        }
+      }
+    }
+    await writeMesoMembership(nameTables);
   }
 
   if (opts.meso) await fetchMeso();

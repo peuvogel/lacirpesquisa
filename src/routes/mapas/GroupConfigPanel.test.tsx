@@ -11,92 +11,68 @@ const sampleTerritory = {
 };
 
 describe('GroupConfigPanel', () => {
-  it('renders temporalidade empty state for new group', () => {
-    const state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+  it('shows variables when open and period summary in subtitle', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'CREATE_GROUP',
       territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_DISEASE_ALL_GROUPS',
+      diseaseId: 'embolia_trombose',
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'SET_SHARED_TIME',
+      time: { mode: 'range', start: '2015-01', end: '2020-12' },
     });
     const group = state.groups[0]!;
     const dispatch = vi.fn();
 
-    render(<GroupConfigPanel group={group} dispatch={dispatch} />);
+    render(
+      <GroupConfigPanel
+        group={group}
+        dispatch={dispatch}
+        periodScope={state.periodScope}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
 
-    expect(screen.getByRole('heading', { name: 'Quando analisar?' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Ano único' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Intervalo de anos' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Comparar dois períodos' })).toBeInTheDocument();
+    expect(screen.getByText(/Variáveis deste grupo/i)).toBeInTheDocument();
+    expect(screen.getByText(/compartilhado/i)).toBeInTheDocument();
   });
 
-  it('shows variable list with provenance badge after time is set', () => {
+  it('enables measure chips after disease and period are ready', () => {
     let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'CREATE_GROUP',
       territories: [sampleTerritory],
     });
     const groupId = state.groups[0]!.id;
     state = mapAnalysisReducer(state, {
-      type: 'SET_GROUP_TIME',
-      groupId,
-      time: { mode: 'point', point: '2020' },
-    });
-    const group = state.groups[0]!;
-    const dispatch = vi.fn();
-
-    render(<GroupConfigPanel group={group} dispatch={dispatch} />);
-
-    expect(screen.getByRole('heading', { name: 'O que comparar?' })).toBeInTheDocument();
-    expect(screen.getAllByText(/Catálogo LACIR/).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('variable-provenance-footnote')).toBeInTheDocument();
-  });
-
-  it('dispatches TOGGLE_GROUP_VARIABLE when checkbox is clicked', () => {
-    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
-      type: 'CREATE_GROUP',
-      territories: [sampleTerritory],
-    });
-    const groupId = state.groups[0]!.id;
-    state = mapAnalysisReducer(state, {
-      type: 'SET_GROUP_TIME',
-      groupId,
-      time: { mode: 'point', point: '2020' },
-    });
-    const group = state.groups[0]!;
-    const dispatch = vi.fn();
-
-    render(<GroupConfigPanel group={group} dispatch={dispatch} />);
-
-    const checkbox = screen.getByRole('checkbox', {
-      name: /Internações por embolia e trombose arteriais/i,
-    });
-    fireEvent.click(checkbox);
-
-    expect(dispatch).toHaveBeenCalledWith({
       type: 'TOGGLE_GROUP_VARIABLE',
       groupId,
       variableId: 'sih.embolia_trombose.internacoes',
     });
-  });
-
-  it('lists catalog loadables for BA+RS without partial-availability gaps', () => {
-    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
-      type: 'CREATE_GROUP',
-      territories: [
-        sampleTerritory,
-        { level: 'uf', ibgeCode: '43', sigla: 'RS', name: 'Rio Grande do Sul' },
-      ],
-    });
-    const groupId = state.groups[0]!.id;
     state = mapAnalysisReducer(state, {
       type: 'SET_GROUP_TIME',
       groupId,
-      time: { mode: 'range', start: '2018', end: '2021' },
+      time: { mode: 'range', start: '2015-01', end: '2020-12' },
     });
     const group = state.groups[0]!;
+    const dispatch = vi.fn();
 
-    render(<GroupConfigPanel group={group} dispatch={vi.fn()} />);
+    render(
+      <GroupConfigPanel group={group} dispatch={dispatch} open onOpenChange={vi.fn()} />,
+    );
 
-    expect(
-      screen.getByRole('checkbox', { name: /Internações por embolia e trombose arteriais/i }),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Não existe em/)).not.toBeInTheDocument();
+    const obitos = screen.getByRole('button', { name: /^Óbitos$/i });
+    expect(obitos).not.toBeDisabled();
+    fireEvent.click(obitos);
+
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'TOGGLE_GROUP_VARIABLE',
+        groupId: group.id,
+      }),
+    );
   });
 });

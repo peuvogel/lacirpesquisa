@@ -1,21 +1,35 @@
-import { useCallback, useRef, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { ChevronDownIcon } from 'lucide-react';
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from 'react';
 import { ChartCanvas } from './ChartCanvas';
 import { ChartCustomizer } from './ChartCustomizer';
-import { useChartExport } from './useChartExport';
+import { ChartEditPanel } from './ChartEditPanel';
+import { DownloadPngButton } from './DownloadPngButton';
+import {
+  ChartOverlayIconButton,
+  PencilIcon,
+} from './ChartOverlayIconButton';
+import {
+  applyChartOverrides,
+  type ChartStyleOverrides,
+} from './chartOverrides';
+import { exportCanvasPng } from './useChartExport';
 import {
   useChartCustomizer,
   type AnnotationDefinition,
   type ChartPreset,
 } from './useChartCustomizer';
+import { getChartTypeLabel } from './chartTypeCatalog';
+import { usePresenceList } from './usePresenceList';
 import { InterpretationText } from '@/routes/estatistica/InterpretationText';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
+import { cn } from '@/lib/utils';
 
 export interface ResultsPanelWithCustomizerProps<T> {
   title: string;
@@ -29,9 +43,18 @@ export interface ResultsPanelWithCustomizerProps<T> {
   actions?: ReactNode;
 }
 
+function isInsideEditChrome(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      '[data-lacir-chart-edit-panel], [data-slot="select-content"], [data-slot="select-item"], [data-slot="select-trigger"]',
+    ),
+  );
+}
+
 /**
- * ResultsPanel + ChartCustomizer grid layout for migrated tests (D-04).
- * Demo stays on plain ResultsPanel (D-06).
+ * Results panel with compact on-screen charts (high-res on PNG download).
+ * Gallery: 2 per row; odd last chart spans full width.
  */
 export function ResultsPanelWithCustomizer<T>({
   title,
@@ -44,8 +67,11 @@ export function ResultsPanelWithCustomizer<T>({
   exportFilename = 'grafico-lacirstat.png',
   actions,
 }: ResultsPanelWithCustomizerProps<T>) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const exportChart = useChartExport(canvasRef);
+  const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
+  const [overridesById, setOverridesById] = useState<Record<string, ChartStyleOverrides>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingIdRef = useRef<string | null>(null);
+  editingIdRef.current = editingId;
 
   const customizer = useChartCustomizer({
     presets,
@@ -54,35 +80,89 @@ export function ResultsPanelWithCustomizer<T>({
     annotations,
   });
 
-  const handleCanvasReady = useCallback((canvas: HTMLCanvasElement | null) => {
-    canvasRef.current = canvas;
+  const presenceCharts = usePresenceList(customizer.visibleCharts);
+  const activeCount = presenceCharts.filter((item) => item.phase !== 'exit').length;
+  const editingItem =
+    editingId == null
+      ? undefined
+      : presenceCharts.find((item) => item.id === editingId) ??
+        customizer.visibleCharts.find((item) => item.id === editingId);
+
+  const setChartTypePreset = customizer.setChartTypePreset;
+  const beginEditing = useCallback(
+    (id: string) => {
+      setChartTypePreset(id);
+      setEditingId(id);
+    },
+    [setChartTypePreset],
+  );
+
+  const handleCanvasReady = useCallback((id: string, canvas: HTMLCanvasElement | null) => {
+    if (canvas) canvasRefs.current.set(id, canvas);
+    else canvasRefs.current.delete(id);
   }, []);
 
-  const { chart } = customizer;
-  const presetOptions = presets.map(({ id, label }) => ({ id, label }));
+  // Click outside edit menu closes it (edits already persisted live).
+  // Click on another chart switches editing target.
+  useEffect(() => {
+    if (!editingId) return;
 
-  const chartBlock = (
-    <ChartCanvas
-      type={chart.type}
-      data={chart.data}
-      options={chart.options}
-      ariaLabel={chart.ariaLabel}
-      onCanvasReady={handleCanvasReady}
-    />
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (isInsideEditChrome(target)) return;
+
+      const chartCard =
+        target instanceof Element ? target.closest<HTMLElement>('[data-chart-id]') : null;
+      if (chartCard) {
+        const nextId = chartCard.dataset.chartId;
+        if (nextId && nextId !== editingIdRef.current) {
+          beginEditing(nextId);
+        }
+        return;
+      }
+
+      setEditingId(null);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [editingId, beginEditing]);
+
+  const presetOptions = useMemo(
+    () =>
+      presets.map((preset) => ({
+        id: preset.id,
+        label: getChartTypeLabel(preset.visualType) || preset.label,
+        visualType: preset.visualType,
+      })),
+    [presets],
   );
 
-  const customizerBlock = (
-    <ChartCustomizer
-      presets={presetOptions}
-      state={customizer.state}
-      annotations={annotations}
-      onPresetChange={customizer.setChartTypePreset}
-      onAxisLabelChange={customizer.setAxisLabel}
-      onAnnotationToggle={customizer.setAnnotationToggle}
-      onThemeChange={customizer.setThemeVariant}
-      onReset={customizer.resetToDefault}
-    />
-  );
+  const slugFilename = (label: string, id: string) => {
+    const base = exportFilename.replace(/\.png$/i, '');
+    const slug = label
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    return `${base}-${slug || id}.png`;
+  };
+
+  const onFocusParallax = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const el = event.currentTarget;
+    if (!el.classList.contains('lacir-chart-focus--editing')) return;
+    const rect = el.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width - 0.5;
+    const py = (event.clientY - rect.top) / rect.height - 0.5;
+    el.style.setProperty('--parallax-x', `${px * 5.5}deg`);
+    el.style.setProperty('--parallax-y', `${-py * 5.5}deg`);
+  };
+
+  const resetParallax = (event: ReactMouseEvent<HTMLDivElement>) => {
+    event.currentTarget.style.setProperty('--parallax-x', '0deg');
+    event.currentTarget.style.setProperty('--parallax-y', '0deg');
+  };
 
   return (
     <div className="space-y-6">
@@ -90,7 +170,10 @@ export function ResultsPanelWithCustomizer<T>({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-lg border border-border bg-[var(--color-surface)] px-4 py-3">
+          <div
+            key={metric.label}
+            className="rounded-lg border border-border bg-[var(--color-surface)] px-4 py-3"
+          >
             <p className="text-sm font-bold text-muted-foreground">{metric.label}</p>
             <p className="mt-1 text-[20px] font-bold leading-tight text-foreground">{metric.value}</p>
             {metric.hint ? <p className="mt-1 text-xs text-muted-foreground">{metric.hint}</p> : null}
@@ -98,32 +181,150 @@ export function ResultsPanelWithCustomizer<T>({
         ))}
       </div>
 
-      {/* Desktop: side-by-side 62/38 grid */}
-      <div className="hidden lg:grid lg:grid-cols-[62%_38%] lg:gap-4">
-        {chartBlock}
-        {customizerBlock}
-      </div>
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div>
+          {customizer.visibleCharts.length === 0 && presenceCharts.length === 0 ? (
+            <p className="rounded-lg border border-border bg-[var(--color-surface)] px-4 py-6 text-sm text-muted-foreground">
+              Selecione ao menos um tipo de gráfico na lista ao lado.
+            </p>
+          ) : null}
 
-      {/* Mobile/tablet: chart + collapsible customizer */}
-      <div className="lg:hidden">
-        {chartBlock}
-        <Collapsible defaultOpen className="mt-4">
-          <CollapsibleTrigger className="flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-[var(--color-surface)] px-4 py-2 text-sm font-bold text-foreground">
-            Personalizar gráfico
-            <ChevronDownIcon className="size-4 transition-transform [[data-state=open]_&]:rotate-180" />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">{customizerBlock}</CollapsibleContent>
-        </Collapsible>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {presenceCharts.map((item) => {
+              const activeIndex = presenceCharts
+                .filter((row) => row.phase !== 'exit')
+                .findIndex((row) => row.id === item.id);
+              const isLastOdd =
+                item.phase !== 'exit' && activeCount % 2 === 1 && activeIndex === activeCount - 1;
+              const isEditing = editingId === item.id;
+              const isDimmed = editingId != null && !isEditing;
+              const displayChart = applyChartOverrides(item.chart, overridesById[item.id]);
+
+              return (
+                <article
+                  key={item.id}
+                  data-phase={item.phase}
+                  data-chart-id={item.id}
+                  className={cn(
+                    'lacir-chart-card min-w-0',
+                    isLastOdd && 'md:col-span-2',
+                    isEditing && 'lacir-chart-card--editing',
+                    isDimmed && 'lacir-chart-card--dimmed',
+                  )}
+                >
+                  <div
+                    className={cn('lacir-chart-focus relative', isEditing && 'lacir-chart-focus--editing')}
+                    onMouseMove={onFocusParallax}
+                    onMouseLeave={resetParallax}
+                  >
+                    <ChartCanvas
+                      type={displayChart.type}
+                      data={displayChart.data}
+                      options={displayChart.options}
+                      ariaLabel={displayChart.ariaLabel}
+                      onCanvasReady={(canvas) => handleCanvasReady(item.id, canvas)}
+                      onChartInteract={() => beginEditing(item.id)}
+                    />
+                    <div className="pointer-events-none absolute top-1.5 right-1.5 z-10 flex items-center gap-1">
+                      <div className="pointer-events-auto">
+                        <ChartOverlayIconButton
+                          label={`Editar ${item.label}`}
+                          onClick={() => {
+                            if (editingId === item.id) {
+                              setEditingId(null);
+                              return;
+                            }
+                            beginEditing(item.id);
+                          }}
+                        >
+                          <PencilIcon />
+                        </ChartOverlayIconButton>
+                      </div>
+                      <div className="pointer-events-auto">
+                        <DownloadPngButton
+                          label={`Baixar ${item.label}`}
+                          onClick={() => {
+                            const canvas = canvasRefs.current.get(item.id);
+                            if (canvas) exportCanvasPng(canvas, slugFilename(item.label, item.id));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="lg:sticky lg:top-4">
+          <ChartCustomizer
+            presets={presetOptions}
+            state={customizer.state}
+            onPresetVisibleChange={customizer.setPresetVisible}
+          />
+        </div>
       </div>
 
       <InterpretationText paragraphs={interpretation} />
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" variant="secondary" onClick={() => exportChart(exportFilename)}>
-          Baixar gráfico (PNG)
-        </Button>
+        <DownloadPngButton
+          wide
+          label="Baixar todos"
+          onClick={() => {
+            for (const item of customizer.visibleCharts) {
+              const canvas = canvasRefs.current.get(item.id);
+              if (canvas) exportCanvasPng(canvas, slugFilename(item.label, item.id));
+            }
+          }}
+        />
         {actions}
       </div>
+
+      {editingItem ? (
+        <ChartEditPanel
+          open={editingId != null}
+          onOpenChange={(open) => {
+            if (!open) setEditingId(null);
+          }}
+          chartLabel={editingItem.label}
+          chart={editingItem.chart}
+          overrides={overridesById[editingItem.id] ?? {}}
+          onOverridesChange={(next) =>
+            setOverridesById((prev) => ({ ...prev, [editingItem.id]: next }))
+          }
+          annotations={(annotations ?? []).filter((def) =>
+            editingItem.preset.annotationKeys?.includes(def.id),
+          )}
+          annotationToggles={overridesById[editingItem.id]?.annotationToggles ?? {}}
+          onAnnotationToggle={(id, value) => {
+            setOverridesById((prev) => {
+              const current = prev[editingItem.id] ?? {};
+              return {
+                ...prev,
+                [editingItem.id]: {
+                  ...current,
+                  annotationToggles: {
+                    ...(current.annotationToggles ?? {}),
+                    [id]: value,
+                  },
+                },
+              };
+            });
+          }}
+          themeVariant={customizer.state.themeVariant}
+          onThemeChange={customizer.setThemeVariant}
+          onReset={() => {
+            customizer.resetToDefault();
+            setOverridesById((prev) => {
+              const next = { ...prev };
+              delete next[editingItem.id];
+              return next;
+            });
+          }}
+        />
+      ) : null}
     </div>
   );
 }

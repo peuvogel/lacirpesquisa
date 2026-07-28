@@ -43,7 +43,6 @@ export function ChoroplethLegend({ values, activeVariableId, variableLabel }: Ch
           </li>
         ))}
       </ul>
-      <p className="mt-3 font-sans text-xs text-text-muted">Catálogo LACIR</p>
     </aside>
   );
 }

@@ -1,10 +1,6 @@
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import type { DidacticCard } from '@/features/tests/shared/DidacticCards';
 import type { AnnotationDefinition } from '@/shared/charts/useChartCustomizer';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-const fixturePath = join(__dirname, '../../../test/fixtures/tests/binomial-negativa-exemplo.txt');
 
 export const TABULAR_OPTIONS: TabularInputOptions = {
   aliases: {
@@ -43,7 +39,21 @@ export const didacticCards: DidacticCard[] = [
   },
 ];
 
-export const exampleText: string = readFileSync(fixturePath, 'utf8');
+/** Mirrors `src/test/fixtures/tests/binomial-negativa-exemplo.txt` (browser-safe; no node:fs). */
+export const exampleText = `contagem;exposicao
+8;1,0
+12;1,0
+15;1,2
+9;1,2
+18;1,5
+22;1,5
+14;2,0
+25;2,0
+30;2,5
+28;2,5
+35;3,0
+40;3,0
+`;
 
 export const CHART_PRESET_LABELS = {
   forest: 'Coeficientes (IC95%)',

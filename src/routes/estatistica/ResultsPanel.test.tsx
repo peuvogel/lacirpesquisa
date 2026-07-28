@@ -6,7 +6,7 @@ import { ResultsPanel } from './ResultsPanel';
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
   const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
-    return { destroy: destroySpy };
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
   });
   const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
     register: ReturnType<typeof vi.fn>;
@@ -26,6 +26,7 @@ vi.mock('chart.js', () => ({
   LineElement: {},
   BarElement: {},
   Legend: {},
+  Title: {},
   Tooltip: {},
   Filler: {},
 }));
@@ -56,8 +57,8 @@ describe('ResultsPanel', () => {
       <ResultsPanel
         title="Resumo descritivo"
         metrics={[
-          { label: 'Grupo A — média', value: '6,042' },
-          { label: 'Grupo B — média', value: '4,342', hint: 'n = 12' },
+          { label: 'Grupo A: média', value: '6,042' },
+          { label: 'Grupo B: média', value: '4,342', hint: 'n = 12' },
         ]}
         chart={sampleChart}
         interpretation={['Primeiro parágrafo.', 'Segundo parágrafo.']}
@@ -66,9 +67,9 @@ describe('ResultsPanel', () => {
     );
 
     expect(screen.getByText('Resumo descritivo')).toBeInTheDocument();
-    expect(screen.getByText('Grupo A — média')).toBeInTheDocument();
+    expect(screen.getByText('Grupo A: média')).toBeInTheDocument();
     expect(screen.getByText('6,042')).toBeInTheDocument();
-    expect(screen.getByText('Grupo B — média')).toBeInTheDocument();
+    expect(screen.getByText('Grupo B: média')).toBeInTheDocument();
     expect(screen.getByText('4,342')).toBeInTheDocument();
     expect(screen.getByText('n = 12')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Médias por grupo' })).toBeInTheDocument();

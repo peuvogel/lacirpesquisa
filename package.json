@@ -12,8 +12,14 @@
     "test:run": "npm run catalog:validate && vitest run",
     "typecheck": "tsc --noEmit",
     "catalog:build": "node scripts/catalog/build.mjs",
-    "catalog:validate": "node scripts/catalog/validate.mjs"
+    "catalog:validate": "node scripts/catalog/validate.mjs",
+    "catalog:sync-column-map": "node scripts/catalog/syncColumnMap.mjs",
+    "catalog:rebuild": "node scripts/catalog/rebuildAfterScrape.mjs",
+    "scrape:sih-multi": "python3 \"trabalhos datasus/scripts/coleta_sih_multi_disease.py\" --skip-done",
+    "scrape:overnight": "python3 \"trabalhos datasus/scripts/launch_overnight.py\""
   },
+
+
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
@@ -35,6 +41,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/geist": "^5.3.0",
+    "@internationalized/date": "^3.12.2",
+    "@supabase/supabase-js": "^2.110.8",
     "@tailwindcss/vite": "^4.3.3",
     "chart.js": "^4.5.1",
     "chartjs-plugin-annotation": "^3.1.0",
@@ -45,8 +53,10 @@
     "jstat": "^1.9.6",
     "lucide-react": "^1.26.0",
     "ml-matrix": "^6.14.0",
+    "motion": "^12.42.2",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
+    "react-aria-components": "^1.19.0",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.1",
     "shadcn": "^4.14.1",

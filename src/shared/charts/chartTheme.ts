@@ -1,89 +1,176 @@
 /**
- * Chart.js theme, ported from assets/js/chart-manager.js:36-89.
- * Only two values are retinted for the new UI contract:
- *   - COLORS.primary:    #22c55e -> #10b981 (clinical teal, D-16)
- *   - COLORS.background: #0f1117 -> #0a0f0d (UI-SPEC dominant surface)
- * Everything else (grid/tick/label rgba values, animation timing, layout
- * flags) is unchanged so charts keep the v1.0 feel.
+ * Chart.js publication theme — white canvas for papers/congress abstracts.
+ * Datawrapper-inspired: light grid, slate text, solid accent series, clean legend.
  */
-import type { ChartOptions, ChartType } from 'chart.js';
+import type { ChartOptions, ChartType, Plugin } from 'chart.js';
 
 export const COLORS = {
-  primary: '#10b981',
-  primaryLight: 'rgba(34,197,94,0.18)',
-  blue: '#3b82f6',
-  blueLight: 'rgba(59,130,246,0.15)',
-  teal: '#14b8a6',
-  tealLight: 'rgba(20,184,166,0.15)',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  dangerLight: 'rgba(239,68,68,0.18)',
-  grid: 'rgba(255,255,255,0.07)',
-  tick: 'rgba(255,255,255,0.45)',
-  label: 'rgba(255,255,255,0.65)',
-  background: '#0a0f0d',
+  primary: '#0F766E',
+  primarySolid: '#0D9488',
+  primaryLight: 'rgba(13, 148, 136, 0.18)',
+  blue: '#2563EB',
+  blueSolid: '#3B82F6',
+  blueLight: 'rgba(37, 99, 235, 0.16)',
+  teal: '#0D9488',
+  tealLight: 'rgba(13, 148, 136, 0.14)',
+  warning: '#D97706',
+  danger: '#DC2626',
+  dangerLight: 'rgba(220, 38, 38, 0.14)',
+  grid: 'rgba(15, 23, 42, 0.08)',
+  tick: '#64748B',
+  label: '#334155',
+  text: '#1E293B',
+  muted: '#94A3B8',
+  background: '#FFFFFF',
+  border: '#E2E8F0',
+};
+
+/** Ensures PNG export and on-screen canvas are opaque white (not transparent). */
+export const whiteBackgroundPlugin: Plugin = {
+  id: 'lacirWhiteBackground',
+  beforeDraw(chart) {
+    const { ctx, width, height } = chart;
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = COLORS.background;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  },
 };
 
 export const BASE_OPTS: ChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  animation: { duration: 600, easing: 'easeOutQuart' },
+  animation: { duration: 450, easing: 'easeOutQuart' },
+  layout: {
+    padding: { top: 18, right: 20, bottom: 8, left: 10 },
+  },
   plugins: {
     legend: {
+      position: 'top',
+      align: 'start',
       labels: {
-        color: COLORS.label,
-        font: { family: "'Inter', sans-serif", size: 12 },
-        boxWidth: 14,
-        padding: 16,
+        color: COLORS.text,
+        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12, weight: 500 },
+        boxWidth: 10,
+        boxHeight: 10,
+        usePointStyle: true,
+        pointStyle: 'rectRounded',
+        padding: 14,
       },
     },
     tooltip: {
-      backgroundColor: 'rgba(15,17,23,0.95)',
-      borderColor: 'rgba(34,197,94,0.35)',
+      backgroundColor: '#FFFFFF',
+      borderColor: COLORS.border,
       borderWidth: 1,
-      titleColor: COLORS.primary,
-      bodyColor: '#e5e7eb',
-      padding: 12,
-      cornerRadius: 8,
-      titleFont: { family: "'Inter', sans-serif", weight: 600, size: 12 },
-      bodyFont: { family: "'Inter', sans-serif", size: 12 },
+      titleColor: COLORS.text,
+      bodyColor: COLORS.label,
+      padding: 10,
+      cornerRadius: 6,
+      displayColors: true,
+      boxPadding: 4,
+      titleFont: { family: "'Sora', 'Helvetica Neue', sans-serif", weight: 600, size: 12 },
+      bodyFont: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12 },
     },
   },
   scales: {
     x: {
-      ticks: { color: COLORS.tick, font: { size: 11 } },
-      grid: { color: COLORS.grid },
-      border: { color: 'rgba(255,255,255,0.1)' },
+      ticks: {
+        color: COLORS.tick,
+        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 11 },
+        padding: 6,
+      },
+      grid: { color: COLORS.grid, drawTicks: false },
+      border: { color: COLORS.border, display: true },
+      title: {
+        color: COLORS.label,
+        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12, weight: 500 },
+      },
     },
     y: {
-      ticks: { color: COLORS.tick, font: { size: 11 } },
-      grid: { color: COLORS.grid },
-      border: { color: 'rgba(255,255,255,0.1)' },
+      ticks: {
+        color: COLORS.tick,
+        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 11 },
+        padding: 6,
+      },
+      grid: { color: COLORS.grid, drawTicks: false },
+      border: { display: false },
+      title: {
+        color: COLORS.label,
+        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12, weight: 500 },
+      },
     },
   },
 };
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
 /**
- * Merges a caller-supplied options override over BASE_OPTS. A plain spread
- * would clobber `plugins`/`scales` wholesale when a caller only wants to
- * override one nested field (e.g. a single tooltip callback), so this merges
- * one level into those two nested groups while shallow-spreading the rest.
+ * Merges chart options without clobbering nested layout/plugins/scales.
+ * Annotation entries are additive; callers that need a full replace should
+ * assign `plugins.annotation.annotations` directly (see filterAnnotationsByToggles).
  */
 export function mergeChartOptions<T extends ChartType = ChartType>(
   base: ChartOptions<T>,
   override?: ChartOptions<T>,
 ): ChartOptions<T> {
   if (!override) return base;
-  // ChartOptions<T> isn't indexable for a generic T, so merge through an
-  // untyped record and cast back once at the boundary.
   const baseRecord = base as Record<string, unknown>;
   const overrideRecord = override as Record<string, unknown>;
+
+  const baseLayout = asRecord(baseRecord.layout);
+  const overrideLayout = asRecord(overrideRecord.layout);
+  const basePlugins = asRecord(baseRecord.plugins);
+  const overridePlugins = asRecord(overrideRecord.plugins);
+  const baseAnn = asRecord(basePlugins.annotation);
+  const overrideAnn = asRecord(overridePlugins.annotation);
+  const baseScales = asRecord(baseRecord.scales);
+  const overrideScales = asRecord(overrideRecord.scales);
+
+  const scaleKeys = new Set([...Object.keys(baseScales), ...Object.keys(overrideScales)]);
+  const scales: Record<string, unknown> = {};
+  for (const key of scaleKeys) {
+    const left = asRecord(baseScales[key]);
+    const right = asRecord(overrideScales[key]);
+    scales[key] = {
+      ...left,
+      ...right,
+      title: { ...asRecord(left.title), ...asRecord(right.title) },
+      ticks: { ...asRecord(left.ticks), ...asRecord(right.ticks) },
+      grid: { ...asRecord(left.grid), ...asRecord(right.grid) },
+    };
+  }
 
   const merged: Record<string, unknown> = {
     ...baseRecord,
     ...overrideRecord,
-    plugins: { ...(baseRecord.plugins as object), ...(overrideRecord.plugins as object) },
-    scales: { ...(baseRecord.scales as object), ...(overrideRecord.scales as object) },
+    layout: {
+      ...baseLayout,
+      ...overrideLayout,
+      padding: {
+        ...asRecord(baseLayout.padding),
+        ...asRecord(overrideLayout.padding),
+      },
+    },
+    plugins: {
+      ...basePlugins,
+      ...overridePlugins,
+      ...(basePlugins.annotation != null || overridePlugins.annotation != null
+        ? {
+            annotation: {
+              ...baseAnn,
+              ...overrideAnn,
+              annotations: {
+                ...asRecord(baseAnn.annotations),
+                ...asRecord(overrideAnn.annotations),
+              },
+            },
+          }
+        : {}),
+    },
+    scales,
   };
 
   return merged as ChartOptions<T>;

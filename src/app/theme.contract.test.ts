@@ -43,8 +43,8 @@ describe('LACIR theme token contract', () => {
     expect(themeCss.includes(`${token}:`)).toBe(true);
   });
 
-  it('declares the locked teal accent value #10b981', () => {
-    expect(themeCss.toLowerCase()).toContain('#10b981');
+  it('declares the locked green accent value #209978', () => {
+    expect(themeCss.toLowerCase()).toContain('#209978');
   });
 
   it.each(FORBIDDEN_HEXES)('never declares the forbidden legacy value %s (comments stripped)', (hex) => {

@@ -7,7 +7,7 @@ import { TesteDemo } from './TesteDemo';
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
   const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
-    return { destroy: destroySpy };
+    return { destroy: destroySpy, update: vi.fn(), config: { options: {} }, data: {} };
   });
   const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
     register: ReturnType<typeof vi.fn>;
@@ -27,6 +27,7 @@ vi.mock('chart.js', () => ({
   LineElement: {},
   BarElement: {},
   Legend: {},
+  Title: {},
   Tooltip: {},
   Filler: {},
 }));
@@ -85,8 +86,8 @@ describe('TesteDemo', () => {
       expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
     });
 
-    expect(screen.getByText('Grupo A — média')).toBeInTheDocument();
-    expect(screen.getByText('Grupo B — média')).toBeInTheDocument();
+    expect(screen.getByText('Grupo A: média')).toBeInTheDocument();
+    expect(screen.getByText('Grupo B: média')).toBeInTheDocument();
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar gráfico (PNG)' })).toBeInTheDocument();
 

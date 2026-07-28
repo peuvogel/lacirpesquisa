@@ -24,26 +24,97 @@ function renderMapasPage(
 }
 
 describe('MapasPage group workspace', () => {
-  it('renders GroupBar and SelectionSummaryStrip above map', () => {
+  it('renders group strip, region checkboxes and breadcrumb (no empty CTA strip)', () => {
     renderMapasPage();
 
-    expect(screen.getByRole('region', { name: 'Barra de grupos' })).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: 'Resumo da seleção' })).toBeInTheDocument();
-    expect(screen.getByText('Nada selecionado ainda')).toBeInTheDocument();
+    expect(screen.getByLabelText('Grupos de análise')).toBeInTheDocument();
+    expect(screen.getByLabelText('Presets territoriais')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Mesorregiões' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Navegação do mapa')).toBeInTheDocument();
+    expect(screen.queryByText('Nada selecionado ainda')).not.toBeInTheDocument();
+    expect(screen.queryByText(/estado\(s\) selecionado\(s\)/)).not.toBeInTheDocument();
   });
 
-  it('creating a group updates the summary strip', () => {
+  it('applies the 5 regiões group preset from the strip menu', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('button', { name: /Presets/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /5 regiões/i }));
+    expect(screen.getByRole('tab', { name: /Norte/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Sudeste/i })).toBeInTheDocument();
+  });
+
+  it('checking Norte selects regional UFs without instructional strip CTA', () => {
     renderMapasPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Norte' }));
-    expect(screen.getByText(/7 território\(s\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Norte' }));
+    expect(screen.queryByText(/7 estado\(s\) selecionado\(s\)/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Crie um grupo/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Amazonas' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('unchecking Norte clears the regional UF selection', () => {
+    renderMapasPage();
+    const norte = screen.getByRole('checkbox', { name: 'Norte' });
+    fireEvent.click(norte);
+    expect(norte).toBeChecked();
+    fireEvent.click(norte);
+    expect(norte).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Amazonas' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('unchecking a mesorregião clears municipality selection', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('tab', { name: 'Mesorregiões' }));
+    const meso = screen.getByRole('checkbox', { name: /Metropolitana de Salvador/i });
+    fireEvent.click(meso);
+    expect(meso).toBeChecked();
+    fireEvent.click(meso);
+    expect(meso).not.toBeChecked();
+  });
+
+  it('clears a partially selected region on the next checkbox click', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Norte' }));
+    // Remove one UF → region becomes partial/indeterminate.
+    fireEvent.click(screen.getByRole('button', { name: 'Amazonas' }));
+    const norte = screen.getByRole('checkbox', { name: 'Norte' });
+    expect(norte).not.toBeChecked();
+    fireEvent.click(norte);
+    expect(norte).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Acre' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('switches preset carousel to mesorregiões layer', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('tab', { name: 'Mesorregiões' }));
+    expect(screen.getByRole('checkbox', { name: /Metropolitana de Salvador/i })).toBeInTheDocument();
+  });
+
+  it('shows scoped mesorregião panel when zoomed into BA', async () => {
+    renderMapasPage();
+    fireEvent.dblClick(screen.getByRole('button', { name: 'Bahia' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Mesorregiões de BA')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('checkbox', { name: /Metropolitana de Salvador/i })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Norte' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /Metropolitana de São Paulo/i })).not.toBeInTheDocument();
   });
 });
 
 describe('MapasPage catalogVariableIds handoff (D-15)', () => {
   it('applies navigate state ids to the active group and checkbox list', async () => {
     const internacoesId = 'sih.embolia_trombose.internacoes';
-    const label = getCatalogLabel(internacoesId);
 
     renderMapasPage([
       {
@@ -55,13 +126,18 @@ describe('MapasPage catalogVariableIds handoff (D-15)', () => {
     ]);
 
     await waitFor(() => {
-      expect(screen.getByRole('checkbox', { name: label })).toBeChecked();
+      expect(screen.getByLabelText('Configuração de Catálogo')).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText('Configuração de Catálogo')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: label })).toBeInTheDocument();
+    // Measure × disease: checkbox is the disease name, not the old flat label.
+    await waitFor(() => {
+      expect(
+        screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }),
+      ).toBeChecked();
+    });
 
-    // Choropleth path still resolves pack metrics for the handed-off id.
+    expect(getCatalogLabel(internacoesId)).toMatch(/Internações/i);
+
     const metrics = getMetricByUf(internacoesId);
     expect(Object.keys(metrics).length).toBeGreaterThan(0);
   });

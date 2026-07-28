@@ -1,12 +1,13 @@
+import { healthMacrosAvailableForUf } from '@/geo/territoryCatalog';
 import type { GeoLevel, MapViewState } from '@/geo/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getUfName } from './ufCodes';
 
 const DRILL_LEVELS: { level: Exclude<GeoLevel, 'uf'>; label: string }[] = [
-  { level: 'municipio', label: 'Município' },
-  { level: 'meso', label: 'Mesorregião' },
-  { level: 'health-macro', label: 'Macrorregião de saúde' },
+  { level: 'municipio', label: 'Municípios' },
+  { level: 'meso', label: 'Mesorregiões' },
+  { level: 'health-macro', label: 'Macrorregiões de saúde' },
 ];
 
 export interface MapBreadcrumbProps {
@@ -16,12 +17,19 @@ export interface MapBreadcrumbProps {
 }
 
 /**
- * Brasil → UF → geography level navigation (MAP-03 / UI-SPEC Key Screen 7).
+ * Brasil → UF → nível geográfico (MAP-03).
  */
 export function MapBreadcrumb({ mapView, onNavigate, className }: MapBreadcrumbProps) {
   const isBrazil = mapView.level === 'uf';
   const ufSigla = mapView.parentCode;
   const ufIbge = mapView.ufIbge;
+  const drillTabs = DRILL_LEVELS.filter(
+    (item) =>
+      item.level !== 'health-macro' ||
+      (ufIbge != null && healthMacrosAvailableForUf(ufIbge)),
+  );
+  const levelLabel =
+    drillTabs.find((item) => item.level === mapView.level)?.label ?? mapView.level;
 
   function goBrazil() {
     onNavigate({ level: 'uf' });
@@ -33,34 +41,52 @@ export function MapBreadcrumb({ mapView, onNavigate, className }: MapBreadcrumbP
   }
 
   return (
-    <nav aria-label="Navegação do mapa" className={cn('flex flex-wrap items-center gap-2', className)}>
+    <nav
+      aria-label="Navegação do mapa"
+      className={cn(
+        'flex flex-wrap items-center gap-2 rounded-xl border border-border bg-elevated/60 px-3 py-2',
+        className,
+      )}
+    >
       {isBrazil ? (
-        <span className="font-sans text-sm font-bold text-text">Brasil</span>
+        <ol className="flex flex-wrap items-center gap-1.5 font-sans text-sm">
+          <li className="font-bold text-text">Brasil</li>
+          <li className="text-text-muted" aria-hidden>
+            /
+          </li>
+          <li className="text-text-muted">Unidades federativas</li>
+        </ol>
       ) : (
-        <>
-          <button
-            type="button"
-            onClick={goBrazil}
-            className="font-sans text-sm text-accent underline-offset-2 hover:underline"
-          >
-            Brasil
-          </button>
-          <span className="text-text-muted" aria-hidden="true">
-            →
-          </span>
-          <span className="font-sans text-sm font-bold text-text">
+        <ol className="flex flex-wrap items-center gap-1.5 font-sans text-sm">
+          <li>
+            <button
+              type="button"
+              onClick={goBrazil}
+              className="font-medium text-accent underline-offset-2 hover:underline"
+            >
+              Brasil
+            </button>
+          </li>
+          <li className="text-text-muted" aria-hidden>
+            /
+          </li>
+          <li className="font-bold text-text">
             {getUfName(ufSigla ?? '')} ({ufSigla})
-          </span>
-        </>
+          </li>
+          <li className="text-text-muted" aria-hidden>
+            /
+          </li>
+          <li className="font-medium text-text">{levelLabel}</li>
+        </ol>
       )}
 
       {!isBrazil ? (
         <div
-          className="ml-2 flex flex-wrap gap-1 rounded-lg border border-border p-1"
+          className="ml-auto flex flex-wrap gap-1 rounded-lg border border-border bg-surface p-1"
           role="tablist"
           aria-label="Nível geográfico"
         >
-          {DRILL_LEVELS.map(({ level, label }) => (
+          {drillTabs.map(({ level, label }) => (
             <Button
               key={level}
               type="button"

@@ -65,6 +65,7 @@ export function ResultsPanel({
         options={chart.options}
         ariaLabel={chart.ariaLabel}
         onCanvasReady={handleCanvasReady}
+        className="lacir-chart-card"
       />
 
       <InterpretationText paragraphs={interpretation} />

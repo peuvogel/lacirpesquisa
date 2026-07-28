@@ -21,14 +21,16 @@ export function buildResidualBarChartData(
         data: residuals,
         backgroundColor: colors,
         borderColor: colors,
-        borderWidth: 1,
-        borderRadius: 4,
+        borderWidth: 0,
+        borderRadius: 2,
+        maxBarThickness: 36,
       },
     ],
   };
 
   const options = mergeChartOptions(BASE_OPTS, {
     plugins: {
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (item) => `Resíduo: ${fmtNumber(item.parsed.y, 4)}`,
@@ -40,7 +42,7 @@ export function buildResidualBarChartData(
             type: 'line',
             yMin: 0,
             yMax: 0,
-            borderColor: 'rgba(255,255,255,0.35)',
+            borderColor: 'rgba(100, 116, 139, 0.45)',
             borderWidth: 1,
             borderDash: [4, 4],
           },

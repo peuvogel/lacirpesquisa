@@ -1,10 +1,6 @@
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import type { DidacticCard } from '@/features/tests/shared/DidacticCards';
 import type { AnnotationDefinition } from '@/shared/charts/useChartCustomizer';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-const fixturePath = join(__dirname, '../../../test/fixtures/tests/qui-quadrado-exemplo.txt');
 
 export const TABULAR_OPTIONS: TabularInputOptions = {
   aliases: {
@@ -59,7 +55,24 @@ export const didacticCards: DidacticCard[] = [
   },
 ];
 
-export const exampleText: string = readFileSync(fixturePath, 'utf8');
+/** Mirrors `src/test/fixtures/tests/qui-quadrado-exemplo.txt` (browser-safe; no node:fs). */
+export const exampleText = `tratamento;desfecho
+A;sim
+A;sim
+A;sim
+A;nao
+A;nao
+B;sim
+B;sim
+B;nao
+B;nao
+B;nao
+C;sim
+C;sim
+C;sim
+C;sim
+C;nao
+`;
 
 export const CHART_PRESET_LABELS = {
   contingency: 'Observado vs esperado',

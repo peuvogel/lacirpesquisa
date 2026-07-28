@@ -1,11 +1,13 @@
 /**
- * pt-BR number formatting helpers, ported verbatim from assets/js/app.js:85-107.
+ * pt-BR number formatting helpers, ported from assets/js/app.js:85-107.
  * Every result screen in the project shares these so numbers read identically
  * to the v1.0 vanilla-JS app.
  */
 
+const MISSING = 'n/d';
+
 export function fmtNumber(value: unknown, digits = 3): string {
-  if (!Number.isFinite(Number(value))) return '—';
+  if (!Number.isFinite(Number(value))) return MISSING;
   return Number(value).toLocaleString('pt-BR', {
     maximumFractionDigits: digits,
     minimumFractionDigits: digits,
@@ -13,7 +15,7 @@ export function fmtNumber(value: unknown, digits = 3): string {
 }
 
 export function fmtP(value: number): string {
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return MISSING;
   if (value < 0.001) return '< 0,001';
   return value.toLocaleString('pt-BR', {
     maximumFractionDigits: 4,
@@ -22,7 +24,7 @@ export function fmtP(value: number): string {
 }
 
 export function fmtSigned(value: number, digits = 3): string {
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return MISSING;
   const sign = value > 0 ? '+' : '';
   return sign + Number(value).toLocaleString('pt-BR', {
     maximumFractionDigits: digits,

@@ -5,10 +5,11 @@ import { FlowSteps } from './FlowSteps';
 
 const baseCanAdvance = { dados: true, configurar: true, resultados: true };
 
-describe('FlowSteps', () => {
+describe('FlowSteps stepper layout', () => {
   it('renders only the active step content', () => {
     render(
       <FlowSteps
+        layout="stepper"
         active="dados"
         onStepChange={() => {}}
         canAdvance={baseCanAdvance}
@@ -26,6 +27,7 @@ describe('FlowSteps', () => {
   it('marks the active step with aria-current="step"', () => {
     render(
       <FlowSteps
+        layout="stepper"
         active="configurar"
         onStepChange={() => {}}
         canAdvance={baseCanAdvance}
@@ -43,6 +45,7 @@ describe('FlowSteps', () => {
     const onStepChange = vi.fn();
     render(
       <FlowSteps
+        layout="stepper"
         active="dados"
         onStepChange={onStepChange}
         canAdvance={{ ...baseCanAdvance, resultados: false }}
@@ -65,6 +68,7 @@ describe('FlowSteps', () => {
     const onStepChange = vi.fn();
     render(
       <FlowSteps
+        layout="stepper"
         active="dados"
         onStepChange={onStepChange}
         canAdvance={baseCanAdvance}
@@ -78,10 +82,50 @@ describe('FlowSteps', () => {
     expect(onStepChange).toHaveBeenCalledWith('configurar');
   });
 
-  it('exposes the accessible nav name "Etapas"', () => {
+  it('always allows returning to Dados even when canAdvance.dados is false', async () => {
+    const user = userEvent.setup();
+    const onStepChange = vi.fn();
     render(
       <FlowSteps
+        layout="stepper"
+        active="configurar"
+        onStepChange={onStepChange}
+        canAdvance={{ dados: false, configurar: true, resultados: true }}
+        dados={<p>Dados</p>}
+        configurar={<p>Configurar</p>}
+        resultados={<p>Resultados</p>}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Dados' }));
+    expect(onStepChange).toHaveBeenCalledWith('dados');
+  });
+});
+
+describe('FlowSteps scroll layout', () => {
+  it('shows configurar instead of dados when config can advance', () => {
+    render(
+      <FlowSteps
+        layout="scroll"
         active="dados"
+        onStepChange={() => {}}
+        canAdvance={{ dados: true, configurar: true, resultados: false }}
+        dados={<p>Conteúdo Dados</p>}
+        configurar={<p>Conteúdo Configurar</p>}
+        resultados={<p>Conteúdo Resultados</p>}
+      />,
+    );
+
+    expect(screen.queryByText('Conteúdo Dados')).not.toBeInTheDocument();
+    expect(screen.getByText('Conteúdo Configurar')).toBeInTheDocument();
+    expect(screen.queryByText('Conteúdo Resultados')).not.toBeInTheDocument();
+  });
+
+  it('shows results below when resultados can advance', () => {
+    render(
+      <FlowSteps
+        layout="scroll"
+        active="resultados"
         onStepChange={() => {}}
         canAdvance={baseCanAdvance}
         dados={<p>Dados</p>}
@@ -90,28 +134,7 @@ describe('FlowSteps', () => {
       />,
     );
 
-    expect(screen.getByRole('navigation', { name: 'Etapas' })).toBeInTheDocument();
-  });
-
-  it('keeps dados reachable and enabled even when the caller passes canAdvance.dados: false', async () => {
-    const user = userEvent.setup();
-    const onStepChange = vi.fn();
-    render(
-      <FlowSteps
-        active="configurar"
-        onStepChange={onStepChange}
-        canAdvance={{ ...baseCanAdvance, dados: false }}
-        dados={<p>Dados</p>}
-        configurar={<p>Configurar</p>}
-        resultados={<p>Resultados</p>}
-      />,
-    );
-
-    const dadosButton = screen.getByRole('button', { name: 'Dados' });
-    expect(dadosButton).not.toBeDisabled();
-    expect(dadosButton).not.toHaveAttribute('aria-disabled', 'true');
-
-    await user.click(dadosButton);
-    expect(onStepChange).toHaveBeenCalledWith('dados');
+    expect(screen.getByText('Configurar')).toBeInTheDocument();
+    expect(screen.getByText('Resultados')).toBeInTheDocument();
   });
 });

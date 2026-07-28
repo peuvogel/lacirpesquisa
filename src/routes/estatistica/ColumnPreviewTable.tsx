@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   deriveRecognizedColumnsFromRoles,
@@ -32,6 +32,8 @@ export interface ColumnPreviewTableProps {
     recognizedColumns: Record<string, number>;
   }) => void;
   maxPreviewRows?: number;
+  /** Allow editing cells / headers by clicking (single-scroll Estatística). */
+  editable?: boolean;
 }
 
 function normalizeNumericToken(raw: string): string {
@@ -49,12 +51,6 @@ function looksTemporal(raw: string): boolean {
   return /^\d{4}([/-]\d{1,2}){0,2}$/.test(value) || /^\d{1,2}\/\d{4}$/.test(value);
 }
 
-/**
- * Auto-detects a column's role from its actual pasted/uploaded values — not
- * from domain aliases, since this component is generic across every future
- * test module (D-10). A column with mostly numeric cells is "numérica", a
- * column with year/date-shaped cells is "tempo", otherwise "categórica".
- */
 function detectColumnRole(columnIndex: number, bodyRows: string[][]): ColumnRole {
   const values = bodyRows.map((row) => row[columnIndex] ?? '').filter((value) => value.trim() !== '');
   if (!values.length) return 'categorica';
@@ -69,25 +65,37 @@ function detectColumnRole(columnIndex: number, bodyRows: string[][]): ColumnRole
 }
 
 /**
- * Confirmable column preview (D-10): auto-detected roles are pre-selected,
- * adjustable per column, and flagged "ajustado" once the user overrides the
- * detected value. Confirm emits the full row set, not just the preview slice.
+ * Confirmable column preview: auto-detected roles, optional inline cell edits,
+ * confirm emits the full (possibly edited) row set.
  */
 export function ColumnPreviewTable({
-  headers,
-  bodyRows,
+  headers: initialHeaders,
+  bodyRows: initialRows,
   recognizedColumns,
   tabularOptions,
   confirmMode = 'numeric-required',
   onRoleAdjust,
   onConfirm,
   maxPreviewRows = 8,
+  editable = true,
 }: ColumnPreviewTableProps) {
+  const [headers, setHeaders] = useState(initialHeaders);
+  const [bodyRows, setBodyRows] = useState(initialRows);
+
+  useEffect(() => {
+    setHeaders(initialHeaders);
+    setBodyRows(initialRows);
+  }, [initialHeaders, initialRows]);
+
   const detectedRoles = useMemo(
     () => headers.map((_, index) => detectColumnRole(index, bodyRows)),
     [headers, bodyRows],
   );
   const [roles, setRoles] = useState<ColumnRole[]>(detectedRoles);
+
+  useEffect(() => {
+    setRoles(detectedRoles);
+  }, [detectedRoles]);
 
   const recognizedIndexes = useMemo(() => new Set(Object.values(recognizedColumns)), [recognizedColumns]);
 
@@ -100,11 +108,23 @@ export function ColumnPreviewTable({
       return required.every((key) => mapped[key] !== undefined);
     }
     return roles.some((role) => role === 'numerica');
-  }, [confirmMode, headers.length, roles, tabularOptions]);
+  }, [confirmMode, headers, roles, tabularOptions]);
 
   function handleRoleChange(index: number, role: ColumnRole) {
     setRoles((previous) => previous.map((value, position) => (position === index ? role : value)));
     onRoleAdjust?.();
+  }
+
+  function handleHeaderChange(index: number, value: string) {
+    setHeaders((prev) => prev.map((h, i) => (i === index ? value : h)));
+  }
+
+  function handleCellChange(rowIndex: number, columnIndex: number, value: string) {
+    setBodyRows((prev) =>
+      prev.map((row, r) =>
+        r === rowIndex ? row.map((cell, c) => (c === columnIndex ? value : cell)) : row,
+      ),
+    );
   }
 
   function handleConfirm() {
@@ -123,12 +143,21 @@ export function ColumnPreviewTable({
               {headers.map((header, index) => {
                 const label = header || `Coluna ${index + 1}`;
                 return (
-                  <th key={`${label}-${index}`} className="border-b border-border px-3 py-2 text-left align-bottom">
+                  <th key={`h-${index}`} className="border-b border-border px-3 py-2 text-left align-bottom">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-foreground">{label}</span>
+                        {editable ? (
+                          <input
+                            aria-label={`Nome da coluna ${index + 1}`}
+                            value={header}
+                            onChange={(e) => handleHeaderChange(index, e.target.value)}
+                            className="w-full min-w-[6rem] rounded-md border border-transparent bg-transparent px-1 py-0.5 text-sm font-bold text-foreground hover:border-border focus:border-primary focus:outline-none"
+                          />
+                        ) : (
+                          <span className="text-sm font-bold text-foreground">{label}</span>
+                        )}
                         {recognizedIndexes.has(index) ? (
-                          <span className="text-xs font-bold text-primary">detectado</span>
+                          <span className="shrink-0 text-xs font-bold text-primary">detectado</span>
                         ) : null}
                       </div>
                       <select
@@ -158,10 +187,23 @@ export function ColumnPreviewTable({
                 {headers.map((_, columnIndex) => (
                   <td
                     key={columnIndex}
-                    className="border-b border-border/60 px-3 py-1.5 text-foreground"
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-data)', lineHeight: 'var(--text-data--line-height)' }}
+                    className="border-b border-border/60 px-2 py-1 text-foreground"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 'var(--text-data)',
+                      lineHeight: 'var(--text-data--line-height)',
+                    }}
                   >
-                    {row[columnIndex] ?? ''}
+                    {editable ? (
+                      <input
+                        aria-label={`Linha ${rowIndex + 1}, coluna ${columnIndex + 1}`}
+                        value={row[columnIndex] ?? ''}
+                        onChange={(e) => handleCellChange(rowIndex, columnIndex, e.target.value)}
+                        className="w-full min-w-[4rem] rounded-md border border-transparent bg-transparent px-1 py-0.5 hover:border-border focus:border-primary focus:outline-none"
+                      />
+                    ) : (
+                      (row[columnIndex] ?? '')
+                    )}
                   </td>
                 ))}
               </tr>
@@ -171,6 +213,7 @@ export function ColumnPreviewTable({
       </div>
       <p className="text-sm text-muted-foreground">
         Mostrando {previewRows.length} de {bodyRows.length} linhas
+        {editable ? ' · clique para editar células ou nomes de coluna' : ''}
       </p>
       <Button type="button" disabled={!isValid} onClick={handleConfirm}>
         Analisar dados

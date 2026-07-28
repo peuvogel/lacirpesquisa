@@ -90,22 +90,22 @@ function renderDialog(
 }
 
 describe('resolveHandoffTestId', () => {
-  it('prefers the first non-demo suggestion when available', () => {
+  it('prefers the first available suggestion', () => {
     expect(
       resolveHandoffTestId([
         { testId: 'correlacao', rationale: 'corr' },
-        { testId: 'demo', rationale: 'demo' },
+        { testId: 't-student', rationale: 't' },
       ]),
     ).toBe('correlacao');
   });
 
   it('falls back to t-student when the primary suggestion is unavailable', () => {
-    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id !== 'anova-tukey');
+    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 't-student');
 
     expect(
       resolveHandoffTestId([
         { testId: 'anova-tukey', rationale: 'anova' },
-        { testId: 'demo', rationale: 'demo' },
+        { testId: 't-student', rationale: 't' },
       ]),
     ).toBe('t-student');
 

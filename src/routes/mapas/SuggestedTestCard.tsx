@@ -13,7 +13,6 @@ export function SuggestedTestCard({ testId, rationale }: SuggestedTestCardProps)
 
   const isAvailable = entry.status === 'available';
   const badgeLabel = getTestBadgeLabel(entry);
-  const isDemo = entry.id === 'demo';
 
   return (
     <div
@@ -30,10 +29,10 @@ export function SuggestedTestCard({ testId, rationale }: SuggestedTestCardProps)
         <span className="font-sans text-sm font-normal text-text-muted">{rationale}</span>
       </span>
       <Badge
-        variant={isAvailable && !isDemo ? 'default' : 'outline'}
+        variant={isAvailable ? 'default' : 'outline'}
         className={cn(
           'shrink-0',
-          isAvailable && !isDemo ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted',
+          isAvailable ? 'bg-accent text-[#04120c]' : 'border-border text-text-muted',
         )}
       >
         {badgeLabel}

@@ -1,31 +1,24 @@
 # Phase 5 Plan Check
 
-**Status:** FAIL  
+**Status:** PASS (blockers cleared)  
 **Checked:** 2026-07-25  
+**Re-checked:** 2026-07-25 (VALIDATION.md authored; RESEARCH OQs RESOLVED)  
 **Plans:** 05-01 … 05-07 (7)  
-**Issues:** 2 blocker(s), 3 warning(s)
+**Issues:** 0 blocker(s), 3 warning(s) (non-blocking)
 
-Goal-backward: plans **would** deliver CAT-01…05 and D-01…D-19 once the two process blockers below are fixed. No deferred-scope creep found.
+Goal-backward: plans deliver CAT-01…05 and D-01…D-19. No deferred-scope creep found.
 
 ---
 
-## Blockers (must fix before execute)
+## Blockers — CLEARED
 
-### 1. [nyquist] `05-VALIDATION.md` missing
+### 1. [nyquist] `05-VALIDATION.md` — CLEARED
 
-Nyquist gate (config `nyquist_validation: true` + RESEARCH § Validation Architecture) requires `05-VALIDATION.md` **before** execution. Plan 07 *creates* it at the end — too late for the pre-execution gate.
+Authoring complete at `05-VALIDATION.md` (pre-exec). Plan 07 updates sign-off only.
 
-**Fix:** Author `05-VALIDATION.md` now from RESEARCH § Validation Architecture / Phase Requirements → Test Map. Map each CAT-01…05 (+ D-07, D-19) to the plan that creates the test and the automated command. Mark Wave 0 gaps as closed by plans 01–06 (not by 07). Keep 07 as sign-off/update only.
+### 2. [research_resolution] Open Questions — CLEARED
 
-### 2. [research_resolution] Open Questions not marked RESOLVED
-
-`05-RESEARCH.md` still has `## Open Questions` without `(RESOLVED)` and without inline `RESOLVED:` markers.
-
-**Fix:** Rename to `## Open Questions (RESOLVED)` and lock:
-
-1. **Default Mapas year** — latest non-null year for active variable (discretion; add one sentence to 05-05 Task 1 action).
-2. **Commit `public/data/catalog/*`** — yes (already planned in 05-01).
-3. **`catalog:validate` in pretest** — yes (already planned in 05-02).
+`## Open Questions (RESOLVED)` with locked answers: latest non-null Mapas year; commit catalog assets; `catalog:validate` in pretest.
 
 ---
 

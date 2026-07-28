@@ -28,15 +28,15 @@ function group(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGroup {
 }
 
 describe('assembleHandoffTable', () => {
-  it('produces wide headers with Território, Grupo, Período and variable columns for one group', () => {
+  it('produces clean headers Território, Grupo and short measure for point mode', () => {
     const result = assembleHandoffTable([group()]);
 
-    expect(result.headers.length).toBeGreaterThanOrEqual(4);
     expect(result.headers[0]).toBe('Território');
     expect(result.headers[1]).toBe('Grupo');
-    expect(result.headers[2]).toBe('Período');
-    expect(result.headers).toContain('Internações por embolia e trombose arteriais');
+    expect(result.headers).toContain('Internações');
+    expect(result.headers).not.toContain('Período');
     expect(result.rows.length).toBeGreaterThanOrEqual(1);
+    expect(result.rows[0]?.every((cell) => cell.toLowerCase() !== 'n/d')).toBe(true);
   });
 
   it('emits pack metric for SP that is not the old mock UF_WEIGHT value', () => {
@@ -47,7 +47,7 @@ describe('assembleHandoffTable', () => {
         time: { mode: 'point', point: '2019' },
       }),
     ]);
-    const value = Number(result.rows[0]?.[3]);
+    const value = Number(result.rows[0]?.[2]);
     expect(value).toBe(5660);
     expect(value).not.toBe(898000);
   });
@@ -76,6 +76,7 @@ describe('assembleHandoffTable', () => {
     expect(result.rows[0]?.[1]).toBe('Grupo A');
     expect(result.rows[1]?.[0]).toBe('SP');
     expect(result.sourceLabel).toMatch(/2 grupos/);
+    expect(result.headers).toEqual(expect.arrayContaining(['Internações', 'Óbitos']));
   });
 
   it('prefers paste rows when provenance is hybrid', () => {
@@ -106,5 +107,20 @@ describe('assembleHandoffTable', () => {
 
     expect(result.headers[0]).toBe('Território');
     expect(result.rows[0]?.[0]).toBe('BA');
+  });
+
+  it('skips município rows when no muni metric is available (no UF leakage)', () => {
+    const result = assembleHandoffTable([
+      group({
+        territoryIds: [
+          {
+            level: 'municipio',
+            ibgeCode: '292740',
+            name: 'Salvador',
+          },
+        ],
+      }),
+    ]);
+    expect(result.rows).toHaveLength(0);
   });
 });
