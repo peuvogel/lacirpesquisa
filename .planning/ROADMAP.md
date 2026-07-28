@@ -2,194 +2,165 @@
 
 ## Overview
 
-v2.0 re-platforms the vanilla MVP calculator onto a React + Tailwind + shadcn/cult-ui dark/verde shell, then rebuilds capability in the build order locked in PROJECT.md: base shell first, migrate the three validated tests, add classic + GLM tests, ship maps as a **statistical analysis interface** (temporality, regional presets, health macro-regions, multi-disease), deliver **scraped/curated variables in-app with mandatory provenance**, and finish with meta-análise last. Analyses stay client-side (session in browser cache); DataSUS scrape is an offline/versioned data pipeline into bundled assets — never orphan variables without source references.
+**v3.0 é corretivo antes de ser aditivo.** O v2.0 entregou as cinco fases planejadas (shell React, 9 testes estatísticos, mapas como interface de análise, catálogo com proveniência), mas o trabalho que veio depois seguiu sem commit e deixou o produto *incorreto*, não apenas incompleto — 20 agravos servem dados de outra doença sob rótulo clínico convincente, o mapa promete 330 agravos e entrega 10, e uma consulta de município devolve 1.000 de 6.481 linhas com HTTP 200.
 
-**Implementation stance (locked):** Do **not** reinvent statistical engines from scratch. Port/adapt formulas and expected outputs from (1) existing v1.0 modules under `tests/` and (2) JASP open-source logic in `jasp-desktop-development/` (R analyses / docs as oracle). Milestone effort concentrates on didactic React UX, Portuguese interpretation, assumption nudges, charts/export, map-as-analysis-UI, and variable pipeline + provenance.
+Um tema une os quatro defeitos, repetido em quatro camadas da pilha: **uma ausência que se parece com um valor.** Uma falha de DNS registrada como `OK · 0 linhas`. Um null coagido a 0 no domínio da escala. Um resultado truncado devolvido como sucesso. Um validador que confere presença e chama isso de correção. Cada fase deste milestone é, de alguma forma, sobre tornar a ausência visível.
+
+**Ordem de build travada (com o porquê):** baseline verde → taxonomia → pipeline + coleta → mapas dinâmicos → fluxo → varredura. A taxonomia precede o pipeline porque o ledger é chaveado por `disease_id` — migrar os ids *antes* da coleta de vários dias, nunca depois. A Fase 9 só precisa entregar o **schema** do `sih_collection_status` (não a coleta completa) para a Fase 10 começar, que é o desacoplamento concreto que impede a Fase 10 de refazer o trabalho da Fase 9 enquanto a coleta longa roda.
+
+**Meta-análise (antiga Fase 6) fica adiada para v3.1** por pedido explícito — primeiro garantir que o resto funcione.
 
 ## Phases
 
 **Phase Numbering:**
 
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Integer phases (7, 8, 9): Planned milestone work
+- Decimal phases (8.1, 8.2): Urgent insertions (marked with INSERTED)
 
-Decimal phases appear between their surrounding integers in numeric order.
+Numeração continua do v2.0, que terminou na Fase 6.
 
-- [x] **Phase 1: Redesign / base React shell** - React+Vite+Tailwind+shadcn dark/teal LACIR portal (header: Estatística | Meta-análise | Variáveis | Mapas), shared paste→configure→results flow, PNG export, conditional leave warning, "qual teste?" modal, Mapas mock shell (completed 2026-07-25)
-- [x] **Phase 2: Migrar testes existentes** - t de Student, Pearson/Spearman, and Prais-Winsten ported into the new shell with output parity to v1.0 (completed 2026-07-25)
-- [x] **Phase 3: Testes clássicos + GLM novos** - Qui-quadrado, ANOVA/Tukey, Kruskal-Wallis/Dunn, Poisson, Binomial Negativa, and Regressão Logística, each with assumption-check nudges (completed 2026-07-25)
-- [x] **Phase 4: Mapas como interface estatística** - Brazil/UF + drill-down; temporalidade; grupos de UF com presets (N/NE/CO/SE/S); macrorregiões de saúde; multi-doença; fluxo didático território×tempo×grupo → testes (completed 2026-07-25)
-- [x] **Phase 5: Variáveis no site (scrape + referências)** - Pipeline de curadoria/scrape versionado; catálogo classificado; **referência obrigatória** em cada variável; carregar dados no app sem sites externos na aula (completed 2026-07-25)
-- [ ] **Phase 6: Meta-análise** - Fixed/random-effects pooling with forest plot, heterogeneity stats, funnel plot, and Egger's asymmetry check
+- [ ] **Phase 7: Baseline verde** - typecheck limpo, suíte inteira passando, gate de CI que impede o vermelho de voltar
+- [ ] **Phase 8: Taxonomia canônica + integridade** - regerar a Lista Morb da fonte oficial, migrar ids no Supabase sem perder linha, validação fail-closed, apelidos clínicos
+- [ ] **Phase 9: Pipeline confiável + coleta completa** - ledger por agravo × medida × grão, falha ruidosa, retomada; 4 medidas × 330 agravos × UF e município
+- [ ] **Phase 10: Mapas dinâmicos sobre Supabase** - choropleth ao vivo para os 330, tri-estado honesto, drill municipal sob demanda, sem truncamento silencioso
+- [ ] **Phase 11: Fluxo pesquisa → estatística** - handoff limpo com proveniência preservada e ausentes tratados explicitamente
+- [ ] **Phase 12: Varredura de bugs + UAT** - Estatística, Variáveis e Mapas de ponta a ponta em uso didático real
 
 ## Phase Details
 
-### Phase 1: Redesign / base React shell
+### Phase 7: Baseline verde
 
-**Goal**: Users experience the LACIR portal React shell — header nav, Estatística flow, Mapas mock research launcher, shared paste, export, and conditional leave warning — that later modules mount on
-**Depends on**: Nothing (first phase)
-**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UX-01
+**Goal**: O desenvolvedor consegue distinguir uma regressão nova de dívida herdada — a suíte volta a ser sinal
+**Depends on**: Nothing (primeira fase do milestone)
+**Requirements**: QA-01, QA-02, QA-03, QA-04
 **Success Criteria** (what must be TRUE):
 
-  1. User opens the app on Estatística and sees dark + teal accents, LACIR logo+name, and header nav Estatística | Meta-análise | Variáveis | Mapas (no version badge; DataSUS link inside Estatística)
-  2. User completes the stub test through Dados → Configurar → Resultados with brief PT interpretation
-  3. User pastes messy DataSUS/TABNET-style data and gets auto-detect → preview → confirm (friendly errors when invalid)
-  4. User downloads the active result chart as a PNG
-  5. Leaving/closing Estatística with inputted data triggers a browser leave prompt; no persistent refresh banner
-  6. User can open "qual teste usar?" modal (roadmap with em breve) and use Mapas mock: hover/select UFs, variable panel intersection/partials, stub Iniciar pesquisa
+  1. `npm run typecheck` termina sem erros
+  2. `npm run test:run` passa integralmente, sem teste marcado como falha conhecida
+  3. Os 24 testes que dirigiam o fluxo pelo stepper agora exercitam o layout `scroll` que a aplicação de fato usa, e continuam cobrindo a mesma jornada Dados → Configurar → Resultados
+  4. Registrar um teste novo sem ícone próprio não derruba o sidebar
+  5. Um gate de CI bloqueia merge com teste vermelho ou typecheck sujo
 
-**Plans**: 12 plans (6 waves)
-Plans:
-
-- [x] 01-01-PLAN.md — Wave 1: Vite/React/TS/Tailwind v4 scaffold, dependency install, vitest+RTL harness, shadcn primitives, purple-scaffold purge
-- [x] 01-02-PLAN.md — Wave 2: dark+teal token layer, Sora/IBM Plex Mono, two first-party accents, token contract test
-- [x] 01-03-PLAN.md — Wave 2: port tabular/DataSUS parsers with TABNET fixtures and differential parity tests
-- [x] 01-04-PLAN.md — Wave 2: port chart theme + ChartCanvas lifecycle + PNG export hook + pt-BR formatting
-- [x] 01-05-PLAN.md — Wave 3: app shell — header nav, router, placeholder routes, in-memory session
-- [x] 01-06-PLAN.md — Wave 3: FlowSteps stepper, useTabularInput, paste/upload panel, confirmable column preview
-- [x] 01-07-PLAN.md — Wave 4: test registry, collapsible sidebar, "Qual teste usar?" modal, Portal DATASUS link
-- [x] 01-08-PLAN.md — Wave 4: DataSUS assistant — state machine port + six-step JSX panel
-- [x] 01-09-PLAN.md — Wave 4: Mapas mock — 27-UF SVG, intersection/partial variable panel
-- [x] 01-10-PLAN.md — Wave 5: Teste demo end-to-end + shared results pattern (chart, interpretation, PNG)
-- [x] 01-11-PLAN.md — Wave 5: Mapas "Iniciar pesquisa" stub — suggestions, collection links, paste handoff
-- [x] 01-12-PLAN.md — Wave 6: conditional leave warning (Estatística + data only) and "Limpar dados"
-
-**UI hint**: yes
-
-### Phase 2: Migrar testes existentes
-
-**Goal**: The three validated v1.0 tests run inside the new shell with no regression in numbers, charts, or workflow
-**Depends on**: Phase 1
-**Requirements**: TEST-01, TEST-02, TEST-03
-**Success Criteria** (what must be TRUE):
-
-  1. User runs t de Student in the new shell and gets results/charts matching v1.0 output
-  2. User runs Correlação Pearson/Spearman in the new shell with charts matching v1.0 output
-  3. User runs Prais-Winsten in the new shell with results matching v1.0 output
-  4. Each migrated test shows an interpretation paragraph and supports PNG export like every other module
-
-**Plans**: 8 plans (6 waves)
-Plans:
-
-- [x] 02-01-PLAN.md — Wave 0: Stats engine port, derive* parity tests, fixtures, chartjs-plugin-annotation install
-- [x] 02-02-PLAN.md — Wave 1: Chart factories, ChartCustomizer, ResultsPanelWithCustomizer, shared Configurar components
-- [x] 02-03-PLAN.md — Wave 2: t de Student module (TEST-01) — engine, interpretation, FlowSteps UI
-- [x] 02-04-PLAN.md — Wave 3: Correlação Pearson/Spearman module (TEST-02)
-- [x] 02-05-PLAN.md — Wave 3: Prais-Winsten module (TEST-03) — parallel with 02-04
-- [x] 02-06-PLAN.md — Wave 4: Registry flip, EstatisticaPage routing, demo badge, Mapas handoff, integration gate
-- [x] 02-07-PLAN.md — Wave 5 (gap): Shared deriveRecognizedColumnsFromTabular + session bootstrap fix (CR-01)
-- [x] 02-08-PLAN.md — Wave 6 (gap): ColumnPreview confirm mapping (WR-01) + handoff Resultados integration test
-
-### Phase 3: Testes clássicos + GLM novos
-
-**Goal**: Ligantes can run every statistical test taught in the capacitação that was missing from the MVP, each with correct numerics and assumption guidance
-**Depends on**: Phase 2
-**Requirements**: TEST-04, TEST-05, TEST-06, TEST-07, TEST-08, TEST-09, UX-02
-**Success Criteria** (what must be TRUE):
-
-  1. User runs qui-quadrado de independência and sees an effect size plus a warning when expected cell counts are too low
-  2. User runs one-way ANOVA with Tukey post-hoc and Kruskal-Wallis with Dunn post-hoc
-  3. User runs Poisson regression with an overdispersion check, and Negative Binomial regression when overdispersion is present
-  4. User runs Logistic regression and sees odds ratios with confidence intervals
-  5. User sees assumption-check nudges appropriate to whichever test is active (e.g. normality hint, expected counts, overdispersion)
-
-**Plans**: 9 plans (5 waves)
-
-Plans:
-
-- [x] 03-01-PLAN.md — Wave 0: statsEngine χ²/ANOVA/Kruskal/Tukey/Dunn + glmEngine + golden fixtures + AssumptionNudgeStrip + jstat/ml-matrix
-- [x] 03-02-PLAN.md — Wave A: Qui-quadrado TEST-04 (engine + UI + charts)
-- [x] 03-03-PLAN.md — Wave A: ANOVA+Tukey TEST-05 (parallel with 03-04)
-- [x] 03-04-PLAN.md — Wave A: Kruskal+Dunn TEST-06 (parallel with 03-03)
-- [x] 03-05-PLAN.md — Wave A gate: registry + routes for classical tests; UX-02 integration
-- [x] 03-06-PLAN.md — Wave B: Poisson TEST-07 + overdispersion CTA + glmCoefForestChart
-- [x] 03-07-PLAN.md — Wave B: Binomial Negativa TEST-08 (parallel with 03-08)
-- [x] 03-08-PLAN.md — Wave B: Logística TEST-09 (parallel with 03-07)
-- [x] 03-09-PLAN.md — Wave B gate: full verification; all six tests available
-
-### Phase 4: Mapas como interface estatística
-
-**Goal**: Ligantes use the map as a didactic statistical-analysis surface — select territory, time, disease(s), and groups (regional presets / health macro-regions), then run tests — not merely a research launcher
-**Depends on**: Phase 3
-**Requirements**: MAP-01, MAP-02, MAP-03, MAP-04, MAP-05, MAP-06, MAP-07, MAP-08, MAP-09, MAP-10
-**Success Criteria** (what must be TRUE):
-
-  1. User plots a Brazil choropleth heatmap by UF with a legend
-  2. User pastes territory labels as UF name or sigla and has them correctly recognized
-  3. User drills into a selected state to view município, mesorregião, or região/macrorregião de saúde choropleths
-  4. User sees a matched/unmatched report when municipality names are resolved within the chosen UF
-  5. Maps render fully offline from bundled static geo assets, with no runtime map or IBGE API dependency
-  6. User selects a time window / compares periods (temporalidade) as part of the map analysis flow
-  7. User groups UFs for analysis using presets (Norte, Nordeste, Centro-Oeste, Sudeste, Sul) and/or custom groups
-  8. User can include macrorregiões de saúde in grouping/selection
-  9. User selects multiple diseases/agravos within the active territory × time × group context and proceeds to statistical tests
-  10. The map flow stays didactic: clear steps, plain-PT guidance, and a visible summary of the current selection
-
-**Plans**: 8 plans in 8 waves
-
-Plans:
-
-- [x] 04-01-PLAN.md — Wave 0: geo fetch script, types, session model, CI fixtures (MAP-05/08 infra)
-- [x] 04-02-PLAN.md — Wave 1: UF choropleth + legend (MAP-01)
-- [x] 04-03-PLAN.md — Wave 2: territory paste UF matching (MAP-02)
-- [x] 04-04-PLAN.md — Wave 3: GroupBar DnD + presets + summary strip (MAP-07/08/10)
-- [x] 04-05-PLAN.md — Wave 4: drill-down + lazy topo + muni match (MAP-03/04/05)
-- [x] 04-06-PLAN.md — Wave 5: GroupConfigPanel time + variables hybrid data (MAP-06)
-- [x] 04-07-PLAN.md — Wave 6: ReviewAnalysisDialog + assemble table + suggest test (MAP-09)
-- [x] 04-08-PLAN.md — Wave 7: phase gate verification (MAP-01…10)
-
-**UI hint**: yes
-
-### Phase 5: Variáveis no site (scrape + referências)
-
-**Goal**: Ligantes analyze public-health variables already available in the app (via versioned scrape/curation pipeline), always seeing where each variable comes from — no orphan data, no mandatory external TABNET trip during class
-**Depends on**: Phase 4
-**Requirements**: CAT-01, CAT-02, CAT-03, CAT-04, CAT-05
-**Success Criteria** (what must be TRUE):
-
-  1. User searches/browses a panel of public-health variables classified by type (categórica, numérica, ordinal, etc.)
-  2. Every catalog entry shows mandatory provenance (sistema/fonte, tabela/indicador, período, URL/citação oficial)
-  3. User sees a suggested statistical test hint based on the variable's classified type
-  4. User loads curated/scraped datasets into Estatística/Mapas analysis without leaving the app for data collection
-  5. Datasets are produced by a versioned offline pipeline (build-time assets), not live runtime scraping
-
-**Plans:** 7/7 plans complete
-
-Plans:
-
-- [x] 05-01-PLAN.md — Offline pipeline: package embolia/amputação packs + reference-seed → public/data/catalog
-- [x] 05-02-PLAN.md — CatalogEntry types + fail-closed catalog:validate + npm/pretest gate
-- [x] 05-03-PLAN.md — TDD catalog modules: loadCatalog, filter, suggestTest, buildSessionDataset
-- [x] 05-04-PLAN.md — Variáveis UI: search/filter/list/detail + provenance + test hint
-- [x] 05-05-PLAN.md — Mapas catalogAnalysisData swap; retire mock numerics/provenance for packs
-- [x] 05-06-PLAN.md — Load handoff: Carregar na Estatística + Usar no mapa (multi-select D-16)
-- [x] 05-07-PLAN.md — Phase gate: validate + full suite + VERIFICATION + human UAT
-
-### Phase 6: Meta-análise
-
-**Goal**: Ligantes can pool study-level effects and evaluate heterogeneity/publication bias using the didactic subset of meta-analysis (no Bayesian/trim-and-fill)
-**Depends on**: Phase 5
-**Requirements**: META-01, META-02, META-03, META-04
-**Success Criteria** (what must be TRUE):
-
-  1. User pools study-level effects using both fixed-effect and random-effects (DerSimonian-Laird) models
-  2. User views and downloads a forest plot of study-level and pooled effects
-  3. User sees heterogeneity stats I², Q, and τ² alongside the pooled result
-  4. User views a funnel plot with a basic asymmetry check (Egger's test)
+**Notes**: Nenhum código de produção passa `layout="stepper"` — só `FlowSteps.test.tsx`. Decidir explicitamente se o modo stepper permanece como API pública ou é removido como código morto. `FlaskConical` é usado como fallback em `SidebarTestLink.tsx:53` e nunca importado: hoje é inalcançável porque os 9 ids têm ícone, mas é uma mina para o décimo.
 
 **Plans**: TBD
+
+### Phase 8: Taxonomia canônica + integridade
+
+**Goal**: Nenhum agravo exibe dados de outra doença, e a validação impede que isso volte
+**Depends on**: Phase 7 (precisa de suíte verde para provar que a migração não quebrou nada)
+**Requirements**: TAX-01, TAX-02, TAX-03, TAX-04, TAX-05, TAX-06
+**Success Criteria** (what must be TRUE):
+
+  1. Para os 330 agravos, `id`, `tabnetCode`, `cid` e `label` são mutuamente consistentes com a Lista Morb CID-10 oficial
+  2. A validação falha quando `id ↔ tabnetCode ↔ label` divergem — rodando contra a taxonomia de hoje, ela acusa os 20 registros corrompidos
+  3. Depois da migração, `sih_disease` tem 330 linhas, `sih_metric_uf` 30.313 e `sih_metric_muni` 1.099.403, com integridade referencial conferida antes e depois
+  4. A migração é reversível e atravessa os ciclos de renomeação sem violar a chave primária
+  5. O estudante encontra "AVC" e chega aos ids canônicos corretos (`infarto_cerebral`, `acid_vascular_cerebr_nao_espec…`), sem que o apelido vire chave de dado
+  6. Packs, `variables.json`, seeds SQL e a cópia no bundle são gerados da taxonomia canônica — nenhuma lista mantida à mão em paralelo
+
+**Notes**: Ground truth verificado em `.planning/notes/2026-07-28-taxonomia-corrompida-ground-truth.md` — **nenhum dado precisa ser re-coletado**, `tabnetCode`/`cid`/`label` já concordam entre si; só o slug `id` está errado. Dois ciclos de renomeação (`hemorroidas`↔`outras_doencas_veias`, `embolia_pulmonar`↔`doencas_reumaticas_cronicas`) exigem duas passadas ou constraint deferida. Não há `ON UPDATE CASCADE` nas FKs — adicionar uma vez como melhoria permanente. Consultar `pg_constraint` para os nomes reais das constraints antes de escrever o SQL; nunca adivinhar. Ensaiar fora da tabela viva: é a mudança de maior raio de dano do milestone.
+
+**Plans**: TBD
+
+### Phase 9: Pipeline confiável + coleta completa
+
+**Goal**: A coleta nunca mais registra falha como sucesso, e as 4 medidas existem para os 330 agravos nos dois grãos
+**Depends on**: Phase 8 (o ledger é chaveado por `disease_id` — migrar antes de coletar)
+**Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05, PIPE-06, DATA-01, DATA-02, DATA-03, DATA-04
+**Success Criteria** (what must be TRUE):
+
+  1. Uma falha injetada de rede/DNS/parse aparece como falha ruidosa e a execução termina com código de saída não-zero — nunca `OK · 0 linhas`
+  2. O operador consulta um ledger por (agravo × medida × grão) que distingue coletado, falhou e nunca tentado — e o app consegue lê-lo
+  3. Interromper e reexecutar a coleta continua de onde parou, sem duplicar linhas
+  4. O cache bruto só é apagado depois que a contagem de linhas é relida do Supabase e confere
+  5. As 4 medidas estão coletadas para os 330 agravos no grão UF e no grão município, com `taxa_mortalidade` derivável em todo o catálogo
+  6. Cada métrica servida carrega a data em que foi coletada
+
+**Notes**: Duas causas raiz já localizadas: `scrape_one()` imprime `OK` sem consultar a própria lista `errors`, e `scrape_upload_sih.py::main()` chama `mark_uploaded()`/`cleanup_raw()` incondicionalmente. Ordem correta: coletar → verificar contagem → subir → confirmar → só então limpar. Python aqui tem **zero** pacotes de terceiros (3.9.6) — `sqlite3` da stdlib e um helper curto de backoff bastam; não introduzir biblioteca de retry. **Entregar o schema de `sih_collection_status` cedo na fase**, para a Fase 10 poder começar enquanto a coleta longa roda. Rotacionar o `INGEST_SECRET` hardcoded (ver Riscos).
+
+**Plans**: TBD
+
+### Phase 10: Mapas dinâmicos sobre Supabase
+
+**Goal**: O estudante pesquisa qualquer um dos 330 agravos no mapa e o que ele vê é verdade
+**Depends on**: Phase 9 (schema do ledger; a coleta completa pode continuar em paralelo)
+**Requirements**: MAPA-01, MAPA-02, MAPA-03, MAPA-04, MAPA-05, MAPA-06, MAPA-07, MAPA-08, MAPA-09, MAPA-10
+**Success Criteria** (what must be TRUE):
+
+  1. Selecionar qualquer um dos 330 agravos produz dado real, "carregando" ou "ainda não coletamos" — nunca clique morto nem mapa vazio sem explicação
+  2. O choropleth em grão UF vem do Supabase ao vivo, e os 10 packs embutidos deixam de ser a fonte
+  3. "Sem dado coletado", "zero verdadeiro" e "menor balde" são distinguíveis no mapa e na legenda
+  4. Um ausente não vira 0 em lugar nenhum — render, domínio da escala, legenda ou tabela montada
+  5. O drill municipal busca sob demanda, com carregamento restrito à região aberta, e redrilhar na mesma sessão não refaz a busca
+  6. Um resultado maior que o limite do PostgREST é paginado por completo ou falha alto — nunca truncado em silêncio
+  7. Trocar de agravo durante uma busca em voo nunca pinta o dado anterior sob o rótulo novo
+  8. Sem Supabase acessível, a interface diz isso
+  9. A proveniência da métrica ativa fica visível durante a exploração
+
+**Notes**: Causa raiz é precisa — `taxonomy.ts` valida contra o espaço 330×6 enquanto `catalogAnalysisData.ts` só tem valores para 10 diseases: o seletor e o choropleth leem universos de tamanhos diferentes. A conversão sync→async é limitada, não uma reescrita: só duas chamadas impuras estão dentro do reducer; `choroplethValues` já é `useMemo`. Ordem interna sugerida em 5 ondas (repositório → cache de query → repontar o reducer → drill/handoff → gate) para que nenhuma onda desfaça a anterior. Corrigir o truncamento de `fetchHandoffMetrics.ts` **dentro** deste trabalho — é o mesmo caminho de código. Verificado ao vivo: `content-range: 0-999/6481`. O defeito null-vs-zero está apurado em `.planning/notes/2026-07-28-null-vs-zero-choropleth.md`.
+
 **UI hint**: yes
+
+**Plans**: TBD
+
+### Phase 11: Fluxo pesquisa → estatística
+
+**Goal**: O dado atravessa do mapa até o resultado do teste sem perder proveniência nem ganhar zeros inventados
+**Depends on**: Phase 10 (consumidor do repositório unificado, não um esforço paralelo de busca)
+**Requirements**: FLUXO-01, FLUXO-02, FLUXO-03, FLUXO-04
+**Success Criteria** (what must be TRUE):
+
+  1. A seleção do mapa (território × tempo × agravo × grupo) chega ao teste estatístico com a tabela montada corretamente a partir dos dados ao vivo
+  2. A proveniência sobrevive ao handoff e continua visível no resultado do teste, depois que o estudante já saiu do mapa
+  3. Ausentes chegam ao módulo estatístico como ausentes, e o módulo declara o que fez com eles — nunca imputa em silêncio
+  4. O estudante é avisado quando a comparação montada é frágil (denominador pequeno, taxa instável, inferência agregada)
+
+**Notes**: `ReviewAnalysisDialog.handleConfirm` hoje passa `sourceLabel` como string plana — precisa virar (ou acompanhar) um descritor estruturado que as telas de resultado ainda consigam renderizar. Reaproveitar a família `AssumptionNudgeStrip` já existente para os avisos, com gatilhos novos. Requer a coluna de data de coleta entregue na Fase 9 — dependência cruzada explícita.
+
+**UI hint**: yes
+
+**Plans**: TBD
+
+### Phase 12: Varredura de bugs + UAT
+
+**Goal**: Tudo que o milestone prometeu funciona em uso didático real, exceto meta-análise
+**Depends on**: Phase 11
+**Requirements**: BUG-01, BUG-02, BUG-03
+**Success Criteria** (what must be TRUE):
+
+  1. Os 9 módulos estatísticos rodam de ponta a ponta pelo fluxo atual sem erro
+  2. O catálogo de Variáveis navega, filtra e carrega sem rótulo enganoso
+  3. O fluxo de Mapas roda de ponta a ponta em UAT com a liga, em condição de aula
+  4. Os testes de regressão das fases 8–11 seguem verdes
+
+**Plans**: TBD
+
+## Riscos conhecidos
+
+| Risco | Fase | Mitigação |
+|---|---|---|
+| Migração de PK em tabela de 1.1M linhas com ciclos de renomeação e sem `ON UPDATE CASCADE` | 8 | Ensaiar fora da produção; contagem + integridade antes/depois; mapa inverso guardado |
+| Coleta de 4 medidas × 330 agravos × 2 grãos é longa e sujeita a interrupção | 9 | Ledger + retomada idempotente são pré-requisito, não melhoria |
+| `INGEST_SECRET = "lacir-sih-ingest-2026"` em texto plano em `scrape_upload_sih.py:33`, presente no histórico git a partir de `180e6e3` | 9 | Repositório **não tem remote** — nada foi publicado. Rotacionar o valor no Supabase, mover para variável de ambiente e adicionar varredura de segredo antes de qualquer push |
+| Edge Function `sih-ingest` não está versionada no repositório | 9 | Trazer o fonte para o repo com testes; hoje o comportamento do servidor não é revisável |
+| Suposição de que o TabNet nunca emite célula `0` explícita (ausência de linha *é* o zero) vem do próprio pipeline, não de spec oficial | 9 | Uma verificação empírica contra o portal antes de travar a lógica null-vs-zero nessa premissa |
+| Índice `sih_metric_muni_uf_ano` documentado como intenção, não confirmado aplicado | 9/10 | Verificar ao vivo antes de depender dele para o drill |
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 1. Redesign / base React shell | 12/12 | Complete   | 2026-07-25 |
-| 2. Migrar testes existentes | 8/8 | Complete   | 2026-07-25 |
-| 3. Testes clássicos + GLM novos | 9/9 | Complete   | 2026-07-25 |
-| 4. Mapas como interface estatística | 8/8 | Complete   | 2026-07-25 |
-| 5. Variáveis no site (scrape + referências) | 7/7 | Complete   | 2026-07-25 |
-| 6. Meta-análise | 0/TBD | Not started | - |
+| 7. Baseline verde | 0/TBD | Not started | - |
+| 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
+| 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
+| 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
+| 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |
+| 12. Varredura de bugs + UAT | 0/TBD | Not started | - |
+
+## Milestones anteriores
+
+**v2.0 — Suite estatística + mapas DataSUS** (fases 1–5 completas, 2026-07-25). Fase 6 (Meta-análise) planejada e não iniciada, adiada para v3.1.
