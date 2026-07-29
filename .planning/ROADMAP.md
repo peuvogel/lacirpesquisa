@@ -53,7 +53,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 07-03-PLAN.md — Remoção do modo stepper e limpeza da API do FlowSteps
+- [x] 07-03-PLAN.md — Remoção do modo stepper e limpeza da API do FlowSteps
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 7. Baseline verde | 2/7 | In Progress|  |
+| 7. Baseline verde | 3/7 | In Progress|  |
 | 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |

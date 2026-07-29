@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-07-29T08:14:56.712Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-07-29T13:35:36.501Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 07 (Baseline verde) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -102,6 +102,8 @@ Last activity: 2026-07-29
 - [Phase 07-01]: registry.test.ts widened com as TestStatus no teste de em-breve — TS2367 surgiu do as const satisfies da própria Task 1, corrigido inline
 - [Phase 07]: D-06/D-07 implementadas: runToResultados(user) com 2 passos no corpo (click + findByRole('region')), export nomeado em src/test/flowHelpers.ts
 - [Phase 07]: D-08 (canvas) implementada: proto.getContext/proto.toDataURL substituídos incondicionalmente em src/test/setup.ts, sem sondar o método real — 190 avisos de HTMLCanvasElement viraram 0
+- [Phase 07-03]: layout="stepper" e toda a API morta (onStepChange, FLOW_STEP_LABELS, effectiveCanAdvance, import de Check) removidos de FlowSteps.tsx e dos 11 call sites que a referenciavam — D-01/D-02: guarda contra recorrência é a ausência estrutural da API, não uma convenção documentada
+- [Phase 07-03]: FlowSteps.test.tsx reescrito: 5 casos vivos cobrindo só o layout scroll, contra os 2 que existiam antes do stepper sair — D-03: cobertura líquida não pode cair ao remover os 5 testes de stepper
 
 ### Pending Todos
 
@@ -113,8 +115,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-29T08:14:56.709Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-07-29T13:35:36.499Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -145,3 +147,4 @@ Resume file: None
 | Phase 05 P07 | 4min | 2 tasks | 5 files |
 | Phase 07 P01 | 12min | 3 tasks | 5 files |
 | Phase 07 P02 | ~7min | 2 tasks | 3 files |
+| Phase 07-baseline-verde P03 | 15min | 2 tasks | 13 files |
