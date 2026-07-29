@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-07-29T13:35:36.501Z"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-07-29T13:47:45.988Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 07 (Baseline verde) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -104,6 +104,8 @@ Last activity: 2026-07-29
 - [Phase 07]: D-08 (canvas) implementada: proto.getContext/proto.toDataURL substituídos incondicionalmente em src/test/setup.ts, sem sondar o método real — 190 avisos de HTMLCanvasElement viraram 0
 - [Phase 07-03]: layout="stepper" e toda a API morta (onStepChange, FLOW_STEP_LABELS, effectiveCanAdvance, import de Check) removidos de FlowSteps.tsx e dos 11 call sites que a referenciavam — D-01/D-02: guarda contra recorrência é a ausência estrutural da API, não uma convenção documentada
 - [Phase 07-03]: FlowSteps.test.tsx reescrito: 5 casos vivos cobrindo só o layout scroll, contra os 2 que existiam antes do stepper sair — D-03: cobertura líquida não pode cair ao remover os 5 testes de stepper
+- [Phase 07-04]: D-06/D-07 aplicadas nos 12 casos de AnovaTukey/KruskalDunn/Logistica/BinomialNegativa: click 'Configurar' + aria-current='step' saíram, runToResultados(user) entrou
+- [Phase 07-04]: within(resultados) usado para escopar asserção 'θ (dispersão)' em BinomialNegativaTest — layout scroll mantém Dados e configuração montada ao lado de Resultados, gerando ambiguidade de texto que o stepper antigo nunca expunha
 
 ### Pending Todos
 
@@ -115,8 +117,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-29T13:35:36.499Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-07-29T13:47:45.986Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -148,3 +150,4 @@ Resume file: None
 | Phase 07 P01 | 12min | 3 tasks | 5 files |
 | Phase 07 P02 | ~7min | 2 tasks | 3 files |
 | Phase 07-baseline-verde P03 | 15min | 2 tasks | 13 files |
+| Phase 07-baseline-verde P04 | ~8min | 2 tasks | 4 files |
