@@ -4,6 +4,7 @@ import {
   getTestById,
   isTestAvailable,
   TEST_REGISTRY,
+  type TestStatus,
 } from './registry';
 
 describe('TEST_REGISTRY', () => {
@@ -39,7 +40,12 @@ describe('TEST_REGISTRY', () => {
   });
 
   it('has no em-breve entries remaining', () => {
-    const emBreve = TEST_REGISTRY.filter((entry) => entry.status === 'em-breve');
+    // `TEST_REGISTRY` is now `as const satisfies` (Task 1) — every current
+    // entry's `status` narrows to the literal `'available'`, so comparing
+    // directly to `'em-breve'` is a compile error (TS2367: no overlap).
+    // Widen back to `TestStatus` to keep this guard meaningful if a future
+    // entry is ever added with `status: 'em-breve'`.
+    const emBreve = TEST_REGISTRY.filter((entry) => (entry.status as TestStatus) === 'em-breve');
     expect(emBreve).toHaveLength(0);
   });
 

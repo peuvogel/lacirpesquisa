@@ -2,6 +2,7 @@ import {
   BarChart3,
   Binary,
   ChartScatter,
+  FlaskConical,
   GitCompareArrows,
   Grid3x3,
   Sigma,
@@ -10,10 +11,10 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { TestRegistryEntry } from '@/features/tests/registry';
+import type { TestRegistryEntry, TestId } from '@/features/tests/registry';
 import { getTestBadgeLabel } from '@/features/tests/registry';
 
-const TEST_ICONS: Record<string, LucideIcon> = {
+const TEST_ICONS: Record<TestId, LucideIcon> = {
   't-student': GitCompareArrows,
   correlacao: ChartScatter,
   'prais-winsten': TrendingUp,
@@ -24,6 +25,17 @@ const TEST_ICONS: Record<string, LucideIcon> = {
   'binomial-negativa': Sigma,
   logistica: Binary,
 };
+
+/**
+ * TEST_ICONS is exhaustive over TestId — forgetting a key when a 10th test
+ * is registered is a compile error (TS2741, QA-04/D-14). entry.id here is a
+ * plain `string` (TestRegistryEntry stays generic on purpose, see below), so
+ * the lookup goes through a cast — that cast is the exact point where the
+ * runtime fallback stays alive and testable.
+ */
+function iconFor(id: string): LucideIcon {
+  return (TEST_ICONS as Partial<Record<string, LucideIcon>>)[id] ?? FlaskConical;
+}
 
 export interface SidebarTestLinkProps {
   entry: TestRegistryEntry;
@@ -50,7 +62,7 @@ export function SidebarTestLink({
 }: SidebarTestLinkProps) {
   const isAvailable = entry.status === 'available';
   const badgeLabel = getTestBadgeLabel(entry);
-  const Icon = TEST_ICONS[entry.id] ?? FlaskConical;
+  const Icon = iconFor(entry.id);
   const showBadge = dense ? entry.status === 'em-breve' : true;
 
   if (dense) {
