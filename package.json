@@ -11,6 +11,8 @@
     "pretest": "npm run catalog:validate",
     "test:run": "npm run catalog:validate && vitest run",
     "typecheck": "tsc --noEmit",
+    "gate": "npm run test:run && npm run build",
+    "prepare": "git config core.hooksPath .githooks || true",
     "catalog:build": "node scripts/catalog/build.mjs",
     "catalog:validate": "node scripts/catalog/validate.mjs",
     "catalog:sync-column-map": "node scripts/catalog/syncColumnMap.mjs",
