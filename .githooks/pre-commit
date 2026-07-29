@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# D-18: pula o gate quando TODO o staged está sob .planning/ — sem isso,
+# restringir o tipo de mudança listada (ex.: só Added/Copied/Modified/Renamed,
+# que exclui Deleted) faria um `git rm` de um arquivo em src/ passar
+# despercebido como "só doc" (verificado na pesquisa: uma deleção pura de
+# src/foo.ts fica INVISÍVEL para --name-only quando restrita dessa forma).
+# Por isso o comando abaixo usa o filtro default do git (todas as mudanças).
+#
+# Limitação conhecida: --name-only mostra só o destino de um rename, então
+# mover um arquivo de src/ para .planning/ ficaria mascarado como "só doc" —
+# cenário raro neste projeto, registrado em vez de fingido.
+staged=$(git diff --cached --name-only)
+if [ -n "$staged" ] && ! echo "$staged" | grep -qv '^\.planning/'; then
+  echo "pre-commit: staged é só .planning/ — pulando gate (D-18)."
+  exit 0
+fi
+
+npm run gate

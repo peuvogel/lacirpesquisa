@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sem exceção de D-18 aqui: pre-push roda sempre. A exceção local do
+# pre-commit nunca deixa código chegar ao remoto sem o gate.
+npm run gate
