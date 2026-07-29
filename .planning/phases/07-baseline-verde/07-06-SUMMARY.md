@@ -105,3 +105,9 @@ None - nenhuma configuração de serviço externo necessária.
 ---
 *Phase: 07-baseline-verde*
 *Completed: 2026-07-29*
+
+## Self-Check: PASSED
+
+Todos os arquivos declarados e todos os commits referenciados foram verificados presentes no working tree / git log:
+- `src/app/router.test.tsx`, `.planning/phases/07-baseline-verde/07-06-SUMMARY.md` — FOUND
+- `d57518a`, `3aa9658` — FOUND
