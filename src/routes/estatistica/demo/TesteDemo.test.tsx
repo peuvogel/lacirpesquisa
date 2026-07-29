@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
+import { runToResultados } from '@/test/flowHelpers';
 import { TesteDemo } from './TesteDemo';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
@@ -59,8 +60,7 @@ describe('TesteDemo', () => {
 
   it('keeps Resultados locked until a dataset is confirmed', () => {
     renderDemo();
-    const resultadosButton = screen.getByRole('button', { name: 'Resultados' });
-    expect(resultadosButton).toBeDisabled();
+    expect(screen.queryByRole('region', { name: 'Resultados' })).not.toBeInTheDocument();
   });
 
   it('loads sample data, unlocks Configurar, and reaches Resultados after confirm', async () => {
@@ -70,21 +70,7 @@ describe('TesteDemo', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
-    });
+    await runToResultados(user);
 
     expect(screen.getByText('Grupo A: média')).toBeInTheDocument();
     expect(screen.getByText('Grupo B: média')).toBeInTheDocument();
