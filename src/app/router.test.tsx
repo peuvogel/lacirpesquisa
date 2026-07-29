@@ -37,9 +37,18 @@ function renderAt(initialPath: string) {
 }
 
 describe('router', () => {
-  it('renders the Estatística heading at / (landing route, D-04)', () => {
-    renderAt('/');
-    expect(screen.getByRole('heading', { name: 'Estatística' })).toBeInTheDocument();
+  it('renders the Estatística page at / (landing route, D-04)', () => {
+    const { container } = renderAt('/');
+    expect(container.querySelector('#lacir-test-module-mount')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Qual teste usar?' })).toBeInTheDocument();
+  });
+
+  it('defaults the active test to t-student at / (D-10/D-12)', () => {
+    const { container } = renderAt('/');
+    expect(container.querySelector('#lacir-test-module-mount')).toHaveAttribute(
+      'data-active-test-id', 't-student',
+    );
+    expect(screen.getByRole('heading', { name: 't de Student' })).toBeInTheDocument();
   });
 
   it('renders the shared Em breve placeholder at /meta-analise', () => {
