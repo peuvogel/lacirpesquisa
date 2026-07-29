@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-07-29T04:55:58.234Z"
-last_activity: 2026-07-29 -- Phase 7 planning complete
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-07-29T08:02:30.182Z"
+last_activity: 2026-07-29
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 05 — variaveis-no-site-scrape-referencias
+**Current focus:** Phase 07 — Baseline verde
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
+Phase: 07 (Baseline verde) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-07-29 -- Phase 7 planning complete
+Last activity: 2026-07-29
 
 ## Accumulated Context
 
@@ -97,6 +97,9 @@ Last activity: 2026-07-29 -- Phase 7 planning complete
 - [Phase 05]: MAX_LOADABLE_SELECTION=12 for Variáveis multi-select (T-05-13) — Discretionary classroom bound from plan threat model
 - [Phase 05]: Phase 5 gate: automated PASS; human classroom UAT remains human_needed
 - [Phase 05]: 05-07 typecheck fixes: Dispatch mock cast + drop import.meta.env.DEV
+- [Phase 07-01]: TestId derivado de TEST_REGISTRY via as const satisfies + isTestAvailable como type guard (id is TestId) — elimina classe de bug de tipo solto sem mudar comportamento runtime
+- [Phase 07-01]: TEST_ICONS exaustivo por TestId + iconFor(id) com cast controlado — ícone faltante em novo teste vira erro de compilação, fallback FlaskConical continua testado em runtime (QA-04)
+- [Phase 07-01]: registry.test.ts widened com as TestStatus no teste de em-breve — TS2367 surgiu do as const satisfies da própria Task 1, corrigido inline
 
 ### Pending Todos
 
@@ -108,9 +111,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-28T18:10:32.249Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-baseline-verde/07-CONTEXT.md
+Last session: 2026-07-29T08:02:30.179Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -138,3 +141,4 @@ Resume file: .planning/phases/07-baseline-verde/07-CONTEXT.md
 | Phase 05 P05 | 4min | 2 tasks | 21 files |
 | Phase 05 P06 | 2min | 2 tasks | 9 files |
 | Phase 05 P07 | 4min | 2 tasks | 5 files |
+| Phase 07 P01 | 12min | 3 tasks | 5 files |

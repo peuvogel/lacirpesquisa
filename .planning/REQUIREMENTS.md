@@ -22,10 +22,10 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 
 ### Baseline / Saúde do código
 
-- [ ] **QA-01**: `npm run typecheck` passa sem erros
+- [x] **QA-01**: `npm run typecheck` passa sem erros
 - [ ] **QA-02**: A suíte de testes passa integralmente, e passar é pré-condição de commit
 - [ ] **QA-03**: Nenhum teste fica vermelho "conhecido" — uma falha nova é distinguível de dívida herdada
-- [ ] **QA-04**: Registrar um teste novo sem ícone próprio não derruba o sidebar
+- [x] **QA-04**: Registrar um teste novo sem ícone próprio não derruba o sidebar
 
 ### Integridade da taxonomia
 
@@ -106,10 +106,10 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QA-01 | Phase 7 | Pending |
+| QA-01 | Phase 7 | Complete |
 | QA-02 | Phase 7 | Pending |
 | QA-03 | Phase 7 | Pending |
-| QA-04 | Phase 7 | Pending |
+| QA-04 | Phase 7 | Complete |
 | TAX-01 | Phase 8 | Pending |
 | TAX-02 | Phase 8 | Pending |
 | TAX-03 | Phase 8 | Pending |
