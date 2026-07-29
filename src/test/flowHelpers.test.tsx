@@ -31,7 +31,6 @@ function Fixture({ advancesToResultados = true }: { advancesToResultados?: boole
   return (
     <FlowSteps
       active={active}
-      onStepChange={() => {}}
       canAdvance={{ dados: true, configurar: configurarReady, resultados: resultadosReady }}
       dados={<p>Cole os dados aqui</p>}
       configurar={

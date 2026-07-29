@@ -191,7 +191,6 @@ export function QuiQuadradoTest() {
   return (
     <FlowSteps
       active={activeStep}
-      onStepChange={setActiveStep}
       canAdvance={canAdvance}
       dados={
         <div className="space-y-3">
