@@ -122,3 +122,9 @@ None - nenhuma configuração de serviço externo necessária.
 ---
 *Phase: 07-baseline-verde*
 *Completed: 2026-07-29*
+
+## Self-Check: PASSED
+
+Todos os arquivos declarados e todos os commits referenciados foram verificados presentes no working tree / git log:
+- `src/features/tests/registry.ts`, `src/routes/estatistica/SidebarTestLink.tsx`, `src/routes/estatistica/SidebarTestLink.test.tsx`, `src/routes/estatistica/EstatisticaPage.tsx`, `src/routes/mapas/ReviewAnalysisDialog.test.tsx`, `.planning/phases/07-baseline-verde/07-01-SUMMARY.md` — FOUND
+- `5ea5c8a`, `4d9c8d1`, `2af8a3b`, `a571603` — FOUND
