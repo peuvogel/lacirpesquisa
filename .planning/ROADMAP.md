@@ -62,7 +62,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 07-06-PLAN.md — Landing/router separado + suíte verde e silenciosa
+- [x] 07-06-PLAN.md — Landing/router separado + suíte verde e silenciosa
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 7. Baseline verde | 5/7 | In Progress|  |
+| 7. Baseline verde | 6/7 | In Progress|  |
 | 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |

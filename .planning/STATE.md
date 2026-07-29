@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-07-29T13:56:31.405Z"
+stopped_at: Completed 07-06-PLAN.md
+last_updated: "2026-07-29T20:59:37.805Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 07 (Baseline verde) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -106,6 +106,8 @@ Last activity: 2026-07-29
 - [Phase 07-03]: FlowSteps.test.tsx reescrito: 5 casos vivos cobrindo só o layout scroll, contra os 2 que existiam antes do stepper sair — D-03: cobertura líquida não pode cair ao remover os 5 testes de stepper
 - [Phase 07-04]: D-06/D-07 aplicadas nos 12 casos de AnovaTukey/KruskalDunn/Logistica/BinomialNegativa: click 'Configurar' + aria-current='step' saíram, runToResultados(user) entrou
 - [Phase 07-04]: within(resultados) usado para escopar asserção 'θ (dispersão)' em BinomialNegativaTest — layout scroll mantém Dados e configuração montada ao lado de Resultados, gerando ambiguidade de texto que o stepper antigo nunca expunha
+- [Phase 07-06]: D-09/D-12 implementadas: router.test.tsx desdobrado em dois casos independentes — rota via #lacir-test-module-mount + botão 'Qual teste usar?' (D-04), teste ativo padrão via data-active-test-id/heading 't de Student' (D-10)
+- [Phase 07-06]: D-08 fechada por medição: 0 avisos de act() e 0 de canvas já estavam presentes antes da Task 2 — nenhum arquivo além de router.test.tsx precisou de mudança nesta plan
 
 ### Pending Todos
 
@@ -117,8 +119,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-29T13:47:45.986Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-07-29T20:59:37.803Z
+Stopped at: Completed 07-06-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -151,3 +153,4 @@ Resume file: None
 | Phase 07 P02 | ~7min | 2 tasks | 3 files |
 | Phase 07-baseline-verde P03 | 15min | 2 tasks | 13 files |
 | Phase 07-baseline-verde P04 | ~8min | 2 tasks | 4 files |
+| Phase 07-baseline-verde P06 | ~8min | 2 tasks | 1 files |
