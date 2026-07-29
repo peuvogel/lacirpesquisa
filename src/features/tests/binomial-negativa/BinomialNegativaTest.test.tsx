@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEffect, useState } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider, useSession, type SessionDataset } from '@/shared/session/SessionProvider';
+import { runToResultados } from '@/test/flowHelpers';
 import { BinomialNegativaTest } from './BinomialNegativaTest';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
@@ -78,21 +79,12 @@ describe('BinomialNegativaTest', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
-    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
-    });
+    const resultados = await runToResultados(user);
 
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
     expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
-    expect(screen.getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
+    expect(within(resultados).getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
 
     const prose = screen.getAllByText(/indicou associação|não encontrou associação|Pergunta analisada/i);
     expect(prose.length).toBeGreaterThan(0);
@@ -129,20 +121,14 @@ describe('BinomialNegativaTest', () => {
       </SessionProvider>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).toHaveAttribute('aria-current', 'step');
-    });
+    await screen.findByRole('button', { name: 'Analisar dados' });
 
     const detectedBadges = screen.getAllByText('detectado');
     expect(detectedBadges.length).toBe(2);
 
-    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+    const resultados = await runToResultados(user);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
-    });
-
-    expect(screen.getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
+    expect(within(resultados).getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
   });
 
   it('shows soft reset alert when column role is adjusted after confirm', async () => {
@@ -152,18 +138,8 @@ describe('BinomialNegativaTest', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
+    await runToResultados(user);
 
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
-    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
     await user.selectOptions(screen.getByLabelText(/Papel da coluna contagem/i), 'ignorar');
 
     expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
