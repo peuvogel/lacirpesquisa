@@ -25,7 +25,7 @@ export interface TestRegistryEntry {
   phase: number;
 }
 
-export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
+export const TEST_REGISTRY = [
   {
     id: 't-student',
     title: 't de Student',
@@ -98,14 +98,28 @@ export const TEST_REGISTRY: readonly TestRegistryEntry[] = [
     status: 'available',
     phase: 3,
   },
-];
+] as const satisfies readonly TestRegistryEntry[];
 
+/**
+ * Union of the 9 registry ids, derived from TEST_REGISTRY itself (D-11) —
+ * an id can never drift from the array it comes from.
+ */
+export type TestId = (typeof TEST_REGISTRY)[number]['id'];
+
+export function getTestById(id: TestId): TestRegistryEntry;
+export function getTestById(id: string): TestRegistryEntry | undefined;
 export function getTestById(id: string): TestRegistryEntry | undefined {
   return TEST_REGISTRY.find((entry) => entry.id === id);
 }
 
-export function isTestAvailable(id: string): boolean {
-  return getTestById(id)?.status === 'available';
+/**
+ * Type guard, not just a boolean check — narrows `string` to `TestId` at
+ * every runtime boundary (location.state handoff, cross-test navigation)
+ * so `setActiveTestId(id)` keeps compiling without a cast (07-RESEARCH.md
+ * Pitfall 5). Runtime behavior is unchanged.
+ */
+export function isTestAvailable(id: string): id is TestId {
+  return TEST_REGISTRY.some((entry) => entry.id === id && entry.status === 'available');
 }
 
 /** Sidebar/modal badge copy. */
