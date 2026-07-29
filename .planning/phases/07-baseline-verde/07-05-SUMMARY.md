@@ -128,3 +128,9 @@ None - nenhuma configuração de serviço externo necessária.
 ---
 *Phase: 07-baseline-verde*
 *Completed: 2026-07-29*
+
+## Self-Check: PASSED
+
+Todos os arquivos declarados e todos os commits referenciados foram verificados presentes no working tree / git log:
+- `src/features/tests/poisson/PoissonTest.test.tsx`, `src/features/tests/prais-winsten/PraisWinstenTest.test.tsx`, `src/features/tests/qui-quadrado/QuiQuadradoTest.test.tsx`, `src/routes/estatistica/demo/TesteDemo.test.tsx`, `.planning/phases/07-baseline-verde/07-05-SUMMARY.md` — FOUND
+- `32fcdbf`, `809fae4`, `da853ad` — FOUND
