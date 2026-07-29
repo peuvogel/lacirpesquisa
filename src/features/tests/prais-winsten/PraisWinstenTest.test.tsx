@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
+import { runToResultados } from '@/test/flowHelpers';
 import { PraisWinstenTest } from './PraisWinstenTest';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
@@ -58,11 +59,7 @@ describe('PraisWinstenTest', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
+    await screen.findByRole('button', { name: 'Analisar dados' });
 
     expect(screen.getByText('Prévia da série temporal')).toBeInTheDocument();
     expect(screen.getAllByText('2015').length).toBeGreaterThan(0);
@@ -76,16 +73,7 @@ describe('PraisWinstenTest', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
-    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Resultados' })).toHaveAttribute('aria-current', 'step');
-    });
+    await runToResultados(user);
 
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
@@ -105,12 +93,7 @@ describe('PraisWinstenTest', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Configurar' })).not.toBeDisabled();
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Configurar' }));
-    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+    await runToResultados(user);
 
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: 'Tendência' })).toBeInTheDocument();
