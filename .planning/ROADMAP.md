@@ -46,13 +46,31 @@ Numeração continua do v2.0, que terminou na Fase 6.
 **Plans**: 7 plans (5 waves)
 
 Plans:
+**Wave 1**
+
 - [ ] 07-01-PLAN.md — Tipagem derivada do registry + os 2 erros de typecheck (QA-01, QA-04)
 - [ ] 07-02-PLAN.md — Helper de fluxo compartilhado + stub de canvas incondicional
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 07-03-PLAN.md — Remoção do modo stepper e limpeza da API do FlowSteps
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 07-04-PLAN.md — Reescrita scroll: anova-tukey, kruskal-dunn, logistica, binomial-negativa
 - [ ] 07-05-PLAN.md — Reescrita scroll: poisson, prais-winsten, qui-quadrado, TesteDemo
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 07-06-PLAN.md — Landing/router separado + suíte verde e silenciosa
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 07-07-PLAN.md — Gate: npm run gate, .githooks/ e ci.yml, com prova de bloqueio
+
+**Cross-cutting constraints:**
+
+- Nenhum teste é removido, pulado, marcado `.todo` ou anotado como falha conhecida para chegar ao verde (QA-03)
 
 ### Phase 8: Taxonomia canônica + integridade
 
