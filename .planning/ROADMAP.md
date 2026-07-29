@@ -58,7 +58,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 07-04-PLAN.md — Reescrita scroll: anova-tukey, kruskal-dunn, logistica, binomial-negativa
-- [ ] 07-05-PLAN.md — Reescrita scroll: poisson, prais-winsten, qui-quadrado, TesteDemo
+- [x] 07-05-PLAN.md — Reescrita scroll: poisson, prais-winsten, qui-quadrado, TesteDemo
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 7. Baseline verde | 4/7 | In Progress|  |
+| 7. Baseline verde | 5/7 | In Progress|  |
 | 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
