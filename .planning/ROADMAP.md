@@ -49,7 +49,7 @@ Plans:
 **Wave 1**
 
 - [x] 07-01-PLAN.md — Tipagem derivada do registry + os 2 erros de typecheck (QA-01, QA-04)
-- [ ] 07-02-PLAN.md — Helper de fluxo compartilhado + stub de canvas incondicional
+- [x] 07-02-PLAN.md — Helper de fluxo compartilhado + stub de canvas incondicional
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 7. Baseline verde | 1/7 | In Progress|  |
+| 7. Baseline verde | 2/7 | In Progress|  |
 | 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |

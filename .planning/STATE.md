@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-07-29T08:02:30.182Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-07-29T08:14:56.712Z"
 last_activity: 2026-07-29
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 07 (Baseline verde) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-07-29
 
@@ -100,6 +100,8 @@ Last activity: 2026-07-29
 - [Phase 07-01]: TestId derivado de TEST_REGISTRY via as const satisfies + isTestAvailable como type guard (id is TestId) — elimina classe de bug de tipo solto sem mudar comportamento runtime
 - [Phase 07-01]: TEST_ICONS exaustivo por TestId + iconFor(id) com cast controlado — ícone faltante em novo teste vira erro de compilação, fallback FlaskConical continua testado em runtime (QA-04)
 - [Phase 07-01]: registry.test.ts widened com as TestStatus no teste de em-breve — TS2367 surgiu do as const satisfies da própria Task 1, corrigido inline
+- [Phase 07]: D-06/D-07 implementadas: runToResultados(user) com 2 passos no corpo (click + findByRole('region')), export nomeado em src/test/flowHelpers.ts
+- [Phase 07]: D-08 (canvas) implementada: proto.getContext/proto.toDataURL substituídos incondicionalmente em src/test/setup.ts, sem sondar o método real — 190 avisos de HTMLCanvasElement viraram 0
 
 ### Pending Todos
 
@@ -111,8 +113,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-29T08:02:30.179Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-07-29T08:14:56.709Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -142,3 +144,4 @@ Resume file: None
 | Phase 05 P06 | 2min | 2 tasks | 9 files |
 | Phase 05 P07 | 4min | 2 tasks | 5 files |
 | Phase 07 P01 | 12min | 3 tasks | 5 files |
+| Phase 07 P02 | ~7min | 2 tasks | 3 files |

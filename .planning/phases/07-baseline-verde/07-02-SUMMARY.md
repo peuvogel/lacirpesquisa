@@ -113,3 +113,9 @@ None - nenhuma configuração de serviço externo necessária.
 ---
 *Phase: 07-baseline-verde*
 *Completed: 2026-07-29*
+
+## Self-Check: PASSED
+
+Todos os arquivos declarados e todos os commits referenciados foram verificados presentes no working tree / git log:
+- `src/test/flowHelpers.ts`, `src/test/flowHelpers.test.tsx`, `src/test/setup.ts`, `.planning/phases/07-baseline-verde/07-02-SUMMARY.md` — FOUND
+- `e7ee9c5`, `8a822cd`, `d815808` — FOUND
