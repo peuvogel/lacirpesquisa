@@ -2,7 +2,7 @@
 phase: 07
 slug: baseline-verde
 status: planned
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-28
 ---
@@ -51,6 +51,7 @@ Task IDs são preenchidos durante o planejamento; as linhas abaixo fixam o coman
 | 07-02 T2 / 07-06 T2 | 07-02, 07-06 | 1 e 4 | QA-02 (D-08, silêncio) | — | N/A | log assertion | `npx vitest run 2>&1 \| grep -c "Not implemented: HTMLCanvasElement"` → 0; `grep -c "was not wrapped in act"` → 0 | ✅ setup.ts existe (contém o probe defeituoso) | ⬜ pending |
 | 07-07 T3 | 07-07 | 5 | QA-03 / SC#5 | T-07-07-03, T-07-07-04 | Hook não pode ser burlado silenciosamente; `--no-verify` é bypass conhecido e documentado | integration (git hook) | commit deliberadamente vermelho contra `.githooks/pre-commit` ativo → exit ≠ 0 e nenhum commit criado | ❌ W0 — hooks não existem | ⬜ pending |
 | 07-07 T3 | 07-07 | 5 | QA-03 (D-18) | — | N/A | integration (git hook) | commit tocando só `.planning/` → completa em < 2s, sem rodar o gate | ❌ W0 | ⬜ pending |
+| 07-07 T3 | 07-07 | 5 | SC#5 | T-07-07-03 | `pre-push` roda sempre — a exceção de D-18 vale só para o pre-commit | integration (git hook) | push vermelho contra bare local (`git init --bare /tmp/remote-test.git`) → exit ≠ 0 e `git ls-remote` sem refs | ❌ W0 — hooks não existem | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -73,19 +74,22 @@ Task IDs são preenchidos durante o planejamento; as linhas abaixo fixam o coman
 |----------|-------------|------------|-------------------|
 | O workflow do Actions bloqueia merge de fato | SC#5 | Requer remote no GitHub **e** branch protection com required status check — configuração operacional, não código. O repositório não tem remote hoje. | Quando existir remote: push da branch, abrir PR, confirmar que o check `gate` aparece como required e que um PR vermelho fica bloqueado. Até lá, o `ci.yml` é verificável só por lint de sintaxe. |
 | `core.hooksPath` sobrevive a um clone novo | QA-03 | `core.hooksPath` é config **local** — nunca viaja com o clone. Precisa de bootstrap (ex.: script `prepare` do npm). | Clonar o repo em diretório temporário, rodar `npm install`, confirmar `git config core.hooksPath` → `.githooks`. |
-| `pre-push` bloqueia push vermelho | SC#5 | Sem remote, `git push` não acontece. | Criar remote de teste (`git init --bare /tmp/remote-test.git`), adicionar, tentar push com suíte vermelha, esperar exit ≠ 0. |
+
+**Promovido a roteirizado (não é mais manual):** "`pre-push` bloqueia push vermelho" saiu desta tabela — não precisa de remote no GitHub nem de julgamento humano, só de um bare local (`git init --bare /tmp/remote-test.git`). Virou cenário 3 da Task 3 do `07-07-PLAN.md`, com critério de aceite por código de saída.
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (SidebarTestLink.test.tsx, helper de fluxo, .githooks/, correção do stub)
-- [ ] No watch-mode flags (`vitest run`, nunca `vitest` interativo)
-- [ ] Feedback latency < 25s
-- [ ] Suíte provada verde **e silenciosa** (0 avisos de canvas, 0 de act)
-- [ ] Gate provado bloqueante, não apenas presente
-- [ ] `nyquist_compliant: true` set in frontmatter
+Marcado só o que é verificável **em tempo de planejamento**. As duas caixas restantes só podem ser marcadas depois da execução, com prova em mão — marcar antes seria exatamente o tipo de check não merecido que este milestone existe para eliminar.
 
-**Approval:** pending
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies — 16 tasks nos 7 planos, 16 blocos `<automated>`
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (SidebarTestLink.test.tsx, helper de fluxo, .githooks/, correção do stub)
+- [x] No watch-mode flags (`vitest run`, nunca `vitest` interativo)
+- [x] Feedback latency < 25s — suíte completa medida em 18,7s (2026-07-28); os comandos por task são de arquivo único, portanto mais rápidos
+- [ ] Suíte provada verde **e silenciosa** (0 avisos de canvas, 0 de act) — só verificável ao fim da Wave 4
+- [ ] Gate provado bloqueante, não apenas presente — só verificável ao fim da Wave 5 (cenários 1 a 3 da Task 3 do `07-07`)
+- [x] `nyquist_compliant: true` set in frontmatter
+
+**Approval:** pending — fica pendente até as duas caixas de execução fecharem.

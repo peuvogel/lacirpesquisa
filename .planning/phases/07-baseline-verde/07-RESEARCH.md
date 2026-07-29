@@ -458,19 +458,21 @@ jobs:
 
 **Se esta tabela parecer pequena:** é porque a maioria dos achados desta pesquisa foi verificada por reprodução direta neste repositório (comandos rodados nesta sessão) ou por consulta à API/documentação oficial, não por conhecimento de treinamento não verificado.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Opção A vs. B de composição do `gate` (Pattern 4)**
+As três questões foram fechadas no planejamento e as resoluções já estão aplicadas de forma consistente nos 7 planos. O conteúdo técnico abaixo permanece como registrado na pesquisa; só a marcação de resolução foi acrescentada.
+
+1. **RESOLVED: Opção A vs. B de composição do `gate` (Pattern 4)** — resolvido como **Opção A**, aplicado em `07-07-PLAN.md` Task 1 (`"gate": "npm run test:run && npm run build"`, com critério de aceite que proíbe `tsc` no comando).
    - What we know: ambas evitam rodar `tsc` duas vezes; ambas cobrem typecheck+test+build.
    - What's unclear: se o time prefere fail-fast (B, com risco de duplicação textual futura) ou DRY total (A, com typecheck só depois da suíte).
    - Recommendation: Opção A por padrão — CONTEXT.md deixa isso como discricionário do executor; nenhuma das duas viola D-17.
 
-2. **Pin por SHA das GitHub Actions (endurecimento de supply chain)**
+2. **RESOLVED: Pin por SHA das GitHub Actions (endurecimento de supply chain)** — resolvido como **tag major, sem pin por SHA**, aplicado em `07-07-PLAN.md` Task 3 (`actions/checkout@v7` e `actions/setup-node@v7`, com critério de aceite que proíbe `@main`/`@master`) e registrado em T-07-07-01, que deixa o pin por SHA explicitamente como endurecimento futuro.
    - What we know: `actions/checkout`/`setup-node` são primeira-parte GitHub, risco baixo; pin por tag major (`@v7`) já é prática comum.
    - What's unclear: se o projeto quer o endurecimento extra de pin por commit SHA (mais seguro contra um major tag ser recomprometido, mas exige atualização manual mais frequente).
    - Recommendation: tag major (`@v7`) é suficiente para este projeto (baixo risco, sem segredos de produção no bundle) — não vale a fricção operacional extra agora; revisitar se o projeto crescer em superfície de CI.
 
-3. **Nome/assinatura exata do helper de teste**
+3. **RESOLVED: Nome/assinatura exata do helper de teste** — resolvido como **`runToResultados(user)`**, aplicado em `07-02-PLAN.md` Task 1 (`export async function runToResultados` em `src/test/flowHelpers.ts`) e consumido com esse nome pelos 9 arquivos reescritos em `07-04`/`07-05`.
    - Já marcado como discricionário no CONTEXT — não é uma lacuna de pesquisa, é uma decisão do executor. `runToResultados(user)` (Pattern 1) é uma sugestão concreta e testável, não uma prescrição.
 
 ## Environment Availability
