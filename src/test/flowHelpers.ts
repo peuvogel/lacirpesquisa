@@ -12,7 +12,7 @@ import type { UserEvent } from '@testing-library/user-event';
  * da seção.
  *
  * Proibido aqui dentro (idioma de 3 passos, D-07): ler o atributo que o
- * antigo stepper usava para marcar o passo ativo, clicar em qualquer botão
+ * layout antigo (removido) usava para marcar o passo ativo, clicar em qualquer botão
  * de navegação entre etapas, ou usar espera manual de temporizador (relógio
  * falso avançado manualmente ou `Promise` própria) — o atraso do debounce de
  * parse do dado colado é específico do carregamento e permanece no arquivo
