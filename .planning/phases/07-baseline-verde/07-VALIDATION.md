@@ -88,8 +88,10 @@ Marcado só o que é verificável **em tempo de planejamento**. As duas caixas r
 - [x] Wave 0 covers all MISSING references (SidebarTestLink.test.tsx, helper de fluxo, .githooks/, correção do stub)
 - [x] No watch-mode flags (`vitest run`, nunca `vitest` interativo)
 - [x] Feedback latency < 25s — suíte completa medida em 18,7s (2026-07-28); os comandos por task são de arquivo único, portanto mais rápidos
-- [ ] Suíte provada verde **e silenciosa** (0 avisos de canvas, 0 de act) — só verificável ao fim da Wave 4
-- [ ] Gate provado bloqueante, não apenas presente — só verificável ao fim da Wave 5 (cenários 1 a 3 da Task 3 do `07-07`)
+- [x] Suíte provada verde **e silenciosa** — medido pelo orquestrador em 2026-07-29: `npx vitest run` exit 0, 681/681 em 97 arquivos; `grep -c "Not implemented: HTMLCanvasElement"` → 0 (eram 190); `grep -c "was not wrapped in act"` → 0 (eram 21); zero testes pulados em `src/`
+- [x] Gate provado bloqueante, não apenas presente — os 3 cenários foram **executados**, não descritos: (1) commit com erro de tipo → exit 1, nenhum commit criado; (2) commit só-`.planning/` → exit 0 em 0s, gate pulado (D-18); (3) push vermelho contra bare local → exit 1, `git ls-remote` sem refs. Limpeza completa confirmada
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending — fica pendente até as duas caixas de execução fecharem.
+**Approval:** approved 2026-07-29 — as duas caixas de execução fecharam com prova medida.
+
+**Ressalva que permanece aberta (não é lacuna de validação, é escopo operacional):** o `ci.yml` está versionado e correto, mas não bloqueia merge por si só — isso exige remote no GitHub mais branch protection com o check `gate` como required. As duas verificações da tabela "Manual-Only Verifications" acima seguem pendentes por depender de infraestrutura que não existe no repositório hoje.

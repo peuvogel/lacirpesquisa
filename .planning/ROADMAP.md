@@ -19,7 +19,7 @@ Um tema une os quatro defeitos, repetido em quatro camadas da pilha: **uma ausê
 
 Numeração continua do v2.0, que terminou na Fase 6.
 
-- [ ] **Phase 7: Baseline verde** - typecheck limpo, suíte inteira passando, gate de CI que impede o vermelho de voltar
+- [x] **Phase 7: Baseline verde** - typecheck limpo, suíte inteira passando, gate de CI que impede o vermelho de voltar (completed 2026-07-29)
 - [ ] **Phase 8: Taxonomia canônica + integridade** - regerar a Lista Morb da fonte oficial, migrar ids no Supabase sem perder linha, validação fail-closed, apelidos clínicos
 - [ ] **Phase 9: Pipeline confiável + coleta completa** - ledger por agravo × medida × grão, falha ruidosa, retomada; 4 medidas × 330 agravos × UF e município
 - [ ] **Phase 10: Mapas dinâmicos sobre Supabase** - choropleth ao vivo para os 330, tri-estado honesto, drill municipal sob demanda, sem truncamento silencioso
@@ -66,7 +66,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 07-07-PLAN.md — Gate: npm run gate, .githooks/ e ci.yml, com prova de bloqueio
+- [x] 07-07-PLAN.md — Gate: npm run gate, .githooks/ e ci.yml, com prova de bloqueio
 
 **Cross-cutting constraints:**
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
-| 7. Baseline verde | 6/7 | In Progress|  |
+| 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
 | 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
