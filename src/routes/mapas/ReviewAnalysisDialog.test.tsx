@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import * as registry from '@/features/tests/registry';
 import { SessionProvider, useSession, type SessionDataset } from '@/shared/session/SessionProvider';
 import type { MapAnalysisGroup } from './mapAnalysisState';
-import { deriveSelectionSummary } from './mapAnalysisState';
+import { createInitialMapAnalysisState, deriveSelectionSummary } from './mapAnalysisState';
 import { ReviewAnalysisDialog, resolveHandoffTestId } from './ReviewAnalysisDialog';
 import { guardHandoffTestId } from './mapHandoffShared';
 import { TestPickerSelect } from './TestPickerSelect';
@@ -65,6 +65,7 @@ function renderDialog(
 ) {
   const onOpenChange = vi.fn();
   const summary = deriveSelectionSummary({
+    ...createInitialMapAnalysisState(),
     groups,
     activeGroupId: 'g1',
     mapView: { level: 'uf' },

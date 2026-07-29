@@ -9,7 +9,7 @@ import { PoissonTest } from '@/features/tests/poisson/PoissonTest';
 import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTest';
 import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
 import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
-import { getTestById, isTestAvailable } from '@/features/tests/registry';
+import { getTestById, isTestAvailable, type TestId } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
 import { PortalDatasusLink } from './PortalDatasusLink';
@@ -86,7 +86,7 @@ function renderActiveTest({
 export function EstatisticaPage() {
   const { hasData } = useSession();
   const location = useLocation();
-  const [activeTestId, setActiveTestId] = useState<string>('t-student');
+  const [activeTestId, setActiveTestId] = useState<TestId>('t-student');
   const [handoffRecognizedColumns, setHandoffRecognizedColumns] = useState<
     Record<string, number> | undefined
   >();
@@ -119,7 +119,7 @@ export function EstatisticaPage() {
     }
   }
 
-  const pageTitle = getTestById(activeTestId)?.title ?? 'Estatística';
+  const pageTitle = getTestById(activeTestId).title;
 
   return (
     <>
