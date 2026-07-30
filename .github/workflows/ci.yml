@@ -4,6 +4,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+
+# Menor escopo possivel para o GITHUB_TOKEN: este job so faz checkout,
+# build e teste — nao escreve nada no repositorio. Sem este bloco, o token
+# herda o padrao da organizacao/repositorio, que pode incluir escrita.
+permissions:
+  contents: read
+
 jobs:
   gate:
     runs-on: ubuntu-latest
