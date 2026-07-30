@@ -20,5 +20,14 @@ const proto = HTMLCanvasElement.prototype;
 const noop = () => {};
 const contextStub = new Proxy({}, { get: () => noop });
 
-proto.getContext = (() => contextStub) as unknown as typeof proto.getContext;
+// A substituicao continua incondicional (ver acima), mas o stub honra o
+// contextId em vez de devolver um objeto truthy para qualquer argumento.
+// No browser/jsdom real, getContext() com um id nao suportado ('webgl',
+// 'bitmaprenderer', ou um id invalido) devolve null; com o stub antigo,
+// qualquer `const ctx = canvas.getContext(...); if (!ctx) { fallback }`
+// nunca exercitava o branch de fallback sob teste, porque ctx era sempre
+// truthy. Devolver null fora do '2d' preserva o objetivo original
+// (nenhum warning, nenhum desenho real) e mantem esse branch testavel.
+proto.getContext = ((contextId: string) =>
+  contextId === '2d' ? contextStub : null) as unknown as typeof proto.getContext;
 proto.toDataURL = (() => 'data:image/png;base64,stub') as typeof proto.toDataURL;
