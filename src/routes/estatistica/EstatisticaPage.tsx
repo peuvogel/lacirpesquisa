@@ -22,7 +22,14 @@ export interface EstatisticaHandoffState {
 }
 
 interface RenderActiveTestProps {
-  activeTestId: string;
+  /**
+   * `TestId`, não `string`: junto com o `default` exaustivo abaixo, isso faz
+   * o TypeScript recusar a compilação assim que um décimo id entrar em
+   * `TEST_REGISTRY` sem um `case` correspondente aqui — a mesma garantia que
+   * `TEST_ICONS` já tem em SidebarTestLink.tsx. Com `string`, o id novo
+   * caía no `default` e o módulo simplesmente não renderizava, sem erro.
+   */
+  activeTestId: TestId;
   handoffRecognizedColumns?: Record<string, number>;
   onCrossTestHandoff: (testId: string, recognizedColumns?: Record<string, number>) => void;
 }
@@ -76,8 +83,12 @@ function renderActiveTest({
       );
     case 'logistica':
       return <LogisticaTest key={activeTestId} />;
-    default:
-      return null;
+    default: {
+      // Erro de compilação (TS2322) se um id de TEST_REGISTRY ficar sem
+      // `case` acima — a ausência vira falha de build, não tela vazia.
+      const exhaustive: never = activeTestId;
+      return exhaustive;
+    }
   }
 }
 
