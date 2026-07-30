@@ -15,8 +15,13 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      # Actions fixadas por SHA de commit, nao por tag movel: uma tag de
+      # major (@v7) pode ser reapontada para outro commit sem nenhuma
+      # mudanca neste repositorio. SHAs conferidos na API do GitHub
+      # (refs/tags do proprio upstream). Ao atualizar, troque SHA e
+      # comentario juntos.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: 'npm'
