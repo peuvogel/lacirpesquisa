@@ -12,7 +12,7 @@
     "test:run": "npm run catalog:validate && vitest run",
     "typecheck": "tsc --noEmit",
     "gate": "npm run test:run && npm run build",
-    "prepare": "git config core.hooksPath .githooks || true",
+    "prepare": "git config core.hooksPath .githooks || echo 'AVISO: nao foi possivel configurar core.hooksPath — os hooks locais (pre-commit/pre-push) NAO estao ativos neste clone. O gate local esta desligado; rode manualmente: git config core.hooksPath .githooks' 1>&2",
     "catalog:build": "node scripts/catalog/build.mjs",
     "catalog:validate": "node scripts/catalog/validate.mjs",
     "catalog:sync-column-map": "node scripts/catalog/syncColumnMap.mjs",
