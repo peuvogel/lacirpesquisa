@@ -33,6 +33,37 @@ vi.mock('chart.js', () => ({
   Filler: {},
 }));
 
+/**
+ * Dataset com desvios-padrão deliberadamente díspares entre os grupos
+ * (sd_C ≈ 11,2 contra sd_A ≈ 0,16) para disparar o nudge de heterogeneidade
+ * de variâncias, que é o único que carrega o CTA "Abrir Kruskal-Wallis +
+ * Dunn" (anovaEngine.ts:189-202).
+ *
+ * O `exampleText` do módulo NÃO serve para este teste: seus três grupos têm
+ * n igual (5/5/5), desvios-padrão quase idênticos (1,29 / 1,39 / 1,65) e
+ * média ≈ mediana, então nenhuma das quatro condições de
+ * `computeAssumptionNudges` dispara e o botão do CTA nunca chega a existir.
+ * Enquanto este teste usava `exampleText` + `queryByRole` condicional, ele
+ * passava sem nunca executar sua própria asserção.
+ */
+const heteroscedasticText = `desfecho;grupo
+12,0;A
+12,2;A
+11,8;A
+12,1;A
+11,9;A
+18,0;B
+18,3;B
+17,7;B
+18,1;B
+17,9;B
+10,0;C
+30,0;C
+20,0;C
+40,0;C
+25,0;C
+`;
+
 function renderAnova(onNavigateTest?: (testId: string) => void) {
   return render(
     <SessionProvider>
@@ -95,7 +126,8 @@ describe('AnovaTukeyTest', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderAnova(onNavigateTest);
 
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await user.click(screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'));
+    await user.paste(heteroscedasticText);
     await vi.advanceTimersByTimeAsync(200);
 
     await runToResultados(user);
@@ -104,10 +136,10 @@ describe('AnovaTukeyTest', () => {
       expect(screen.getByText('Comparações par a par')).toBeInTheDocument();
     });
 
-    const kruskalButton = screen.queryByRole('button', { name: /Kruskal/i });
-    if (kruskalButton) {
-      await user.click(kruskalButton);
-      expect(onNavigateTest).toHaveBeenCalledWith('kruskal-dunn', expect.any(Object));
-    }
+    const kruskalButton = await screen.findByRole('button', {
+      name: 'Abrir Kruskal-Wallis + Dunn',
+    });
+    await user.click(kruskalButton);
+    expect(onNavigateTest).toHaveBeenCalledWith('kruskal-dunn', expect.any(Object));
   });
 });
