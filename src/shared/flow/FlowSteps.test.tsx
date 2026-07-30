@@ -66,19 +66,40 @@ describe('FlowSteps', () => {
   });
 
   it('scrolls the resultados section into view when it becomes reachable', () => {
+    // jsdom nao implementa scrollIntoView: a propriedade nem chega a existir
+    // em Element.prototype (typeof === 'undefined', hasOwnProperty === false),
+    // entao vi.spyOn() lancaria "is not a function" e nao serve aqui. A
+    // atribuicao direta e necessaria — mas precisa ser desfeita no finally,
+    // senao qualquer teste adicionado depois deste no mesmo describe herda o
+    // mock em vez do comportamento real, sem nenhum sinal disso.
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
     const scrollIntoViewMock = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoViewMock;
 
-    render(
-      <FlowSteps
-        active="resultados"
-        canAdvance={baseCanAdvance}
-        dados={<p>Dados</p>}
-        configurar={<p>Configurar</p>}
-        resultados={<p>Resultados</p>}
-      />,
-    );
+    try {
+      render(
+        <FlowSteps
+          active="resultados"
+          canAdvance={baseCanAdvance}
+          dados={<p>Dados</p>}
+          configurar={<p>Configurar</p>}
+          resultados={<p>Resultados</p>}
+        />,
+      );
 
-    expect(scrollIntoViewMock).toHaveBeenCalled();
+      expect(scrollIntoViewMock).toHaveBeenCalled();
+    } finally {
+      if (original) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original);
+      } else {
+        // Restaura a ausencia real do jsdom, nao uma propriedade com valor
+        // undefined.
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      }
+    }
+  });
+
+  it('leaves Element.prototype.scrollIntoView unpatched for subsequent tests', () => {
+    expect(Object.prototype.hasOwnProperty.call(Element.prototype, 'scrollIntoView')).toBe(false);
   });
 });
