@@ -1,123 +1,157 @@
 /**
- * Sync full TabNet SIH Lista Morb CID-10 into diseases.json + diseases.lista.json.
+ * Generate diseases.json + diseases.lista.json from the committed Lista Morb CID-10
+ * snapshot (D-09). No network access here — refreshing the snapshot is the exclusive
+ * responsibility of `listaMorbSource.mjs --refresh`.
  *
  * Usage: node scripts/catalog/sync-lista-morb.mjs
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { loadSnapshot, slugify } from './listaMorbSource.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
-const TABNET_URL = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def';
 
-/** Preserve pack-compatible ids for diseases already scraped. */
-const KNOWN_BY_CODE = {
-  183: 'embolia_trombose',
-  185: 'varizes_mmii',
-  179: 'aneurisma_aorta',
-  163: 'avc',
-  164: 'ait',
-  178: 'doencas_arterias',
-  190: 'outras_doencas_vasculares',
-  182: 'embolia_pulmonar',
-  184: 'flebites_tromboflebites',
-  175: 'hipertensao',
-  176: 'angina_pectoris',
-  177: 'infarto_agudo',
-  180: 'outras_doencas_arteriais',
-  181: 'aterosclerose',
-  186: 'hemorroidas',
-  187: 'outras_doencas_veias',
-  188: 'linfedema',
-  189: 'hipotensao',
-  172: 'febre_reumatica',
-  173: 'doencas_reumaticas_cronicas',
-  174: 'outras_doencas_coracao',
-};
+const EXCLUSIONS_PATH = path.join(ROOT, 'scripts/catalog/exclusions.json');
+const EXTRA_DISEASES_PATH = path.join(ROOT, 'scripts/catalog/extra-diseases.json');
+const CID_MAP_PATH = path.join(ROOT, 'scripts/catalog/lista-morb-cid.json');
+const DISEASES_JSON_PATH = path.join(ROOT, 'scripts/catalog/diseases.json');
+const DISEASES_LISTA_JSON_PATH = path.join(ROOT, 'src/features/catalog/diseases.lista.json');
 
-const SKIP_CODES = new Set(['331', '332', '333']);
+/**
+ * Build the canonical `diseases.json` array from the raw snapshot options.
+ * Pulls in only what a real Lista Morb category needs — no id dictionary, no
+ * regex against the label (D-25). The only path skipped is `code` empty or
+ * present in `exclusions`.
+ *
+ * @param {{
+ *   options: { code: string, label: string }[],
+ *   exclusions: Record<string, string>,
+ *   extras: { id: string, label: string, filterKind: string, tabnetCode: string, def: string, reason?: string }[],
+ * }} args
+ * @returns {{ id: string, label: string, filterKind: string, tabnetCode: string, def: string }[]}
+ */
+export function buildDiseases({ options, exclusions, extras }) {
+  const out = [];
+  const seen = new Map();
 
-function slugify(label, code) {
-  const s = label
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .toLowerCase()
-    .replace(/_+/g, '_');
-  return s || `lista_${code}`;
+  for (const opt of options) {
+    const code = String(opt.code).trim();
+    const label = String(opt.label).trim();
+    if (!code || Object.prototype.hasOwnProperty.call(exclusions, code)) continue;
+
+    const id = slugify(label, code);
+    if (seen.has(id)) {
+      const other = seen.get(id);
+      throw new Error(
+        `buildDiseases: colisão de slug "${id}" entre tabnetCode ${other.code} ("${other.label}") e tabnetCode ${code} ("${label}") — decisão humana necessária, nenhum sufixo automático`,
+      );
+    }
+    seen.set(id, { code, label });
+
+    out.push({
+      id,
+      label,
+      filterKind: 'lista_morb',
+      tabnetCode: code,
+      def: 'sih/cnv/nibr.def',
+    });
+  }
+
+  for (const extra of extras) {
+    out.push({
+      id: extra.id,
+      label: extra.label,
+      filterKind: extra.filterKind,
+      tabnetCode: extra.tabnetCode,
+      def: extra.def,
+    });
+  }
+
+  return out;
 }
 
-function decodeEntities(text) {
-  return text
-    .replace(/&aacute;/gi, 'á')
-    .replace(/&eacute;/gi, 'é')
-    .replace(/&iacute;/gi, 'í')
-    .replace(/&oacute;/gi, 'ó')
-    .replace(/&uacute;/gi, 'ú')
-    .replace(/&atilde;/gi, 'ã')
-    .replace(/&otilde;/gi, 'õ')
-    .replace(/&ccedil;/gi, 'ç')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+/**
+ * Build the minified runtime array (`diseases.lista.json` shape) from the canonical
+ * diseases array plus the CID map keyed by `tabnetCode` (D-11).
+ *
+ * @param {{ id: string, label: string, filterKind: string, tabnetCode: string, def: string }[]} diseases
+ * @param {Record<string, string>} cidByCode
+ * @returns {{ id: string, label: string, filterKind: string, tabnetCode: string, cid: string | null, packId: string, domain: string }[]}
+ */
+export function buildRuntimeLista(diseases, cidByCode) {
+  return diseases.map((d) => ({
+    id: d.id,
+    label: d.label,
+    filterKind: d.filterKind,
+    tabnetCode: d.tabnetCode,
+    cid: d.filterKind === 'lista_morb' ? (cidByCode[d.tabnetCode] ?? null) : null,
+    packId: `sih.${d.id}_uf`,
+    domain: d.filterKind === 'lista_morb' ? 'sih_lista_morb' : 'vascular',
+  }));
 }
 
-const html = await (await fetch(TABNET_URL)).text();
-const blockMatch = html.match(
-  /<select[^>]*name=["']SLista_Morb__CID-10["'][^>]*>([\s\S]*?)<\/select>/i,
-);
-if (!blockMatch) throw new Error('SLista_Morb__CID-10 select not found in TabNet HTML');
-
-const opts = [...blockMatch[1].matchAll(/<option[^>]*value=["']([^"']*)["'][^>]*>([^<]*)/gi)];
-const out = [];
-const seen = new Set();
-
-for (const [, codeRaw, labelRaw] of opts) {
-  const code = String(codeRaw).trim();
-  const label = decodeEntities(labelRaw).replace(/\s+/g, ' ').trim();
-  if (!code || SKIP_CODES.has(code) || /^todas/i.test(label) || code.startsWith('TODAS')) continue;
-  let id = KNOWN_BY_CODE[code] ?? slugify(label, code);
-  if (seen.has(id)) id = `${id}_${code}`;
-  seen.add(id);
-  out.push({
-    id,
-    label,
-    filterKind: 'lista_morb',
-    tabnetCode: code,
-    def: 'sih/cnv/nibr.def',
-  });
+/**
+ * @param {ReturnType<typeof buildDiseases>} diseases
+ * @returns {string}
+ */
+export function renderDiseasesJson(diseases) {
+  return `${JSON.stringify(diseases, null, 2)}\n`;
 }
 
-out.push({
-  id: 'amputacao_mmii',
-  label: 'Amputação / desarticulação de membros inferiores',
-  filterKind: 'procedimento',
-  tabnetCode: '3331',
-  def: 'sih/cnv/qibr.def',
-});
+/**
+ * @param {ReturnType<typeof buildRuntimeLista>} runtime
+ * @returns {string}
+ */
+export function renderListaJson(runtime) {
+  return `${JSON.stringify(runtime)}\n`;
+}
 
-const diseasesPath = path.join(ROOT, 'scripts/catalog/diseases.json');
-fs.writeFileSync(diseasesPath, `${JSON.stringify(out, null, 2)}\n`);
+/**
+ * Load the committed snapshot + the three data-with-reason input files, build both
+ * derived artifacts in memory, and return everything a caller (CLI `main()`,
+ * `buildRenameMap.mjs`, vitest) needs — without touching disk beyond the reads.
+ *
+ * @returns {{
+ *   diseases: ReturnType<typeof buildDiseases>,
+ *   runtime: ReturnType<typeof buildRuntimeLista>,
+ *   diseasesText: string,
+ *   listaText: string,
+ * }}
+ */
+export function generateFromSnapshot() {
+  const { extract } = loadSnapshot();
+  const exclusions = JSON.parse(fs.readFileSync(EXCLUSIONS_PATH, 'utf8'));
+  const extras = JSON.parse(fs.readFileSync(EXTRA_DISEASES_PATH, 'utf8'));
+  const cidByCode = JSON.parse(fs.readFileSync(CID_MAP_PATH, 'utf8'));
 
-const cidMapPath = path.join(ROOT, 'scripts/catalog/lista-morb-cid.json');
-const cidById = fs.existsSync(cidMapPath)
-  ? JSON.parse(fs.readFileSync(cidMapPath, 'utf8'))
-  : {};
+  const diseases = buildDiseases({ options: extract.options, exclusions, extras });
+  const runtime = buildRuntimeLista(diseases, cidByCode);
 
-const runtime = out.map((d) => ({
-  id: d.id,
-  label: d.label,
-  filterKind: d.filterKind,
-  tabnetCode: d.tabnetCode,
-  cid: d.filterKind === 'lista_morb' ? (cidById[d.id] ?? null) : null,
-  packId: `sih.${d.id}_uf`,
-  domain: d.filterKind === 'lista_morb' ? 'sih_lista_morb' : 'vascular',
-}));
-fs.writeFileSync(
-  path.join(ROOT, 'src/features/catalog/diseases.lista.json'),
-  `${JSON.stringify(runtime)}\n`,
-);
+  return {
+    diseases,
+    runtime,
+    diseasesText: renderDiseasesJson(diseases),
+    listaText: renderListaJson(runtime),
+  };
+}
 
-console.log(`sync-lista-morb: ${out.length} diseases → diseases.json + diseases.lista.json`);
+function main() {
+  const { diseases, diseasesText, listaText } = generateFromSnapshot();
+
+  fs.writeFileSync(DISEASES_JSON_PATH, diseasesText);
+  fs.writeFileSync(DISEASES_LISTA_JSON_PATH, listaText);
+
+  console.log(
+    `sync-lista-morb: ${diseases.length} diseases → diseases.json + diseases.lista.json`,
+  );
+}
+
+const isDirectRun =
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+
+if (isDirectRun) {
+  main();
+}
