@@ -1,0 +1,1343 @@
+{
+  "source": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
+  "capturedAt": "2026-08-03T20:41:49.502Z",
+  "sha256": "3991c5a99c77ee9958daa483cf462a9e37370e3651380515fe44ec91ff4de612",
+  "options": [
+    {
+      "code": "TODAS_AS_CATEGORIAS__",
+      "label": "Todas as categorias"
+    },
+    {
+      "code": "1",
+      "label": "Cólera"
+    },
+    {
+      "code": "2",
+      "label": "Febres tifóide e paratifóide"
+    },
+    {
+      "code": "3",
+      "label": "Shiguelose"
+    },
+    {
+      "code": "4",
+      "label": "Amebíase"
+    },
+    {
+      "code": "5",
+      "label": "Diarréia e gastroenterite origem infecc presumível"
+    },
+    {
+      "code": "6",
+      "label": "Outras doenças infecciosas intestinais"
+    },
+    {
+      "code": "7",
+      "label": "Tuberculose pulmonar"
+    },
+    {
+      "code": "8",
+      "label": "Outras tuberculoses respiratórias"
+    },
+    {
+      "code": "9",
+      "label": "Restante de tuberculose respiratória"
+    },
+    {
+      "code": "10",
+      "label": "Tuberculose do sistema nervoso"
+    },
+    {
+      "code": "11",
+      "label": "Tuberc intest perit&ocirc;nio gl&acirc;ngl mesentéricos"
+    },
+    {
+      "code": "12",
+      "label": "Tuberculose óssea e das articulações"
+    },
+    {
+      "code": "13",
+      "label": "Tuberculose do aparelho geniturinário"
+    },
+    {
+      "code": "14",
+      "label": "Tuberculose miliar"
+    },
+    {
+      "code": "15",
+      "label": "Restante de outras tuberculoses"
+    },
+    {
+      "code": "16",
+      "label": "Peste"
+    },
+    {
+      "code": "17",
+      "label": "Brucelose"
+    },
+    {
+      "code": "18",
+      "label": "Hanseníase [lepra]"
+    },
+    {
+      "code": "19",
+      "label": "Tétano neonatal"
+    },
+    {
+      "code": "20",
+      "label": "Outros tétanos"
+    },
+    {
+      "code": "21",
+      "label": "Difteria"
+    },
+    {
+      "code": "22",
+      "label": "Coqueluche"
+    },
+    {
+      "code": "23",
+      "label": "Infecção meningocócica"
+    },
+    {
+      "code": "24",
+      "label": "Septicemia"
+    },
+    {
+      "code": "25",
+      "label": "Leptospirose icterohemorrágica"
+    },
+    {
+      "code": "26",
+      "label": "Outras formas de leptospirose"
+    },
+    {
+      "code": "27",
+      "label": "Leptospirose não especificada"
+    },
+    {
+      "code": "28",
+      "label": "Restante de outras doenças bacterianas"
+    },
+    {
+      "code": "29",
+      "label": "Sífilis cong&ecirc;nita"
+    },
+    {
+      "code": "30",
+      "label": "Sífilis precoce"
+    },
+    {
+      "code": "31",
+      "label": "Outras sífilis"
+    },
+    {
+      "code": "32",
+      "label": "Infecção gonocócica"
+    },
+    {
+      "code": "33",
+      "label": "Doenças por clamídias transmitidas por via sexual"
+    },
+    {
+      "code": "34",
+      "label": "Outras infecções com transm predominant sexual"
+    },
+    {
+      "code": "35",
+      "label": "Febres recorrentes"
+    },
+    {
+      "code": "36",
+      "label": "Tracoma"
+    },
+    {
+      "code": "37",
+      "label": "Tifo exantemático"
+    },
+    {
+      "code": "38",
+      "label": "Poliomielite aguda"
+    },
+    {
+      "code": "39",
+      "label": "Raiva"
+    },
+    {
+      "code": "40",
+      "label": "Encefalite viral"
+    },
+    {
+      "code": "41",
+      "label": "Febre amarela"
+    },
+    {
+      "code": "42",
+      "label": "Dengue [dengue clásssico]"
+    },
+    {
+      "code": "43",
+      "label": "Febre hemorrágica devida ao vírus da dengue"
+    },
+    {
+      "code": "44",
+      "label": "Restante de outr febr arbovírus febr hemor vírus"
+    },
+    {
+      "code": "45",
+      "label": "Infecções pelo vírus do herpes"
+    },
+    {
+      "code": "46",
+      "label": "Varicela e herpes zoster"
+    },
+    {
+      "code": "47",
+      "label": "Sarampo"
+    },
+    {
+      "code": "48",
+      "label": "Rubéola"
+    },
+    {
+      "code": "49",
+      "label": "Hepatite aguda B"
+    },
+    {
+      "code": "50",
+      "label": "Outras hepatites virais"
+    },
+    {
+      "code": "51",
+      "label": "Doença pelo vírus da imunodefici&ecirc;ncia humana [HIV]"
+    },
+    {
+      "code": "52",
+      "label": "Caxumba [parotidite epid&ecirc;mica]"
+    },
+    {
+      "code": "53",
+      "label": "Meningite viral"
+    },
+    {
+      "code": "54",
+      "label": "Restante de outras doenças virais"
+    },
+    {
+      "code": "55",
+      "label": "Micoses"
+    },
+    {
+      "code": "56",
+      "label": "Malária por Plasmodium falciparum"
+    },
+    {
+      "code": "57",
+      "label": "Malária por Plasmodium vivax"
+    },
+    {
+      "code": "58",
+      "label": "Malária por Plasmodium malariae"
+    },
+    {
+      "code": "59",
+      "label": "Outras formas malária conf exames parasitológ"
+    },
+    {
+      "code": "60",
+      "label": "Malária não especificada"
+    },
+    {
+      "code": "61",
+      "label": "Leishmaniose visceral"
+    },
+    {
+      "code": "62",
+      "label": "Leishmaniose cut&acirc;nea"
+    },
+    {
+      "code": "63",
+      "label": "Leishmaniose cut&acirc;neo-mucosa"
+    },
+    {
+      "code": "64",
+      "label": "Leishmaniose não especificada"
+    },
+    {
+      "code": "65",
+      "label": "Tripanossomíase"
+    },
+    {
+      "code": "66",
+      "label": "Esquistossomose"
+    },
+    {
+      "code": "67",
+      "label": "Outras infestações por trematódeos"
+    },
+    {
+      "code": "68",
+      "label": "Equinococose"
+    },
+    {
+      "code": "69",
+      "label": "Dracunculíase"
+    },
+    {
+      "code": "70",
+      "label": "Oncocercose"
+    },
+    {
+      "code": "71",
+      "label": "Filariose"
+    },
+    {
+      "code": "72",
+      "label": "Ancilostomíase"
+    },
+    {
+      "code": "73",
+      "label": "Outras helmintíases"
+    },
+    {
+      "code": "74",
+      "label": "Seq&uuml;elas de tuberculose"
+    },
+    {
+      "code": "75",
+      "label": "Seq&uuml;elas de poliomielite"
+    },
+    {
+      "code": "76",
+      "label": "Seq&uuml;elas de hanseníase [lepra]"
+    },
+    {
+      "code": "77",
+      "label": "Outras doenças infecciosas e parasitárias"
+    },
+    {
+      "code": "78",
+      "label": "Neoplasia maligna do lábio cavidade oral e faringe"
+    },
+    {
+      "code": "79",
+      "label": "Neoplasia maligna do es&ocirc;fago"
+    },
+    {
+      "code": "80",
+      "label": "Neoplasia maligna do est&ocirc;mago"
+    },
+    {
+      "code": "81",
+      "label": "Neoplasia maligna do cólon"
+    },
+    {
+      "code": "82",
+      "label": "Neopl malig junção retossigm reto &acirc;nus canal anal"
+    },
+    {
+      "code": "83",
+      "label": "Neopl malig fígado e vias biliares intra-hepáticas"
+    },
+    {
+      "code": "84",
+      "label": "Neoplasia maligna do p&acirc;ncreas"
+    },
+    {
+      "code": "85",
+      "label": "Outras neoplasias malignas de órgãos digestivos"
+    },
+    {
+      "code": "86",
+      "label": "Neoplasias malignas de laringe"
+    },
+    {
+      "code": "87",
+      "label": "Neoplasia maligna de traquéia br&ocirc;nquios e pulmões"
+    },
+    {
+      "code": "88",
+      "label": "Outras neopl malig órg respirat e intratorácicos"
+    },
+    {
+      "code": "89",
+      "label": "Neoplasia maligna do osso e cartilagem articular"
+    },
+    {
+      "code": "90",
+      "label": "Neoplasia maligna da pele"
+    },
+    {
+      "code": "91",
+      "label": "Outras neoplasias malignas da pele"
+    },
+    {
+      "code": "92",
+      "label": "Neopl malig do tecido mesotelial e tecidos moles"
+    },
+    {
+      "code": "93",
+      "label": "Neoplasia maligna da mama"
+    },
+    {
+      "code": "94",
+      "label": "Neoplasia maligna do colo do útero"
+    },
+    {
+      "code": "95",
+      "label": "Neopl malig outr porções e porções não espec útero"
+    },
+    {
+      "code": "96",
+      "label": "Outras neopl malignas órgãos genitais femininos"
+    },
+    {
+      "code": "97",
+      "label": "Neoplasia maligna da próstata"
+    },
+    {
+      "code": "98",
+      "label": "Outras neopl malignas órgãos genitais masculinos"
+    },
+    {
+      "code": "99",
+      "label": "Neoplasia maligna da bexiga"
+    },
+    {
+      "code": "100",
+      "label": "Outras neoplasias malignas do trato urinário"
+    },
+    {
+      "code": "101",
+      "label": "Neoplasia maligna dos olhos e anexos"
+    },
+    {
+      "code": "102",
+      "label": "Neoplasia maligna do encéfalo"
+    },
+    {
+      "code": "103",
+      "label": "Neopl malig outras partes sistema nervoso central"
+    },
+    {
+      "code": "104",
+      "label": "Neopl malig outr localiz mal def secun e não espec"
+    },
+    {
+      "code": "105",
+      "label": "Doença de Hodgkin"
+    },
+    {
+      "code": "106",
+      "label": "Linfoma não-Hodgkin"
+    },
+    {
+      "code": "107",
+      "label": "Leucemia"
+    },
+    {
+      "code": "108",
+      "label": "Outras neopl malig tecidos linfóid hematop e relac"
+    },
+    {
+      "code": "109",
+      "label": "Carcinoma in situ de colo do útero"
+    },
+    {
+      "code": "110",
+      "label": "Neoplasia benigna da pele"
+    },
+    {
+      "code": "111",
+      "label": "Neoplasia benigna da mama"
+    },
+    {
+      "code": "112",
+      "label": "Leiomioma do útero"
+    },
+    {
+      "code": "113",
+      "label": "Neoplasia benigna do ovário"
+    },
+    {
+      "code": "114",
+      "label": "Neoplasia benigna dos órgãos urinários"
+    },
+    {
+      "code": "115",
+      "label": "Neopl benig encéfalo e outr part sist nerv central"
+    },
+    {
+      "code": "116",
+      "label": "Outr neopl in situ benigs e comport incert desconh"
+    },
+    {
+      "code": "117",
+      "label": "Anemia por defici&ecirc;ncia de ferro"
+    },
+    {
+      "code": "118",
+      "label": "Outras anemias"
+    },
+    {
+      "code": "119",
+      "label": "Afecç hemorrág e outr doenç sang e órg hematopoét"
+    },
+    {
+      "code": "120",
+      "label": "Alguns transtornos envolvendo mecanismo imunitário"
+    },
+    {
+      "code": "121",
+      "label": "Transtornos tireoidianos relac defici&ecirc;ncia de iodo"
+    },
+    {
+      "code": "122",
+      "label": "Tireotoxicose"
+    },
+    {
+      "code": "123",
+      "label": "Outros transtornos tireoidianos"
+    },
+    {
+      "code": "124",
+      "label": "Diabetes mellitus"
+    },
+    {
+      "code": "125",
+      "label": "Desnutrição"
+    },
+    {
+      "code": "126",
+      "label": "Defici&ecirc;ncia de vitamina A"
+    },
+    {
+      "code": "127",
+      "label": "Outras defici&ecirc;ncias vitamínicas"
+    },
+    {
+      "code": "128",
+      "label": "Seq&uuml;elas de desnutrição e de outras defic nutric"
+    },
+    {
+      "code": "129",
+      "label": "Obesidade"
+    },
+    {
+      "code": "130",
+      "label": "Depleção de volume"
+    },
+    {
+      "code": "131",
+      "label": "Outros transt endócrinos nutricionais metabólicos"
+    },
+    {
+      "code": "132",
+      "label": "Dem&ecirc;ncia"
+    },
+    {
+      "code": "133",
+      "label": "Transt mentais e comportamentais dev uso de álcool"
+    },
+    {
+      "code": "134",
+      "label": "Transt mentais comport dev uso outr subst psicoat"
+    },
+    {
+      "code": "135",
+      "label": "Esquizofrenia transt esquizotípicos e delirantes"
+    },
+    {
+      "code": "136",
+      "label": "Transtornos de humor [afetivos]"
+    },
+    {
+      "code": "137",
+      "label": "Transt neurót e relacionados com stress e somatof"
+    },
+    {
+      "code": "138",
+      "label": "Retardo mental"
+    },
+    {
+      "code": "139",
+      "label": "Outros transtornos mentais e comportamentais"
+    },
+    {
+      "code": "140",
+      "label": "Meningite bacteriana não classif outra parte"
+    },
+    {
+      "code": "141",
+      "label": "Meningite em doenças bacters class outr parte"
+    },
+    {
+      "code": "142",
+      "label": "Mening em doenç infec/parasit class outr part"
+    },
+    {
+      "code": "143",
+      "label": "Mening dev outras causas e causas não especif"
+    },
+    {
+      "code": "144",
+      "label": "Restante doenças inflamat sist nervoso central"
+    },
+    {
+      "code": "145",
+      "label": "Doença de Parkinson"
+    },
+    {
+      "code": "146",
+      "label": "Doença de Alzheimer"
+    },
+    {
+      "code": "147",
+      "label": "Esclerose múltiplas"
+    },
+    {
+      "code": "148",
+      "label": "Epilepsia"
+    },
+    {
+      "code": "149",
+      "label": "Enxaqueca e outras síndromes de algias cefálicos"
+    },
+    {
+      "code": "150",
+      "label": "Acid vascular cerebr isqu&ecirc;m transit e síndr correl"
+    },
+    {
+      "code": "151",
+      "label": "Transtornos dos nervos raízes e plexos nervosos"
+    },
+    {
+      "code": "152",
+      "label": "Paralisia cerebral e outras síndromes paralíticas"
+    },
+    {
+      "code": "153",
+      "label": "Outras doenças do sistema nervoso"
+    },
+    {
+      "code": "154",
+      "label": "Inflamação da pálpebra"
+    },
+    {
+      "code": "155",
+      "label": "Conjuntivite e outros transtornos da conjuntiva"
+    },
+    {
+      "code": "156",
+      "label": "Ceratite e outros transtornos esclerótica e córnea"
+    },
+    {
+      "code": "157",
+      "label": "Catarata e outros transtornos do cristalino"
+    },
+    {
+      "code": "158",
+      "label": "Descolamentos e defeitos da retina"
+    },
+    {
+      "code": "159",
+      "label": "Glaucoma"
+    },
+    {
+      "code": "160",
+      "label": "Estrabismo"
+    },
+    {
+      "code": "161",
+      "label": "Transtornos da refração e da acomodação"
+    },
+    {
+      "code": "162",
+      "label": "Cegueira e visão subnormal"
+    },
+    {
+      "code": "163",
+      "label": "Outras doenças do olho e anexos"
+    },
+    {
+      "code": "164",
+      "label": "Otite média e outr transt ouvido médio apóf mast"
+    },
+    {
+      "code": "165",
+      "label": "Perda de audição"
+    },
+    {
+      "code": "166",
+      "label": "Outras doenças do ouvido e da apófise mastóide"
+    },
+    {
+      "code": "167",
+      "label": "Febre reumática aguda"
+    },
+    {
+      "code": "168",
+      "label": "Doença reumática cr&ocirc;nica do coração"
+    },
+    {
+      "code": "169",
+      "label": "Hipertensão essencial (primária)"
+    },
+    {
+      "code": "170",
+      "label": "Outras doenças hipertensivas"
+    },
+    {
+      "code": "171",
+      "label": "Infarto agudo do miocárdio"
+    },
+    {
+      "code": "172",
+      "label": "Outras doenças isqu&ecirc;micas do coração"
+    },
+    {
+      "code": "173",
+      "label": "Embolia pulmonar"
+    },
+    {
+      "code": "174",
+      "label": "Transtornos de condução e arritmias cardíacas"
+    },
+    {
+      "code": "175",
+      "label": "Insufici&ecirc;ncia cardíaca"
+    },
+    {
+      "code": "176",
+      "label": "Outras doenças do coração"
+    },
+    {
+      "code": "177",
+      "label": "Hemorragia intracraniana"
+    },
+    {
+      "code": "178",
+      "label": "Infarto cerebral"
+    },
+    {
+      "code": "179",
+      "label": "Acid vascular cerebr não espec hemorrág ou isqu&ecirc;m"
+    },
+    {
+      "code": "180",
+      "label": "Outras doenças cerebrovasculares"
+    },
+    {
+      "code": "181",
+      "label": "Arteroesclerose"
+    },
+    {
+      "code": "182",
+      "label": "Outras doenças vasculares periféricas"
+    },
+    {
+      "code": "183",
+      "label": "Embolia e trombose arteriais"
+    },
+    {
+      "code": "184",
+      "label": "Outras doenças das artérias arteríolas e capilares"
+    },
+    {
+      "code": "185",
+      "label": "Flebite tromboflebite embolia e trombose venosa"
+    },
+    {
+      "code": "186",
+      "label": "Veias varicosas das extremidades inferiores"
+    },
+    {
+      "code": "187",
+      "label": "Hemorróidas"
+    },
+    {
+      "code": "188",
+      "label": "Outras doenças do aparelho circulatório"
+    },
+    {
+      "code": "189",
+      "label": "Faringite aguda e amigdalite aguda"
+    },
+    {
+      "code": "190",
+      "label": "Laringite e traqueíte agudas"
+    },
+    {
+      "code": "191",
+      "label": "Outras infecções agudas das vias aéreas superiores"
+    },
+    {
+      "code": "192",
+      "label": "Influenza [gripe]"
+    },
+    {
+      "code": "193",
+      "label": "Pneumonia"
+    },
+    {
+      "code": "194",
+      "label": "Bronquite aguda e bronquiolite aguda"
+    },
+    {
+      "code": "195",
+      "label": "Sinusite cr&ocirc;nica"
+    },
+    {
+      "code": "196",
+      "label": "Outras doenças do nariz e dos seios paranasais"
+    },
+    {
+      "code": "197",
+      "label": "Doenças cr&ocirc;nicas das amígdalas e das adenóides"
+    },
+    {
+      "code": "198",
+      "label": "Outras doenças do trato respiratório superior"
+    },
+    {
+      "code": "199",
+      "label": "Bronquite enfisema e outr doenç pulm obstr cr&ocirc;nic"
+    },
+    {
+      "code": "200",
+      "label": "Asma"
+    },
+    {
+      "code": "201",
+      "label": "Bronquiectasia"
+    },
+    {
+      "code": "202",
+      "label": "Pneumoconiose"
+    },
+    {
+      "code": "203",
+      "label": "Outras doenças do aparelho respiratório"
+    },
+    {
+      "code": "204",
+      "label": "Cárie dentária"
+    },
+    {
+      "code": "205",
+      "label": "Outros transtornos dentes e estruturas de suporte"
+    },
+    {
+      "code": "206",
+      "label": "Outr doenç cavidade oral gl&acirc;nd saliv e maxilares"
+    },
+    {
+      "code": "207",
+      "label": "úlcera gástrica e duodenal"
+    },
+    {
+      "code": "208",
+      "label": "Gastrite e duodenite"
+    },
+    {
+      "code": "209",
+      "label": "Outras doenças do es&ocirc;fago est&ocirc;mago e duodeno"
+    },
+    {
+      "code": "210",
+      "label": "Doenças do ap&ecirc;ndice"
+    },
+    {
+      "code": "211",
+      "label": "Hérnia inguinal"
+    },
+    {
+      "code": "212",
+      "label": "Outras hérnias"
+    },
+    {
+      "code": "213",
+      "label": "Doença de Crohn e colite ulcerativa"
+    },
+    {
+      "code": "214",
+      "label": "Ileo paralítico e obstrução intestinal sem hérnia"
+    },
+    {
+      "code": "215",
+      "label": "Doença diverticular do intestino"
+    },
+    {
+      "code": "216",
+      "label": "Outras doenças dos intestinos e perit&ocirc;nio"
+    },
+    {
+      "code": "217",
+      "label": "Doença alcoólica do fígado"
+    },
+    {
+      "code": "218",
+      "label": "Outras doenças do fígado"
+    },
+    {
+      "code": "219",
+      "label": "Colelitíase e colecistite"
+    },
+    {
+      "code": "220",
+      "label": "Pancreatite aguda e outras doenças do p&acirc;ncreas"
+    },
+    {
+      "code": "221",
+      "label": "Outras doenças do aparelho digestivo"
+    },
+    {
+      "code": "222",
+      "label": "Infecções da pele e do tecido subcut&acirc;neo"
+    },
+    {
+      "code": "223",
+      "label": "Outras doenças da pele e do tecido subcut&acirc;neo"
+    },
+    {
+      "code": "224",
+      "label": "Artrite reumatóide e outr poliartropatias inflamat"
+    },
+    {
+      "code": "225",
+      "label": "Artrose"
+    },
+    {
+      "code": "226",
+      "label": "Deformidades adquiridas das articulações"
+    },
+    {
+      "code": "227",
+      "label": "Outros transtronos articulares"
+    },
+    {
+      "code": "228",
+      "label": "Doenças sist&ecirc;micas do tecido conjuntivo"
+    },
+    {
+      "code": "229",
+      "label": "Transt discais cervic e outr transt disc intervert"
+    },
+    {
+      "code": "230",
+      "label": "Outras dorsopatias"
+    },
+    {
+      "code": "231",
+      "label": "Transtornos do tecido mole"
+    },
+    {
+      "code": "232",
+      "label": "Transtornos da densidade e da estrutura ósseas"
+    },
+    {
+      "code": "233",
+      "label": "Osteomielite"
+    },
+    {
+      "code": "234",
+      "label": "Outras doenças sist osteomuscular e tec conjuntivo"
+    },
+    {
+      "code": "235",
+      "label": "Síndrome nefríticas aguda e rapidamente progressiv"
+    },
+    {
+      "code": "236",
+      "label": "Outras doenças glomerulares"
+    },
+    {
+      "code": "237",
+      "label": "Doenças renais túbulo-intersticiais"
+    },
+    {
+      "code": "238",
+      "label": "Insufici&ecirc;ncia renal"
+    },
+    {
+      "code": "239",
+      "label": "Urolitíase"
+    },
+    {
+      "code": "240",
+      "label": "Cistite"
+    },
+    {
+      "code": "241",
+      "label": "Outras doenças do aparelho urinário"
+    },
+    {
+      "code": "242",
+      "label": "Hiperplasia da próstata"
+    },
+    {
+      "code": "243",
+      "label": "Outros transtornos da próstata"
+    },
+    {
+      "code": "244",
+      "label": "Hidrocele e espermatocele"
+    },
+    {
+      "code": "245",
+      "label": "Preprúcio redundante fimose e parafimose"
+    },
+    {
+      "code": "246",
+      "label": "Outras doenças dos órgãos genitais masculinos"
+    },
+    {
+      "code": "247",
+      "label": "Transtornos da mama"
+    },
+    {
+      "code": "248",
+      "label": "Salpingite e ooforite"
+    },
+    {
+      "code": "249",
+      "label": "Doença inflamatória do colo do útero"
+    },
+    {
+      "code": "250",
+      "label": "Outras doenças inflamat órgãos pélvicos femininos"
+    },
+    {
+      "code": "251",
+      "label": "Endometriose"
+    },
+    {
+      "code": "252",
+      "label": "Prolapso genital feminino"
+    },
+    {
+      "code": "253",
+      "label": "Transt não-inflam ovário tromp Falópio ligam largo"
+    },
+    {
+      "code": "254",
+      "label": "Transtornos da menstruação"
+    },
+    {
+      "code": "255",
+      "label": "Transt menopáusicos e outr transt perimenopáusicos"
+    },
+    {
+      "code": "256",
+      "label": "Infertilidade feminina"
+    },
+    {
+      "code": "257",
+      "label": "Outros transtornos do aparelho geniturinário"
+    },
+    {
+      "code": "258",
+      "label": "Aborto espont&acirc;neo"
+    },
+    {
+      "code": "259",
+      "label": "Aborto por razões médicas"
+    },
+    {
+      "code": "260",
+      "label": "Outras gravidezes que terminam em aborto"
+    },
+    {
+      "code": "261",
+      "label": "Edema protein transt hipertens gravid parto puerp"
+    },
+    {
+      "code": "262",
+      "label": "Placent prév descol premat placent hemorr antepart"
+    },
+    {
+      "code": "263",
+      "label": "Outr mot ass &agrave; mãe rel cav fetal amn pos prob part"
+    },
+    {
+      "code": "264",
+      "label": "Trabalho de parto obstruído"
+    },
+    {
+      "code": "265",
+      "label": "Hemorragia pós-parto"
+    },
+    {
+      "code": "266",
+      "label": "Outras complicações da gravidez e do parto"
+    },
+    {
+      "code": "267",
+      "label": "Parto único espont&acirc;neo"
+    },
+    {
+      "code": "268",
+      "label": "Compl pred rel puerpério e outr afecç obstétr NCOP"
+    },
+    {
+      "code": "269",
+      "label": "Feto e rec-nasc afet fat mat e compl grav e parto"
+    },
+    {
+      "code": "270",
+      "label": "Ret cres fet desn fet tran rel gest curt baix peso"
+    },
+    {
+      "code": "271",
+      "label": "Trauma durante o nascimento"
+    },
+    {
+      "code": "272",
+      "label": "Hipóxia intrauterina e asfixia ao nascer"
+    },
+    {
+      "code": "273",
+      "label": "Outros transt respiratórios orig período perinatal"
+    },
+    {
+      "code": "274",
+      "label": "Doenças infecciosas e parasitárias cong&ecirc;nitas"
+    },
+    {
+      "code": "275",
+      "label": "Outras infecções específicas do período perinatal"
+    },
+    {
+      "code": "276",
+      "label": "Doença hemolítica do feto e do recém-nascido"
+    },
+    {
+      "code": "277",
+      "label": "Outras afecções originadas no período perinatal"
+    },
+    {
+      "code": "278",
+      "label": "Espinha bífida"
+    },
+    {
+      "code": "279",
+      "label": "Outras malformações cong&ecirc;nitas do sistema nervoso"
+    },
+    {
+      "code": "280",
+      "label": "Malformações cong&ecirc;nitas do aparelho circulatório"
+    },
+    {
+      "code": "281",
+      "label": "Fenda labial e fenda palatina"
+    },
+    {
+      "code": "282",
+      "label": "Aus&ecirc;ncia atresia e estenose do intestino delgado"
+    },
+    {
+      "code": "283",
+      "label": "Outras malformações cong&ecirc;nitas aparelho digestivo"
+    },
+    {
+      "code": "284",
+      "label": "Testiculo não-descido"
+    },
+    {
+      "code": "285",
+      "label": "Outras malformações do aparelho geniturinário"
+    },
+    {
+      "code": "286",
+      "label": "Deformidades cong&ecirc;nitas do quadril"
+    },
+    {
+      "code": "287",
+      "label": "Deformidades cong&ecirc;nitas dos pés"
+    },
+    {
+      "code": "288",
+      "label": "Outr malform e deform cong&ecirc;nit aparelho osteomusc"
+    },
+    {
+      "code": "289",
+      "label": "Outras malformações cong&ecirc;nitas"
+    },
+    {
+      "code": "290",
+      "label": "Anomalias cromoss&ocirc;micas NCOP"
+    },
+    {
+      "code": "291",
+      "label": "Dor abdominal e pélvica"
+    },
+    {
+      "code": "292",
+      "label": "Febre de origem desconhecida"
+    },
+    {
+      "code": "293",
+      "label": "Senilidade"
+    },
+    {
+      "code": "294",
+      "label": "Outr sist sinais achad anorm ex clín laborat NCOP"
+    },
+    {
+      "code": "295",
+      "label": "Fratura do cr&acirc;nio e dos ossos da face"
+    },
+    {
+      "code": "296",
+      "label": "Fratura do pescoço tórax ou pelve"
+    },
+    {
+      "code": "297",
+      "label": "Fratura do f&ecirc;mur"
+    },
+    {
+      "code": "298",
+      "label": "Fratura de outros ossos dos membros"
+    },
+    {
+      "code": "299",
+      "label": "Fraturas envolvendo múltiplas regiões do corpo"
+    },
+    {
+      "code": "300",
+      "label": "Luxações entorse distensão reg esp e múltip corpo"
+    },
+    {
+      "code": "301",
+      "label": "Traumatismo do olho e da órbita ocular"
+    },
+    {
+      "code": "302",
+      "label": "Traumatismo intracraniano"
+    },
+    {
+      "code": "303",
+      "label": "Traumatismo de outros órgãos internos"
+    },
+    {
+      "code": "304",
+      "label": "Lesões esmag amput traumát reg esp e múltip corpo"
+    },
+    {
+      "code": "305",
+      "label": "Outr traum reg espec não espec e múltiplas corpo"
+    },
+    {
+      "code": "306",
+      "label": "Efeitos corpo estranho através de orifício natural"
+    },
+    {
+      "code": "307",
+      "label": "Queimadura e corrosões"
+    },
+    {
+      "code": "308",
+      "label": "Envenenamento por drogas e subst&acirc;ncias biológicas"
+    },
+    {
+      "code": "309",
+      "label": "Efeitos tóxicos subst origem princ não-medicinal"
+    },
+    {
+      "code": "310",
+      "label": "Síndromes de maus tratos"
+    },
+    {
+      "code": "311",
+      "label": "Outros efeitos e não espec de causas externas"
+    },
+    {
+      "code": "312",
+      "label": "Cert compl prec traum compl cirúrg ass médic NCOP"
+    },
+    {
+      "code": "313",
+      "label": "Seq&uuml;el traum enven e outr conseq causas externas"
+    },
+    {
+      "code": "314",
+      "label": "Pessoas em contato com serv saúde exame e investig"
+    },
+    {
+      "code": "315",
+      "label": "Estado infec assint vírus da imunodef humana [HIV]"
+    },
+    {
+      "code": "316",
+      "label": "Outr pess riscos pot &agrave; saúde rel doenças transmiss"
+    },
+    {
+      "code": "317",
+      "label": "Anticoncepção"
+    },
+    {
+      "code": "318",
+      "label": "Rastreamento pré-natal e outr superv da gravidez"
+    },
+    {
+      "code": "319",
+      "label": "Nascidos vivos segundo o local de nascimento"
+    },
+    {
+      "code": "320",
+      "label": "Assist&ecirc;ncia e exame pós-natal"
+    },
+    {
+      "code": "321",
+      "label": "Pessoas contato serv saúde cuidados proc específ"
+    },
+    {
+      "code": "322",
+      "label": "Pessoas contato serv saúde por outras razões"
+    },
+    {
+      "code": "323",
+      "label": "Acidentes de transporte"
+    },
+    {
+      "code": "324",
+      "label": "Quedas"
+    },
+    {
+      "code": "325",
+      "label": "Afogamento e submersão acidentamente"
+    },
+    {
+      "code": "326",
+      "label": "Exposição ao fumo ao fogo e &agrave;s chamas"
+    },
+    {
+      "code": "327",
+      "label": "Envenenamento intox exposição subst&acirc;ncias nocivas"
+    },
+    {
+      "code": "328",
+      "label": "Lesões autoprovocadas voluntariamente"
+    },
+    {
+      "code": "329",
+      "label": "Agressões"
+    },
+    {
+      "code": "330",
+      "label": "Todas as outras causas externas"
+    },
+    {
+      "code": "331",
+      "label": "Não preenchido"
+    },
+    {
+      "code": "332",
+      "label": "CID 10ª Revisão não disponível"
+    },
+    {
+      "code": "333",
+      "label": "CID inválido"
+    }
+  ]
+}

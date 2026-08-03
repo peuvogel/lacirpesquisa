@@ -15,6 +15,7 @@
     "prepare": "git config core.hooksPath .githooks || echo 'AVISO: nao foi possivel configurar core.hooksPath — os hooks locais (pre-commit/pre-push) NAO estao ativos neste clone. O gate local esta desligado; rode manualmente: git config core.hooksPath .githooks' 1>&2",
     "catalog:build": "node scripts/catalog/build.mjs",
     "catalog:validate": "node scripts/catalog/validate.mjs",
+    "catalog:snapshot": "node scripts/catalog/listaMorbSource.mjs --refresh",
     "catalog:sync-column-map": "node scripts/catalog/syncColumnMap.mjs",
     "catalog:rebuild": "node scripts/catalog/rebuildAfterScrape.mjs",
     "scrape:sih-multi": "python3 \"trabalhos datasus/scripts/coleta_sih_multi_disease.py\" --skip-done",

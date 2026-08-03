@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CATALOG_OUT_DIR } from './paths.mjs';
+import { checkSnapshotIntegrity } from './listaMorbSource.mjs';
 
 const VARIABLE_TYPES = new Set([
   'categorica',
@@ -290,6 +291,11 @@ export function validateCatalogDir(catalogDir = CATALOG_OUT_DIR) {
 function main() {
   try {
     const result = validateCatalogDir(CATALOG_OUT_DIR);
+    const snapshotErrors = checkSnapshotIntegrity();
+    if (snapshotErrors.length > 0) {
+      result.errors.push(...snapshotErrors);
+      result.ok = false;
+    }
     if (!result.ok) {
       const preview = result.errors.slice(0, 25);
       console.error('catalog:validate FAILED — fail-closed (D-05/D-06)');
