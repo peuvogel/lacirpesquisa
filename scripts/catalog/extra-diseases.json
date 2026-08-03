@@ -1,0 +1,10 @@
+[
+  {
+    "id": "amputacao_mmii",
+    "label": "Amputação / desarticulação de membros inferiores",
+    "filterKind": "procedimento",
+    "tabnetCode": "3331",
+    "def": "sih/cnv/qibr.def",
+    "reason": "Procedimento SIH (sih/cnv/qibr.def), fora da Lista Morb CID-10 (sih/cnv/nibr.def) — não tem entrada no select SLista_Morb__CID-10 do snapshot, por isso é legitimamente uma segunda fonte de entrada e não slugify(label) === id por acaso. Allowlist justificada do invariante A (D-10)."
+  }
+]

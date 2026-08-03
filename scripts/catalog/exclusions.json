@@ -1,0 +1,6 @@
+{
+  "TODAS_AS_CATEGORIAS__": "Pseudo-opção de interface do TabNet para selecionar todas as categorias de uma vez — não é um código real da Lista Morb CID-10, não corresponde a nenhuma categoria clínica.",
+  "331": "Marcador de qualidade do dado subjacente (AIH sem CID preenchido), não categoria clínica. Aparece na tabela oficial mxcid10lm.htm sem código próprio de Lista Morb (\"Não preenchido\").",
+  "332": "Marcador de qualidade do dado subjacente (AIH anterior à CID-10), não categoria clínica. Aparece na tabela oficial mxcid10lm.htm sem código próprio de Lista Morb (\"CID 10ª Revisão não disponível\").",
+  "333": "Marcador de qualidade do dado subjacente (subcategoria CID inexistente), não categoria clínica. Aparece na tabela oficial mxcid10lm.htm sem código próprio de Lista Morb (\"CID inválido\")."
+}
