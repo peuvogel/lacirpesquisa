@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 8 context gathered
-last_updated: "2026-08-03T20:31:18.395Z"
-last_activity: 2026-08-03 -- Phase 8 planning complete
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-08-03T20:53:59.855Z"
+last_activity: 2026-08-03
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 7
+  completed_plans: 8
   percent: 17
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 07 — Baseline verde
+**Current focus:** Phase 08 — taxonomia-can-nica-integridade
 
 ## Current Position
 
-Phase: 07 (Baseline verde) — EXECUTING
-Plan: 7 of 7
+Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
+Plan: 2 of 10
 Status: Ready to execute
-Last activity: 2026-08-03 -- Phase 8 planning complete
+Last activity: 2026-08-03
 
 ## Accumulated Context
 
@@ -108,6 +108,11 @@ Last activity: 2026-08-03 -- Phase 8 planning complete
 - [Phase 07-04]: within(resultados) usado para escopar asserção 'θ (dispersão)' em BinomialNegativaTest — layout scroll mantém Dados e configuração montada ao lado de Resultados, gerando ambiguidade de texto que o stepper antigo nunca expunha
 - [Phase 07-06]: D-09/D-12 implementadas: router.test.tsx desdobrado em dois casos independentes — rota via #lacir-test-module-mount + botão 'Qual teste usar?' (D-04), teste ativo padrão via data-active-test-id/heading 't de Student' (D-10)
 - [Phase 07-06]: D-08 fechada por medição: 0 avisos de act() e 0 de canvas já estavam presentes antes da Task 2 — nenhum arquivo além de router.test.tsx precisou de mudança nesta plan
+- [Phase 08-01]: HTML snapshot read/written as latin1 (ISO-8859-1) throughout — utf8 would silently corrupt every accented label
+- [Phase 08-01]: invariante C sha256 computed over the raw HTML buffer (bytes as written to disk), not the decoded string
+- [Phase 08-01]: parseListaMorbOptions() applies zero filtering — returns all 334 raw options in document order; partitioning is the generator's job (future plan), not the parser's
+- [Phase 08-01]: lista-morb-cid.json re-key done by a disposable conversion script run outside the repo, never left behind, with a multiset-of-values-unchanged assertion before writing
+- [Phase 08-01]: code 330's CID range (W20-W64, W75-W99, X10-X39, X50-X59, Y10-Y89) sourced from RESEARCH 1.3/mxcid10lm.htm item 1.103, added as lista-morb-cid.json's only new key
 
 ### Pending Todos
 
@@ -119,9 +124,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-03T09:17:13.700Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-taxonomia-can-nica-integridade/08-CONTEXT.md
+Last session: 2026-08-03T20:53:59.852Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -154,3 +159,4 @@ Resume file: .planning/phases/08-taxonomia-can-nica-integridade/08-CONTEXT.md
 | Phase 07-baseline-verde P03 | 15min | 2 tasks | 13 files |
 | Phase 07-baseline-verde P04 | ~8min | 2 tasks | 4 files |
 | Phase 07-baseline-verde P06 | ~8min | 2 tasks | 1 files |
+| Phase 08 P01 | 15min | 3 tasks | 13 files |

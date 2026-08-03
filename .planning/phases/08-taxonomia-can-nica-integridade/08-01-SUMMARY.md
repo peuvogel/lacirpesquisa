@@ -121,3 +121,7 @@ None — no external service configuration required.
 ---
 *Phase: 08-taxonomia-can-nica-integridade*
 *Completed: 2026-08-03*
+
+## Self-Check: PASSED
+
+All 9 created/referenced files found on disk. All 4 commits (676efdc, 5ad6799, 80dedd7, 4915d75) found in git log.

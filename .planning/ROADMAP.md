@@ -93,7 +93,7 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 08-01-PLAN.md — Snapshot versionado da Lista Morb, fontes de entrada como dado, invariante C, emenda 330→331 (TAX-01, TAX-06)
+- [x] 08-01-PLAN.md — Snapshot versionado da Lista Morb, fontes de entrada como dado, invariante C, emenda 330→331 (TAX-01, TAX-06)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -220,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 0/10 | Planned | - |
+| 8. Taxonomia canônica + integridade | 1/10 | In Progress|  |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |

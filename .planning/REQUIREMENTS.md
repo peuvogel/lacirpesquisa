@@ -29,12 +29,12 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 
 ### Integridade da taxonomia
 
-- [ ] **TAX-01**: Os 331 agravos da taxonomia canônica (330 categorias `lista_morb` da Lista Morb CID-10 oficial mais o procedimento `amputacao_mmii`) têm `id`, `tabnetCode`, `cid` e `label` mutuamente consistentes — 330 é a contagem com dado coletado (D-25)
+- [x] **TAX-01**: Os 331 agravos da taxonomia canônica (330 categorias `lista_morb` da Lista Morb CID-10 oficial mais o procedimento `amputacao_mmii`) têm `id`, `tabnetCode`, `cid` e `label` mutuamente consistentes — 330 é a contagem com dado coletado (D-25)
 - [ ] **TAX-02**: A validação falha (fail-closed) quando `id ↔ tabnetCode ↔ label` divergem, no CLI e na suíte — o bug `avc` → 163 seria barrado
 - [ ] **TAX-03**: A migração preserva a contagem exata de linhas em `sih_disease` (331 — inclui o `INSERT` do código 330 por D-25), `sih_metric_uf` (30.313) e `sih_metric_muni` (1.099.403, sem alteração — o código 330 não tem dado coletado), com integridade referencial verificada antes e depois
 - [ ] **TAX-04**: A migração é reversível e trata os ciclos de renomeação sem violar a chave primária
 - [ ] **TAX-05**: O estudante encontra um agravo pelo termo clínico da liga ("AVC", "TVP", "embolia pulmonar") via apelidos curados que resolvem para ids canônicos — o apelido nunca é gravado como chave de dado
-- [ ] **TAX-06**: Todo artefato derivado (packs, `variables.json`, seeds SQL, cópia no bundle) é **gerado** a partir da taxonomia canônica, não mantido à mão em paralelo
+- [x] **TAX-06**: Todo artefato derivado (packs, `variables.json`, seeds SQL, cópia no bundle) é **gerado** a partir da taxonomia canônica, não mantido à mão em paralelo
 
 ### Pipeline de coleta
 
@@ -110,12 +110,12 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 | QA-02 | Phase 7 | Complete |
 | QA-03 | Phase 7 | Complete |
 | QA-04 | Phase 7 | Complete |
-| TAX-01 | Phase 8 | Pending |
+| TAX-01 | Phase 8 | Complete |
 | TAX-02 | Phase 8 | Pending |
 | TAX-03 | Phase 8 | Pending |
 | TAX-04 | Phase 8 | Pending |
 | TAX-05 | Phase 8 | Pending |
-| TAX-06 | Phase 8 | Pending |
+| TAX-06 | Phase 8 | Complete |
 | PIPE-01 | Phase 9 | Pending |
 | PIPE-02 | Phase 9 | Pending |
 | PIPE-03 | Phase 9 | Pending |
