@@ -1,11 +1,14 @@
-# Ground truth: os 20 agravos com `id` corrompido
+# Ground truth: os 21 agravos com `id` corrompido
 
 **Apurado em** 2026-07-28, contra `scripts/catalog/diseases.json`, `scripts/catalog/lista-morb-cid.json` e o Supabase ao vivo (`hmfbxqemububjyhdckrj`).
+**Emendado em** 2026-08-03 — ver `## Emenda 2026-08-03` no fim. **São 21 ids, não 20.**
 **Consome isto:** Fase 8 (taxonomia + integridade). Não replanejar sem reler.
 
 ## O que exatamente está errado
 
-Apenas o **`id`**. Para os 330 registros, `tabnetCode`, `cid` e `label` são mutuamente consistentes e corretos — verifiquei par a par. O que aconteceu foi que ~20 ids legados escritos à mão (`avc`, `ait`, `varizes_mmii`, …) foram reaproveitados como *slots* na hora de gerar a lista completa da Lista Morb, e cada um herdou o código que calhou de cair naquela posição.
+Apenas o **`id`**. Para os 330 registros, `tabnetCode`, `cid` e `label` são mutuamente consistentes e corretos — verifiquei par a par. O que aconteceu foi que 21 ids legados escritos à mão (`avc`, `ait`, `varizes_mmii`, …) foram reaproveitados como *slots* na hora de gerar a lista completa da Lista Morb, e cada um herdou o código que calhou de cair naquela posição.
+
+A origem é o dicionário `KNOWN_BY_CODE` em `scripts/catalog/sync-lista-morb.mjs:15-37`, que tem exatamente 21 entradas — e todas as 21 produzem slug diferente de `slugify(label)`.
 
 Consequência prática: **nenhum dado precisa ser re-coletado.** As 30.313 linhas UF e 1.099.403 linhas município estão corretas para o código que foi consultado. A migração é uma renomeação pura.
 
@@ -25,6 +28,7 @@ Consequência clínica: os dados reais de AVC **existem** — sob os ids `doenca
 | `infarto_agudo` | 177 | I60-I62 | Hemorragia intracraniana | `hemorragia_intracraniana` |
 | `doencas_arterias` | 178 | I63 | Infarto cerebral | `infarto_cerebral` |
 | `aneurisma_aorta` | 179 | I64 | Acid vascular cerebr não espec hemorrág ou isquêm | `acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem` |
+| `outras_doencas_arteriais` | 180 | I65-I69 | Outras doenças cerebrovasculares | `outras_doencas_cerebrovasculares` |
 | `aterosclerose` | 181 | I70 | Arteroesclerose | `arteroesclerose` |
 | `embolia_pulmonar` | 182 | I73 | Outras doenças vasculares periféricas | `outras_doencas_vasculares_perifericas` |
 | `embolia_trombose` | 183 | I74 | Embolia e trombose arteriais | `embolia_e_trombose_arteriais` |
@@ -68,4 +72,24 @@ A liga usa "AVC", "TVP", "embolia pulmonar" no dia a dia. Depois de canonizar os
 
 ## Teste de regressão que teria pego o bug
 
-Para os 330 registros, afirmar que `slug(label) === id` (com uma allowlist explícita e justificada para procedimentos como `amputacao_mmii`). Esse invariante é falso hoje em 20 registros e teria falhado no primeiro commit da lista gerada. Deve rodar em `scripts/catalog/validate.mjs` (fail-closed, já encadeado em `pretest`/`test:run`) **e** como teste de vitest, para que valha tanto no CI quanto localmente.
+Para os 330 registros, afirmar que `slug(label) === id` (com uma allowlist explícita e justificada para procedimentos como `amputacao_mmii`). Esse invariante é falso hoje em 21 registros e teria falhado no primeiro commit da lista gerada. Deve rodar em `scripts/catalog/validate.mjs` (fail-closed, já encadeado em `pretest`/`test:run`) **e** como teste de vitest, para que valha tanto no CI quanto localmente.
+
+---
+
+## Emenda 2026-08-03
+
+Apurado durante `/gsd:discuss-phase 8`, simulando a regeneração da taxonomia sem `KNOWN_BY_CODE` sobre `scripts/catalog/diseases.json`.
+
+**1. São 21 ids corrompidos, não 20.** Faltava o código **180**:
+
+| id atual (errado) | código | CID-10 | rótulo verdadeiro | slug canônico |
+|---|---|---|---|---|
+| `outras_doencas_arteriais` | 180 | I65-I69 | Outras doenças cerebrovasculares | `outras_doencas_cerebrovasculares` |
+
+Já inserido na tabela principal acima. O id sugere doença arterial; a categoria é cerebrovascular.
+
+**2. Zero colisões de slug** na regeneração dos 329 `lista_morb`. O caminho de desambiguação por sufixo de código em `sync-lista-morb.mjs:82` nunca é exercitado — nenhum par de rótulos oficiais produz o mesmo slug. Inclusive os dois ciclos se resolvem sozinhos pela ordem do TabNet (186 é processado antes de 187).
+
+**3. Os `lista_morb` cobrem os códigos 1–329 sem buracos.** `SKIP_CODES` (331/332/333) e o código 330 ficam fora do arquivo sem motivo registrado em lugar nenhum — determinar o que são é tarefa do researcher ao capturar o snapshot.
+
+**4. Lição de método.** A lista de 20 foi levantada à mão e errou por 1 em 21. O mapa de renomeação da Fase 8 é **computado** do diff entre o `diseases.json` atual e a regeneração do snapshot (decisão D-12), nunca transcrito desta tabela. Esta nota é documentação e ponto de conferência — não é a fonte da migração.
