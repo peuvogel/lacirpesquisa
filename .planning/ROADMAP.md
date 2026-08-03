@@ -88,7 +88,45 @@ Plans:
 
 **Notes**: Ground truth verificado em `.planning/notes/2026-07-28-taxonomia-corrompida-ground-truth.md` — **nenhum dado precisa ser re-coletado**, `tabnetCode`/`cid`/`label` já concordam entre si; só o slug `id` está errado. Dois ciclos de renomeação (`hemorroidas`↔`outras_doencas_veias`, `embolia_pulmonar`↔`doencas_reumaticas_cronicas`) exigem duas passadas ou constraint deferida. Não há `ON UPDATE CASCADE` nas FKs — adicionar uma vez como melhoria permanente. Consultar `pg_constraint` para os nomes reais das constraints antes de escrever o SQL; nunca adivinhar. Ensaiar fora da tabela viva: é a mudança de maior raio de dano do milestone.
 
-**Plans**: TBD
+**Plans**: 10 plans (7 waves)
+
+Plans:
+**Wave 1**
+
+- [ ] 08-01-PLAN.md — Snapshot versionado da Lista Morb, fontes de entrada como dado, invariante C, emenda 330→331 (TAX-01, TAX-06)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 08-02-PLAN.md — Gerador canônico sem `KNOWN_BY_CODE`, fixture pré-migração, `rename-map.json` computado do diff (TAX-01, TAX-02)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 08-03-PLAN.md — Invariantes A/B/D/D2 e a prova de TAX-02 contra a fixture pré-migração (TAX-01, TAX-02, TAX-06)
+- [ ] 08-04-PLAN.md — Motor de renomeação dirigido pelo mapa, gerador de seeds SQL, guarda de tombstone no upload (TAX-06)
+- [ ] 08-05-PLAN.md — Scaffold `supabase/`, migração up/down gerada do mapa, prova de integridade D-04 (TAX-03, TAX-04)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 08-06-PLAN.md — FLIP: taxonomia canônica, todo derivado regenerado, invariantes ligados ao gate, invariante F — commit único (TAX-01, TAX-02, TAX-06)
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 08-07-PLAN.md — Apelidos clínicos: `aliases.json`, matcher puro, invariante E, conferência clínica *(checkpoint)* (TAX-05)
+
+**Wave 6** *(blocked on Wave 5)*
+
+- [ ] 08-08-PLAN.md — Ensaio local sobre cópia de produção: up → integridade → down → retorno, com medição de custo (TAX-03, TAX-04)
+- [ ] 08-09-PLAN.md — Apelidos plugados no picker de Mapas, tira explicativa D-18, cobertura em Variáveis (TAX-05)
+
+**Wave 7** *(blocked on Wave 6)*
+
+- [ ] 08-10-PLAN.md — `[BLOCKING]` push em produção, verificação de contagens, doc do schema real *(checkpoint)* (TAX-03, TAX-04)
+
+**Cross-cutting constraints:**
+
+- Nesta fase, listas de ids nunca se escrevem à mão: são computadas e a recomputação é afirmada por teste (D-12)
+- Renomeação e invariantes entram no mesmo commit — o gate nunca fica vermelho e nenhum invariante nasce com allowlist (D-24)
+- O ensaio local (08-08) precede obrigatoriamente o push em produção (08-10)
 
 ### Phase 9: Pipeline confiável + coleta completa
 
@@ -182,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 0/TBD | Not started | - |
+| 8. Taxonomia canônica + integridade | 0/10 | Planned | - |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |
