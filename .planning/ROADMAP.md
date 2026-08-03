@@ -79,14 +79,14 @@ Plans:
 **Requirements**: TAX-01, TAX-02, TAX-03, TAX-04, TAX-05, TAX-06
 **Success Criteria** (what must be TRUE):
 
-  1. Para os 330 agravos, `id`, `tabnetCode`, `cid` e `label` são mutuamente consistentes com a Lista Morb CID-10 oficial
-  2. A validação falha quando `id ↔ tabnetCode ↔ label` divergem — rodando contra a taxonomia de hoje, ela acusa os 20 registros corrompidos
-  3. Depois da migração, `sih_disease` tem 330 linhas, `sih_metric_uf` 30.313 e `sih_metric_muni` 1.099.403, com integridade referencial conferida antes e depois
+  1. Para os 331 agravos (330 com dado coletado — D-25), `id`, `tabnetCode`, `cid` e `label` são mutuamente consistentes com a Lista Morb CID-10 oficial
+  2. A validação falha quando `id ↔ tabnetCode ↔ label` divergem — rodando contra a taxonomia de hoje, ela acusa os 21 registros corrompidos
+  3. Depois da migração, `sih_disease` tem 331 linhas (330 com dado coletado — D-25), `sih_metric_uf` 30.313 e `sih_metric_muni` 1.099.403, com integridade referencial conferida antes e depois
   4. A migração é reversível e atravessa os ciclos de renomeação sem violar a chave primária
   5. O estudante encontra "AVC" e chega aos ids canônicos corretos (`infarto_cerebral`, `acid_vascular_cerebr_nao_espec…`), sem que o apelido vire chave de dado
   6. Packs, `variables.json`, seeds SQL e a cópia no bundle são gerados da taxonomia canônica — nenhuma lista mantida à mão em paralelo
 
-**Notes**: Ground truth verificado em `.planning/notes/2026-07-28-taxonomia-corrompida-ground-truth.md` — **nenhum dado precisa ser re-coletado**, `tabnetCode`/`cid`/`label` já concordam entre si; só o slug `id` está errado. Dois ciclos de renomeação (`hemorroidas`↔`outras_doencas_veias`, `embolia_pulmonar`↔`doencas_reumaticas_cronicas`) exigem duas passadas ou constraint deferida. Não há `ON UPDATE CASCADE` nas FKs — adicionar uma vez como melhoria permanente. Consultar `pg_constraint` para os nomes reais das constraints antes de escrever o SQL; nunca adivinhar. Ensaiar fora da tabela viva: é a mudança de maior raio de dano do milestone.
+**Notes**: Ground truth verificado em `.planning/notes/2026-07-28-taxonomia-corrompida-ground-truth.md` — **nenhum dado precisa ser re-coletado**, `tabnetCode`/`cid`/`label` já concordam entre si; só o slug `id` está errado (emenda datada de 2026-08-03: são 21 ids corrompidos, não 20 — faltava o código 180). Dois ciclos de renomeação (`hemorroidas`↔`outras_doencas_veias`, `embolia_pulmonar`↔`doencas_reumaticas_cronicas`) exigem duas passadas ou constraint deferida. **D-08: não** adicionar `ON UPDATE CASCADE` às FKs — depois desta fase, renomear `disease_id` deixa de ser operação esperada, e CASCADE tornaria fácil fazer em silêncio exatamente o que a fase existe para tornar difícil. O código TabNet 330 ("Todas as outras causas externas") entra na taxonomia como agravo canônico por decisão D-25 — `sih_disease` passa a 331 linhas, com dado coletado permanecendo em 330 (sem métrica associada ao código 330 nesta fase). Consultar `pg_constraint` para os nomes reais das constraints antes de escrever o SQL; nunca adivinhar. Ensaiar fora da tabela viva: é a mudança de maior raio de dano do milestone.
 
 **Plans**: 10 plans (7 waves)
 
@@ -205,7 +205,7 @@ Plans:
 
 | Risco | Fase | Mitigação |
 |---|---|---|
-| Migração de PK em tabela de 1.1M linhas com ciclos de renomeação e sem `ON UPDATE CASCADE` | 8 | Ensaiar fora da produção; contagem + integridade antes/depois; mapa inverso guardado |
+| Migração de PK em tabela de 1.1M linhas com ciclos de renomeação, sem `ON UPDATE CASCADE` (não adicionada — decisão deliberada, D-08) | 8 | Ensaiar fora da produção; contagem + integridade antes/depois; mapa inverso guardado |
 | Coleta de 4 medidas × 330 agravos × 2 grãos é longa e sujeita a interrupção | 9 | Ledger + retomada idempotente são pré-requisito, não melhoria |
 | `INGEST_SECRET = "lacir-sih-ingest-2026"` em texto plano em `scrape_upload_sih.py:33`, presente no histórico git a partir de `180e6e3` | 9 | Repositório **não tem remote** — nada foi publicado. Rotacionar o valor no Supabase, mover para variável de ambiente e adicionar varredura de segredo antes de qualquer push |
 | Edge Function `sih-ingest` não está versionada no repositório | 9 | Trazer o fonte para o repo com testes; hoje o comportamento do servidor não é revisável |

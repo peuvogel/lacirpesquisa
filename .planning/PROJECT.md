@@ -14,7 +14,7 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 
 **Target features:**
 - **Baseline verde:** typecheck limpo, suíte de testes passando, working tree commitado — pré-condição para verificar qualquer correção
-- **Taxonomia canônica:** regerar a Lista Morb CID-10 a partir da fonte oficial (1 slug por código TabNet), migrar os ids no Supabase, e expor apelidos clínicos curados (ex.: "AVC" → infarto cerebral + AVC não especificado). Validação *fail-closed* que impede `id ↔ tabnetCode ↔ label` divergentes de voltar
+- **Taxonomia canônica:** regerar a Lista Morb CID-10 a partir da fonte oficial (1 slug por código TabNet), migrar os ids no Supabase, e expor apelidos clínicos curados (ex.: "AVC" → infarto cerebral + AVC não especificado). A taxonomia canônica passa a ter 331 agravos (330 categorias `lista_morb` da Lista Morb CID-10 mais o procedimento `amputacao_mmii`) — 330 é a contagem com dado coletado (D-25). Validação *fail-closed* que impede `id ↔ tabnetCode ↔ label` divergentes de voltar
 - **Pipeline de coleta confiável:** ledger por agravo × medida × grão, retry com backoff, falha ruidosa (nunca gravar "OK · 0 linhas"), retomada idempotente, nunca apagar cache bruto antes de confirmar o upload
 - **Coleta completa:** 4 medidas (Internações, Óbitos, Valor_total, Dias_permanência) × 330 agravos × grãos UF **e** município
 - **Mapas dinâmicos:** choropleth ao vivo do Supabase para qualquer um dos 330 agravos, drill-down municipal sob demanda, cache e estados de carregamento/vazio honestos
@@ -53,7 +53,7 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 <!-- Scoped in REQUIREMENTS.md for v3.0 -->
 
 - [ ] Baseline verde: typecheck limpo e suíte de testes passando como gate de CI
-- [ ] Taxonomia canônica da Lista Morb CID-10 + apelidos clínicos, com validação fail-closed de `id ↔ tabnetCode ↔ label`
+- [ ] Taxonomia canônica da Lista Morb CID-10 (331 agravos — 330 com dado coletado, D-25) + apelidos clínicos, com validação fail-closed de `id ↔ tabnetCode ↔ label`
 - [ ] Migração dos ids de agravo no Supabase (`sih_disease`, `sih_metric_uf`, `sih_metric_muni`) sem perder linhas
 - [ ] Pipeline de coleta confiável: ledger, retry, falha ruidosa, retomada idempotente
 - [ ] Coleta completa: 4 medidas × 330 agravos × grãos UF e município
@@ -84,7 +84,7 @@ Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas
 
 O trabalho pós-Fase-5 foi vibecodado sem commit e chegou ao v3.0 com quatro defeitos conhecidos, capturados no commit de baseline `180e6e3`:
 
-1. **Taxonomia corrompida** — 20 agravos em `scripts/catalog/diseases.json` têm `id`, `label` e `tabnetCode` desalinhados. `avc` aponta para o código 163 ("Outras doenças do olho e anexos"); `embolia_pulmonar` para 182; `varizes_mmii` para 185. Os dados coletados estão corretos **para o código consultado** — o que está errado é o nome. Contaminou `sql/*.sql`, o Supabase `sih_disease`, `src/features/catalog/diseases.lista.json`, os 10 packs em `public/data/catalog/packs/` e os rótulos em `variables.json`.
+1. **Taxonomia corrompida** — 21 agravos (emenda datada de 2026-08-03 apurou 21, não 20 — faltava o código 180) em `scripts/catalog/diseases.json` têm `id`, `label` e `tabnetCode` desalinhados. `avc` aponta para o código 163 ("Outras doenças do olho e anexos"); `embolia_pulmonar` para 182; `varizes_mmii` para 185. Os dados coletados estão corretos **para o código consultado** — o que está errado é o nome. Contaminou `sql/*.sql`, o Supabase `sih_disease`, `src/features/catalog/diseases.lista.json`, os 10 packs em `public/data/catalog/packs/` e os rótulos em `variables.json`.
 2. **Coleta incompleta** — apenas `Internações` cobre os 330 agravos (30.313 linhas UF / 1.099.403 município). `Óbitos`, `Valor_total` e `Dias_permanência` existem para 5 agravos (2.160 linhas UF). `taxa_mortalidade` é derivada de Óbitos, logo indisponível em ~98% do catálogo.
 3. **Pipeline silencioso** — falhas de DNS foram registradas como sucesso (`OK <agravo>: 0 UF rows · 0 muni rows`), o upload gravou 0 linhas e o cache bruto foi apagado em seguida. Não há marcador `.done` nem ledger de retomada.
 4. **Mapa não dinâmico** — o seletor lista os 330 agravos via `taxonomy.ts`, mas o choropleth lê apenas os 10 packs importados estaticamente em `catalogAnalysisData.ts`. O Supabase só é consultado no handoff (`ReviewAnalysisDialog` → `fetchHandoffMetricLookup`).
@@ -116,8 +116,8 @@ Além disso: 24 testes falhando em 9 arquivos (o default do `FlowSteps` mudou de
 | Variáveis scrapadas/curadas no site com referência obrigatória | Usuário analisa sem sites externos na aula; proveniência sempre visível | ✓ Validado — v2.0 Phase 5 |
 | Reutilizar lógica/fórmulas do JASP (e do MVP) — não reinventar engines | `jasp-desktop-development/` e testes v1.0 são oráculo e fonte de algoritmos | ✓ Validado — v2.0 Phases 2-3 |
 | ~~Mapas 100% client-side~~ → **Supabase como fonte de dados de pesquisa** | 330 agravos × UF+município (1.1M linhas) estouram o bundle Vite; a liga precisa de uma base compartilhada. Substitui a decisão "sem backend" do v2.0 | — Pending (decisão 2026-07-28) |
-| Regerar taxonomia canônica a partir da Lista Morb oficial + apelidos clínicos | 20 agravos têm `id ↔ código ↔ rótulo` desalinhados; ids legados (avc, ait, varizes_mmii) ficaram como slots de códigos errados. Slug canônico por código é verificável; apelidos preservam os nomes didáticos que a liga usa | — Pending (decisão 2026-07-28) |
-| Migrar ids no Supabase em vez de re-coletar os 20 | Os dados coletados estão corretos para o código consultado — só a nomenclatura está errada. Re-coletar descartaria 1.1M linhas válidas | — Pending (decisão 2026-07-28) |
+| Regerar taxonomia canônica a partir da Lista Morb oficial + apelidos clínicos | 21 agravos (emenda datada de 2026-08-03; apuração original de 28/07 dizia 20) têm `id ↔ código ↔ rótulo` desalinhados; ids legados (avc, ait, varizes_mmii) ficaram como slots de códigos errados. Slug canônico por código é verificável; apelidos preservam os nomes didáticos que a liga usa | — Pending (decisão 2026-07-28) |
+| Migrar ids no Supabase em vez de re-coletar os 21 (emenda datada de 2026-08-03; apuração original de 28/07 dizia 20) | Os dados coletados estão corretos para o código consultado — só a nomenclatura está errada. Re-coletar descartaria 1.1M linhas válidas | — Pending (decisão 2026-07-28) |
 | Coleta completa: 4 medidas × 330 agravos × UF **e** município | Taxa de mortalidade e custo são medidas centrais da capacitação; sem Óbitos elas ficam indisponíveis em 98% do catálogo | — Pending (decisão 2026-07-28) |
 | Pipeline falha ruidosamente e nunca apaga cache antes de confirmar upload | A corrida overnight registrou falhas de DNS como `OK · 0 linhas` e apagou o bruto — perda silenciosa de dados | — Pending (decisão 2026-07-28) |
 | App somente-leitura no Supabase (anon + RLS); service role só offline | Nenhum segredo de escrita no bundle Vite; ingestão é responsabilidade do pipeline | — Pending (decisão 2026-07-28) |
