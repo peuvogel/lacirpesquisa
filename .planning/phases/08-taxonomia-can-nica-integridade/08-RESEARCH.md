@@ -692,15 +692,17 @@ Deno.serve(async (req) => {
 
 1. ~~Código 330: excluir ou incluir?~~ — **RESOLVIDO por decisão do usuário, registrada como D-25 em CONTEXT.md** (2026-08-03): código 330 **entra** na taxonomia como agravo canônico nº 331, contra a recomendação original deste documento. Ver `## ⚠ Tensão com decisão travada` (agora seção de resolução, não mais aberta) para o histórico completo.
 
-2. **`parseCsv.mjs`/nomes de coluna legados (`internacoes_embolia_trombose_arteriais` etc.) — renomear junto ou deixar como está?**
+2. ~~**`parseCsv.mjs`/nomes de coluna legados (`internacoes_embolia_trombose_arteriais` etc.) — renomear junto ou deixar como está?**~~ — **(RESOLVIDA — ver 08-04)**
    - O que sabemos: são nomes de coluna do CSV histórico, referenciados por `columnKey`, camada distinta do `disease.id`.
    - O que não está claro: se D-21 ("packs, imports e variables.json renomeados agora") pretendia incluir isso.
    - Recomendação: deixar como está nesta fase (nomes de coluna não vazam para o estudante do mesmo jeito que `id`/`label` vazam) — mas o planner deve decidir explicitamente, não por omissão.
+   - **Resolução (planejamento, 2026-08-03):** decidido **não renomear**, explicitamente e não por omissão. Registrado em `08-04-PLAN.md` (`must_haves.truths`: "Nome de coluna de CSV legado e nome de diretorio de coleta nao sao renomeados — sao camada distinta de disease.id") e garantido por construção: os `tombstonePatterns` de `scripts/catalog/tombstones.mjs` são **ancorados** (`sih.<old>_uf`, `sih.<old>.`, id nu entre aspas), então nenhum deles casa `internacoes_embolia_trombose_arteriais`, `outputs/coleta_embolia_trombose_uf` ou `base_embolia_trombose_arteriais_uf_2013_2025.csv`. A 08-04 tem critério de aceite dedicado afirmando que `findTombstoneHits` sobre `parseCsv.mjs` devolve zero ocorrências, e a mesma função alimenta o invariante F — reescrita e varredura não podem discordar.
 
-3. **`ON DELETE CASCADE` não documentado — o plano de migração precisa evitar qualquer caminho que apague `sih_disease` mesmo que temporariamente?**
+3. ~~**`ON DELETE CASCADE` não documentado — o plano de migração precisa evitar qualquer caminho que apague `sih_disease` mesmo que temporariamente?**~~ — **(RESOLVIDA — ver 08-05)**
    - O que sabemos: confirmado via dump real que ambas as FKs têm `ON DELETE CASCADE` (§4.1) — não estava em `docs/SUPABASE-CATALOG.md`.
    - O que não está claro: se algum script existente (fora do que li nesta pesquisa) já faz `DELETE`+`INSERT` em `sih_disease` em vez de `UPDATE` — não encontrei nenhum, mas não é uma garantia de exaustão.
    - Recomendação: o plano de duas passadas com `UPDATE` (D-01, já testado) nunca aciona isso — só registrar o achado como pitfall documentado para não ser reintroduzido por engano numa iteração futura do SQL.
+   - **Resolução (planejamento, 2026-08-03):** sim, evitar qualquer caminho que apague `sih_disease`, e o achado está registrado em três lugares para não se perder. `08-05-PLAN.md` traz a armadilha no bloco `<interfaces>` e a registra como ameaça `T-08-05-02` (disposição: mitigate — as duas passadas só fazem `UPDATE`, nunca deletam a linha pai, e o SQL gerado leva o aviso em comentário). `08-08-PLAN.md` instrui a **não improvisar um caminho com DELETE** se o ensaio falhar. `08-10-PLAN.md` Task 4 leva o `ON DELETE CASCADE` para `docs/SUPABASE-CATALOG.md`, com critério de aceite `grep -c "ON DELETE CASCADE" >= 2`, fechando a lacuna de documentação que originou a pergunta.
 
 ## Metadata
 
