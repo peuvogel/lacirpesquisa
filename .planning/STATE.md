@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-08-04T01:04:20.453Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-08-04T01:19:46.362Z"
 last_activity: 2026-08-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 9
+  completed_plans: 10
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-08-04
 
@@ -116,6 +116,7 @@ Last activity: 2026-08-04
 - [Phase 08-02]: sync-lista-morb.mjs rewritten as pure CLI-plus-export module: KNOWN_BY_CODE and label-based filtering removed, id is always slugify(label, code), exclusions are code-only (D-25) — Removes the root cause of the 21-id corruption and the sibling bug that dropped code 330 by matching against the label
 - [Phase 08-02]: rename-map.json computed from the diff between the frozen pre-migration fixture and the canonical regeneration (D-12), never transcribed from the ground-truth note — 21 renames, 1 addition (code 330), 0 removals — matches the ground-truth note's amended 21-row table exactly, proving the computed-not-transcribed discipline
 - [Phase 08-02]: Rule 1 fix: decodeEntities() in listaMorbSource.mjs (08-01) rewritten from a 9-entity case-insensitive chain to an 18-letter case-sensitive named-entity table; committed extract re-derived from the unchanged HTML — The incomplete decoder silently corrupted ~59 labels with literal &ocirc;/&ecirc;/&acirc;/&uuml;/&agrave; fragments, inflating the diff-computed rename map from 21 to 76 spurious entries; caught by cross-checking against the ground-truth note before commit
+- [Phase 08]: [Phase 08-03]: Invariants A/B/D/D2 written as pure functions in validate.mjs, none wired into main() yet — checkSlugConsistency's allowlist is a required parameter derived from extra-diseases.json's reason field by the caller, never a literal inside validate.mjs; checkColumnMapKeys duplicates the standard-column shape by hand instead of importing syncColumnMap.mjs, which has unconditional top-level disk reads — D-24 requires renaming and invariants to land in the same commit (08-06); this plan proves the invariants work via a frozen pre-migration fixture without touching the live taxonomy
 
 ### Pending Todos
 
@@ -127,8 +128,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T01:04:20.450Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-08-04T01:19:46.359Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -164,3 +165,4 @@ Resume file: None
 | Phase 07-baseline-verde P06 | ~8min | 2 tasks | 1 files |
 | Phase 08 P01 | 15min | 3 tasks | 13 files |
 | Phase 08 P02 | ~5min (continuation) + ~15min (Task 1, prior session) | 3 tasks | 8 files |
+| Phase 08 P03 | ~10min | 2 tasks | 2 files |
