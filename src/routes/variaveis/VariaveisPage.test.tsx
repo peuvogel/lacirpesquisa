@@ -129,6 +129,26 @@ describe('VariaveisPage', () => {
     });
   });
 
+  it('finds AVC-labeled entries after canonization via the curated alias layer (TAX-05)', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const list = await screen.findByRole('listbox', { name: 'Variáveis do catálogo' });
+    await waitFor(() => {
+      expect(within(list).getByText(/Infarto cerebral/i)).toBeInTheDocument();
+    });
+
+    // Pos-canonizacao nenhum id/rotulo contem "avc" — sem a camada de apelido (withDiseaseAliases)
+    // esta busca devolveria zero, exatamente o defeito que TAX-05 existe para impedir.
+    await user.type(screen.getByRole('searchbox', { name: 'Buscar' }), 'avc');
+
+    await waitFor(() => {
+      expect(within(list).getByText(/Infarto cerebral/i)).toBeInTheDocument();
+    });
+    // Rotulo exibido e sempre o oficial da Lista Morb — nenhuma mencao literal a "AVC" (D-19).
+    expect(within(list).queryByText(/\bAVC\b/)).not.toBeInTheDocument();
+  });
+
   it('shows full provenance and suggested test hint when a row is selected (CAT-02/03)', async () => {
     const user = userEvent.setup();
     renderPage();

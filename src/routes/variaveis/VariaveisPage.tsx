@@ -9,8 +9,10 @@ import {
   assertCompatibleSelection,
   buildSessionDataset,
 } from '@/features/catalog/buildSessionDataset';
+import { ALIASES, withDiseaseAliases } from '@/features/catalog/diseaseAliases';
 import { loadCatalog, type LoadedCatalog } from '@/features/catalog/loadCatalog';
 import { resolveHint } from '@/features/catalog/suggestTestForVariable';
+import { DISEASES } from '@/features/catalog/taxonomy';
 import type { CatalogEntry } from '@/features/catalog/types';
 import { useSession } from '@/shared/session/SessionProvider';
 import { VariableDetailPanel } from './VariableDetailPanel';
@@ -86,9 +88,16 @@ export function VariaveisPage() {
     [variables],
   );
 
+  // Enriquece com apelidos clinicos curados (TAX-05) so no indice de busca, em memoria —
+  // nunca gravado em public/data/catalog/variables.json (artefato gerado, TAX-06).
+  const variablesWithAliases = useMemo(
+    () => withDiseaseAliases(variables, DISEASES, ALIASES),
+    [variables],
+  );
+
   const filtered = useMemo(
-    () => filterCatalog(variables, filters),
-    [variables, filters],
+    () => filterCatalog(variablesWithAliases, filters),
+    [variablesWithAliases, filters],
   );
 
   const selected: CatalogEntry | null =

@@ -6,11 +6,16 @@ import {
   labelMatchesQuery,
   matchDiseases,
   resolveAliasTerm,
+  withDiseaseAliases,
   type DiseaseLike,
+  type DiseaseWithPack,
 } from './diseaseAliases';
 
 /** The real 331-label corpus (post-flip canonical taxonomy) — the bateria medida (RESEARCH §6.2) runs against this, not a fixture. */
 const DISEASES = diseasesLista as DiseaseLike[];
+
+/** Same corpus, typed with the `packId` field `diseases.lista.json` already carries — needed only by `withDiseaseAliases`. */
+const DISEASES_WITH_PACK = diseasesLista as DiseaseWithPack[];
 
 function byId(id: string): DiseaseLike {
   const found = DISEASES.find((d) => d.id === id);
@@ -117,5 +122,61 @@ describe('matchDiseases — dicionário curado + regra automática, unidos sem d
         expect(result.diseases.some((d) => d.id === termo)).toBe(false);
       }
     }
+  });
+});
+
+/** Minimal shape exercised by `withDiseaseAliases` in these tests — mirrors `CatalogEntry`'s
+ * own optional `packId`/`aliases` fields without importing that module. */
+interface TestCatalogEntry {
+  id: string;
+  packId?: string;
+  aliases?: string[];
+}
+
+describe('withDiseaseAliases — enriquece CatalogEntry.aliases em memória (TAX-05, busca de Variáveis)', () => {
+  it('entrada cujo pack é do código 178 (uma das categorias de "avc") recebe os termos curados', () => {
+    const entries = withDiseaseAliases<TestCatalogEntry>(
+      [{ id: 'sih.infarto_cerebral.internacoes', packId: 'sih.infarto_cerebral_uf' }],
+      DISEASES_WITH_PACK,
+      ALIASES,
+    );
+    expect(entries[0]?.aliases).toContain('avc');
+  });
+
+  it('entrada de pack sem código curado (pneumonia, 193) não recebe nenhum termo', () => {
+    const entries = withDiseaseAliases<TestCatalogEntry>(
+      [{ id: 'sih.pneumonia.internacoes', packId: 'sih.pneumonia_uf' }],
+      DISEASES_WITH_PACK,
+      ALIASES,
+    );
+    expect(entries[0]?.aliases).toBeUndefined();
+  });
+
+  it('entrada que já tinha aliases preserva os antigos e ganha os novos', () => {
+    const entries = withDiseaseAliases(
+      [
+        {
+          id: 'sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.internacoes',
+          packId: 'sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf',
+          aliases: ['termo-pre-existente'],
+        },
+      ],
+      DISEASES_WITH_PACK,
+      ALIASES,
+    );
+    expect(entries[0]?.aliases).toContain('termo-pre-existente');
+    expect(entries[0]?.aliases).toContain('avc');
+  });
+
+  it('entrada sem packId passa intacta (mesma referência, sem campo aliases criado)', () => {
+    const original = { id: 'ref.sidra.9514', aliases: undefined };
+    const entries = withDiseaseAliases([original], DISEASES_WITH_PACK, ALIASES);
+    expect(entries[0]).toBe(original);
+  });
+
+  it('entrada com packId desconhecido (sem disease correspondente) passa intacta', () => {
+    const original = { id: 'cnes.medicos_vasculares_sus', packId: 'sih.embolia_e_trombose_arteriais_uf_populacao' };
+    const entries = withDiseaseAliases([original], DISEASES_WITH_PACK, ALIASES);
+    expect(entries[0]).toBe(original);
   });
 });

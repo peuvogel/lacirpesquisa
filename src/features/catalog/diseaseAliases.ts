@@ -141,8 +141,8 @@ export function resolveAliasTerm(
  * supply one source of matches; `labelMatchesQuery` against every disease's label supplies
  * the other. The two sources are unioned without duplicating (keyed by disease id) — the
  * alias source guarantees a curated term's categories are always present (e.g. the stroke
- * acronym resolves to exactly its 3 curated codes) even when the automatic rule alone
- * would find nothing or something different.
+ * acronym resolves to exactly its curated codes, currently 4 — see `aliases.json`'s `avc`
+ * entry) even when the automatic rule alone would find nothing or something different.
  */
 export function matchDiseases<T extends DiseaseLike>(
   diseases: readonly T[],
@@ -171,4 +171,56 @@ export function matchDiseases<T extends DiseaseLike>(
     aliasTerm,
     aliasCategoryCount: aliasEntry ? aliasEntry.categorias.length : 0,
   };
+}
+
+/** Minimal disease shape `withDiseaseAliases` needs to resolve a pack back to its `tabnetCode`. */
+export interface DiseaseWithPack extends DiseaseLike {
+  packId: string;
+}
+
+/** Minimal catalog-entry shape `withDiseaseAliases` reads/writes — matches `CatalogEntry`'s
+ * own optional `packId`/`aliases` fields (`types.ts`) without importing that module. */
+export interface AliasableCatalogEntry {
+  packId?: string;
+  aliases?: string[];
+}
+
+/**
+ * Enriches loadable catalog entries with curated alias terms for the Variáveis search
+ * (TAX-05). Pure and in-memory only: for every entry with a `packId`, resolves the disease
+ * that pack belongs to (matched by `packId`, the same field both `DiseaseDef` and
+ * `CatalogEntry` already carry — never by string-slicing an id) and, when that disease's
+ * `tabnetCode` appears among a curated alias entry's `categorias`, appends that entry's
+ * `termos` to the entry's `aliases` array — the exact extension point `filterCatalog.ts`'s
+ * `matchesQuery` already reads (`...(entry.aliases ?? [])`).
+ *
+ * Existing aliases are preserved, never overwritten or deduplicated away; entries without a
+ * matching pack/tabnetCode pass through as the same object reference (no new terms, no
+ * unnecessary churn). Deliberately never writes back to `public/data/catalog/variables.json`
+ * (a generated artifact under invariants B/D2, TAX-06) — the enrichment lives only in the
+ * in-memory array `VariaveisPage` builds before calling `filterCatalog`.
+ */
+export function withDiseaseAliases<T extends AliasableCatalogEntry>(
+  entries: readonly T[],
+  diseases: readonly DiseaseWithPack[],
+  aliases: readonly AliasEntry[],
+): T[] {
+  const diseaseByPackId = new Map(diseases.map((d) => [d.packId, d]));
+  const termsByTabnetCode = new Map<string, string[]>();
+  for (const entry of aliases) {
+    for (const categoria of entry.categorias) {
+      const existing = termsByTabnetCode.get(categoria.tabnetCode);
+      if (existing) existing.push(...entry.termos);
+      else termsByTabnetCode.set(categoria.tabnetCode, [...entry.termos]);
+    }
+  }
+
+  return entries.map((entry) => {
+    if (!entry.packId) return entry;
+    const disease = diseaseByPackId.get(entry.packId);
+    if (!disease) return entry;
+    const newTerms = termsByTabnetCode.get(disease.tabnetCode);
+    if (!newTerms || newTerms.length === 0) return entry;
+    return { ...entry, aliases: [...new Set([...(entry.aliases ?? []), ...newTerms])] };
+  });
 }

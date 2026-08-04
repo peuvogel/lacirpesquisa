@@ -23,7 +23,7 @@ import { SCOPE_EXCLUDE_RELATIVE_PATHS } from '../../scripts/catalog/applyRenameM
 const ROOT = process.cwd();
 
 /**
- * Allowlist de arquivo — exatamente 6 caminhos, cada um com motivo (D-23).
+ * Allowlist de arquivo — exatamente 7 caminhos, cada um com motivo (D-23).
  */
 const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // O unico local legitimo para um id-tombstone existir por escrito: o mapa
@@ -70,6 +70,12 @@ const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // central do D-19 (o rotulo nao muda por caminho de busca, nunca ha badge de apelido)
   // depende de digitar exatamente esses termos no input real.
   'src/routes/mapas/MeasureDiseasePicker.test.tsx',
+  // TAX-05 (08-09): cobertura de comportamento de `VariaveisPage` — prova de que a busca de
+  // Variaveis tambem encontra o agravo pelo termo da liga apos a canonizacao
+  // (`withDiseaseAliases`). "avc" entra como *query digitada no campo de busca real*
+  // (`user.type(searchbox, 'avc')`), nunca como `id`/identidade de variavel — mesma classe
+  // de exclusao das duas entradas acima.
+  'src/routes/variaveis/VariaveisPage.test.tsx',
 ]);
 
 /**
@@ -127,8 +133,8 @@ function scanForTombstones(files: string[]): TombstoneFinding[] {
 }
 
 describe('invariante F — nenhum id-tombstone como literal fora da allowlist (D-23)', () => {
-  it('a allowlist declarada neste arquivo tem exatamente 6 caminhos', () => {
-    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(6);
+  it('a allowlist declarada neste arquivo tem exatamente 7 caminhos', () => {
+    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(7);
   });
 
   it('a varredura visita mais de 200 arquivos versionados sob src/, scripts/ e public/', () => {
