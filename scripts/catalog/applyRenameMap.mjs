@@ -49,8 +49,20 @@ const SCRIPTS_CATALOG_DIR = path.join(ROOT, 'scripts/catalog');
  * form would make the test assert something false. Same rationale as excluding
  * rename-map.json itself from scope; this is the one place besides that file where an
  * old id is legitimately permanent, not a tombstone to purge.
+ *
+ * `tombstones.test.ts` (08-04, this plan) has the same problem for a narrower reason:
+ * its `assertNotTombstone` cases name `hemorroidas`/`embolia_pulmonar` specifically
+ * *as* the two verified cycle ids and assert the thrown message cites their (also
+ * hardcoded) canonical target. That is a historical-fact assertion about which two ids
+ * are cycles, not a "current living id" reference — rewriting the first argument to its
+ * own canonical form would make `assertNotTombstone` stop throwing for it (it would no
+ * longer be a tombstone) while the `.toThrow(...)` expectation still fires, flipping the
+ * test to red (Rule 1 fix, found while verifying this same plan's Task 3).
  */
-const SCOPE_EXCLUDE_RELATIVE_PATHS = new Set(['src/features/catalog/renameMap.test.ts']);
+const SCOPE_EXCLUDE_RELATIVE_PATHS = new Set([
+  'src/features/catalog/renameMap.test.ts',
+  'src/features/catalog/tombstones.test.ts',
+]);
 
 /** Standard measure columns (mirrors syncColumnMap.mjs's MEASURES — duplicated by hand,
  * not imported, because syncColumnMap.mjs has unconditional top-level disk reads and is
