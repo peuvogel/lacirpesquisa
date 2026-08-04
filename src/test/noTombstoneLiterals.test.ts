@@ -23,7 +23,7 @@ import { SCOPE_EXCLUDE_RELATIVE_PATHS } from '../../scripts/catalog/applyRenameM
 const ROOT = process.cwd();
 
 /**
- * Allowlist de arquivo — exatamente 4 caminhos, cada um com motivo (D-23).
+ * Allowlist de arquivo — exatamente 5 caminhos, cada um com motivo (D-23).
  */
 const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // O unico local legitimo para um id-tombstone existir por escrito: o mapa
@@ -54,6 +54,14 @@ const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // `renameMap.test.ts`/`tombstones.test.ts`: literal presente por razao legitima e
   // verificada, nao por acidente.
   'src/features/catalog/aliases.json',
+  // TAX-05 (08-07): bateria de teste de `diseaseAliases.ts`. Passa "avc"/"ait" e o
+  // sinonimo "aterosclerose" como *query de busca* (argumento de string para
+  // `matchDiseases`/`labelMatchesQuery`) — nunca como `id` de agravo. Mesma logica da
+  // entrada de `aliases.json` acima: o proprio teste e a prova de que a query resolve
+  // para o(s) `tabnetCode` certo(s) (inclusive o caso "sem dicionario, avc devolve
+  // zero", que e a prova central do TAX-05); nao ha jeito de exercitar a resolucao de
+  // apelido sem escrever a string do apelido em algum lugar do arquivo que a testa.
+  'src/features/catalog/diseaseAliases.test.ts',
 ]);
 
 /**
@@ -111,8 +119,8 @@ function scanForTombstones(files: string[]): TombstoneFinding[] {
 }
 
 describe('invariante F — nenhum id-tombstone como literal fora da allowlist (D-23)', () => {
-  it('a allowlist declarada neste arquivo tem exatamente 4 caminhos', () => {
-    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(4);
+  it('a allowlist declarada neste arquivo tem exatamente 5 caminhos', () => {
+    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(5);
   });
 
   it('a varredura visita mais de 200 arquivos versionados sob src/, scripts/ e public/', () => {
