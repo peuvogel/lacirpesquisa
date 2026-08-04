@@ -49,7 +49,7 @@
     },
     {
       "code": "11",
-      "label": "Tuberc intest perit&ocirc;nio gl&acirc;ngl mesentéricos"
+      "label": "Tuberc intest peritônio glângl mesentéricos"
     },
     {
       "code": "12",
@@ -121,7 +121,7 @@
     },
     {
       "code": "29",
-      "label": "Sífilis cong&ecirc;nita"
+      "label": "Sífilis congênita"
     },
     {
       "code": "30",
@@ -209,11 +209,11 @@
     },
     {
       "code": "51",
-      "label": "Doença pelo vírus da imunodefici&ecirc;ncia humana [HIV]"
+      "label": "Doença pelo vírus da imunodeficiência humana [HIV]"
     },
     {
       "code": "52",
-      "label": "Caxumba [parotidite epid&ecirc;mica]"
+      "label": "Caxumba [parotidite epidêmica]"
     },
     {
       "code": "53",
@@ -253,11 +253,11 @@
     },
     {
       "code": "62",
-      "label": "Leishmaniose cut&acirc;nea"
+      "label": "Leishmaniose cutânea"
     },
     {
       "code": "63",
-      "label": "Leishmaniose cut&acirc;neo-mucosa"
+      "label": "Leishmaniose cutâneo-mucosa"
     },
     {
       "code": "64",
@@ -301,15 +301,15 @@
     },
     {
       "code": "74",
-      "label": "Seq&uuml;elas de tuberculose"
+      "label": "Seqüelas de tuberculose"
     },
     {
       "code": "75",
-      "label": "Seq&uuml;elas de poliomielite"
+      "label": "Seqüelas de poliomielite"
     },
     {
       "code": "76",
-      "label": "Seq&uuml;elas de hanseníase [lepra]"
+      "label": "Seqüelas de hanseníase [lepra]"
     },
     {
       "code": "77",
@@ -321,11 +321,11 @@
     },
     {
       "code": "79",
-      "label": "Neoplasia maligna do es&ocirc;fago"
+      "label": "Neoplasia maligna do esôfago"
     },
     {
       "code": "80",
-      "label": "Neoplasia maligna do est&ocirc;mago"
+      "label": "Neoplasia maligna do estômago"
     },
     {
       "code": "81",
@@ -333,7 +333,7 @@
     },
     {
       "code": "82",
-      "label": "Neopl malig junção retossigm reto &acirc;nus canal anal"
+      "label": "Neopl malig junção retossigm reto ânus canal anal"
     },
     {
       "code": "83",
@@ -341,7 +341,7 @@
     },
     {
       "code": "84",
-      "label": "Neoplasia maligna do p&acirc;ncreas"
+      "label": "Neoplasia maligna do pâncreas"
     },
     {
       "code": "85",
@@ -353,7 +353,7 @@
     },
     {
       "code": "87",
-      "label": "Neoplasia maligna de traquéia br&ocirc;nquios e pulmões"
+      "label": "Neoplasia maligna de traquéia brônquios e pulmões"
     },
     {
       "code": "88",
@@ -473,7 +473,7 @@
     },
     {
       "code": "117",
-      "label": "Anemia por defici&ecirc;ncia de ferro"
+      "label": "Anemia por deficiência de ferro"
     },
     {
       "code": "118",
@@ -489,7 +489,7 @@
     },
     {
       "code": "121",
-      "label": "Transtornos tireoidianos relac defici&ecirc;ncia de iodo"
+      "label": "Transtornos tireoidianos relac deficiência de iodo"
     },
     {
       "code": "122",
@@ -509,15 +509,15 @@
     },
     {
       "code": "126",
-      "label": "Defici&ecirc;ncia de vitamina A"
+      "label": "Deficiência de vitamina A"
     },
     {
       "code": "127",
-      "label": "Outras defici&ecirc;ncias vitamínicas"
+      "label": "Outras deficiências vitamínicas"
     },
     {
       "code": "128",
-      "label": "Seq&uuml;elas de desnutrição e de outras defic nutric"
+      "label": "Seqüelas de desnutrição e de outras defic nutric"
     },
     {
       "code": "129",
@@ -533,7 +533,7 @@
     },
     {
       "code": "132",
-      "label": "Dem&ecirc;ncia"
+      "label": "Demência"
     },
     {
       "code": "133",
@@ -605,7 +605,7 @@
     },
     {
       "code": "150",
-      "label": "Acid vascular cerebr isqu&ecirc;m transit e síndr correl"
+      "label": "Acid vascular cerebr isquêm transit e síndr correl"
     },
     {
       "code": "151",
@@ -677,7 +677,7 @@
     },
     {
       "code": "168",
-      "label": "Doença reumática cr&ocirc;nica do coração"
+      "label": "Doença reumática crônica do coração"
     },
     {
       "code": "169",
@@ -693,7 +693,7 @@
     },
     {
       "code": "172",
-      "label": "Outras doenças isqu&ecirc;micas do coração"
+      "label": "Outras doenças isquêmicas do coração"
     },
     {
       "code": "173",
@@ -705,7 +705,7 @@
     },
     {
       "code": "175",
-      "label": "Insufici&ecirc;ncia cardíaca"
+      "label": "Insuficiência cardíaca"
     },
     {
       "code": "176",
@@ -721,7 +721,7 @@
     },
     {
       "code": "179",
-      "label": "Acid vascular cerebr não espec hemorrág ou isqu&ecirc;m"
+      "label": "Acid vascular cerebr não espec hemorrág ou isquêm"
     },
     {
       "code": "180",
@@ -785,7 +785,7 @@
     },
     {
       "code": "195",
-      "label": "Sinusite cr&ocirc;nica"
+      "label": "Sinusite crônica"
     },
     {
       "code": "196",
@@ -793,7 +793,7 @@
     },
     {
       "code": "197",
-      "label": "Doenças cr&ocirc;nicas das amígdalas e das adenóides"
+      "label": "Doenças crônicas das amígdalas e das adenóides"
     },
     {
       "code": "198",
@@ -801,7 +801,7 @@
     },
     {
       "code": "199",
-      "label": "Bronquite enfisema e outr doenç pulm obstr cr&ocirc;nic"
+      "label": "Bronquite enfisema e outr doenç pulm obstr crônic"
     },
     {
       "code": "200",
@@ -829,11 +829,11 @@
     },
     {
       "code": "206",
-      "label": "Outr doenç cavidade oral gl&acirc;nd saliv e maxilares"
+      "label": "Outr doenç cavidade oral glând saliv e maxilares"
     },
     {
       "code": "207",
-      "label": "úlcera gástrica e duodenal"
+      "label": "Úlcera gástrica e duodenal"
     },
     {
       "code": "208",
@@ -841,11 +841,11 @@
     },
     {
       "code": "209",
-      "label": "Outras doenças do es&ocirc;fago est&ocirc;mago e duodeno"
+      "label": "Outras doenças do esôfago estômago e duodeno"
     },
     {
       "code": "210",
-      "label": "Doenças do ap&ecirc;ndice"
+      "label": "Doenças do apêndice"
     },
     {
       "code": "211",
@@ -869,7 +869,7 @@
     },
     {
       "code": "216",
-      "label": "Outras doenças dos intestinos e perit&ocirc;nio"
+      "label": "Outras doenças dos intestinos e peritônio"
     },
     {
       "code": "217",
@@ -885,7 +885,7 @@
     },
     {
       "code": "220",
-      "label": "Pancreatite aguda e outras doenças do p&acirc;ncreas"
+      "label": "Pancreatite aguda e outras doenças do pâncreas"
     },
     {
       "code": "221",
@@ -893,11 +893,11 @@
     },
     {
       "code": "222",
-      "label": "Infecções da pele e do tecido subcut&acirc;neo"
+      "label": "Infecções da pele e do tecido subcutâneo"
     },
     {
       "code": "223",
-      "label": "Outras doenças da pele e do tecido subcut&acirc;neo"
+      "label": "Outras doenças da pele e do tecido subcutâneo"
     },
     {
       "code": "224",
@@ -917,7 +917,7 @@
     },
     {
       "code": "228",
-      "label": "Doenças sist&ecirc;micas do tecido conjuntivo"
+      "label": "Doenças sistêmicas do tecido conjuntivo"
     },
     {
       "code": "229",
@@ -957,7 +957,7 @@
     },
     {
       "code": "238",
-      "label": "Insufici&ecirc;ncia renal"
+      "label": "Insuficiência renal"
     },
     {
       "code": "239",
@@ -1037,7 +1037,7 @@
     },
     {
       "code": "258",
-      "label": "Aborto espont&acirc;neo"
+      "label": "Aborto espontâneo"
     },
     {
       "code": "259",
@@ -1057,7 +1057,7 @@
     },
     {
       "code": "263",
-      "label": "Outr mot ass &agrave; mãe rel cav fetal amn pos prob part"
+      "label": "Outr mot ass à mãe rel cav fetal amn pos prob part"
     },
     {
       "code": "264",
@@ -1073,7 +1073,7 @@
     },
     {
       "code": "267",
-      "label": "Parto único espont&acirc;neo"
+      "label": "Parto único espontâneo"
     },
     {
       "code": "268",
@@ -1101,7 +1101,7 @@
     },
     {
       "code": "274",
-      "label": "Doenças infecciosas e parasitárias cong&ecirc;nitas"
+      "label": "Doenças infecciosas e parasitárias congênitas"
     },
     {
       "code": "275",
@@ -1121,11 +1121,11 @@
     },
     {
       "code": "279",
-      "label": "Outras malformações cong&ecirc;nitas do sistema nervoso"
+      "label": "Outras malformações congênitas do sistema nervoso"
     },
     {
       "code": "280",
-      "label": "Malformações cong&ecirc;nitas do aparelho circulatório"
+      "label": "Malformações congênitas do aparelho circulatório"
     },
     {
       "code": "281",
@@ -1133,11 +1133,11 @@
     },
     {
       "code": "282",
-      "label": "Aus&ecirc;ncia atresia e estenose do intestino delgado"
+      "label": "Ausência atresia e estenose do intestino delgado"
     },
     {
       "code": "283",
-      "label": "Outras malformações cong&ecirc;nitas aparelho digestivo"
+      "label": "Outras malformações congênitas aparelho digestivo"
     },
     {
       "code": "284",
@@ -1149,23 +1149,23 @@
     },
     {
       "code": "286",
-      "label": "Deformidades cong&ecirc;nitas do quadril"
+      "label": "Deformidades congênitas do quadril"
     },
     {
       "code": "287",
-      "label": "Deformidades cong&ecirc;nitas dos pés"
+      "label": "Deformidades congênitas dos pés"
     },
     {
       "code": "288",
-      "label": "Outr malform e deform cong&ecirc;nit aparelho osteomusc"
+      "label": "Outr malform e deform congênit aparelho osteomusc"
     },
     {
       "code": "289",
-      "label": "Outras malformações cong&ecirc;nitas"
+      "label": "Outras malformações congênitas"
     },
     {
       "code": "290",
-      "label": "Anomalias cromoss&ocirc;micas NCOP"
+      "label": "Anomalias cromossômicas NCOP"
     },
     {
       "code": "291",
@@ -1185,7 +1185,7 @@
     },
     {
       "code": "295",
-      "label": "Fratura do cr&acirc;nio e dos ossos da face"
+      "label": "Fratura do crânio e dos ossos da face"
     },
     {
       "code": "296",
@@ -1193,7 +1193,7 @@
     },
     {
       "code": "297",
-      "label": "Fratura do f&ecirc;mur"
+      "label": "Fratura do fêmur"
     },
     {
       "code": "298",
@@ -1237,7 +1237,7 @@
     },
     {
       "code": "308",
-      "label": "Envenenamento por drogas e subst&acirc;ncias biológicas"
+      "label": "Envenenamento por drogas e substâncias biológicas"
     },
     {
       "code": "309",
@@ -1257,7 +1257,7 @@
     },
     {
       "code": "313",
-      "label": "Seq&uuml;el traum enven e outr conseq causas externas"
+      "label": "Seqüel traum enven e outr conseq causas externas"
     },
     {
       "code": "314",
@@ -1269,7 +1269,7 @@
     },
     {
       "code": "316",
-      "label": "Outr pess riscos pot &agrave; saúde rel doenças transmiss"
+      "label": "Outr pess riscos pot à saúde rel doenças transmiss"
     },
     {
       "code": "317",
@@ -1285,7 +1285,7 @@
     },
     {
       "code": "320",
-      "label": "Assist&ecirc;ncia e exame pós-natal"
+      "label": "Assistência e exame pós-natal"
     },
     {
       "code": "321",
@@ -1309,11 +1309,11 @@
     },
     {
       "code": "326",
-      "label": "Exposição ao fumo ao fogo e &agrave;s chamas"
+      "label": "Exposição ao fumo ao fogo e às chamas"
     },
     {
       "code": "327",
-      "label": "Envenenamento intox exposição subst&acirc;ncias nocivas"
+      "label": "Envenenamento intox exposição substâncias nocivas"
     },
     {
       "code": "328",

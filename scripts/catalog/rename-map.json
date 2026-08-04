@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "generatedBy": "scripts/catalog/buildRenameMap.mjs",
+  "before": "src/test/fixtures/taxonomy/diseases.pre-migracao.json — estado corrompido de scripts/catalog/diseases.json congelado antes da regeneração (Fase 8 Plan 2)",
+  "after": "scripts/catalog/sync-lista-morb.mjs generateFromSnapshot() — regeneração canônica a partir do snapshot commitado da Lista Morb CID-10",
+  "renames": [
+    {
+      "tabnetCode": "163",
+      "old": "avc",
+      "canonical": "outras_doencas_do_olho_e_anexos",
+      "label": "Outras doenças do olho e anexos"
+    },
+    {
+      "tabnetCode": "164",
+      "old": "ait",
+      "canonical": "otite_media_e_outr_transt_ouvido_medio_apof_mast",
+      "label": "Otite média e outr transt ouvido médio apóf mast"
+    },
+    {
+      "tabnetCode": "172",
+      "old": "febre_reumatica",
+      "canonical": "outras_doencas_isquemicas_do_coracao",
+      "label": "Outras doenças isquêmicas do coração"
+    },
+    {
+      "tabnetCode": "173",
+      "old": "doencas_reumaticas_cronicas",
+      "canonical": "embolia_pulmonar",
+      "label": "Embolia pulmonar"
+    },
+    {
+      "tabnetCode": "174",
+      "old": "outras_doencas_coracao",
+      "canonical": "transtornos_de_conducao_e_arritmias_cardiacas",
+      "label": "Transtornos de condução e arritmias cardíacas"
+    },
+    {
+      "tabnetCode": "175",
+      "old": "hipertensao",
+      "canonical": "insuficiencia_cardiaca",
+      "label": "Insuficiência cardíaca"
+    },
+    {
+      "tabnetCode": "176",
+      "old": "angina_pectoris",
+      "canonical": "outras_doencas_do_coracao",
+      "label": "Outras doenças do coração"
+    },
+    {
+      "tabnetCode": "177",
+      "old": "infarto_agudo",
+      "canonical": "hemorragia_intracraniana",
+      "label": "Hemorragia intracraniana"
+    },
+    {
+      "tabnetCode": "178",
+      "old": "doencas_arterias",
+      "canonical": "infarto_cerebral",
+      "label": "Infarto cerebral"
+    },
+    {
+      "tabnetCode": "179",
+      "old": "aneurisma_aorta",
+      "canonical": "acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem",
+      "label": "Acid vascular cerebr não espec hemorrág ou isquêm"
+    },
+    {
+      "tabnetCode": "180",
+      "old": "outras_doencas_arteriais",
+      "canonical": "outras_doencas_cerebrovasculares",
+      "label": "Outras doenças cerebrovasculares"
+    },
+    {
+      "tabnetCode": "181",
+      "old": "aterosclerose",
+      "canonical": "arteroesclerose",
+      "label": "Arteroesclerose"
+    },
+    {
+      "tabnetCode": "182",
+      "old": "embolia_pulmonar",
+      "canonical": "outras_doencas_vasculares_perifericas",
+      "label": "Outras doenças vasculares periféricas"
+    },
+    {
+      "tabnetCode": "183",
+      "old": "embolia_trombose",
+      "canonical": "embolia_e_trombose_arteriais",
+      "label": "Embolia e trombose arteriais"
+    },
+    {
+      "tabnetCode": "184",
+      "old": "flebites_tromboflebites",
+      "canonical": "outras_doencas_das_arterias_arteriolas_e_capilares",
+      "label": "Outras doenças das artérias arteríolas e capilares"
+    },
+    {
+      "tabnetCode": "185",
+      "old": "varizes_mmii",
+      "canonical": "flebite_tromboflebite_embolia_e_trombose_venosa",
+      "label": "Flebite tromboflebite embolia e trombose venosa"
+    },
+    {
+      "tabnetCode": "186",
+      "old": "hemorroidas",
+      "canonical": "veias_varicosas_das_extremidades_inferiores",
+      "label": "Veias varicosas das extremidades inferiores"
+    },
+    {
+      "tabnetCode": "187",
+      "old": "outras_doencas_veias",
+      "canonical": "hemorroidas",
+      "label": "Hemorróidas"
+    },
+    {
+      "tabnetCode": "188",
+      "old": "linfedema",
+      "canonical": "outras_doencas_do_aparelho_circulatorio",
+      "label": "Outras doenças do aparelho circulatório"
+    },
+    {
+      "tabnetCode": "189",
+      "old": "hipotensao",
+      "canonical": "faringite_aguda_e_amigdalite_aguda",
+      "label": "Faringite aguda e amigdalite aguda"
+    },
+    {
+      "tabnetCode": "190",
+      "old": "outras_doencas_vasculares",
+      "canonical": "laringite_e_traqueite_agudas",
+      "label": "Laringite e traqueíte agudas"
+    }
+  ],
+  "added": [
+    {
+      "tabnetCode": "330",
+      "id": "todas_as_outras_causas_externas",
+      "label": "Todas as outras causas externas",
+      "filterKind": "lista_morb",
+      "def": "sih/cnv/nibr.def"
+    }
+  ],
+  "removed": [],
+  "tombstones": [
+    "avc",
+    "ait",
+    "febre_reumatica",
+    "doencas_reumaticas_cronicas",
+    "outras_doencas_coracao",
+    "hipertensao",
+    "angina_pectoris",
+    "infarto_agudo",
+    "doencas_arterias",
+    "aneurisma_aorta",
+    "outras_doencas_arteriais",
+    "aterosclerose",
+    "embolia_pulmonar",
+    "embolia_trombose",
+    "flebites_tromboflebites",
+    "varizes_mmii",
+    "hemorroidas",
+    "outras_doencas_veias",
+    "linfedema",
+    "hipotensao",
+    "outras_doencas_vasculares"
+  ]
+}

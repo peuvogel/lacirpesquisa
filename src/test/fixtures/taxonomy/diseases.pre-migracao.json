@@ -1,0 +1,2312 @@
+[
+  {
+    "id": "colera",
+    "label": "Cólera",
+    "filterKind": "lista_morb",
+    "tabnetCode": "1",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febres_tifoide_e_paratifoide",
+    "label": "Febres tifóide e paratifóide",
+    "filterKind": "lista_morb",
+    "tabnetCode": "2",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "shiguelose",
+    "label": "Shiguelose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "3",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "amebiase",
+    "label": "Amebíase",
+    "filterKind": "lista_morb",
+    "tabnetCode": "4",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "diarreia_e_gastroenterite_origem_infecc_presumivel",
+    "label": "Diarréia e gastroenterite origem infecc presumível",
+    "filterKind": "lista_morb",
+    "tabnetCode": "5",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_infecciosas_intestinais",
+    "label": "Outras doenças infecciosas intestinais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "6",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tuberculose_pulmonar",
+    "label": "Tuberculose pulmonar",
+    "filterKind": "lista_morb",
+    "tabnetCode": "7",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_tuberculoses_respiratorias",
+    "label": "Outras tuberculoses respiratórias",
+    "filterKind": "lista_morb",
+    "tabnetCode": "8",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "restante_de_tuberculose_respiratoria",
+    "label": "Restante de tuberculose respiratória",
+    "filterKind": "lista_morb",
+    "tabnetCode": "9",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tuberculose_do_sistema_nervoso",
+    "label": "Tuberculose do sistema nervoso",
+    "filterKind": "lista_morb",
+    "tabnetCode": "10",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tuberc_intest_peritonio_glangl_mesentericos",
+    "label": "Tuberc intest peritônio glângl mesentéricos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "11",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tuberculose_ossea_e_das_articulacoes",
+    "label": "Tuberculose óssea e das articulações",
+    "filterKind": "lista_morb",
+    "tabnetCode": "12",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tuberculose_do_aparelho_geniturinario",
+    "label": "Tuberculose do aparelho geniturinário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "13",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tuberculose_miliar",
+    "label": "Tuberculose miliar",
+    "filterKind": "lista_morb",
+    "tabnetCode": "14",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "restante_de_outras_tuberculoses",
+    "label": "Restante de outras tuberculoses",
+    "filterKind": "lista_morb",
+    "tabnetCode": "15",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "peste",
+    "label": "Peste",
+    "filterKind": "lista_morb",
+    "tabnetCode": "16",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "brucelose",
+    "label": "Brucelose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "17",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hanseniase_lepra",
+    "label": "Hanseníase [lepra]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "18",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tetano_neonatal",
+    "label": "Tétano neonatal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "19",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_tetanos",
+    "label": "Outros tétanos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "20",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "difteria",
+    "label": "Difteria",
+    "filterKind": "lista_morb",
+    "tabnetCode": "21",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "coqueluche",
+    "label": "Coqueluche",
+    "filterKind": "lista_morb",
+    "tabnetCode": "22",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infeccao_meningococica",
+    "label": "Infecção meningocócica",
+    "filterKind": "lista_morb",
+    "tabnetCode": "23",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "septicemia",
+    "label": "Septicemia",
+    "filterKind": "lista_morb",
+    "tabnetCode": "24",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leptospirose_icterohemorragica",
+    "label": "Leptospirose icterohemorrágica",
+    "filterKind": "lista_morb",
+    "tabnetCode": "25",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_formas_de_leptospirose",
+    "label": "Outras formas de leptospirose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "26",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leptospirose_nao_especificada",
+    "label": "Leptospirose não especificada",
+    "filterKind": "lista_morb",
+    "tabnetCode": "27",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "restante_de_outras_doencas_bacterianas",
+    "label": "Restante de outras doenças bacterianas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "28",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sifilis_congenita",
+    "label": "Sífilis congênita",
+    "filterKind": "lista_morb",
+    "tabnetCode": "29",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sifilis_precoce",
+    "label": "Sífilis precoce",
+    "filterKind": "lista_morb",
+    "tabnetCode": "30",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_sifilis",
+    "label": "Outras sífilis",
+    "filterKind": "lista_morb",
+    "tabnetCode": "31",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infeccao_gonococica",
+    "label": "Infecção gonocócica",
+    "filterKind": "lista_morb",
+    "tabnetCode": "32",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_por_clamidias_transmitidas_por_via_sexual",
+    "label": "Doenças por clamídias transmitidas por via sexual",
+    "filterKind": "lista_morb",
+    "tabnetCode": "33",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_infeccoes_com_transm_predominant_sexual",
+    "label": "Outras infecções com transm predominant sexual",
+    "filterKind": "lista_morb",
+    "tabnetCode": "34",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febres_recorrentes",
+    "label": "Febres recorrentes",
+    "filterKind": "lista_morb",
+    "tabnetCode": "35",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tracoma",
+    "label": "Tracoma",
+    "filterKind": "lista_morb",
+    "tabnetCode": "36",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tifo_exantematico",
+    "label": "Tifo exantemático",
+    "filterKind": "lista_morb",
+    "tabnetCode": "37",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "poliomielite_aguda",
+    "label": "Poliomielite aguda",
+    "filterKind": "lista_morb",
+    "tabnetCode": "38",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "raiva",
+    "label": "Raiva",
+    "filterKind": "lista_morb",
+    "tabnetCode": "39",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "encefalite_viral",
+    "label": "Encefalite viral",
+    "filterKind": "lista_morb",
+    "tabnetCode": "40",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febre_amarela",
+    "label": "Febre amarela",
+    "filterKind": "lista_morb",
+    "tabnetCode": "41",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "dengue_dengue_classsico",
+    "label": "Dengue [dengue clásssico]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "42",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febre_hemorragica_devida_ao_virus_da_dengue",
+    "label": "Febre hemorrágica devida ao vírus da dengue",
+    "filterKind": "lista_morb",
+    "tabnetCode": "43",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "restante_de_outr_febr_arbovirus_febr_hemor_virus",
+    "label": "Restante de outr febr arbovírus febr hemor vírus",
+    "filterKind": "lista_morb",
+    "tabnetCode": "44",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infeccoes_pelo_virus_do_herpes",
+    "label": "Infecções pelo vírus do herpes",
+    "filterKind": "lista_morb",
+    "tabnetCode": "45",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "varicela_e_herpes_zoster",
+    "label": "Varicela e herpes zoster",
+    "filterKind": "lista_morb",
+    "tabnetCode": "46",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sarampo",
+    "label": "Sarampo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "47",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "rubeola",
+    "label": "Rubéola",
+    "filterKind": "lista_morb",
+    "tabnetCode": "48",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hepatite_aguda_b",
+    "label": "Hepatite aguda B",
+    "filterKind": "lista_morb",
+    "tabnetCode": "49",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_hepatites_virais",
+    "label": "Outras hepatites virais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "50",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_pelo_virus_da_imunodeficiencia_humana_hiv",
+    "label": "Doença pelo vírus da imunodeficiência humana [HIV]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "51",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "caxumba_parotidite_epidemica",
+    "label": "Caxumba [parotidite epidêmica]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "52",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "meningite_viral",
+    "label": "Meningite viral",
+    "filterKind": "lista_morb",
+    "tabnetCode": "53",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "restante_de_outras_doencas_virais",
+    "label": "Restante de outras doenças virais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "54",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "micoses",
+    "label": "Micoses",
+    "filterKind": "lista_morb",
+    "tabnetCode": "55",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "malaria_por_plasmodium_falciparum",
+    "label": "Malária por Plasmodium falciparum",
+    "filterKind": "lista_morb",
+    "tabnetCode": "56",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "malaria_por_plasmodium_vivax",
+    "label": "Malária por Plasmodium vivax",
+    "filterKind": "lista_morb",
+    "tabnetCode": "57",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "malaria_por_plasmodium_malariae",
+    "label": "Malária por Plasmodium malariae",
+    "filterKind": "lista_morb",
+    "tabnetCode": "58",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_formas_malaria_conf_exames_parasitolog",
+    "label": "Outras formas malária conf exames parasitológ",
+    "filterKind": "lista_morb",
+    "tabnetCode": "59",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "malaria_nao_especificada",
+    "label": "Malária não especificada",
+    "filterKind": "lista_morb",
+    "tabnetCode": "60",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leishmaniose_visceral",
+    "label": "Leishmaniose visceral",
+    "filterKind": "lista_morb",
+    "tabnetCode": "61",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leishmaniose_cutanea",
+    "label": "Leishmaniose cutânea",
+    "filterKind": "lista_morb",
+    "tabnetCode": "62",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leishmaniose_cutaneo_mucosa",
+    "label": "Leishmaniose cutâneo-mucosa",
+    "filterKind": "lista_morb",
+    "tabnetCode": "63",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leishmaniose_nao_especificada",
+    "label": "Leishmaniose não especificada",
+    "filterKind": "lista_morb",
+    "tabnetCode": "64",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tripanossomiase",
+    "label": "Tripanossomíase",
+    "filterKind": "lista_morb",
+    "tabnetCode": "65",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "esquistossomose",
+    "label": "Esquistossomose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "66",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_infestacoes_por_trematodeos",
+    "label": "Outras infestações por trematódeos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "67",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "equinococose",
+    "label": "Equinococose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "68",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "dracunculiase",
+    "label": "Dracunculíase",
+    "filterKind": "lista_morb",
+    "tabnetCode": "69",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "oncocercose",
+    "label": "Oncocercose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "70",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "filariose",
+    "label": "Filariose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "71",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ancilostomiase",
+    "label": "Ancilostomíase",
+    "filterKind": "lista_morb",
+    "tabnetCode": "72",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_helmintiases",
+    "label": "Outras helmintíases",
+    "filterKind": "lista_morb",
+    "tabnetCode": "73",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sequelas_de_tuberculose",
+    "label": "Seqüelas de tuberculose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "74",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sequelas_de_poliomielite",
+    "label": "Seqüelas de poliomielite",
+    "filterKind": "lista_morb",
+    "tabnetCode": "75",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sequelas_de_hanseniase_lepra",
+    "label": "Seqüelas de hanseníase [lepra]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "76",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_infecciosas_e_parasitarias",
+    "label": "Outras doenças infecciosas e parasitárias",
+    "filterKind": "lista_morb",
+    "tabnetCode": "77",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_labio_cavidade_oral_e_faringe",
+    "label": "Neoplasia maligna do lábio cavidade oral e faringe",
+    "filterKind": "lista_morb",
+    "tabnetCode": "78",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_esofago",
+    "label": "Neoplasia maligna do esôfago",
+    "filterKind": "lista_morb",
+    "tabnetCode": "79",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_estomago",
+    "label": "Neoplasia maligna do estômago",
+    "filterKind": "lista_morb",
+    "tabnetCode": "80",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_colon",
+    "label": "Neoplasia maligna do cólon",
+    "filterKind": "lista_morb",
+    "tabnetCode": "81",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_malig_juncao_retossigm_reto_anus_canal_anal",
+    "label": "Neopl malig junção retossigm reto ânus canal anal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "82",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_malig_figado_e_vias_biliares_intra_hepaticas",
+    "label": "Neopl malig fígado e vias biliares intra-hepáticas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "83",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_pancreas",
+    "label": "Neoplasia maligna do pâncreas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "84",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neoplasias_malignas_de_orgaos_digestivos",
+    "label": "Outras neoplasias malignas de órgãos digestivos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "85",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasias_malignas_de_laringe",
+    "label": "Neoplasias malignas de laringe",
+    "filterKind": "lista_morb",
+    "tabnetCode": "86",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_de_traqueia_bronquios_e_pulmoes",
+    "label": "Neoplasia maligna de traquéia brônquios e pulmões",
+    "filterKind": "lista_morb",
+    "tabnetCode": "87",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neopl_malig_org_respirat_e_intratoracicos",
+    "label": "Outras neopl malig órg respirat e intratorácicos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "88",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_osso_e_cartilagem_articular",
+    "label": "Neoplasia maligna do osso e cartilagem articular",
+    "filterKind": "lista_morb",
+    "tabnetCode": "89",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_da_pele",
+    "label": "Neoplasia maligna da pele",
+    "filterKind": "lista_morb",
+    "tabnetCode": "90",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neoplasias_malignas_da_pele",
+    "label": "Outras neoplasias malignas da pele",
+    "filterKind": "lista_morb",
+    "tabnetCode": "91",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_malig_do_tecido_mesotelial_e_tecidos_moles",
+    "label": "Neopl malig do tecido mesotelial e tecidos moles",
+    "filterKind": "lista_morb",
+    "tabnetCode": "92",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_da_mama",
+    "label": "Neoplasia maligna da mama",
+    "filterKind": "lista_morb",
+    "tabnetCode": "93",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_colo_do_utero",
+    "label": "Neoplasia maligna do colo do útero",
+    "filterKind": "lista_morb",
+    "tabnetCode": "94",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_malig_outr_porcoes_e_porcoes_nao_espec_utero",
+    "label": "Neopl malig outr porções e porções não espec útero",
+    "filterKind": "lista_morb",
+    "tabnetCode": "95",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neopl_malignas_orgaos_genitais_femininos",
+    "label": "Outras neopl malignas órgãos genitais femininos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "96",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_da_prostata",
+    "label": "Neoplasia maligna da próstata",
+    "filterKind": "lista_morb",
+    "tabnetCode": "97",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neopl_malignas_orgaos_genitais_masculinos",
+    "label": "Outras neopl malignas órgãos genitais masculinos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "98",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_da_bexiga",
+    "label": "Neoplasia maligna da bexiga",
+    "filterKind": "lista_morb",
+    "tabnetCode": "99",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neoplasias_malignas_do_trato_urinario",
+    "label": "Outras neoplasias malignas do trato urinário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "100",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_dos_olhos_e_anexos",
+    "label": "Neoplasia maligna dos olhos e anexos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "101",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_maligna_do_encefalo",
+    "label": "Neoplasia maligna do encéfalo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "102",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_malig_outras_partes_sistema_nervoso_central",
+    "label": "Neopl malig outras partes sistema nervoso central",
+    "filterKind": "lista_morb",
+    "tabnetCode": "103",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_malig_outr_localiz_mal_def_secun_e_nao_espec",
+    "label": "Neopl malig outr localiz mal def secun e não espec",
+    "filterKind": "lista_morb",
+    "tabnetCode": "104",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_de_hodgkin",
+    "label": "Doença de Hodgkin",
+    "filterKind": "lista_morb",
+    "tabnetCode": "105",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "linfoma_nao_hodgkin",
+    "label": "Linfoma não-Hodgkin",
+    "filterKind": "lista_morb",
+    "tabnetCode": "106",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leucemia",
+    "label": "Leucemia",
+    "filterKind": "lista_morb",
+    "tabnetCode": "107",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_neopl_malig_tecidos_linfoid_hematop_e_relac",
+    "label": "Outras neopl malig tecidos linfóid hematop e relac",
+    "filterKind": "lista_morb",
+    "tabnetCode": "108",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "carcinoma_in_situ_de_colo_do_utero",
+    "label": "Carcinoma in situ de colo do útero",
+    "filterKind": "lista_morb",
+    "tabnetCode": "109",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_benigna_da_pele",
+    "label": "Neoplasia benigna da pele",
+    "filterKind": "lista_morb",
+    "tabnetCode": "110",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_benigna_da_mama",
+    "label": "Neoplasia benigna da mama",
+    "filterKind": "lista_morb",
+    "tabnetCode": "111",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "leiomioma_do_utero",
+    "label": "Leiomioma do útero",
+    "filterKind": "lista_morb",
+    "tabnetCode": "112",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_benigna_do_ovario",
+    "label": "Neoplasia benigna do ovário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "113",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neoplasia_benigna_dos_orgaos_urinarios",
+    "label": "Neoplasia benigna dos órgãos urinários",
+    "filterKind": "lista_morb",
+    "tabnetCode": "114",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "neopl_benig_encefalo_e_outr_part_sist_nerv_central",
+    "label": "Neopl benig encéfalo e outr part sist nerv central",
+    "filterKind": "lista_morb",
+    "tabnetCode": "115",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_neopl_in_situ_benigs_e_comport_incert_desconh",
+    "label": "Outr neopl in situ benigs e comport incert desconh",
+    "filterKind": "lista_morb",
+    "tabnetCode": "116",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "anemia_por_deficiencia_de_ferro",
+    "label": "Anemia por deficiência de ferro",
+    "filterKind": "lista_morb",
+    "tabnetCode": "117",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_anemias",
+    "label": "Outras anemias",
+    "filterKind": "lista_morb",
+    "tabnetCode": "118",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "afecc_hemorrag_e_outr_doenc_sang_e_org_hematopoet",
+    "label": "Afecç hemorrág e outr doenç sang e órg hematopoét",
+    "filterKind": "lista_morb",
+    "tabnetCode": "119",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "alguns_transtornos_envolvendo_mecanismo_imunitario",
+    "label": "Alguns transtornos envolvendo mecanismo imunitário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "120",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_tireoidianos_relac_deficiencia_de_iodo",
+    "label": "Transtornos tireoidianos relac deficiência de iodo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "121",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "tireotoxicose",
+    "label": "Tireotoxicose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "122",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transtornos_tireoidianos",
+    "label": "Outros transtornos tireoidianos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "123",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "diabetes_mellitus",
+    "label": "Diabetes mellitus",
+    "filterKind": "lista_morb",
+    "tabnetCode": "124",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "desnutricao",
+    "label": "Desnutrição",
+    "filterKind": "lista_morb",
+    "tabnetCode": "125",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "deficiencia_de_vitamina_a",
+    "label": "Deficiência de vitamina A",
+    "filterKind": "lista_morb",
+    "tabnetCode": "126",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_deficiencias_vitaminicas",
+    "label": "Outras deficiências vitamínicas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "127",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sequelas_de_desnutricao_e_de_outras_defic_nutric",
+    "label": "Seqüelas de desnutrição e de outras defic nutric",
+    "filterKind": "lista_morb",
+    "tabnetCode": "128",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "obesidade",
+    "label": "Obesidade",
+    "filterKind": "lista_morb",
+    "tabnetCode": "129",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "deplecao_de_volume",
+    "label": "Depleção de volume",
+    "filterKind": "lista_morb",
+    "tabnetCode": "130",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transt_endocrinos_nutricionais_metabolicos",
+    "label": "Outros transt endócrinos nutricionais metabólicos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "131",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "demencia",
+    "label": "Demência",
+    "filterKind": "lista_morb",
+    "tabnetCode": "132",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transt_mentais_e_comportamentais_dev_uso_de_alcool",
+    "label": "Transt mentais e comportamentais dev uso de álcool",
+    "filterKind": "lista_morb",
+    "tabnetCode": "133",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transt_mentais_comport_dev_uso_outr_subst_psicoat",
+    "label": "Transt mentais comport dev uso outr subst psicoat",
+    "filterKind": "lista_morb",
+    "tabnetCode": "134",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "esquizofrenia_transt_esquizotipicos_e_delirantes",
+    "label": "Esquizofrenia transt esquizotípicos e delirantes",
+    "filterKind": "lista_morb",
+    "tabnetCode": "135",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_de_humor_afetivos",
+    "label": "Transtornos de humor [afetivos]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "136",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transt_neurot_e_relacionados_com_stress_e_somatof",
+    "label": "Transt neurót e relacionados com stress e somatof",
+    "filterKind": "lista_morb",
+    "tabnetCode": "137",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "retardo_mental",
+    "label": "Retardo mental",
+    "filterKind": "lista_morb",
+    "tabnetCode": "138",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transtornos_mentais_e_comportamentais",
+    "label": "Outros transtornos mentais e comportamentais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "139",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "meningite_bacteriana_nao_classif_outra_parte",
+    "label": "Meningite bacteriana não classif outra parte",
+    "filterKind": "lista_morb",
+    "tabnetCode": "140",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "meningite_em_doencas_bacters_class_outr_parte",
+    "label": "Meningite em doenças bacters class outr parte",
+    "filterKind": "lista_morb",
+    "tabnetCode": "141",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "mening_em_doenc_infec_parasit_class_outr_part",
+    "label": "Mening em doenç infec/parasit class outr part",
+    "filterKind": "lista_morb",
+    "tabnetCode": "142",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "mening_dev_outras_causas_e_causas_nao_especif",
+    "label": "Mening dev outras causas e causas não especif",
+    "filterKind": "lista_morb",
+    "tabnetCode": "143",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "restante_doencas_inflamat_sist_nervoso_central",
+    "label": "Restante doenças inflamat sist nervoso central",
+    "filterKind": "lista_morb",
+    "tabnetCode": "144",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_de_parkinson",
+    "label": "Doença de Parkinson",
+    "filterKind": "lista_morb",
+    "tabnetCode": "145",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_de_alzheimer",
+    "label": "Doença de Alzheimer",
+    "filterKind": "lista_morb",
+    "tabnetCode": "146",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "esclerose_multiplas",
+    "label": "Esclerose múltiplas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "147",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "epilepsia",
+    "label": "Epilepsia",
+    "filterKind": "lista_morb",
+    "tabnetCode": "148",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "enxaqueca_e_outras_sindromes_de_algias_cefalicos",
+    "label": "Enxaqueca e outras síndromes de algias cefálicos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "149",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "acid_vascular_cerebr_isquem_transit_e_sindr_correl",
+    "label": "Acid vascular cerebr isquêm transit e síndr correl",
+    "filterKind": "lista_morb",
+    "tabnetCode": "150",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_dos_nervos_raizes_e_plexos_nervosos",
+    "label": "Transtornos dos nervos raízes e plexos nervosos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "151",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "paralisia_cerebral_e_outras_sindromes_paraliticas",
+    "label": "Paralisia cerebral e outras síndromes paralíticas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "152",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_sistema_nervoso",
+    "label": "Outras doenças do sistema nervoso",
+    "filterKind": "lista_morb",
+    "tabnetCode": "153",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "inflamacao_da_palpebra",
+    "label": "Inflamação da pálpebra",
+    "filterKind": "lista_morb",
+    "tabnetCode": "154",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "conjuntivite_e_outros_transtornos_da_conjuntiva",
+    "label": "Conjuntivite e outros transtornos da conjuntiva",
+    "filterKind": "lista_morb",
+    "tabnetCode": "155",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ceratite_e_outros_transtornos_esclerotica_e_cornea",
+    "label": "Ceratite e outros transtornos esclerótica e córnea",
+    "filterKind": "lista_morb",
+    "tabnetCode": "156",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "catarata_e_outros_transtornos_do_cristalino",
+    "label": "Catarata e outros transtornos do cristalino",
+    "filterKind": "lista_morb",
+    "tabnetCode": "157",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "descolamentos_e_defeitos_da_retina",
+    "label": "Descolamentos e defeitos da retina",
+    "filterKind": "lista_morb",
+    "tabnetCode": "158",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "glaucoma",
+    "label": "Glaucoma",
+    "filterKind": "lista_morb",
+    "tabnetCode": "159",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "estrabismo",
+    "label": "Estrabismo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "160",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_da_refracao_e_da_acomodacao",
+    "label": "Transtornos da refração e da acomodação",
+    "filterKind": "lista_morb",
+    "tabnetCode": "161",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "cegueira_e_visao_subnormal",
+    "label": "Cegueira e visão subnormal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "162",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "avc",
+    "label": "Outras doenças do olho e anexos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "163",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ait",
+    "label": "Otite média e outr transt ouvido médio apóf mast",
+    "filterKind": "lista_morb",
+    "tabnetCode": "164",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "perda_de_audicao",
+    "label": "Perda de audição",
+    "filterKind": "lista_morb",
+    "tabnetCode": "165",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_ouvido_e_da_apofise_mastoide",
+    "label": "Outras doenças do ouvido e da apófise mastóide",
+    "filterKind": "lista_morb",
+    "tabnetCode": "166",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febre_reumatica_aguda",
+    "label": "Febre reumática aguda",
+    "filterKind": "lista_morb",
+    "tabnetCode": "167",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_reumatica_cronica_do_coracao",
+    "label": "Doença reumática crônica do coração",
+    "filterKind": "lista_morb",
+    "tabnetCode": "168",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hipertensao_essencial_primaria",
+    "label": "Hipertensão essencial (primária)",
+    "filterKind": "lista_morb",
+    "tabnetCode": "169",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_hipertensivas",
+    "label": "Outras doenças hipertensivas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "170",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infarto_agudo_do_miocardio",
+    "label": "Infarto agudo do miocárdio",
+    "filterKind": "lista_morb",
+    "tabnetCode": "171",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febre_reumatica",
+    "label": "Outras doenças isquêmicas do coração",
+    "filterKind": "lista_morb",
+    "tabnetCode": "172",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_reumaticas_cronicas",
+    "label": "Embolia pulmonar",
+    "filterKind": "lista_morb",
+    "tabnetCode": "173",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_coracao",
+    "label": "Transtornos de condução e arritmias cardíacas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "174",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hipertensao",
+    "label": "Insuficiência cardíaca",
+    "filterKind": "lista_morb",
+    "tabnetCode": "175",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "angina_pectoris",
+    "label": "Outras doenças do coração",
+    "filterKind": "lista_morb",
+    "tabnetCode": "176",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infarto_agudo",
+    "label": "Hemorragia intracraniana",
+    "filterKind": "lista_morb",
+    "tabnetCode": "177",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_arterias",
+    "label": "Infarto cerebral",
+    "filterKind": "lista_morb",
+    "tabnetCode": "178",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "aneurisma_aorta",
+    "label": "Acid vascular cerebr não espec hemorrág ou isquêm",
+    "filterKind": "lista_morb",
+    "tabnetCode": "179",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_arteriais",
+    "label": "Outras doenças cerebrovasculares",
+    "filterKind": "lista_morb",
+    "tabnetCode": "180",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "aterosclerose",
+    "label": "Arteroesclerose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "181",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "embolia_pulmonar",
+    "label": "Outras doenças vasculares periféricas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "182",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "embolia_trombose",
+    "label": "Embolia e trombose arteriais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "183",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "flebites_tromboflebites",
+    "label": "Outras doenças das artérias arteríolas e capilares",
+    "filterKind": "lista_morb",
+    "tabnetCode": "184",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "varizes_mmii",
+    "label": "Flebite tromboflebite embolia e trombose venosa",
+    "filterKind": "lista_morb",
+    "tabnetCode": "185",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hemorroidas",
+    "label": "Veias varicosas das extremidades inferiores",
+    "filterKind": "lista_morb",
+    "tabnetCode": "186",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_veias",
+    "label": "Hemorróidas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "187",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "linfedema",
+    "label": "Outras doenças do aparelho circulatório",
+    "filterKind": "lista_morb",
+    "tabnetCode": "188",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hipotensao",
+    "label": "Faringite aguda e amigdalite aguda",
+    "filterKind": "lista_morb",
+    "tabnetCode": "189",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_vasculares",
+    "label": "Laringite e traqueíte agudas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "190",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_infeccoes_agudas_das_vias_aereas_superiores",
+    "label": "Outras infecções agudas das vias aéreas superiores",
+    "filterKind": "lista_morb",
+    "tabnetCode": "191",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "influenza_gripe",
+    "label": "Influenza [gripe]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "192",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "pneumonia",
+    "label": "Pneumonia",
+    "filterKind": "lista_morb",
+    "tabnetCode": "193",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "bronquite_aguda_e_bronquiolite_aguda",
+    "label": "Bronquite aguda e bronquiolite aguda",
+    "filterKind": "lista_morb",
+    "tabnetCode": "194",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sinusite_cronica",
+    "label": "Sinusite crônica",
+    "filterKind": "lista_morb",
+    "tabnetCode": "195",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_nariz_e_dos_seios_paranasais",
+    "label": "Outras doenças do nariz e dos seios paranasais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "196",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_cronicas_das_amigdalas_e_das_adenoides",
+    "label": "Doenças crônicas das amígdalas e das adenóides",
+    "filterKind": "lista_morb",
+    "tabnetCode": "197",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_trato_respiratorio_superior",
+    "label": "Outras doenças do trato respiratório superior",
+    "filterKind": "lista_morb",
+    "tabnetCode": "198",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "bronquite_enfisema_e_outr_doenc_pulm_obstr_cronic",
+    "label": "Bronquite enfisema e outr doenç pulm obstr crônic",
+    "filterKind": "lista_morb",
+    "tabnetCode": "199",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "asma",
+    "label": "Asma",
+    "filterKind": "lista_morb",
+    "tabnetCode": "200",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "bronquiectasia",
+    "label": "Bronquiectasia",
+    "filterKind": "lista_morb",
+    "tabnetCode": "201",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "pneumoconiose",
+    "label": "Pneumoconiose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "202",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_aparelho_respiratorio",
+    "label": "Outras doenças do aparelho respiratório",
+    "filterKind": "lista_morb",
+    "tabnetCode": "203",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "carie_dentaria",
+    "label": "Cárie dentária",
+    "filterKind": "lista_morb",
+    "tabnetCode": "204",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transtornos_dentes_e_estruturas_de_suporte",
+    "label": "Outros transtornos dentes e estruturas de suporte",
+    "filterKind": "lista_morb",
+    "tabnetCode": "205",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_doenc_cavidade_oral_gland_saliv_e_maxilares",
+    "label": "Outr doenç cavidade oral glând saliv e maxilares",
+    "filterKind": "lista_morb",
+    "tabnetCode": "206",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ulcera_gastrica_e_duodenal",
+    "label": "Úlcera gástrica e duodenal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "207",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "gastrite_e_duodenite",
+    "label": "Gastrite e duodenite",
+    "filterKind": "lista_morb",
+    "tabnetCode": "208",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_esofago_estomago_e_duodeno",
+    "label": "Outras doenças do esôfago estômago e duodeno",
+    "filterKind": "lista_morb",
+    "tabnetCode": "209",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_do_apendice",
+    "label": "Doenças do apêndice",
+    "filterKind": "lista_morb",
+    "tabnetCode": "210",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hernia_inguinal",
+    "label": "Hérnia inguinal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "211",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_hernias",
+    "label": "Outras hérnias",
+    "filterKind": "lista_morb",
+    "tabnetCode": "212",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_de_crohn_e_colite_ulcerativa",
+    "label": "Doença de Crohn e colite ulcerativa",
+    "filterKind": "lista_morb",
+    "tabnetCode": "213",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ileo_paralitico_e_obstrucao_intestinal_sem_hernia",
+    "label": "Ileo paralítico e obstrução intestinal sem hérnia",
+    "filterKind": "lista_morb",
+    "tabnetCode": "214",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_diverticular_do_intestino",
+    "label": "Doença diverticular do intestino",
+    "filterKind": "lista_morb",
+    "tabnetCode": "215",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_dos_intestinos_e_peritonio",
+    "label": "Outras doenças dos intestinos e peritônio",
+    "filterKind": "lista_morb",
+    "tabnetCode": "216",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_alcoolica_do_figado",
+    "label": "Doença alcoólica do fígado",
+    "filterKind": "lista_morb",
+    "tabnetCode": "217",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_figado",
+    "label": "Outras doenças do fígado",
+    "filterKind": "lista_morb",
+    "tabnetCode": "218",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "colelitiase_e_colecistite",
+    "label": "Colelitíase e colecistite",
+    "filterKind": "lista_morb",
+    "tabnetCode": "219",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "pancreatite_aguda_e_outras_doencas_do_pancreas",
+    "label": "Pancreatite aguda e outras doenças do pâncreas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "220",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_aparelho_digestivo",
+    "label": "Outras doenças do aparelho digestivo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "221",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infeccoes_da_pele_e_do_tecido_subcutaneo",
+    "label": "Infecções da pele e do tecido subcutâneo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "222",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_da_pele_e_do_tecido_subcutaneo",
+    "label": "Outras doenças da pele e do tecido subcutâneo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "223",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "artrite_reumatoide_e_outr_poliartropatias_inflamat",
+    "label": "Artrite reumatóide e outr poliartropatias inflamat",
+    "filterKind": "lista_morb",
+    "tabnetCode": "224",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "artrose",
+    "label": "Artrose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "225",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "deformidades_adquiridas_das_articulacoes",
+    "label": "Deformidades adquiridas das articulações",
+    "filterKind": "lista_morb",
+    "tabnetCode": "226",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transtronos_articulares",
+    "label": "Outros transtronos articulares",
+    "filterKind": "lista_morb",
+    "tabnetCode": "227",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_sistemicas_do_tecido_conjuntivo",
+    "label": "Doenças sistêmicas do tecido conjuntivo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "228",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transt_discais_cervic_e_outr_transt_disc_intervert",
+    "label": "Transt discais cervic e outr transt disc intervert",
+    "filterKind": "lista_morb",
+    "tabnetCode": "229",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_dorsopatias",
+    "label": "Outras dorsopatias",
+    "filterKind": "lista_morb",
+    "tabnetCode": "230",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_do_tecido_mole",
+    "label": "Transtornos do tecido mole",
+    "filterKind": "lista_morb",
+    "tabnetCode": "231",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_da_densidade_e_da_estrutura_osseas",
+    "label": "Transtornos da densidade e da estrutura ósseas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "232",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "osteomielite",
+    "label": "Osteomielite",
+    "filterKind": "lista_morb",
+    "tabnetCode": "233",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_sist_osteomuscular_e_tec_conjuntivo",
+    "label": "Outras doenças sist osteomuscular e tec conjuntivo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "234",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sindrome_nefriticas_aguda_e_rapidamente_progressiv",
+    "label": "Síndrome nefríticas aguda e rapidamente progressiv",
+    "filterKind": "lista_morb",
+    "tabnetCode": "235",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_glomerulares",
+    "label": "Outras doenças glomerulares",
+    "filterKind": "lista_morb",
+    "tabnetCode": "236",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_renais_tubulo_intersticiais",
+    "label": "Doenças renais túbulo-intersticiais",
+    "filterKind": "lista_morb",
+    "tabnetCode": "237",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "insuficiencia_renal",
+    "label": "Insuficiência renal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "238",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "urolitiase",
+    "label": "Urolitíase",
+    "filterKind": "lista_morb",
+    "tabnetCode": "239",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "cistite",
+    "label": "Cistite",
+    "filterKind": "lista_morb",
+    "tabnetCode": "240",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_do_aparelho_urinario",
+    "label": "Outras doenças do aparelho urinário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "241",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hiperplasia_da_prostata",
+    "label": "Hiperplasia da próstata",
+    "filterKind": "lista_morb",
+    "tabnetCode": "242",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transtornos_da_prostata",
+    "label": "Outros transtornos da próstata",
+    "filterKind": "lista_morb",
+    "tabnetCode": "243",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hidrocele_e_espermatocele",
+    "label": "Hidrocele e espermatocele",
+    "filterKind": "lista_morb",
+    "tabnetCode": "244",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "preprucio_redundante_fimose_e_parafimose",
+    "label": "Preprúcio redundante fimose e parafimose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "245",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_dos_orgaos_genitais_masculinos",
+    "label": "Outras doenças dos órgãos genitais masculinos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "246",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_da_mama",
+    "label": "Transtornos da mama",
+    "filterKind": "lista_morb",
+    "tabnetCode": "247",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "salpingite_e_ooforite",
+    "label": "Salpingite e ooforite",
+    "filterKind": "lista_morb",
+    "tabnetCode": "248",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_inflamatoria_do_colo_do_utero",
+    "label": "Doença inflamatória do colo do útero",
+    "filterKind": "lista_morb",
+    "tabnetCode": "249",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_doencas_inflamat_orgaos_pelvicos_femininos",
+    "label": "Outras doenças inflamat órgãos pélvicos femininos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "250",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "endometriose",
+    "label": "Endometriose",
+    "filterKind": "lista_morb",
+    "tabnetCode": "251",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "prolapso_genital_feminino",
+    "label": "Prolapso genital feminino",
+    "filterKind": "lista_morb",
+    "tabnetCode": "252",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transt_nao_inflam_ovario_tromp_falopio_ligam_largo",
+    "label": "Transt não-inflam ovário tromp Falópio ligam largo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "253",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transtornos_da_menstruacao",
+    "label": "Transtornos da menstruação",
+    "filterKind": "lista_morb",
+    "tabnetCode": "254",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "transt_menopausicos_e_outr_transt_perimenopausicos",
+    "label": "Transt menopáusicos e outr transt perimenopáusicos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "255",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "infertilidade_feminina",
+    "label": "Infertilidade feminina",
+    "filterKind": "lista_morb",
+    "tabnetCode": "256",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transtornos_do_aparelho_geniturinario",
+    "label": "Outros transtornos do aparelho geniturinário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "257",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "aborto_espontaneo",
+    "label": "Aborto espontâneo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "258",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "aborto_por_razoes_medicas",
+    "label": "Aborto por razões médicas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "259",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_gravidezes_que_terminam_em_aborto",
+    "label": "Outras gravidezes que terminam em aborto",
+    "filterKind": "lista_morb",
+    "tabnetCode": "260",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "edema_protein_transt_hipertens_gravid_parto_puerp",
+    "label": "Edema protein transt hipertens gravid parto puerp",
+    "filterKind": "lista_morb",
+    "tabnetCode": "261",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "placent_prev_descol_premat_placent_hemorr_antepart",
+    "label": "Placent prév descol premat placent hemorr antepart",
+    "filterKind": "lista_morb",
+    "tabnetCode": "262",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_mot_ass_a_mae_rel_cav_fetal_amn_pos_prob_part",
+    "label": "Outr mot ass à mãe rel cav fetal amn pos prob part",
+    "filterKind": "lista_morb",
+    "tabnetCode": "263",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "trabalho_de_parto_obstruido",
+    "label": "Trabalho de parto obstruído",
+    "filterKind": "lista_morb",
+    "tabnetCode": "264",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hemorragia_pos_parto",
+    "label": "Hemorragia pós-parto",
+    "filterKind": "lista_morb",
+    "tabnetCode": "265",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_complicacoes_da_gravidez_e_do_parto",
+    "label": "Outras complicações da gravidez e do parto",
+    "filterKind": "lista_morb",
+    "tabnetCode": "266",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "parto_unico_espontaneo",
+    "label": "Parto único espontâneo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "267",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "compl_pred_rel_puerperio_e_outr_afecc_obstetr_ncop",
+    "label": "Compl pred rel puerpério e outr afecç obstétr NCOP",
+    "filterKind": "lista_morb",
+    "tabnetCode": "268",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "feto_e_rec_nasc_afet_fat_mat_e_compl_grav_e_parto",
+    "label": "Feto e rec-nasc afet fat mat e compl grav e parto",
+    "filterKind": "lista_morb",
+    "tabnetCode": "269",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ret_cres_fet_desn_fet_tran_rel_gest_curt_baix_peso",
+    "label": "Ret cres fet desn fet tran rel gest curt baix peso",
+    "filterKind": "lista_morb",
+    "tabnetCode": "270",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "trauma_durante_o_nascimento",
+    "label": "Trauma durante o nascimento",
+    "filterKind": "lista_morb",
+    "tabnetCode": "271",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "hipoxia_intrauterina_e_asfixia_ao_nascer",
+    "label": "Hipóxia intrauterina e asfixia ao nascer",
+    "filterKind": "lista_morb",
+    "tabnetCode": "272",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_transt_respiratorios_orig_periodo_perinatal",
+    "label": "Outros transt respiratórios orig período perinatal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "273",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doencas_infecciosas_e_parasitarias_congenitas",
+    "label": "Doenças infecciosas e parasitárias congênitas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "274",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_infeccoes_especificas_do_periodo_perinatal",
+    "label": "Outras infecções específicas do período perinatal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "275",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "doenca_hemolitica_do_feto_e_do_recem_nascido",
+    "label": "Doença hemolítica do feto e do recém-nascido",
+    "filterKind": "lista_morb",
+    "tabnetCode": "276",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_afeccoes_originadas_no_periodo_perinatal",
+    "label": "Outras afecções originadas no período perinatal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "277",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "espinha_bifida",
+    "label": "Espinha bífida",
+    "filterKind": "lista_morb",
+    "tabnetCode": "278",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_malformacoes_congenitas_do_sistema_nervoso",
+    "label": "Outras malformações congênitas do sistema nervoso",
+    "filterKind": "lista_morb",
+    "tabnetCode": "279",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "malformacoes_congenitas_do_aparelho_circulatorio",
+    "label": "Malformações congênitas do aparelho circulatório",
+    "filterKind": "lista_morb",
+    "tabnetCode": "280",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "fenda_labial_e_fenda_palatina",
+    "label": "Fenda labial e fenda palatina",
+    "filterKind": "lista_morb",
+    "tabnetCode": "281",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "ausencia_atresia_e_estenose_do_intestino_delgado",
+    "label": "Ausência atresia e estenose do intestino delgado",
+    "filterKind": "lista_morb",
+    "tabnetCode": "282",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_malformacoes_congenitas_aparelho_digestivo",
+    "label": "Outras malformações congênitas aparelho digestivo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "283",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "testiculo_nao_descido",
+    "label": "Testiculo não-descido",
+    "filterKind": "lista_morb",
+    "tabnetCode": "284",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_malformacoes_do_aparelho_geniturinario",
+    "label": "Outras malformações do aparelho geniturinário",
+    "filterKind": "lista_morb",
+    "tabnetCode": "285",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "deformidades_congenitas_do_quadril",
+    "label": "Deformidades congênitas do quadril",
+    "filterKind": "lista_morb",
+    "tabnetCode": "286",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "deformidades_congenitas_dos_pes",
+    "label": "Deformidades congênitas dos pés",
+    "filterKind": "lista_morb",
+    "tabnetCode": "287",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_malform_e_deform_congenit_aparelho_osteomusc",
+    "label": "Outr malform e deform congênit aparelho osteomusc",
+    "filterKind": "lista_morb",
+    "tabnetCode": "288",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outras_malformacoes_congenitas",
+    "label": "Outras malformações congênitas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "289",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "anomalias_cromossomicas_ncop",
+    "label": "Anomalias cromossômicas NCOP",
+    "filterKind": "lista_morb",
+    "tabnetCode": "290",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "dor_abdominal_e_pelvica",
+    "label": "Dor abdominal e pélvica",
+    "filterKind": "lista_morb",
+    "tabnetCode": "291",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "febre_de_origem_desconhecida",
+    "label": "Febre de origem desconhecida",
+    "filterKind": "lista_morb",
+    "tabnetCode": "292",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "senilidade",
+    "label": "Senilidade",
+    "filterKind": "lista_morb",
+    "tabnetCode": "293",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_sist_sinais_achad_anorm_ex_clin_laborat_ncop",
+    "label": "Outr sist sinais achad anorm ex clín laborat NCOP",
+    "filterKind": "lista_morb",
+    "tabnetCode": "294",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "fratura_do_cranio_e_dos_ossos_da_face",
+    "label": "Fratura do crânio e dos ossos da face",
+    "filterKind": "lista_morb",
+    "tabnetCode": "295",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "fratura_do_pescoco_torax_ou_pelve",
+    "label": "Fratura do pescoço tórax ou pelve",
+    "filterKind": "lista_morb",
+    "tabnetCode": "296",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "fratura_do_femur",
+    "label": "Fratura do fêmur",
+    "filterKind": "lista_morb",
+    "tabnetCode": "297",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "fratura_de_outros_ossos_dos_membros",
+    "label": "Fratura de outros ossos dos membros",
+    "filterKind": "lista_morb",
+    "tabnetCode": "298",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "fraturas_envolvendo_multiplas_regioes_do_corpo",
+    "label": "Fraturas envolvendo múltiplas regiões do corpo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "299",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "luxacoes_entorse_distensao_reg_esp_e_multip_corpo",
+    "label": "Luxações entorse distensão reg esp e múltip corpo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "300",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "traumatismo_do_olho_e_da_orbita_ocular",
+    "label": "Traumatismo do olho e da órbita ocular",
+    "filterKind": "lista_morb",
+    "tabnetCode": "301",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "traumatismo_intracraniano",
+    "label": "Traumatismo intracraniano",
+    "filterKind": "lista_morb",
+    "tabnetCode": "302",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "traumatismo_de_outros_orgaos_internos",
+    "label": "Traumatismo de outros órgãos internos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "303",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "lesoes_esmag_amput_traumat_reg_esp_e_multip_corpo",
+    "label": "Lesões esmag amput traumát reg esp e múltip corpo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "304",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_traum_reg_espec_nao_espec_e_multiplas_corpo",
+    "label": "Outr traum reg espec não espec e múltiplas corpo",
+    "filterKind": "lista_morb",
+    "tabnetCode": "305",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "efeitos_corpo_estranho_atraves_de_orificio_natural",
+    "label": "Efeitos corpo estranho através de orifício natural",
+    "filterKind": "lista_morb",
+    "tabnetCode": "306",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "queimadura_e_corrosoes",
+    "label": "Queimadura e corrosões",
+    "filterKind": "lista_morb",
+    "tabnetCode": "307",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "envenenamento_por_drogas_e_substancias_biologicas",
+    "label": "Envenenamento por drogas e substâncias biológicas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "308",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "efeitos_toxicos_subst_origem_princ_nao_medicinal",
+    "label": "Efeitos tóxicos subst origem princ não-medicinal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "309",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sindromes_de_maus_tratos",
+    "label": "Síndromes de maus tratos",
+    "filterKind": "lista_morb",
+    "tabnetCode": "310",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outros_efeitos_e_nao_espec_de_causas_externas",
+    "label": "Outros efeitos e não espec de causas externas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "311",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "cert_compl_prec_traum_compl_cirurg_ass_medic_ncop",
+    "label": "Cert compl prec traum compl cirúrg ass médic NCOP",
+    "filterKind": "lista_morb",
+    "tabnetCode": "312",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "sequel_traum_enven_e_outr_conseq_causas_externas",
+    "label": "Seqüel traum enven e outr conseq causas externas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "313",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "pessoas_em_contato_com_serv_saude_exame_e_investig",
+    "label": "Pessoas em contato com serv saúde exame e investig",
+    "filterKind": "lista_morb",
+    "tabnetCode": "314",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "estado_infec_assint_virus_da_imunodef_humana_hiv",
+    "label": "Estado infec assint vírus da imunodef humana [HIV]",
+    "filterKind": "lista_morb",
+    "tabnetCode": "315",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "outr_pess_riscos_pot_a_saude_rel_doencas_transmiss",
+    "label": "Outr pess riscos pot à saúde rel doenças transmiss",
+    "filterKind": "lista_morb",
+    "tabnetCode": "316",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "anticoncepcao",
+    "label": "Anticoncepção",
+    "filterKind": "lista_morb",
+    "tabnetCode": "317",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "rastreamento_pre_natal_e_outr_superv_da_gravidez",
+    "label": "Rastreamento pré-natal e outr superv da gravidez",
+    "filterKind": "lista_morb",
+    "tabnetCode": "318",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "nascidos_vivos_segundo_o_local_de_nascimento",
+    "label": "Nascidos vivos segundo o local de nascimento",
+    "filterKind": "lista_morb",
+    "tabnetCode": "319",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "assistencia_e_exame_pos_natal",
+    "label": "Assistência e exame pós-natal",
+    "filterKind": "lista_morb",
+    "tabnetCode": "320",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "pessoas_contato_serv_saude_cuidados_proc_especif",
+    "label": "Pessoas contato serv saúde cuidados proc específ",
+    "filterKind": "lista_morb",
+    "tabnetCode": "321",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "pessoas_contato_serv_saude_por_outras_razoes",
+    "label": "Pessoas contato serv saúde por outras razões",
+    "filterKind": "lista_morb",
+    "tabnetCode": "322",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "acidentes_de_transporte",
+    "label": "Acidentes de transporte",
+    "filterKind": "lista_morb",
+    "tabnetCode": "323",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "quedas",
+    "label": "Quedas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "324",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "afogamento_e_submersao_acidentamente",
+    "label": "Afogamento e submersão acidentamente",
+    "filterKind": "lista_morb",
+    "tabnetCode": "325",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "exposicao_ao_fumo_ao_fogo_e_as_chamas",
+    "label": "Exposição ao fumo ao fogo e às chamas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "326",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "envenenamento_intox_exposicao_substancias_nocivas",
+    "label": "Envenenamento intox exposição substâncias nocivas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "327",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "lesoes_autoprovocadas_voluntariamente",
+    "label": "Lesões autoprovocadas voluntariamente",
+    "filterKind": "lista_morb",
+    "tabnetCode": "328",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "agressoes",
+    "label": "Agressões",
+    "filterKind": "lista_morb",
+    "tabnetCode": "329",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "amputacao_mmii",
+    "label": "Amputação / desarticulação de membros inferiores",
+    "filterKind": "procedimento",
+    "tabnetCode": "3331",
+    "def": "sih/cnv/qibr.def"
+  }
+]

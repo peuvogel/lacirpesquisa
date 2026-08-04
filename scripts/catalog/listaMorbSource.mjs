@@ -39,22 +39,48 @@ export function slugify(label, code) {
   return s || `lista_${code}`;
 }
 
+// Named HTML entities actually present in the ISO-8859-1 TabNet source (D-09), confirmed
+// by scanning the committed snapshot byte-for-byte. Case-sensitive per the HTML4 named
+// entity table — &Aacute; (upper, word-initial) and &aacute; (lower) are distinct
+// characters, not a case-insensitive alias of each other.
+const NAMED_ENTITIES = {
+  aacute: 'á', Aacute: 'Á',
+  agrave: 'à', Agrave: 'À',
+  acirc: 'â', Acirc: 'Â',
+  atilde: 'ã', Atilde: 'Ã',
+  eacute: 'é', Eacute: 'É',
+  egrave: 'è', Egrave: 'È',
+  ecirc: 'ê', Ecirc: 'Ê',
+  iacute: 'í', Iacute: 'Í',
+  igrave: 'ì', Igrave: 'Ì',
+  icirc: 'î', Icirc: 'Î',
+  oacute: 'ó', Oacute: 'Ó',
+  ograve: 'ò', Ograve: 'Ò',
+  ocirc: 'ô', Ocirc: 'Ô',
+  otilde: 'õ', Otilde: 'Õ',
+  uacute: 'ú', Uacute: 'Ú',
+  ugrave: 'ù', Ugrave: 'Ù',
+  ucirc: 'û', Ucirc: 'Û',
+  uuml: 'ü', Uuml: 'Ü',
+  ccedil: 'ç', Ccedil: 'Ç',
+  ntilde: 'ñ', Ntilde: 'Ñ',
+  nbsp: ' ',
+  amp: '&',
+  quot: '"',
+  apos: "'",
+  lt: '<',
+  gt: '>',
+};
+
 /**
  * @param {string} text
  * @returns {string}
  */
 export function decodeEntities(text) {
   return text
-    .replace(/&aacute;/gi, 'á')
-    .replace(/&eacute;/gi, 'é')
-    .replace(/&iacute;/gi, 'í')
-    .replace(/&oacute;/gi, 'ó')
-    .replace(/&uacute;/gi, 'ú')
-    .replace(/&atilde;/gi, 'ã')
-    .replace(/&otilde;/gi, 'õ')
-    .replace(/&ccedil;/gi, 'ç')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
+    .replace(/&([a-zA-Z]+);/g, (match, name) =>
+      Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, name) ? NAMED_ENTITIES[name] : match,
+    )
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 }
 

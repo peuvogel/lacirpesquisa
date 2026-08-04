@@ -17,6 +17,7 @@
     "catalog:validate": "node scripts/catalog/validate.mjs",
     "catalog:snapshot": "node scripts/catalog/listaMorbSource.mjs --refresh",
     "catalog:sync-lista-morb": "node scripts/catalog/sync-lista-morb.mjs",
+    "catalog:rename-map": "node scripts/catalog/buildRenameMap.mjs",
     "catalog:sync-column-map": "node scripts/catalog/syncColumnMap.mjs",
     "catalog:rebuild": "node scripts/catalog/rebuildAfterScrape.mjs",
     "scrape:sih-multi": "python3 \"trabalhos datasus/scripts/coleta_sih_multi_disease.py\" --skip-done",
