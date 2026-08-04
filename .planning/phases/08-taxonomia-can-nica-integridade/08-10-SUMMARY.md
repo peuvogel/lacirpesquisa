@@ -167,3 +167,7 @@ None - no external service configuration required. Docker was not needed for thi
 ---
 *Phase: 08-taxonomia-can-nica-integridade*
 *Completed: 2026-08-04*
+
+## Self-Check: PASSED
+
+`docs/SUPABASE-CATALOG.md` found on disk. This SUMMARY found on disk. Commit `bb99f5f` (Task 4, docs) found in `git log`. Commit `c5a8fe5` (SUMMARY) found in `git log`. `git status --short` clean after both commits — no unexpected deletions (`git diff --diff-filter=D --name-only HEAD~1 HEAD` empty for both). Live production verification (PostgREST content-range 331/30313/1099403, `contagens.sql` exit 0, TAX-06 set-identity comm diff empty, both rename-cycle aggregates matching 08-08's rehearsal exactly) was performed directly against `hmfbxqemububjyhdckrj` in this session, not assumed from the plan.
