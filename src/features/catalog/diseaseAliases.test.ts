@@ -66,10 +66,10 @@ describe('labelMatchesQuery — regra automática (AND entre tokens + piso de fu
 });
 
 describe('resolveAliasTerm — casamento exato do termo curado', () => {
-  it('resolve "avc" para a entrada curada com 3 categorias', () => {
+  it('resolve "avc" para a entrada curada com 4 categorias (escopo cerebrovascular amplo, Task 3)', () => {
     const entry = resolveAliasTerm('avc', ALIASES);
     expect(entry).not.toBeNull();
-    expect(entry?.categorias).toHaveLength(3);
+    expect(entry?.categorias).toHaveLength(4);
   });
 
   it('não dispara por substring dentro de uma busca maior', () => {
@@ -78,16 +78,16 @@ describe('resolveAliasTerm — casamento exato do termo curado', () => {
 });
 
 describe('matchDiseases — dicionário curado + regra automática, unidos sem duplicar', () => {
-  it('"avc" devolve exatamente os 3 códigos da entrada curada, com apelido acionado e 3 categorias', () => {
+  it('"avc" devolve exatamente os 4 códigos da entrada curada (177+178+179+180, escopo cerebrovascular amplo), com apelido acionado', () => {
     const result = matchDiseases(DISEASES, 'avc', ALIASES);
-    expect(result.diseases.map((d) => d.tabnetCode).sort()).toEqual(['177', '178', '179']);
+    expect(result.diseases.map((d) => d.tabnetCode).sort()).toEqual(['177', '178', '179', '180']);
     expect(result.aliasTerm).toBe('avc');
-    expect(result.aliasCategoryCount).toBe(3);
+    expect(result.aliasCategoryCount).toBe(4);
   });
 
-  it('"ait" devolve 1 código (180) via apelido', () => {
+  it('"ait" devolve 1 código (150, G45 — corrigido no checkpoint humano da Task 3) via apelido', () => {
     const result = matchDiseases(DISEASES, 'ait', ALIASES);
-    expect(result.diseases.map((d) => d.tabnetCode)).toEqual(['180']);
+    expect(result.diseases.map((d) => d.tabnetCode)).toEqual(['150']);
     expect(result.aliasTerm).toBe('ait');
     expect(result.aliasCategoryCount).toBe(1);
   });

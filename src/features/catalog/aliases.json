@@ -4,9 +4,10 @@
     "categorias": [
       { "tabnetCode": "177", "labelEsperado": "Hemorragia intracraniana" },
       { "tabnetCode": "178", "labelEsperado": "Infarto cerebral" },
-      { "tabnetCode": "179", "labelEsperado": "Acid vascular cerebr não espec hemorrág ou isquêm" }
+      { "tabnetCode": "179", "labelEsperado": "Acid vascular cerebr não espec hemorrág ou isquêm" },
+      { "tabnetCode": "180", "labelEsperado": "Outras doenças cerebrovasculares" }
     ],
-    "motivo": "Sigla popular para acidente vascular cerebral; nenhum dos três rótulos oficiais contém a sequência \"avc\", e a sigla tem só 3 caracteres — curta demais para dobra de acento ou fuzzy alcançarem com segurança (piso de 6 caracteres, D-17)."
+    "motivo": "Sigla popular para acidente vascular cerebral; nenhum dos quatro rótulos oficiais contém a sequência \"avc\", e a sigla tem só 3 caracteres — curta demais para dobra de acento ou fuzzy alcançarem com segurança (piso de 6 caracteres, D-17). O escopo inclui deliberadamente o código 180 (Outras doenças cerebrovasculares, I65-I69): buscar \"AVC\" deve revelar o panorama cerebrovascular inteiro, não só o evento agudo — decisão clínica confirmada no checkpoint humano (Task 3), não um esquecimento a 'corrigir' de volta para 3 categorias."
   },
   {
     "termos": ["tvp"],
@@ -18,9 +19,9 @@
   {
     "termos": ["ait"],
     "categorias": [
-      { "tabnetCode": "180", "labelEsperado": "Outras doenças cerebrovasculares" }
+      { "tabnetCode": "150", "labelEsperado": "Acid vascular cerebr isquêm transit e síndr correl" }
     ],
-    "motivo": "Sigla popular para ataque isquêmico transitório; ausente do texto oficial do rótulo e curta demais para o piso de fuzzy. Mapeamento para o código 180 segue a tabela de expectativa medida no CONTEXT — sujeito a confirmação clínica no checkpoint humano (Task 3)."
+    "motivo": "Sigla popular para ataque isquêmico transitório (AIT); ausente do texto oficial do rótulo e curta demais para o piso de fuzzy. Mapeamento corrigido no checkpoint humano (Task 3) para o código 150, cuja CID G45 é a categoria exata de AIT — o mapeamento original para o código 180 (I65-I69, \"Outras doenças cerebrovasculares\") estava clinicamente errado: AIT é G45, capítulo de doenças do sistema nervoso, e nunca esteve dentro do intervalo I65-I69."
   },
   {
     "termos": ["varizes"],
