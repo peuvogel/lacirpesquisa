@@ -23,7 +23,7 @@ import { SCOPE_EXCLUDE_RELATIVE_PATHS } from '../../scripts/catalog/applyRenameM
 const ROOT = process.cwd();
 
 /**
- * Allowlist de arquivo — exatamente 5 caminhos, cada um com motivo (D-23).
+ * Allowlist de arquivo — exatamente 6 caminhos, cada um com motivo (D-23).
  */
 const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // O unico local legitimo para um id-tombstone existir por escrito: o mapa
@@ -62,6 +62,14 @@ const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // zero", que e a prova central do TAX-05); nao ha jeito de exercitar a resolucao de
   // apelido sem escrever a string do apelido em algum lugar do arquivo que a testa.
   'src/features/catalog/diseaseAliases.test.ts',
+  // TAX-05 (08-09): cobertura de comportamento de `MeasureDiseasePicker` (o ponto de
+  // plugue do matcher no seletor de Mapas). Mesma classe de exclusao da entrada acima —
+  // "avc"/"tvp"/"aterosclerose" entram como *query digitada no campo de busca*
+  // (`user.type(input, 'avc')`) e como argumento de `termos.includes(...)` ao ler
+  // `aliases.json` de volta para montar a asserção, nunca como `id` de agravo. A prova
+  // central do D-19 (o rotulo nao muda por caminho de busca, nunca ha badge de apelido)
+  // depende de digitar exatamente esses termos no input real.
+  'src/routes/mapas/MeasureDiseasePicker.test.tsx',
 ]);
 
 /**
@@ -119,8 +127,8 @@ function scanForTombstones(files: string[]): TombstoneFinding[] {
 }
 
 describe('invariante F — nenhum id-tombstone como literal fora da allowlist (D-23)', () => {
-  it('a allowlist declarada neste arquivo tem exatamente 5 caminhos', () => {
-    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(5);
+  it('a allowlist declarada neste arquivo tem exatamente 6 caminhos', () => {
+    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(6);
   });
 
   it('a varredura visita mais de 200 arquivos versionados sob src/, scripts/ e public/', () => {

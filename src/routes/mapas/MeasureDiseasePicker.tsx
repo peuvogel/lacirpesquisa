@@ -290,6 +290,16 @@ export function MeasureDiseasePicker({
             ? `${visibleDiseases.length} resultado(s)`
             : `${DISEASES.length} categorias · busque pelo nome ou pelo CID-10`}
         </p>
+        {searchResult.aliasTerm ? (
+          <p
+            role="status"
+            className="mb-2 rounded-lg border border-accent-border/60 bg-elevated/60 px-2.5 py-2 font-sans text-[11px] text-text-muted"
+          >
+            {searchResult.aliasCategoryCount === 1
+              ? `${searchResult.aliasTerm.toUpperCase()} corresponde a 1 categoria da Lista Morb CID-10 — ${searchResult.aliasDiseases[0]?.label ?? ''}.`
+              : `${searchResult.aliasTerm.toUpperCase()} corresponde a ${searchResult.aliasCategoryCount} categorias da Lista Morb CID-10 — selecione as que quiser comparar ou somar.`}
+          </p>
+        ) : null}
         <ul
           className="max-h-52 space-y-0.5 overflow-y-auto rounded-lg border border-border/60 bg-surface/40 p-1"
           role="list"
