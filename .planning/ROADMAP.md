@@ -115,7 +115,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5)*
 
-- [ ] 08-08-PLAN.md — Ensaio local sobre cópia de produção: up → integridade → down → retorno, com medição de custo (TAX-03, TAX-04)
+- [x] 08-08-PLAN.md — Ensaio local sobre cópia de produção: up → integridade → down → retorno, com medição de custo (TAX-03, TAX-04)
 - [ ] 08-09-PLAN.md — Apelidos plugados no picker de Mapas, tira explicativa D-18, cobertura em Variáveis (TAX-05)
 
 **Wave 7** *(blocked on Wave 6)*
@@ -220,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 7/10 | In Progress|  |
+| 8. Taxonomia canônica + integridade | 8/10 | In Progress|  |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |

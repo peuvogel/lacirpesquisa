@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-07-PLAN.md
-last_updated: "2026-08-04T11:11:31.744Z"
+stopped_at: Completed 08-08-PLAN.md
+last_updated: "2026-08-04T12:04:58.257Z"
 last_activity: 2026-08-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 14
+  completed_plans: 15
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
-Plan: 8 of 10
+Plan: 9 of 10
 Status: Ready to execute
 Last activity: 2026-08-04
 
@@ -128,6 +128,8 @@ Last activity: 2026-08-04
 - [Phase 08-06]: Invariant F (noTombstoneLiterals.test.ts) unions its 3 declared allowlist paths with applyRenameMap.mjs's exported SCOPE_EXCLUDE_RELATIVE_PATHS (renameMap.test.ts, tombstones.test.ts) instead of hand-retranscribing — both retain old-id literals as historical-fact assertions about rename-map.json's own immutable content
 - [Phase 08-07]: ait remapped from tabnetCode 180 (I65-I69) to tabnetCode 150 (G45, exact ICD-10 category) — Task 3 human checkpoint caught a real clinical mis-mapping, not a rubber-stamp
 - [Phase 08-07]: avc broadened from 3 to 4 categories (177+178+179+180) — deliberate scope decision so the acronym search surfaces the whole cerebrovascular panorama, not just the three acute-event forms
+- [Phase 08-08]: Migration rehearsal (08-08) passed completely against full production-volume Postgres (330/30313/1099403 rows): up 3.674s, D-04 integrity proof passed, verify 331/30313/1099403, down 3.921s, byte-identical reversibility diff (D-03). Per-id row counts for the 21 renames matched planning estimate exactly (4,195 uf / 200,636 muni). Unblocks 08-10 production apply.
+- [Phase 08-08]: docker run used public.ecr.aws/supabase/postgres:17.6.1.147 (full registry path) instead of the plan's literal short tag supabase/postgres:17.6.1.147 — the short tag was not cached locally; the full path is the same image the Supabase CLI itself pulled in 08-05 (same IMAGE ID).
 
 ### Pending Todos
 
@@ -139,8 +141,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T11:11:31.742Z
-Stopped at: Completed 08-07-PLAN.md
+Last session: 2026-08-04T12:04:58.254Z
+Stopped at: Completed 08-08-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -181,3 +183,4 @@ Resume file: None
 | Phase 08-taxonomia-can-nica-integridade P05 | ~25min | 3 tasks | 11 files |
 | Phase 08-taxonomia-can-nica-integridade P06 | ~55min | 1 tasks | 51 files |
 | Phase 08 P07 | ~15min (continuation) + prior sessions | 3 tasks | 4 files |
+| Phase 08-taxonomia-can-nica-integridade P08 | ~48min | 3 tasks | 1 files |
