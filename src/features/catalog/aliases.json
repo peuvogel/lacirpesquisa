@@ -1,0 +1,32 @@
+[
+  {
+    "termos": ["avc"],
+    "categorias": [
+      { "tabnetCode": "177", "labelEsperado": "Hemorragia intracraniana" },
+      { "tabnetCode": "178", "labelEsperado": "Infarto cerebral" },
+      { "tabnetCode": "179", "labelEsperado": "Acid vascular cerebr não espec hemorrág ou isquêm" }
+    ],
+    "motivo": "Sigla popular para acidente vascular cerebral; nenhum dos três rótulos oficiais contém a sequência \"avc\", e a sigla tem só 3 caracteres — curta demais para dobra de acento ou fuzzy alcançarem com segurança (piso de 6 caracteres, D-17)."
+  },
+  {
+    "termos": ["tvp"],
+    "categorias": [
+      { "tabnetCode": "185", "labelEsperado": "Flebite tromboflebite embolia e trombose venosa" }
+    ],
+    "motivo": "Sigla popular para trombose venosa profunda; ausente do texto oficial do rótulo e curta demais para o piso de fuzzy."
+  },
+  {
+    "termos": ["ait"],
+    "categorias": [
+      { "tabnetCode": "180", "labelEsperado": "Outras doenças cerebrovasculares" }
+    ],
+    "motivo": "Sigla popular para ataque isquêmico transitório; ausente do texto oficial do rótulo e curta demais para o piso de fuzzy. Mapeamento para o código 180 segue a tabela de expectativa medida no CONTEXT — sujeito a confirmação clínica no checkpoint humano (Task 3)."
+  },
+  {
+    "termos": ["varizes"],
+    "categorias": [
+      { "tabnetCode": "186", "labelEsperado": "Veias varicosas das extremidades inferiores" }
+    ],
+    "motivo": "Sinônimo popular de veias varicosas; a distância de edição entre \"varizes\" e \"varicosas\" é maior que o limiar fuzzy de 2, então a regra automática não alcança."
+  }
+]

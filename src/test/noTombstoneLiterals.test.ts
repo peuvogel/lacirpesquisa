@@ -23,7 +23,7 @@ import { SCOPE_EXCLUDE_RELATIVE_PATHS } from '../../scripts/catalog/applyRenameM
 const ROOT = process.cwd();
 
 /**
- * Allowlist de arquivo — exatamente 3 caminhos, cada um com motivo (D-23).
+ * Allowlist de arquivo — exatamente 4 caminhos, cada um com motivo (D-23).
  */
 const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // O unico local legitimo para um id-tombstone existir por escrito: o mapa
@@ -42,6 +42,18 @@ const ALLOWLIST_RELATIVE_PATHS = new Set<string>([
   // real dentro de um arquivo temporario, e se algum dia esse padrao mudar para escrever
   // dentro deste proprio arquivo, a varredura nao deve reprovar a si mesma por isso.
   'src/test/noTombstoneLiterals.test.ts',
+  // TAX-05/D-19 (08-07): dicionario curado de apelidos clinicos. Duas das quatro
+  // entradas ("avc", "ait") sao, por coincidencia de string, tambem dois dos 21
+  // ids-tombstone — mas aqui a string vive dentro de `termos` (indice de busca), nunca
+  // como `id`/identidade de agravo (D-19: "o apelido vive so no indice de busca").
+  // Diferente do defeito que F existe para pegar (um id-tombstone reaparecendo como
+  // identidade viva de um agravo), a superficie de risco equivalente aqui — a entrada
+  // apontar para o codigo/rotulo errado — ja e coberta por um mecanismo dedicado, o
+  // invariante E (`checkAliases` em `validate.mjs`), que amarra cada `tabnetCode`
+  // citado ao `label` canonico por maquina. Mesma classe de exclusao de
+  // `renameMap.test.ts`/`tombstones.test.ts`: literal presente por razao legitima e
+  // verificada, nao por acidente.
+  'src/features/catalog/aliases.json',
 ]);
 
 /**
@@ -99,8 +111,8 @@ function scanForTombstones(files: string[]): TombstoneFinding[] {
 }
 
 describe('invariante F — nenhum id-tombstone como literal fora da allowlist (D-23)', () => {
-  it('a allowlist declarada neste arquivo tem exatamente 3 caminhos', () => {
-    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(3);
+  it('a allowlist declarada neste arquivo tem exatamente 4 caminhos', () => {
+    expect(ALLOWLIST_RELATIVE_PATHS.size).toBe(4);
   });
 
   it('a varredura visita mais de 200 arquivos versionados sob src/, scripts/ e public/', () => {
