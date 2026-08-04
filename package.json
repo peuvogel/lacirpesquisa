@@ -20,6 +20,8 @@
     "catalog:rename-map": "node scripts/catalog/buildRenameMap.mjs",
     "catalog:sync-column-map": "node scripts/catalog/syncColumnMap.mjs",
     "catalog:rebuild": "node scripts/catalog/rebuildAfterScrape.mjs",
+    "catalog:apply-rename": "node scripts/catalog/applyRenameMap.mjs",
+    "catalog:seeds": "node scripts/catalog/generateDiseaseSeeds.mjs",
     "scrape:sih-multi": "python3 \"trabalhos datasus/scripts/coleta_sih_multi_disease.py\" --skip-done",
     "scrape:overnight": "python3 \"trabalhos datasus/scripts/launch_overnight.py\""
   },
