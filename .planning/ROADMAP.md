@@ -111,7 +111,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 08-07-PLAN.md — Apelidos clínicos: `aliases.json`, matcher puro, invariante E, conferência clínica *(checkpoint)* (TAX-05)
+- [x] 08-07-PLAN.md — Apelidos clínicos: `aliases.json`, matcher puro, invariante E, conferência clínica *(checkpoint)* (TAX-05)
 
 **Wave 6** *(blocked on Wave 5)*
 
@@ -220,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 6/10 | In Progress|  |
+| 8. Taxonomia canônica + integridade | 7/10 | In Progress|  |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |

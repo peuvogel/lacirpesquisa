@@ -33,7 +33,7 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 - [x] **TAX-02**: A validação falha (fail-closed) quando `id ↔ tabnetCode ↔ label` divergem, no CLI e na suíte — o bug `avc` → 163 seria barrado
 - [x] **TAX-03**: A migração preserva a contagem exata de linhas em `sih_disease` (331 — inclui o `INSERT` do código 330 por D-25), `sih_metric_uf` (30.313) e `sih_metric_muni` (1.099.403, sem alteração — o código 330 não tem dado coletado), com integridade referencial verificada antes e depois
 - [x] **TAX-04**: A migração é reversível e trata os ciclos de renomeação sem violar a chave primária
-- [ ] **TAX-05**: O estudante encontra um agravo pelo termo clínico da liga ("AVC", "TVP", "embolia pulmonar") via apelidos curados que resolvem para ids canônicos — o apelido nunca é gravado como chave de dado
+- [x] **TAX-05**: O estudante encontra um agravo pelo termo clínico da liga ("AVC", "TVP", "embolia pulmonar") via apelidos curados que resolvem para ids canônicos — o apelido nunca é gravado como chave de dado
 - [x] **TAX-06**: Todo artefato derivado (packs, `variables.json`, seeds SQL, cópia no bundle) é **gerado** a partir da taxonomia canônica, não mantido à mão em paralelo
 
 ### Pipeline de coleta
@@ -114,7 +114,7 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 | TAX-02 | Phase 8 | Complete |
 | TAX-03 | Phase 8 | Complete |
 | TAX-04 | Phase 8 | Complete |
-| TAX-05 | Phase 8 | Pending |
+| TAX-05 | Phase 8 | Complete |
 | TAX-06 | Phase 8 | Complete |
 | PIPE-01 | Phase 9 | Pending |
 | PIPE-02 | Phase 9 | Pending |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-06-PLAN.md
-last_updated: "2026-08-04T02:44:58.434Z"
+stopped_at: Completed 08-07-PLAN.md
+last_updated: "2026-08-04T11:11:31.744Z"
 last_activity: 2026-08-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 13
+  completed_plans: 14
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
-Plan: 7 of 10
+Plan: 8 of 10
 Status: Ready to execute
 Last activity: 2026-08-04
 
@@ -126,6 +126,8 @@ Last activity: 2026-08-04
 - [Phase 08-06]: git mv given repo-relative paths (not absolute) in applyRenameMap.mjs — absolute paths under this project's accented directory name hit a macOS/APFS NFC/NFD Unicode normalization mismatch against git's toplevel string comparison
 - [Phase 08-06]: assertNotTombstone in paths.mjs's PACK_SOURCES loop skips CYCLE_CANONICAL_IDS (hemorroidas, embolia_pulmonar) — these are today's legitimate canonical ids for a different tabnetCode, not leftovers; assertNotTombstone itself keeps throwing unconditionally for untrusted write-path callers
 - [Phase 08-06]: Invariant F (noTombstoneLiterals.test.ts) unions its 3 declared allowlist paths with applyRenameMap.mjs's exported SCOPE_EXCLUDE_RELATIVE_PATHS (renameMap.test.ts, tombstones.test.ts) instead of hand-retranscribing — both retain old-id literals as historical-fact assertions about rename-map.json's own immutable content
+- [Phase 08-07]: ait remapped from tabnetCode 180 (I65-I69) to tabnetCode 150 (G45, exact ICD-10 category) — Task 3 human checkpoint caught a real clinical mis-mapping, not a rubber-stamp
+- [Phase 08-07]: avc broadened from 3 to 4 categories (177+178+179+180) — deliberate scope decision so the acronym search surfaces the whole cerebrovascular panorama, not just the three acute-event forms
 
 ### Pending Todos
 
@@ -137,8 +139,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T02:44:58.432Z
-Stopped at: Completed 08-06-PLAN.md
+Last session: 2026-08-04T11:11:31.742Z
+Stopped at: Completed 08-07-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -178,3 +180,4 @@ Resume file: None
 | Phase 08-taxonomia-can-nica-integridade P04 | ~25min | 3 tasks | 6 files |
 | Phase 08-taxonomia-can-nica-integridade P05 | ~25min | 3 tasks | 11 files |
 | Phase 08-taxonomia-can-nica-integridade P06 | ~55min | 1 tasks | 51 files |
+| Phase 08 P07 | ~15min (continuation) + prior sessions | 3 tasks | 4 files |
