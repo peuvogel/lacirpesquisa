@@ -20,7 +20,7 @@ Um tema une os quatro defeitos, repetido em quatro camadas da pilha: **uma ausê
 Numeração continua do v2.0, que terminou na Fase 6.
 
 - [x] **Phase 7: Baseline verde** - typecheck limpo, suíte inteira passando, gate de CI que impede o vermelho de voltar (completed 2026-07-29)
-- [ ] **Phase 8: Taxonomia canônica + integridade** - regerar a Lista Morb da fonte oficial, migrar ids no Supabase sem perder linha, validação fail-closed, apelidos clínicos
+- [x] **Phase 8: Taxonomia canônica + integridade** - regerar a Lista Morb da fonte oficial, migrar ids no Supabase sem perder linha, validação fail-closed, apelidos clínicos (completed 2026-08-04)
 - [ ] **Phase 9: Pipeline confiável + coleta completa** - ledger por agravo × medida × grão, falha ruidosa, retomada; 4 medidas × 330 agravos × UF e município
 - [ ] **Phase 10: Mapas dinâmicos sobre Supabase** - choropleth ao vivo para os 330, tri-estado honesto, drill municipal sob demanda, sem truncamento silencioso
 - [ ] **Phase 11: Fluxo pesquisa → estatística** - handoff limpo com proveniência preservada e ausentes tratados explicitamente
@@ -120,7 +120,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6)*
 
-- [ ] 08-10-PLAN.md — `[BLOCKING]` push em produção, verificação de contagens, doc do schema real *(checkpoint)* (TAX-03, TAX-04)
+- [x] 08-10-PLAN.md — `[BLOCKING]` push em produção, verificação de contagens, doc do schema real *(checkpoint)* (TAX-03, TAX-04)
 
 **Cross-cutting constraints:**
 
@@ -220,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 9/10 | In Progress|  |
+| 8. Taxonomia canônica + integridade | 10/10 | Complete   | 2026-08-04 |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |

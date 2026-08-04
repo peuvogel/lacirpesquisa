@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 08-09-PLAN.md
-last_updated: "2026-08-04T12:27:58.579Z"
+status: verifying
+stopped_at: Completed 08-10-PLAN.md
+last_updated: "2026-08-04T13:33:23.000Z"
 last_activity: 2026-08-04
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 17
-  completed_plans: 16
-  percent: 17
+  completed_plans: 17
+  percent: 33
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
 Plan: 10 of 10
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-04
 
 ## Accumulated Context
@@ -134,6 +134,8 @@ Last activity: 2026-08-04
 - [Phase ?]: [Phase 08-09]: D-18 strip is role=status, strictly above the disease list, never a per-row badge — deliberate exemption from the 'no avc text outside search field' test, scoped to the list container
 - [Phase ?]: [Phase 08-09]: Variaveis search DOES get the alias layer (withDiseaseAliases matches CatalogEntry.packId to DiseaseDef.packId) — two AVC codes + TVP have physical packs, so post-canonization search for avc would otherwise silently return zero on this second screen
 - [Phase ?]: [Phase 08-09]: noTombstoneLiterals.test.ts allowlist extended 5->7 paths (MeasureDiseasePicker.test.tsx, VariaveisPage.test.tsx) — same class of exclusion as diseaseAliases.test.ts (08-07): alias terms typed as search queries, never disease ids
+- [Phase ?]: [Phase 08-10]: supabase db query --linked -f used instead of the dashboard SQL Editor for contagens.sql — non-interactive agent has no browser/db password; same single-execution, read-only semantics via the CLI's own Management-API session
+- [Phase ?]: [Phase 08-10]: Production migration applied (supabase db push, 46.6s wall vs rehearsal's 3.674s SQL-only time) — 21 disease ids renamed, code-330 inserted, live verified 331/30313/1099403 (PostgREST), TAX-06 set-identity confirmed byte-for-byte against seed SQL. TAX-03/TAX-04 closed.
 
 ### Pending Todos
 
@@ -145,8 +147,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T12:27:58.576Z
-Stopped at: Completed 08-09-PLAN.md
+Last session: 2026-08-04T13:33:22.998Z
+Stopped at: Completed 08-10-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -189,3 +191,4 @@ Resume file: None
 | Phase 08 P07 | ~15min (continuation) + prior sessions | 3 tasks | 4 files |
 | Phase 08-taxonomia-can-nica-integridade P08 | ~48min | 3 tasks | 1 files |
 | Phase 08-taxonomia-can-nica-integridade P09 | ~20min | 3 tasks | 7 files |
+| Phase 08-taxonomia-can-nica-integridade P10 | ~15min (continuation session) | 4 tasks | 2 files |
