@@ -97,7 +97,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1)*
 
-- [ ] 08-02-PLAN.md — Gerador canônico sem `KNOWN_BY_CODE`, fixture pré-migração, `rename-map.json` computado do diff (TAX-01, TAX-02)
+- [x] 08-02-PLAN.md — Gerador canônico sem `KNOWN_BY_CODE`, fixture pré-migração, `rename-map.json` computado do diff (TAX-01, TAX-02)
 
 **Wave 3** *(blocked on Wave 2)*
 
@@ -220,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 1/10 | In Progress|  |
+| 8. Taxonomia canônica + integridade | 2/10 | In Progress|  |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |

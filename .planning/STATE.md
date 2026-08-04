@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-08-03T20:53:59.855Z"
-last_activity: 2026-08-03
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-08-04T01:04:20.453Z"
+last_activity: 2026-08-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 8
+  completed_plans: 9
   percent: 17
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 Status: Ready to execute
-Last activity: 2026-08-03
+Last activity: 2026-08-04
 
 ## Accumulated Context
 
@@ -113,6 +113,9 @@ Last activity: 2026-08-03
 - [Phase 08-01]: parseListaMorbOptions() applies zero filtering — returns all 334 raw options in document order; partitioning is the generator's job (future plan), not the parser's
 - [Phase 08-01]: lista-morb-cid.json re-key done by a disposable conversion script run outside the repo, never left behind, with a multiset-of-values-unchanged assertion before writing
 - [Phase 08-01]: code 330's CID range (W20-W64, W75-W99, X10-X39, X50-X59, Y10-Y89) sourced from RESEARCH 1.3/mxcid10lm.htm item 1.103, added as lista-morb-cid.json's only new key
+- [Phase 08-02]: sync-lista-morb.mjs rewritten as pure CLI-plus-export module: KNOWN_BY_CODE and label-based filtering removed, id is always slugify(label, code), exclusions are code-only (D-25) — Removes the root cause of the 21-id corruption and the sibling bug that dropped code 330 by matching against the label
+- [Phase 08-02]: rename-map.json computed from the diff between the frozen pre-migration fixture and the canonical regeneration (D-12), never transcribed from the ground-truth note — 21 renames, 1 addition (code 330), 0 removals — matches the ground-truth note's amended 21-row table exactly, proving the computed-not-transcribed discipline
+- [Phase 08-02]: Rule 1 fix: decodeEntities() in listaMorbSource.mjs (08-01) rewritten from a 9-entity case-insensitive chain to an 18-letter case-sensitive named-entity table; committed extract re-derived from the unchanged HTML — The incomplete decoder silently corrupted ~59 labels with literal &ocirc;/&ecirc;/&acirc;/&uuml;/&agrave; fragments, inflating the diff-computed rename map from 21 to 76 spurious entries; caught by cross-checking against the ground-truth note before commit
 
 ### Pending Todos
 
@@ -124,8 +127,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-03T20:53:59.852Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-08-04T01:04:20.450Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -160,3 +163,4 @@ Resume file: None
 | Phase 07-baseline-verde P04 | ~8min | 2 tasks | 4 files |
 | Phase 07-baseline-verde P06 | ~8min | 2 tasks | 1 files |
 | Phase 08 P01 | 15min | 3 tasks | 13 files |
+| Phase 08 P02 | ~5min (continuation) + ~15min (Task 1, prior session) | 3 tasks | 8 files |
