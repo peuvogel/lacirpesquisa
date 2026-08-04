@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-08-04T01:19:46.362Z"
+stopped_at: Completed 08-04-PLAN.md
+last_updated: "2026-08-04T01:49:32.664Z"
 last_activity: 2026-08-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 10
+  completed_plans: 11
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
-Plan: 4 of 10
+Plan: 5 of 10
 Status: Ready to execute
 Last activity: 2026-08-04
 
@@ -117,6 +117,9 @@ Last activity: 2026-08-04
 - [Phase 08-02]: rename-map.json computed from the diff between the frozen pre-migration fixture and the canonical regeneration (D-12), never transcribed from the ground-truth note — 21 renames, 1 addition (code 330), 0 removals — matches the ground-truth note's amended 21-row table exactly, proving the computed-not-transcribed discipline
 - [Phase 08-02]: Rule 1 fix: decodeEntities() in listaMorbSource.mjs (08-01) rewritten from a 9-entity case-insensitive chain to an 18-letter case-sensitive named-entity table; committed extract re-derived from the unchanged HTML — The incomplete decoder silently corrupted ~59 labels with literal &ocirc;/&ecirc;/&acirc;/&uuml;/&agrave; fragments, inflating the diff-computed rename map from 21 to 76 spurious entries; caught by cross-checking against the ground-truth note before commit
 - [Phase 08]: [Phase 08-03]: Invariants A/B/D/D2 written as pure functions in validate.mjs, none wired into main() yet — checkSlugConsistency's allowlist is a required parameter derived from extra-diseases.json's reason field by the caller, never a literal inside validate.mjs; checkColumnMapKeys duplicates the standard-column shape by hand instead of importing syncColumnMap.mjs, which has unconditional top-level disk reads — D-24 requires renaming and invariants to land in the same commit (08-06); this plan proves the invariants work via a frozen pre-migration fixture without touching the live taxonomy
+- [Phase ?]: [Phase 08-04]: applyRenameMap.mjs code-source substitution uses one combined regex.exec pass (not sequential per-rename replace) because a sequential loop lets one rename cycle's freshly-written canonical text get re-matched by the other cycle's rename (186/187, 173/182)
+- [Phase ?]: [Phase 08-04]: renameMap.test.ts and tombstones.test.ts excluded from applyRenameMap.mjs's rename-engine scope — both assert historical facts about rename-map.json's own immutable content (which old ids exist, which two are cycles), so rewriting their literals would make a currently-true assertion false once --apply runs in 08-06
+- [Phase ?]: [Phase 08-04]: sobras (leftover-tombstone) count after simulating a rewrite excludes ids that are simultaneously a tombstone and the canonical target of a different rename (hemorroidas, embolia_pulmonar) — their correct post-rename reappearance is not a leftover
 
 ### Pending Todos
 
@@ -128,8 +131,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T01:19:46.359Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-08-04T01:49:32.661Z
+Stopped at: Completed 08-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -166,3 +169,4 @@ Resume file: None
 | Phase 08 P01 | 15min | 3 tasks | 13 files |
 | Phase 08 P02 | ~5min (continuation) + ~15min (Task 1, prior session) | 3 tasks | 8 files |
 | Phase 08 P03 | ~10min | 2 tasks | 2 files |
+| Phase 08-taxonomia-can-nica-integridade P04 | ~25min | 3 tasks | 6 files |

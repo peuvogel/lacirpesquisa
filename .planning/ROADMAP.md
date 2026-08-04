@@ -102,7 +102,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2)*
 
 - [x] 08-03-PLAN.md — Invariantes A/B/D/D2 e a prova de TAX-02 contra a fixture pré-migração (TAX-01, TAX-02, TAX-06)
-- [ ] 08-04-PLAN.md — Motor de renomeação dirigido pelo mapa, gerador de seeds SQL, guarda de tombstone no upload (TAX-06)
+- [x] 08-04-PLAN.md — Motor de renomeação dirigido pelo mapa, gerador de seeds SQL, guarda de tombstone no upload (TAX-06)
 - [ ] 08-05-PLAN.md — Scaffold `supabase/`, migração up/down gerada do mapa, prova de integridade D-04 (TAX-03, TAX-04)
 
 **Wave 4** *(blocked on Wave 3)*
@@ -220,7 +220,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 | Phase | Plans Complete | Status | Completed |
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
-| 8. Taxonomia canônica + integridade | 3/10 | In Progress|  |
+| 8. Taxonomia canônica + integridade | 4/10 | In Progress|  |
 | 9. Pipeline confiável + coleta completa | 0/TBD | Not started | - |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |
