@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 08-05-PLAN.md
-last_updated: "2026-08-04T02:14:56.205Z"
+stopped_at: Completed 08-06-PLAN.md
+last_updated: "2026-08-04T02:44:58.434Z"
 last_activity: 2026-08-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 17
-  completed_plans: 12
+  completed_plans: 13
   percent: 17
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 08 (taxonomia-can-nica-integridade) — EXECUTING
-Plan: 6 of 10
+Plan: 7 of 10
 Status: Ready to execute
 Last activity: 2026-08-04
 
@@ -123,6 +123,9 @@ Last activity: 2026-08-04
 - [Phase 08-05]: supabase db pull failed on a pre-existing untracked remote migration entry; used the plan's documented fallback (db dump -s public + migration repair --status applied) to capture the real production schema as baseline without touching data
 - [Phase 08-05]: supabase/config.toml does not receive the linked project ref from supabase link in CLI 2.90.0 (it lives in gitignored supabase/.temp/project-ref) — added a documentation comment citing the ref instead
 - [Phase 08-05]: Rename migration up/down/verify SQL generated purely from rename-map.json + metricless-diseases.json (never hand-transcribed); shared __rename_map temp table reused by both directions, with movement direction expressed by which column each pass matches/sets
+- [Phase 08-06]: git mv given repo-relative paths (not absolute) in applyRenameMap.mjs — absolute paths under this project's accented directory name hit a macOS/APFS NFC/NFD Unicode normalization mismatch against git's toplevel string comparison
+- [Phase 08-06]: assertNotTombstone in paths.mjs's PACK_SOURCES loop skips CYCLE_CANONICAL_IDS (hemorroidas, embolia_pulmonar) — these are today's legitimate canonical ids for a different tabnetCode, not leftovers; assertNotTombstone itself keeps throwing unconditionally for untrusted write-path callers
+- [Phase 08-06]: Invariant F (noTombstoneLiterals.test.ts) unions its 3 declared allowlist paths with applyRenameMap.mjs's exported SCOPE_EXCLUDE_RELATIVE_PATHS (renameMap.test.ts, tombstones.test.ts) instead of hand-retranscribing — both retain old-id literals as historical-fact assertions about rename-map.json's own immutable content
 
 ### Pending Todos
 
@@ -134,8 +137,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T02:14:56.202Z
-Stopped at: Completed 08-05-PLAN.md
+Last session: 2026-08-04T02:44:58.432Z
+Stopped at: Completed 08-06-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -174,3 +177,4 @@ Resume file: None
 | Phase 08 P03 | ~10min | 2 tasks | 2 files |
 | Phase 08-taxonomia-can-nica-integridade P04 | ~25min | 3 tasks | 6 files |
 | Phase 08-taxonomia-can-nica-integridade P05 | ~25min | 3 tasks | 11 files |
+| Phase 08-taxonomia-can-nica-integridade P06 | ~55min | 1 tasks | 51 files |
