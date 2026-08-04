@@ -158,3 +158,7 @@ None - nenhuma configuração de serviço externo necessária. Docker Desktop j�
 ---
 *Phase: 08-taxonomia-can-nica-integridade*
 *Completed: 2026-08-04*
+
+## Self-Check: PASSED
+
+`08-08-SUMMARY.md` found on disk. Commit `cf73cef` found in git log. Container `lacir-ensaio` confirmed absent from `docker ps -a` (0 matches). `.local/supabase/prod_data.sql` confirmed deleted. `npm run gate` green (104 test files / 747 tests, catalog:validate OK, build succeeds) after this plan's work, confirming zero code impact.
