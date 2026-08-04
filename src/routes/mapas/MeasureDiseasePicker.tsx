@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getCatalogVariableById } from '@/features/catalog/catalogAnalysisData';
+import { ALIASES, labelMatchesQuery, matchDiseases } from '@/features/catalog/diseaseAliases';
 import {
   DISEASES,
   MEASURES,
@@ -52,11 +53,22 @@ function normalizeCidQuery(q: string): string {
 
 function diseaseMatches(disease: DiseaseDef, q: string): boolean {
   const lower = q.toLowerCase();
-  if (disease.label.toLowerCase().includes(lower) || disease.id.includes(lower)) return true;
+  if (labelMatchesQuery(disease.label, q) || disease.id.includes(lower)) return true;
   if (!disease.cid) return false;
   const cidNorm = normalizeCidQuery(disease.cid);
   const qNorm = normalizeCidQuery(q);
   return cidNorm.includes(qNorm) || (qNorm.length >= 2 && cidNorm.startsWith(qNorm));
+}
+
+/** Result of one query's search — the pool to render plus alias provenance for the D-18 strip. */
+interface DiseaseSearchResult {
+  pool: readonly DiseaseDef[];
+  /** Normalized alias term that fired, or null when no curated entry matched (D-18/D-19). */
+  aliasTerm: string | null;
+  /** How many categories the fired alias resolved to (0 when aliasTerm is null). */
+  aliasCategoryCount: number;
+  /** The exact categories the curated alias resolved to (for the singular-case strip copy). */
+  aliasDiseases: readonly DiseaseDef[];
 }
 
 /**
@@ -89,16 +101,35 @@ export function MeasureDiseasePicker({
     [selectedDiseaseIds],
   );
 
-  const visibleDiseases = useMemo(() => {
+  // Apelido calculado uma vez por query (nao por agravo, T-08-09-05): `matchDiseases` roda
+  // aqui dentro, nunca dentro de um `.filter` sobre DISEASES.
+  const searchResult = useMemo<DiseaseSearchResult>(() => {
     const q = query.trim();
-    const pool = q ? DISEASES.filter((d) => diseaseMatches(d, q)) : DISEASES;
+    if (!q) {
+      return { pool: DISEASES, aliasTerm: null, aliasCategoryCount: 0, aliasDiseases: [] };
+    }
+    const byLabelOrId = DISEASES.filter((d) => diseaseMatches(d, q));
+    const aliasMatch = matchDiseases(DISEASES, q, ALIASES);
+    const merged = new Map<string, DiseaseDef>();
+    for (const d of byLabelOrId) merged.set(d.id, d);
+    for (const d of aliasMatch.diseases) merged.set(d.id, d);
+    return {
+      pool: [...merged.values()],
+      aliasTerm: aliasMatch.aliasTerm,
+      aliasCategoryCount: aliasMatch.aliasCategoryCount,
+      aliasDiseases: aliasMatch.diseases,
+    };
+  }, [query]);
+
+  const visibleDiseases = useMemo(() => {
+    const { pool } = searchResult;
     const selected = pool.filter((d) => selectedDiseaseSet.has(d.id));
     const rest = pool.filter((d) => !selectedDiseaseSet.has(d.id));
     // Pack-backed diseases first so period years resolve without hunting.
     const withPack = rest.filter((d) => FIRST_LOADABLE_MEASURE.has(d.id));
     const withoutPack = rest.filter((d) => !FIRST_LOADABLE_MEASURE.has(d.id));
     return [...selected, ...withPack, ...withoutPack];
-  }, [query, selectedDiseaseSet]);
+  }, [searchResult, selectedDiseaseSet]);
 
   const toggleDisease = (diseaseId: string) => {
     if (onToggleDisease) {
