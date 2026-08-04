@@ -18,7 +18,7 @@ describe('GroupConfigPanel', () => {
     });
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
     state = mapAnalysisReducer(state, {
       type: 'SET_SHARED_TIME',
@@ -50,7 +50,7 @@ describe('GroupConfigPanel', () => {
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_GROUP_VARIABLE',
       groupId,
-      variableId: 'sih.embolia_trombose.internacoes',
+      variableId: 'sih.embolia_e_trombose_arteriais.internacoes',
     });
     state = mapAnalysisReducer(state, {
       type: 'SET_GROUP_TIME',

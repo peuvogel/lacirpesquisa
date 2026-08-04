@@ -203,7 +203,7 @@ export const MEASURE_COLUMN_SUFFIX: Record<string, string> = {
 
 /** Legacy pack ids that differ from the canonical measure×disease form. */
 const CATALOG_ID_ALIASES: Record<string, string> = {
-  'sih.embolia_trombose.taxa_internacao': 'sih.embolia_trombose.taxa_internacao_100k',
+  'sih.embolia_e_trombose_arteriais.taxa_internacao': 'sih.embolia_e_trombose_arteriais.taxa_internacao_100k',
   'sih.amputacao_mmii.taxa_internacao': 'sih.amputacao_mmii.taxa_internacao_100k',
 };
 
@@ -215,14 +215,14 @@ const MEASURE_ID_FROM_SUFFIX: Record<string, string> = {
 
 /** Resolve catalog entry id for a measure×disease pair (legacy pack naming). */
 export function catalogIdFor(measureId: string, diseaseId: string): string {
-  if (diseaseId === 'embolia_trombose') {
+  if (diseaseId === 'embolia_e_trombose_arteriais') {
     const map: Record<string, string> = {
-      internacoes: 'sih.embolia_trombose.internacoes',
-      obitos: 'sih.embolia_trombose.obitos',
-      dias_permanencia: 'sih.embolia_trombose.dias_permanencia',
-      taxa_mortalidade: 'sih.embolia_trombose.taxa_mortalidade',
-      taxa_internacao: 'sih.embolia_trombose.taxa_internacao_100k',
-      custo: 'sih.embolia_trombose.custo',
+      internacoes: 'sih.embolia_e_trombose_arteriais.internacoes',
+      obitos: 'sih.embolia_e_trombose_arteriais.obitos',
+      dias_permanencia: 'sih.embolia_e_trombose_arteriais.dias_permanencia',
+      taxa_mortalidade: 'sih.embolia_e_trombose_arteriais.taxa_mortalidade',
+      taxa_internacao: 'sih.embolia_e_trombose_arteriais.taxa_internacao_100k',
+      custo: 'sih.embolia_e_trombose_arteriais.custo',
     };
     return map[measureId] ?? `sih.${diseaseId}.${measureId}`;
   }

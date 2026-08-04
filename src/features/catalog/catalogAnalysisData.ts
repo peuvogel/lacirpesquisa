@@ -6,16 +6,16 @@
  */
 import type { CatalogEntry, PackFile } from './types';
 import variablesJson from '../../../public/data/catalog/variables.json';
-import emboliaTrombosePackJson from '../../../public/data/catalog/packs/sih.embolia_trombose_uf.json';
+import emboliaETromboseArteriaisPackJson from '../../../public/data/catalog/packs/sih.embolia_e_trombose_arteriais_uf.json';
 import amputacaoMmiiPackJson from '../../../public/data/catalog/packs/sih.amputacao_mmii_uf.json';
-import aitPackJson from '../../../public/data/catalog/packs/sih.ait_uf.json';
-import aneurismaAortaPackJson from '../../../public/data/catalog/packs/sih.aneurisma_aorta_uf.json';
-import avcPackJson from '../../../public/data/catalog/packs/sih.avc_uf.json';
-import doencasArteriasPackJson from '../../../public/data/catalog/packs/sih.doencas_arterias_uf.json';
-import emboliaPulmonarPackJson from '../../../public/data/catalog/packs/sih.embolia_pulmonar_uf.json';
-import flebitesTromboflebitesPackJson from '../../../public/data/catalog/packs/sih.flebites_tromboflebites_uf.json';
-import outrasDoencasVascularesPackJson from '../../../public/data/catalog/packs/sih.outras_doencas_vasculares_uf.json';
-import varizesMmiiPackJson from '../../../public/data/catalog/packs/sih.varizes_mmii_uf.json';
+import acidVascularCerebrNaoEspecHemorragOuIsquemPackJson from '../../../public/data/catalog/packs/sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf.json';
+import flebiteTromboflebiteEmboliaETromboseVenosaPackJson from '../../../public/data/catalog/packs/sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf.json';
+import infartoCerebralPackJson from '../../../public/data/catalog/packs/sih.infarto_cerebral_uf.json';
+import laringiteETraqueiteAgudasPackJson from '../../../public/data/catalog/packs/sih.laringite_e_traqueite_agudas_uf.json';
+import otiteMediaEOutrTranstOuvidoMedioApofMastPackJson from '../../../public/data/catalog/packs/sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf.json';
+import outrasDoencasDasArteriasArteriolasECapilaresPackJson from '../../../public/data/catalog/packs/sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf.json';
+import outrasDoencasDoOlhoEAnexosPackJson from '../../../public/data/catalog/packs/sih.outras_doencas_do_olho_e_anexos_uf.json';
+import outrasDoencasVascularesPerifericasPackJson from '../../../public/data/catalog/packs/sih.outras_doencas_vasculares_perifericas_uf.json';
 
 /** Analysis variable shown in Mapas checkboxes / choropleth (catalog or paste overlay). */
 export interface CatalogAnalysisVariable {
@@ -29,23 +29,23 @@ export interface CatalogAnalysisVariable {
 /** Stable Phase 4 mock IDs → pack-backed catalog IDs where semantics match (D-18). */
 export const VARIABLE_ID_ALIASES: Readonly<Record<string, string>> = {
   'mock.amputacoes': 'sih.amputacao_mmii.internacoes',
-  'mock.internacoes': 'sih.embolia_trombose.internacoes',
-  'mock.obitos': 'sih.embolia_trombose.obitos',
+  'mock.internacoes': 'sih.embolia_e_trombose_arteriais.internacoes',
+  'mock.obitos': 'sih.embolia_e_trombose_arteriais.obitos',
   // mock.taxa_mortalidade intentionally NOT aliased (infantil ≠ hospital SIH rates)
 };
 
 const CATALOG_ENTRIES = variablesJson as CatalogEntry[];
 const PACKS: Record<string, PackFile> = {
-  'sih.embolia_trombose_uf': emboliaTrombosePackJson as PackFile,
+  'sih.embolia_e_trombose_arteriais_uf': emboliaETromboseArteriaisPackJson as PackFile,
   'sih.amputacao_mmii_uf': amputacaoMmiiPackJson as PackFile,
-  'sih.ait_uf': aitPackJson as PackFile,
-  'sih.aneurisma_aorta_uf': aneurismaAortaPackJson as PackFile,
-  'sih.avc_uf': avcPackJson as PackFile,
-  'sih.doencas_arterias_uf': doencasArteriasPackJson as PackFile,
-  'sih.embolia_pulmonar_uf': emboliaPulmonarPackJson as PackFile,
-  'sih.flebites_tromboflebites_uf': flebitesTromboflebitesPackJson as PackFile,
-  'sih.outras_doencas_vasculares_uf': outrasDoencasVascularesPackJson as PackFile,
-  'sih.varizes_mmii_uf': varizesMmiiPackJson as PackFile,
+  'sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf': acidVascularCerebrNaoEspecHemorragOuIsquemPackJson as PackFile,
+  'sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf': flebiteTromboflebiteEmboliaETromboseVenosaPackJson as PackFile,
+  'sih.infarto_cerebral_uf': infartoCerebralPackJson as PackFile,
+  'sih.laringite_e_traqueite_agudas_uf': laringiteETraqueiteAgudasPackJson as PackFile,
+  'sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf': otiteMediaEOutrTranstOuvidoMedioApofMastPackJson as PackFile,
+  'sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf': outrasDoencasDasArteriasArteriolasECapilaresPackJson as PackFile,
+  'sih.outras_doencas_do_olho_e_anexos_uf': outrasDoencasDoOlhoEAnexosPackJson as PackFile,
+  'sih.outras_doencas_vasculares_perifericas_uf': outrasDoencasVascularesPerifericasPackJson as PackFile,
 };
 
 const ENTRIES_BY_ID = new Map(CATALOG_ENTRIES.map((entry) => [entry.id, entry]));
@@ -100,7 +100,7 @@ export const CATALOG_ID_TO_LABEL: Record<string, string> = Object.fromEntries(
 
 /** Prefer embolia internações (legacy mock.internacoes default), else first loadable contagem. */
 export function getDefaultCatalogVariableId(): string {
-  const preferred = 'sih.embolia_trombose.internacoes';
+  const preferred = 'sih.embolia_e_trombose_arteriais.internacoes';
   if (ENTRIES_BY_ID.has(preferred)) return preferred;
   const firstCount = LOADABLE_ENTRIES.find((e) => e.variableType === 'contagem');
   return firstCount?.id ?? LOADABLE_ENTRIES[0]?.id ?? preferred;

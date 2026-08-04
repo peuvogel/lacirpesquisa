@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertNotTombstone, CYCLE_CANONICAL_IDS } from './tombstones.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '../..');
@@ -65,7 +66,7 @@ function multiPackSource(diseaseId) {
 }
 
 const LEGACY_PACKS = {
-  'sih.embolia_trombose_uf': {
+  'sih.embolia_e_trombose_arteriais_uf': {
     sourceDir: 'outputs/coleta_embolia_trombose_uf',
     csv: 'outputs/coleta_embolia_trombose_uf/base_embolia_trombose_arteriais_uf_2013_2025.csv',
     metadata: 'outputs/coleta_embolia_trombose_uf/metadata.json',
@@ -85,7 +86,15 @@ const diseases = JSON.parse(
 export const PACK_SOURCES = { ...LEGACY_PACKS };
 
 for (const disease of diseases) {
-  if (disease.id === 'embolia_trombose' || disease.id === 'amputacao_mmii') continue;
+  if (disease.id === 'embolia_e_trombose_arteriais' || disease.id === 'amputacao_mmii') continue;
+  // D-06/D-23 build-time entry point: a tombstone id read from diseases.json here would
+  // silently build a corpus path for the wrong agravo (the same defect class the rename
+  // fixed). Skip the two verified-cycle ids (CYCLE_CANONICAL_IDS) — in the trusted
+  // canonical diseases.json they are legitimate modern ids (hemorroidas=187,
+  // embolia_pulmonar=173), not leftovers; asserting on them would always throw.
+  if (!CYCLE_CANONICAL_IDS.has(disease.id)) {
+    assertNotTombstone(disease.id, 'paths.mjs PACK_SOURCES');
+  }
   const packId = `sih.${disease.id}_uf`;
   PACK_SOURCES[packId] = multiPackSource(disease.id);
 }

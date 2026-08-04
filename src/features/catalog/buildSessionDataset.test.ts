@@ -32,7 +32,7 @@ function loadable(
   };
 }
 
-const EMBOLIA = readPack('sih.embolia_trombose_uf');
+const EMBOLIA = readPack('sih.embolia_e_trombose_arteriais_uf');
 const AMPUTACAO = readPack('sih.amputacao_mmii_uf');
 
 const PACKS: Record<string, PackFile> = {
@@ -41,18 +41,18 @@ const PACKS: Record<string, PackFile> = {
 };
 
 const INTERNACOES_EMBOLIA = loadable({
-  id: 'sih.embolia_trombose.internacoes',
+  id: 'sih.embolia_e_trombose_arteriais.internacoes',
   label: 'Internações embolia/trombose',
-  packId: 'sih.embolia_trombose_uf',
+  packId: 'sih.embolia_e_trombose_arteriais_uf',
   columnKey: 'internacoes_embolia_trombose_arteriais',
   tableOrIndicator: 'sih/cnv/nibr.def',
 });
 
 const TAXA_EMBOLIA = loadable({
-  id: 'sih.embolia_trombose.taxa_internacao_100k',
+  id: 'sih.embolia_e_trombose_arteriais.taxa_internacao_100k',
   label: 'Taxa internação embolia/100k',
   variableType: 'taxa',
-  packId: 'sih.embolia_trombose_uf',
+  packId: 'sih.embolia_e_trombose_arteriais_uf',
   columnKey: 'taxa_internacao_por_100k',
   tableOrIndicator: 'sih/cnv/nibr.def',
 });
@@ -79,9 +79,9 @@ describe('assertCompatibleSelection', () => {
   it('rejects more than MAX_LOADABLE_SELECTION metrics', () => {
     const many = Array.from({ length: 13 }, (_, i) =>
       loadable({
-        id: `sih.embolia_trombose.extra_${i}`,
+        id: `sih.embolia_e_trombose_arteriais.extra_${i}`,
         label: `Métrica ${i}`,
-        packId: 'sih.embolia_trombose_uf',
+        packId: 'sih.embolia_e_trombose_arteriais_uf',
         columnKey: 'internacoes_embolia_trombose_arteriais',
       }),
     );

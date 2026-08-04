@@ -266,7 +266,7 @@ describe('VariaveisPage', () => {
 
     const location = screen.getByTestId('location-probe').textContent ?? '';
     expect(location.startsWith('/mapas|')).toBe(true);
-    expect(location).toContain('sih.embolia_trombose.internacoes');
-    expect(location).toContain('sih.embolia_trombose.obitos');
+    expect(location).toContain('sih.embolia_e_trombose_arteriais.internacoes');
+    expect(location).toContain('sih.embolia_e_trombose_arteriais.obitos');
   });
 });

@@ -114,7 +114,7 @@ describe('MapasPage group workspace', () => {
 
 describe('MapasPage catalogVariableIds handoff (D-15)', () => {
   it('applies navigate state ids to the active group and checkbox list', async () => {
-    const internacoesId = 'sih.embolia_trombose.internacoes';
+    const internacoesId = 'sih.embolia_e_trombose_arteriais.internacoes';
 
     renderMapasPage([
       {

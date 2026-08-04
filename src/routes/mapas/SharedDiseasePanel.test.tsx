@@ -19,14 +19,14 @@ describe('SharedDiseasePanel', () => {
 
     expect(dispatch).toHaveBeenCalledWith({
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
   });
 
   it('shows summary when collapsed', () => {
     render(
       <SharedDiseasePanel
-        selectedVariableIds={['sih.embolia_trombose.internacoes']}
+        selectedVariableIds={['sih.embolia_e_trombose_arteriais.internacoes']}
         dispatch={vi.fn()}
         open={false}
         onOpenChange={vi.fn()}

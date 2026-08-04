@@ -11,7 +11,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/prid02br.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "medicos_vasculares_sus",
     "grain": "uf_ano",
     "unit": "n",
@@ -43,7 +43,7 @@
     "officialUrl": "https://sidra.ibge.gov.br/tabela/6579",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "populacao",
     "grain": "uf_ano",
     "unit": "n",
@@ -77,7 +77,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/prid02br.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "medicos_vasculares_por_100k",
     "grain": "uf_ano",
     "unit": "por 100 mil",
@@ -100,7 +100,7 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.internacoes",
+    "id": "sih.embolia_e_trombose_arteriais.internacoes",
     "label": "Internações por embolia e trombose arteriais",
     "variableType": "contagem",
     "domain": "vascular",
@@ -111,7 +111,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "internacoes_embolia_trombose_arteriais",
     "grain": "uf_ano",
     "unit": "n",
@@ -137,7 +137,7 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.obitos",
+    "id": "sih.embolia_e_trombose_arteriais.obitos",
     "label": "Óbitos hospitalares por embolia e trombose arteriais",
     "variableType": "contagem",
     "domain": "vascular",
@@ -148,7 +148,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "obitos_embolia_trombose_arteriais",
     "grain": "uf_ano",
     "unit": "n",
@@ -174,7 +174,7 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.dias_permanencia",
+    "id": "sih.embolia_e_trombose_arteriais.dias_permanencia",
     "label": "Dias de permanência — embolia e trombose arteriais",
     "variableType": "contagem",
     "domain": "vascular",
@@ -185,7 +185,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "dias_permanencia_embolia_trombose_arteriais",
     "grain": "uf_ano",
     "unit": "dias",
@@ -206,7 +206,7 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.taxa_mortalidade",
+    "id": "sih.embolia_e_trombose_arteriais.taxa_mortalidade",
     "label": "Taxa de mortalidade hospitalar — embolia e trombose arteriais",
     "variableType": "taxa",
     "domain": "vascular",
@@ -217,7 +217,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "taxa_mortalidade_pct",
     "grain": "uf_ano",
     "unit": "%",
@@ -238,7 +238,7 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.media_permanencia",
+    "id": "sih.embolia_e_trombose_arteriais.media_permanencia",
     "label": "Média de permanência — embolia e trombose arteriais",
     "variableType": "numerica",
     "domain": "vascular",
@@ -249,7 +249,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "media_permanencia_calculada",
     "grain": "uf_ano",
     "unit": "dias",
@@ -270,7 +270,7 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.taxa_internacao_100k",
+    "id": "sih.embolia_e_trombose_arteriais.taxa_internacao_100k",
     "label": "Taxa de internação por embolia e trombose arteriais (por 100 mil)",
     "variableType": "taxa",
     "domain": "vascular",
@@ -281,7 +281,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "taxa_internacao_por_100k",
     "grain": "uf_ano",
     "unit": "por 100 mil",
@@ -304,8 +304,8 @@
     ]
   },
   {
-    "id": "sih.embolia_trombose.custo",
-    "label": "Custo (valor total) — embolia e trombose arteriais",
+    "id": "sih.embolia_e_trombose_arteriais.custo",
+    "label": "Custo (valor total) — Embolia e trombose arteriais",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -315,7 +315,7 @@
     "officialUrl": "http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def",
     "methodologyNotes": "CNES: selecionado somente dezembro de cada ano de 2013 a 2025. SIH nibr.def não oferece UF diretamente em Linha; foi selecionado Linha = Município e depois agregado para UF pelo código IBGE municipal. SIH: selecionados todos os meses de processamento de 2013 a 2025; colunas de ano de atendimento fora de 2013-2025 foram descartadas. Lista Morb CID-10: Embolia e trombose arteriais, código interno TabNet 183. Média permanência calculada como dias permanência / internações após agregação UF-ano. Taxa mortalidade calculada como óbitos / internações * 100 após agregação UF-ano. População: 2013-2021 e 2024-2025 pela SIDRA 6579; 2022 pela SIDRA 9514; 2023 sem denominador oficial nesta regra, então taxas/densidades ficam vazias.",
     "loadable": true,
-    "packId": "sih.embolia_trombose_uf",
+    "packId": "sih.embolia_e_trombose_arteriais_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -505,8 +505,8 @@
     ]
   },
   {
-    "id": "sih.avc.internacoes",
-    "label": "Internações — AVC / acidente vascular cerebral",
+    "id": "sih.outras_doencas_do_olho_e_anexos.internacoes",
+    "label": "Internações — Outras doenças do olho e anexos",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -516,7 +516,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.avc_uf",
+    "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -537,8 +537,8 @@
     ]
   },
   {
-    "id": "sih.avc.obitos",
-    "label": "Óbitos — AVC / acidente vascular cerebral",
+    "id": "sih.outras_doencas_do_olho_e_anexos.obitos",
+    "label": "Óbitos — Outras doenças do olho e anexos",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -548,7 +548,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.avc_uf",
+    "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -569,8 +569,8 @@
     ]
   },
   {
-    "id": "sih.avc.custo",
-    "label": "Custo (valor total) — AVC / acidente vascular cerebral",
+    "id": "sih.outras_doencas_do_olho_e_anexos.custo",
+    "label": "Custo (valor total) — Outras doenças do olho e anexos",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -580,7 +580,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.avc_uf",
+    "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -601,8 +601,8 @@
     ]
   },
   {
-    "id": "sih.avc.dias_permanencia",
-    "label": "Dias de permanência — AVC / acidente vascular cerebral",
+    "id": "sih.outras_doencas_do_olho_e_anexos.dias_permanencia",
+    "label": "Dias de permanência — Outras doenças do olho e anexos",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -612,7 +612,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.avc_uf",
+    "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -633,8 +633,8 @@
     ]
   },
   {
-    "id": "sih.avc.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — AVC / acidente vascular cerebral",
+    "id": "sih.outras_doencas_do_olho_e_anexos.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Outras doenças do olho e anexos",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -644,7 +644,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.avc_uf",
+    "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -665,8 +665,8 @@
     ]
   },
   {
-    "id": "sih.ait.internacoes",
-    "label": "Internações — Ataque isquêmico transitório (AIT)",
+    "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.internacoes",
+    "label": "Internações — Otite média e outr transt ouvido médio apóf mast",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -676,7 +676,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.ait_uf",
+    "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -697,8 +697,8 @@
     ]
   },
   {
-    "id": "sih.ait.obitos",
-    "label": "Óbitos — Ataque isquêmico transitório (AIT)",
+    "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.obitos",
+    "label": "Óbitos — Otite média e outr transt ouvido médio apóf mast",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -708,7 +708,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.ait_uf",
+    "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -729,8 +729,8 @@
     ]
   },
   {
-    "id": "sih.ait.custo",
-    "label": "Custo (valor total) — Ataque isquêmico transitório (AIT)",
+    "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.custo",
+    "label": "Custo (valor total) — Otite média e outr transt ouvido médio apóf mast",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -740,7 +740,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.ait_uf",
+    "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -761,8 +761,8 @@
     ]
   },
   {
-    "id": "sih.ait.dias_permanencia",
-    "label": "Dias de permanência — Ataque isquêmico transitório (AIT)",
+    "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.dias_permanencia",
+    "label": "Dias de permanência — Otite média e outr transt ouvido médio apóf mast",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -772,7 +772,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.ait_uf",
+    "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -793,8 +793,8 @@
     ]
   },
   {
-    "id": "sih.ait.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Ataque isquêmico transitório (AIT)",
+    "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Otite média e outr transt ouvido médio apóf mast",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -804,7 +804,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.ait_uf",
+    "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -825,8 +825,8 @@
     ]
   },
   {
-    "id": "sih.doencas_arterias.internacoes",
-    "label": "Internações — Doenças das artérias, arteríolas e capilares",
+    "id": "sih.infarto_cerebral.internacoes",
+    "label": "Internações — Infarto cerebral",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -836,7 +836,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.doencas_arterias_uf",
+    "packId": "sih.infarto_cerebral_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -857,8 +857,8 @@
     ]
   },
   {
-    "id": "sih.doencas_arterias.obitos",
-    "label": "Óbitos — Doenças das artérias, arteríolas e capilares",
+    "id": "sih.infarto_cerebral.obitos",
+    "label": "Óbitos — Infarto cerebral",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -868,7 +868,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.doencas_arterias_uf",
+    "packId": "sih.infarto_cerebral_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -889,8 +889,8 @@
     ]
   },
   {
-    "id": "sih.doencas_arterias.custo",
-    "label": "Custo (valor total) — Doenças das artérias, arteríolas e capilares",
+    "id": "sih.infarto_cerebral.custo",
+    "label": "Custo (valor total) — Infarto cerebral",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -900,7 +900,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.doencas_arterias_uf",
+    "packId": "sih.infarto_cerebral_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -921,8 +921,8 @@
     ]
   },
   {
-    "id": "sih.doencas_arterias.dias_permanencia",
-    "label": "Dias de permanência — Doenças das artérias, arteríolas e capilares",
+    "id": "sih.infarto_cerebral.dias_permanencia",
+    "label": "Dias de permanência — Infarto cerebral",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -932,7 +932,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.doencas_arterias_uf",
+    "packId": "sih.infarto_cerebral_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -953,8 +953,8 @@
     ]
   },
   {
-    "id": "sih.doencas_arterias.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Doenças das artérias, arteríolas e capilares",
+    "id": "sih.infarto_cerebral.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Infarto cerebral",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -964,7 +964,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.doencas_arterias_uf",
+    "packId": "sih.infarto_cerebral_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -985,8 +985,8 @@
     ]
   },
   {
-    "id": "sih.aneurisma_aorta.internacoes",
-    "label": "Internações — Aneurisma da aorta",
+    "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.internacoes",
+    "label": "Internações — Acid vascular cerebr não espec hemorrág ou isquêm",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -996,7 +996,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.aneurisma_aorta_uf",
+    "packId": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -1017,8 +1017,8 @@
     ]
   },
   {
-    "id": "sih.aneurisma_aorta.obitos",
-    "label": "Óbitos — Aneurisma da aorta",
+    "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.obitos",
+    "label": "Óbitos — Acid vascular cerebr não espec hemorrág ou isquêm",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1028,7 +1028,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.aneurisma_aorta_uf",
+    "packId": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -1049,8 +1049,8 @@
     ]
   },
   {
-    "id": "sih.aneurisma_aorta.custo",
-    "label": "Custo (valor total) — Aneurisma da aorta",
+    "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.custo",
+    "label": "Custo (valor total) — Acid vascular cerebr não espec hemorrág ou isquêm",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1060,7 +1060,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.aneurisma_aorta_uf",
+    "packId": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -1081,8 +1081,8 @@
     ]
   },
   {
-    "id": "sih.aneurisma_aorta.dias_permanencia",
-    "label": "Dias de permanência — Aneurisma da aorta",
+    "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.dias_permanencia",
+    "label": "Dias de permanência — Acid vascular cerebr não espec hemorrág ou isquêm",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1092,7 +1092,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.aneurisma_aorta_uf",
+    "packId": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -1113,8 +1113,8 @@
     ]
   },
   {
-    "id": "sih.aneurisma_aorta.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Aneurisma da aorta",
+    "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Acid vascular cerebr não espec hemorrág ou isquêm",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1124,7 +1124,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.aneurisma_aorta_uf",
+    "packId": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -1145,8 +1145,8 @@
     ]
   },
   {
-    "id": "sih.embolia_pulmonar.internacoes",
-    "label": "Internações — Embolia pulmonar",
+    "id": "sih.outras_doencas_vasculares_perifericas.internacoes",
+    "label": "Internações — Outras doenças vasculares periféricas",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1156,7 +1156,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.embolia_pulmonar_uf",
+    "packId": "sih.outras_doencas_vasculares_perifericas_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -1177,8 +1177,8 @@
     ]
   },
   {
-    "id": "sih.embolia_pulmonar.obitos",
-    "label": "Óbitos — Embolia pulmonar",
+    "id": "sih.outras_doencas_vasculares_perifericas.obitos",
+    "label": "Óbitos — Outras doenças vasculares periféricas",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1188,7 +1188,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.embolia_pulmonar_uf",
+    "packId": "sih.outras_doencas_vasculares_perifericas_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -1209,8 +1209,8 @@
     ]
   },
   {
-    "id": "sih.embolia_pulmonar.custo",
-    "label": "Custo (valor total) — Embolia pulmonar",
+    "id": "sih.outras_doencas_vasculares_perifericas.custo",
+    "label": "Custo (valor total) — Outras doenças vasculares periféricas",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1220,7 +1220,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.embolia_pulmonar_uf",
+    "packId": "sih.outras_doencas_vasculares_perifericas_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -1241,8 +1241,8 @@
     ]
   },
   {
-    "id": "sih.embolia_pulmonar.dias_permanencia",
-    "label": "Dias de permanência — Embolia pulmonar",
+    "id": "sih.outras_doencas_vasculares_perifericas.dias_permanencia",
+    "label": "Dias de permanência — Outras doenças vasculares periféricas",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1252,7 +1252,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.embolia_pulmonar_uf",
+    "packId": "sih.outras_doencas_vasculares_perifericas_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -1273,8 +1273,8 @@
     ]
   },
   {
-    "id": "sih.embolia_pulmonar.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Embolia pulmonar",
+    "id": "sih.outras_doencas_vasculares_perifericas.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Outras doenças vasculares periféricas",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1284,7 +1284,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.embolia_pulmonar_uf",
+    "packId": "sih.outras_doencas_vasculares_perifericas_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -1305,8 +1305,8 @@
     ]
   },
   {
-    "id": "sih.flebites_tromboflebites.internacoes",
-    "label": "Internações — Flebite e tromboflebite",
+    "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.internacoes",
+    "label": "Internações — Outras doenças das artérias arteríolas e capilares",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1316,7 +1316,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.flebites_tromboflebites_uf",
+    "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -1337,8 +1337,8 @@
     ]
   },
   {
-    "id": "sih.flebites_tromboflebites.obitos",
-    "label": "Óbitos — Flebite e tromboflebite",
+    "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.obitos",
+    "label": "Óbitos — Outras doenças das artérias arteríolas e capilares",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1348,7 +1348,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.flebites_tromboflebites_uf",
+    "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -1369,8 +1369,8 @@
     ]
   },
   {
-    "id": "sih.flebites_tromboflebites.custo",
-    "label": "Custo (valor total) — Flebite e tromboflebite",
+    "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.custo",
+    "label": "Custo (valor total) — Outras doenças das artérias arteríolas e capilares",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1380,7 +1380,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.flebites_tromboflebites_uf",
+    "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -1401,8 +1401,8 @@
     ]
   },
   {
-    "id": "sih.flebites_tromboflebites.dias_permanencia",
-    "label": "Dias de permanência — Flebite e tromboflebite",
+    "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.dias_permanencia",
+    "label": "Dias de permanência — Outras doenças das artérias arteríolas e capilares",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1412,7 +1412,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.flebites_tromboflebites_uf",
+    "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -1433,8 +1433,8 @@
     ]
   },
   {
-    "id": "sih.flebites_tromboflebites.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Flebite e tromboflebite",
+    "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Outras doenças das artérias arteríolas e capilares",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1444,7 +1444,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.flebites_tromboflebites_uf",
+    "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -1465,8 +1465,8 @@
     ]
   },
   {
-    "id": "sih.varizes_mmii.internacoes",
-    "label": "Internações — Varizes de membros inferiores",
+    "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.internacoes",
+    "label": "Internações — Flebite tromboflebite embolia e trombose venosa",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1476,7 +1476,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.varizes_mmii_uf",
+    "packId": "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -1497,8 +1497,8 @@
     ]
   },
   {
-    "id": "sih.varizes_mmii.obitos",
-    "label": "Óbitos — Varizes de membros inferiores",
+    "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.obitos",
+    "label": "Óbitos — Flebite tromboflebite embolia e trombose venosa",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1508,7 +1508,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.varizes_mmii_uf",
+    "packId": "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -1529,8 +1529,8 @@
     ]
   },
   {
-    "id": "sih.varizes_mmii.custo",
-    "label": "Custo (valor total) — Varizes de membros inferiores",
+    "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.custo",
+    "label": "Custo (valor total) — Flebite tromboflebite embolia e trombose venosa",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1540,7 +1540,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.varizes_mmii_uf",
+    "packId": "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -1561,8 +1561,8 @@
     ]
   },
   {
-    "id": "sih.varizes_mmii.dias_permanencia",
-    "label": "Dias de permanência — Varizes de membros inferiores",
+    "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.dias_permanencia",
+    "label": "Dias de permanência — Flebite tromboflebite embolia e trombose venosa",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1572,7 +1572,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.varizes_mmii_uf",
+    "packId": "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -1593,8 +1593,8 @@
     ]
   },
   {
-    "id": "sih.varizes_mmii.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Varizes de membros inferiores",
+    "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Flebite tromboflebite embolia e trombose venosa",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1604,7 +1604,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.varizes_mmii_uf",
+    "packId": "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",
@@ -1625,8 +1625,8 @@
     ]
   },
   {
-    "id": "sih.outras_doencas_vasculares.internacoes",
-    "label": "Internações — Outras doenças do aparelho circulatório",
+    "id": "sih.laringite_e_traqueite_agudas.internacoes",
+    "label": "Internações — Laringite e traqueíte agudas",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1636,7 +1636,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.outras_doencas_vasculares_uf",
+    "packId": "sih.laringite_e_traqueite_agudas_uf",
     "columnKey": "internacoes",
     "grain": "uf_ano",
     "unit": "n",
@@ -1657,8 +1657,8 @@
     ]
   },
   {
-    "id": "sih.outras_doencas_vasculares.obitos",
-    "label": "Óbitos — Outras doenças do aparelho circulatório",
+    "id": "sih.laringite_e_traqueite_agudas.obitos",
+    "label": "Óbitos — Laringite e traqueíte agudas",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1668,7 +1668,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.outras_doencas_vasculares_uf",
+    "packId": "sih.laringite_e_traqueite_agudas_uf",
     "columnKey": "obitos",
     "grain": "uf_ano",
     "unit": "n",
@@ -1689,8 +1689,8 @@
     ]
   },
   {
-    "id": "sih.outras_doencas_vasculares.custo",
-    "label": "Custo (valor total) — Outras doenças do aparelho circulatório",
+    "id": "sih.laringite_e_traqueite_agudas.custo",
+    "label": "Custo (valor total) — Laringite e traqueíte agudas",
     "variableType": "numerica",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1700,7 +1700,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.outras_doencas_vasculares_uf",
+    "packId": "sih.laringite_e_traqueite_agudas_uf",
     "columnKey": "valor_total",
     "grain": "uf_ano",
     "unit": "R$",
@@ -1721,8 +1721,8 @@
     ]
   },
   {
-    "id": "sih.outras_doencas_vasculares.dias_permanencia",
-    "label": "Dias de permanência — Outras doenças do aparelho circulatório",
+    "id": "sih.laringite_e_traqueite_agudas.dias_permanencia",
+    "label": "Dias de permanência — Laringite e traqueíte agudas",
     "variableType": "contagem",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1732,7 +1732,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.outras_doencas_vasculares_uf",
+    "packId": "sih.laringite_e_traqueite_agudas_uf",
     "columnKey": "dias_permanencia",
     "grain": "uf_ano",
     "unit": "dias",
@@ -1753,8 +1753,8 @@
     ]
   },
   {
-    "id": "sih.outras_doencas_vasculares.taxa_mortalidade",
-    "label": "Taxa de mortalidade hospitalar — Outras doenças do aparelho circulatório",
+    "id": "sih.laringite_e_traqueite_agudas.taxa_mortalidade",
+    "label": "Taxa de mortalidade hospitalar — Laringite e traqueíte agudas",
     "variableType": "taxa",
     "domain": "vascular",
     "sourceSystem": "SIH/SUS",
@@ -1764,7 +1764,7 @@
     "officialUrl": "https://datasus.saude.gov.br/",
     "methodologyNotes": "População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).",
     "loadable": true,
-    "packId": "sih.outras_doencas_vasculares_uf",
+    "packId": "sih.laringite_e_traqueite_agudas_uf",
     "columnKey": "taxa_mortalidade",
     "grain": "uf_ano",
     "unit": "%",

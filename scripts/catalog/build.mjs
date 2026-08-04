@@ -209,7 +209,7 @@ async function main() {
 
   // 1) Embolia first (primary for shared CNES/pop catalog ids)
   {
-    const packId = 'sih.embolia_trombose_uf';
+    const packId = 'sih.embolia_e_trombose_arteriais_uf';
     const src = PACK_SOURCES[packId];
     const csvPath = corpusPath(src.csv);
     const metaPath = corpusPath(src.metadata);
@@ -271,7 +271,7 @@ async function main() {
 
   // 3) Multi-disease packs (optional — skip when scrape CSV not ready yet)
   const multiPackIds = Object.keys(PACK_SOURCES).filter(
-    (id) => id !== 'sih.embolia_trombose_uf' && id !== 'sih.amputacao_mmii_uf',
+    (id) => id !== 'sih.embolia_e_trombose_arteriais_uf' && id !== 'sih.amputacao_mmii_uf',
   );
   for (const packId of multiPackIds) {
     const src = PACK_SOURCES[packId];

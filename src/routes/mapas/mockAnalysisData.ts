@@ -19,16 +19,16 @@ import { getCatalogTimeSeriesYears } from '@/features/catalog/catalogAnalysisDat
 
 /** @deprecated Use getCatalogTimeSeriesYears(variableId) — pack years, not 2018–2022 didactic list. */
 export const MOCK_TIME_SERIES_YEARS: readonly number[] = getCatalogTimeSeriesYears(
-  'sih.embolia_trombose.internacoes',
+  'sih.embolia_e_trombose_arteriais.internacoes',
 );
 
 /** Legacy Phase 1 label → catalog id (kept for old VariablePanel / flat-selection helpers). */
 export const MOCK_LABEL_TO_ID: Record<string, string> = {
-  'Internações por causa': 'sih.embolia_trombose.internacoes',
-  'Internações hospitalares': 'sih.embolia_trombose.internacoes',
-  'Óbitos hospitalares': 'sih.embolia_trombose.obitos',
+  'Internações por causa': 'sih.embolia_e_trombose_arteriais.internacoes',
+  'Internações hospitalares': 'sih.embolia_e_trombose_arteriais.internacoes',
+  'Óbitos hospitalares': 'sih.embolia_e_trombose_arteriais.obitos',
   'Amputações de membros inferiores': 'sih.amputacao_mmii.internacoes',
-  'Internações por embolia e trombose arteriais': 'sih.embolia_trombose.internacoes',
-  'Óbitos hospitalares por embolia e trombose arteriais': 'sih.embolia_trombose.obitos',
+  'Internações por embolia e trombose arteriais': 'sih.embolia_e_trombose_arteriais.internacoes',
+  'Óbitos hospitalares por embolia e trombose arteriais': 'sih.embolia_e_trombose_arteriais.obitos',
   'Internações por amputação de membros inferiores': 'sih.amputacao_mmii.internacoes',
 };

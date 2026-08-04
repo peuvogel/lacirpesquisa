@@ -22,7 +22,7 @@ function group(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGroup {
     name: 'Grupo 1',
     territoryIds: [baTerritory],
     time: { mode: 'point', point: '2019' },
-    variableIds: ['sih.embolia_trombose.internacoes'],
+    variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
     ...overrides,
   };
 }
@@ -58,14 +58,14 @@ describe('assembleHandoffTable', () => {
         id: 'g1',
         name: 'Grupo A',
         territoryIds: [baTerritory],
-        variableIds: ['sih.embolia_trombose.internacoes'],
+        variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
       }),
       group({
         id: 'g2',
         name: 'Grupo B',
         territoryIds: [spTerritory],
         time: { mode: 'point', point: '2019' },
-        variableIds: ['sih.embolia_trombose.obitos'],
+        variableIds: ['sih.embolia_e_trombose_arteriais.obitos'],
       }),
     ];
 

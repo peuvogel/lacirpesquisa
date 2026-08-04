@@ -41,14 +41,14 @@ function twoGroupFixture(): MapAnalysisGroup[] {
       name: 'Grupo A',
       territoryIds: [baTerritory],
       time: { mode: 'point', point: '2020' },
-      variableIds: ['sih.embolia_trombose.internacoes'],
+      variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
     },
     {
       id: 'g2',
       name: 'Grupo B',
       territoryIds: [spTerritory],
       time: { mode: 'point', point: '2021' },
-      variableIds: ['sih.embolia_trombose.internacoes'],
+      variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
     },
   ];
 }

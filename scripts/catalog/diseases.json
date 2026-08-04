@@ -1134,14 +1134,14 @@
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "avc",
+    "id": "outras_doencas_do_olho_e_anexos",
     "label": "Outras doenças do olho e anexos",
     "filterKind": "lista_morb",
     "tabnetCode": "163",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "ait",
+    "id": "otite_media_e_outr_transt_ouvido_medio_apof_mast",
     "label": "Otite média e outr transt ouvido médio apóf mast",
     "filterKind": "lista_morb",
     "tabnetCode": "164",
@@ -1197,133 +1197,133 @@
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "febre_reumatica",
+    "id": "outras_doencas_isquemicas_do_coracao",
     "label": "Outras doenças isquêmicas do coração",
     "filterKind": "lista_morb",
     "tabnetCode": "172",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "doencas_reumaticas_cronicas",
+    "id": "embolia_pulmonar",
     "label": "Embolia pulmonar",
     "filterKind": "lista_morb",
     "tabnetCode": "173",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "outras_doencas_coracao",
+    "id": "transtornos_de_conducao_e_arritmias_cardiacas",
     "label": "Transtornos de condução e arritmias cardíacas",
     "filterKind": "lista_morb",
     "tabnetCode": "174",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "hipertensao",
+    "id": "insuficiencia_cardiaca",
     "label": "Insuficiência cardíaca",
     "filterKind": "lista_morb",
     "tabnetCode": "175",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "angina_pectoris",
+    "id": "outras_doencas_do_coracao",
     "label": "Outras doenças do coração",
     "filterKind": "lista_morb",
     "tabnetCode": "176",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "infarto_agudo",
+    "id": "hemorragia_intracraniana",
     "label": "Hemorragia intracraniana",
     "filterKind": "lista_morb",
     "tabnetCode": "177",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "doencas_arterias",
+    "id": "infarto_cerebral",
     "label": "Infarto cerebral",
     "filterKind": "lista_morb",
     "tabnetCode": "178",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "aneurisma_aorta",
+    "id": "acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem",
     "label": "Acid vascular cerebr não espec hemorrág ou isquêm",
     "filterKind": "lista_morb",
     "tabnetCode": "179",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "outras_doencas_arteriais",
+    "id": "outras_doencas_cerebrovasculares",
     "label": "Outras doenças cerebrovasculares",
     "filterKind": "lista_morb",
     "tabnetCode": "180",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "aterosclerose",
+    "id": "arteroesclerose",
     "label": "Arteroesclerose",
     "filterKind": "lista_morb",
     "tabnetCode": "181",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "embolia_pulmonar",
+    "id": "outras_doencas_vasculares_perifericas",
     "label": "Outras doenças vasculares periféricas",
     "filterKind": "lista_morb",
     "tabnetCode": "182",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "embolia_trombose",
+    "id": "embolia_e_trombose_arteriais",
     "label": "Embolia e trombose arteriais",
     "filterKind": "lista_morb",
     "tabnetCode": "183",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "flebites_tromboflebites",
+    "id": "outras_doencas_das_arterias_arteriolas_e_capilares",
     "label": "Outras doenças das artérias arteríolas e capilares",
     "filterKind": "lista_morb",
     "tabnetCode": "184",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "varizes_mmii",
+    "id": "flebite_tromboflebite_embolia_e_trombose_venosa",
     "label": "Flebite tromboflebite embolia e trombose venosa",
     "filterKind": "lista_morb",
     "tabnetCode": "185",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "hemorroidas",
+    "id": "veias_varicosas_das_extremidades_inferiores",
     "label": "Veias varicosas das extremidades inferiores",
     "filterKind": "lista_morb",
     "tabnetCode": "186",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "outras_doencas_veias",
+    "id": "hemorroidas",
     "label": "Hemorróidas",
     "filterKind": "lista_morb",
     "tabnetCode": "187",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "linfedema",
+    "id": "outras_doencas_do_aparelho_circulatorio",
     "label": "Outras doenças do aparelho circulatório",
     "filterKind": "lista_morb",
     "tabnetCode": "188",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "hipotensao",
+    "id": "faringite_aguda_e_amigdalite_aguda",
     "label": "Faringite aguda e amigdalite aguda",
     "filterKind": "lista_morb",
     "tabnetCode": "189",
     "def": "sih/cnv/nibr.def"
   },
   {
-    "id": "outras_doencas_vasculares",
+    "id": "laringite_e_traqueite_agudas",
     "label": "Laringite e traqueíte agudas",
     "filterKind": "lista_morb",
     "tabnetCode": "190",
@@ -2300,6 +2300,13 @@
     "label": "Agressões",
     "filterKind": "lista_morb",
     "tabnetCode": "329",
+    "def": "sih/cnv/nibr.def"
+  },
+  {
+    "id": "todas_as_outras_causas_externas",
+    "label": "Todas as outras causas externas",
+    "filterKind": "lista_morb",
+    "tabnetCode": "330",
     "def": "sih/cnv/nibr.def"
   },
   {

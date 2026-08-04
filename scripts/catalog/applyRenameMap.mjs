@@ -416,25 +416,71 @@ function runDryRun() {
   process.exit(0);
 }
 
+/** Repo-relative path to the packs dir, for `git mv` arguments — `git mv` string-compares
+ * its arguments against `git rev-parse --show-toplevel`, which on macOS/APFS can be a
+ * different Unicode normalization form (NFD) than the NFC absolute path Node computes
+ * from `import.meta.url` when ROOT contains accented characters (e.g. "Bioestatística").
+ * Relative paths run with `cwd: ROOT` sidestep that string-normalization mismatch
+ * entirely — `fs.*` calls stay on absolute paths since they resolve via the OS, which is
+ * normalization-insensitive, not string-comparison-based like git's arg parsing. */
+const PACKS_DIR_REL = path.relative(ROOT, PACKS_DIR);
+
 /** Two-pass file rename via a temp suffix, so pack renames never collide even if a
  * canonical target happens to equal another pack's current (not-yet-renamed) name. */
 function applyPacksPlan(packsPlan) {
   const tmpSuffix = '.applyRenameMap.tmp';
   for (const p of packsPlan) {
-    execFileSync('git', ['mv', path.join(PACKS_DIR, p.fromFile), path.join(PACKS_DIR, p.toFile + tmpSuffix)], { cwd: ROOT });
+    execFileSync(
+      'git',
+      ['mv', path.join(PACKS_DIR_REL, p.fromFile), path.join(PACKS_DIR_REL, p.toFile + tmpSuffix)],
+      { cwd: ROOT },
+    );
   }
   for (const p of packsPlan) {
+    const finalRel = path.join(PACKS_DIR_REL, p.toFile);
+    execFileSync('git', ['mv', finalRel + tmpSuffix, finalRel], { cwd: ROOT });
     const finalPath = path.join(PACKS_DIR, p.toFile);
-    execFileSync('git', ['mv', finalPath + tmpSuffix, finalPath], { cwd: ROOT });
     const pack = JSON.parse(fs.readFileSync(finalPath, 'utf8'));
     pack.packId = `sih.${p.canonical}_uf`;
     fs.writeFileSync(finalPath, `${JSON.stringify(pack)}\n`);
   }
 }
 
+/** Write every artifact described by `plans` to disk — the actual mutation step of
+ * `--apply` (D-24, 08-06). Packs via `applyPacksPlan` (git mv, preserves history);
+ * manifest/variables/columnMap as fresh `JSON.stringify(x, null, 2) + '\n'` (house
+ * style, matches every other script-written data file in this pipeline); code-source
+ * files with their pre-computed `newText`. Order: packs first (so a later step reading
+ * PACK_SOURCES/`readdirSync(PACK_DIR)` sees the renamed files), then data, then code. */
+function writePlans(plans) {
+  applyPacksPlan(plans.packsPlan);
+  fs.writeFileSync(MANIFEST_PATH, `${JSON.stringify(plans.manifestPlan.newManifest, null, 2)}\n`);
+  fs.writeFileSync(VARIABLES_PATH, `${JSON.stringify(plans.variablesPlan.newVariables, null, 2)}\n`);
+  fs.writeFileSync(COLUMN_MAP_PATH, `${JSON.stringify(plans.columnMapPlan.newColumnMap, null, 2)}\n`);
+  for (const change of plans.codeSourcePlan) {
+    fs.writeFileSync(path.join(ROOT, change.file), change.newText);
+  }
+}
+
 function runApply() {
-  console.error('applyRenameMap --apply: nao executar nesta plan (08-04) — a aplicacao acontece em 08-06 (D-24)');
-  process.exit(1);
+  const plans = buildPlans();
+  const leftovers = computeLeftovers(plans);
+  if (leftovers.length > 0) {
+    console.error('applyRenameMap --apply ABORTADO — sobrou tombstone apos simulacao (rode --dry-run para detalhes)');
+    for (const l of leftovers.slice(0, 25)) {
+      console.error(`  ${l.file}: id="${l.id}" forma=${l.form} offset=${l.offset}`);
+    }
+    process.exit(1);
+  }
+
+  writePlans(plans);
+
+  console.log(
+    `applyRenameMap --apply OK — ${plans.packsPlan.length} packs, ${plans.manifestPlan.changes.length} manifest packIds, ` +
+      `${plans.variablesPlan.changes.length} variables.json entries, ${plans.columnMapPlan.moves.length} columnMap chaves, ` +
+      `${plans.codeSourcePlan.length} arquivos de codigo-fonte`,
+  );
+  process.exit(0);
 }
 
 function runCheck() {
@@ -449,6 +495,10 @@ function runCheck() {
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
     for (const h of findTombstoneHits(text)) {
+      // Ids that are simultaneously a tombstone and the canonical target of a
+      // different rename (the two verified cycles) legitimately reappear post-apply —
+      // same CYCLE_OLD_IDS exclusion computeLeftovers() applies during --dry-run.
+      if (CYCLE_OLD_IDS.has(h.id)) continue;
       leftovers.push({ file: path.relative(ROOT, file), ...h });
     }
   }
@@ -488,4 +538,5 @@ export {
   planCodeSource,
   renameCodeSourceText,
   applyPacksPlan,
+  SCOPE_EXCLUDE_RELATIVE_PATHS,
 };

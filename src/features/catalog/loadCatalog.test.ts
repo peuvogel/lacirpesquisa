@@ -78,8 +78,8 @@ describe('loadCatalog', () => {
   });
 
   it('getCatalogPack returns a known pack by id', async () => {
-    const pack = await getCatalogPack('sih.embolia_trombose_uf');
-    expect(pack.packId).toBe('sih.embolia_trombose_uf');
+    const pack = await getCatalogPack('sih.embolia_e_trombose_arteriais_uf');
+    expect(pack.packId).toBe('sih.embolia_e_trombose_arteriais_uf');
     expect(pack.rows.length).toBe(351);
   });
 });

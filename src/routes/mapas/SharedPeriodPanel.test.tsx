@@ -21,7 +21,7 @@ describe('SharedPeriodPanel', () => {
     });
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
     const dispatch = vi.fn();
 
@@ -56,7 +56,7 @@ describe('SharedPeriodPanel', () => {
     });
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
     state = mapAnalysisReducer(state, { type: 'SET_PERIOD_SCOPE', scope: 'per-group' });
     const dispatch = vi.fn();

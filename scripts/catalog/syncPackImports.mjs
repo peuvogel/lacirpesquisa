@@ -26,7 +26,7 @@ const packs = fs
   .map((f) => f.replace(/\.json$/, ''))
   .sort((a, b) => {
     const rank = (id) =>
-      id === 'sih.embolia_trombose_uf' ? 0 : id === 'sih.amputacao_mmii_uf' ? 1 : 2;
+      id === 'sih.embolia_e_trombose_arteriais_uf' ? 0 : id === 'sih.amputacao_mmii_uf' ? 1 : 2;
     return rank(a) - rank(b) || a.localeCompare(b);
   });
 
@@ -73,8 +73,8 @@ export interface CatalogAnalysisVariable {
 /** Stable Phase 4 mock IDs → pack-backed catalog IDs where semantics match (D-18). */
 export const VARIABLE_ID_ALIASES: Readonly<Record<string, string>> = {
   'mock.amputacoes': 'sih.amputacao_mmii.internacoes',
-  'mock.internacoes': 'sih.embolia_trombose.internacoes',
-  'mock.obitos': 'sih.embolia_trombose.obitos',
+  'mock.internacoes': 'sih.embolia_e_trombose_arteriais.internacoes',
+  'mock.obitos': 'sih.embolia_e_trombose_arteriais.obitos',
   // mock.taxa_mortalidade intentionally NOT aliased (infantil ≠ hospital SIH rates)
 };
 

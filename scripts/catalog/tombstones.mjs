@@ -27,6 +27,27 @@ export const CANONICAL_BY_OLD = Object.fromEntries(
  * than the canonical id (e.g. the rename engine, error messages). */
 export const RENAME_BY_OLD = Object.fromEntries(renameMap.renames.map((r) => [r.old, r]));
 
+/** Ids that are simultaneously a tombstone (someone else's `old`) and the legitimate
+ * `canonical` id of a *different* rename record — the two verified cycles (D-06):
+ * `hemorroidas` (old of tabnetCode 186, canonical of tabnetCode 187) and
+ * `embolia_pulmonar` (old of tabnetCode 182, canonical of tabnetCode 173). Their correct
+ * reappearance in the canonical taxonomy is not a leftover: a trusted caller iterating
+ * `diseases.json` (which by construction only contains ids that passed invariante A —
+ * `slugify(label, tabnetCode) === id`, never a tombstone dictionary) can skip
+ * `assertNotTombstone` for ids in this set without weakening the guard, because the only
+ * way one of these two strings can appear in the canonical taxonomy is as the real
+ * modern id of the rename that legitimately claims it — never a leftover corrupted
+ * value. `assertNotTombstone` itself keeps throwing unconditionally for these two ids
+ * (D-06's write-path guard, where the caller's id is untrusted input, e.g. a corpus
+ * directory name that could predate either rename) — this set exists for the narrower
+ * case of a *trusted* source iterating known-canonical ids, not for relaxing the guard
+ * on untrusted input. */
+export const CYCLE_CANONICAL_IDS = new Set(
+  renameMap.renames
+    .filter((r) => Object.prototype.hasOwnProperty.call(CANONICAL_BY_OLD, r.canonical))
+    .map((r) => r.canonical),
+);
+
 /**
  * @param {string} s
  * @returns {string}

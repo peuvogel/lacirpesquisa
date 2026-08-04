@@ -1,5 +1,5 @@
 {
-  "sih.embolia_trombose_uf": {
+  "sih.embolia_e_trombose_arteriais_uf": {
     "medicos_vasculares_sus": {
       "id": "cnes.medicos_vasculares_sus",
       "label": "Médicos vasculares no SUS (CNES)",
@@ -34,7 +34,7 @@
       "sourceKey": "cnes"
     },
     "internacoes_embolia_trombose_arteriais": {
-      "id": "sih.embolia_trombose.internacoes",
+      "id": "sih.embolia_e_trombose_arteriais.internacoes",
       "label": "Internações por embolia e trombose arteriais",
       "variableType": "contagem",
       "domain": "vascular",
@@ -48,7 +48,7 @@
       ]
     },
     "obitos_embolia_trombose_arteriais": {
-      "id": "sih.embolia_trombose.obitos",
+      "id": "sih.embolia_e_trombose_arteriais.obitos",
       "label": "Óbitos hospitalares por embolia e trombose arteriais",
       "variableType": "contagem",
       "domain": "vascular",
@@ -62,7 +62,7 @@
       ]
     },
     "dias_permanencia_embolia_trombose_arteriais": {
-      "id": "sih.embolia_trombose.dias_permanencia",
+      "id": "sih.embolia_e_trombose_arteriais.dias_permanencia",
       "label": "Dias de permanência — embolia e trombose arteriais",
       "variableType": "contagem",
       "domain": "vascular",
@@ -73,7 +73,7 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade_pct": {
-      "id": "sih.embolia_trombose.taxa_mortalidade",
+      "id": "sih.embolia_e_trombose_arteriais.taxa_mortalidade",
       "label": "Taxa de mortalidade hospitalar — embolia e trombose arteriais",
       "variableType": "taxa",
       "domain": "vascular",
@@ -84,7 +84,7 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "media_permanencia_calculada": {
-      "id": "sih.embolia_trombose.media_permanencia",
+      "id": "sih.embolia_e_trombose_arteriais.media_permanencia",
       "label": "Média de permanência — embolia e trombose arteriais",
       "variableType": "numerica",
       "domain": "vascular",
@@ -95,7 +95,7 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_internacao_por_100k": {
-      "id": "sih.embolia_trombose.taxa_internacao_100k",
+      "id": "sih.embolia_e_trombose_arteriais.taxa_internacao_100k",
       "label": "Taxa de internação por embolia e trombose arteriais (por 100 mil)",
       "variableType": "taxa",
       "domain": "vascular",
@@ -106,10 +106,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.embolia_trombose.custo",
-      "label": "Custo (valor total) — embolia e trombose arteriais",
+      "id": "sih.embolia_e_trombose_arteriais.custo",
+      "label": "Custo (valor total) — Embolia e trombose arteriais",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -177,12 +177,12 @@
       "sourceKey": "sih"
     }
   },
-  "sih.varizes_mmii_uf": {
+  "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf": {
     "internacoes": {
-      "id": "sih.varizes_mmii.internacoes",
-      "label": "Internações — Varizes de membros inferiores",
+      "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.internacoes",
+      "label": "Internações — Flebite tromboflebite embolia e trombose venosa",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -190,10 +190,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.varizes_mmii.obitos",
-      "label": "Óbitos — Varizes de membros inferiores",
+      "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.obitos",
+      "label": "Óbitos — Flebite tromboflebite embolia e trombose venosa",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -201,10 +201,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.varizes_mmii.custo",
-      "label": "Custo (valor total) — Varizes de membros inferiores",
+      "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.custo",
+      "label": "Custo (valor total) — Flebite tromboflebite embolia e trombose venosa",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -212,10 +212,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.varizes_mmii.dias_permanencia",
-      "label": "Dias de permanência — Varizes de membros inferiores",
+      "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.dias_permanencia",
+      "label": "Dias de permanência — Flebite tromboflebite embolia e trombose venosa",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -223,10 +223,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.varizes_mmii.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Varizes de membros inferiores",
+      "id": "sih.flebite_tromboflebite_embolia_e_trombose_venosa.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Flebite tromboflebite embolia e trombose venosa",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -234,12 +234,12 @@
       "sourceKey": "sih_morbidade_local_internacao"
     }
   },
-  "sih.aneurisma_aorta_uf": {
+  "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf": {
     "internacoes": {
-      "id": "sih.aneurisma_aorta.internacoes",
-      "label": "Internações — Aneurisma da aorta",
+      "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.internacoes",
+      "label": "Internações — Acid vascular cerebr não espec hemorrág ou isquêm",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -247,10 +247,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.aneurisma_aorta.obitos",
-      "label": "Óbitos — Aneurisma da aorta",
+      "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.obitos",
+      "label": "Óbitos — Acid vascular cerebr não espec hemorrág ou isquêm",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -258,10 +258,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.aneurisma_aorta.custo",
-      "label": "Custo (valor total) — Aneurisma da aorta",
+      "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.custo",
+      "label": "Custo (valor total) — Acid vascular cerebr não espec hemorrág ou isquêm",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -269,10 +269,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.aneurisma_aorta.dias_permanencia",
-      "label": "Dias de permanência — Aneurisma da aorta",
+      "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.dias_permanencia",
+      "label": "Dias de permanência — Acid vascular cerebr não espec hemorrág ou isquêm",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -280,10 +280,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.aneurisma_aorta.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Aneurisma da aorta",
+      "id": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Acid vascular cerebr não espec hemorrág ou isquêm",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -291,12 +291,12 @@
       "sourceKey": "sih_morbidade_local_internacao"
     }
   },
-  "sih.avc_uf": {
+  "sih.outras_doencas_do_olho_e_anexos_uf": {
     "internacoes": {
-      "id": "sih.avc.internacoes",
-      "label": "Internações — AVC / acidente vascular cerebral",
+      "id": "sih.outras_doencas_do_olho_e_anexos.internacoes",
+      "label": "Internações — Outras doenças do olho e anexos",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -304,10 +304,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.avc.obitos",
-      "label": "Óbitos — AVC / acidente vascular cerebral",
+      "id": "sih.outras_doencas_do_olho_e_anexos.obitos",
+      "label": "Óbitos — Outras doenças do olho e anexos",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -315,10 +315,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.avc.custo",
-      "label": "Custo (valor total) — AVC / acidente vascular cerebral",
+      "id": "sih.outras_doencas_do_olho_e_anexos.custo",
+      "label": "Custo (valor total) — Outras doenças do olho e anexos",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -326,10 +326,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.avc.dias_permanencia",
-      "label": "Dias de permanência — AVC / acidente vascular cerebral",
+      "id": "sih.outras_doencas_do_olho_e_anexos.dias_permanencia",
+      "label": "Dias de permanência — Outras doenças do olho e anexos",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -337,10 +337,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.avc.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — AVC / acidente vascular cerebral",
+      "id": "sih.outras_doencas_do_olho_e_anexos.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Outras doenças do olho e anexos",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -348,12 +348,12 @@
       "sourceKey": "sih_morbidade_local_internacao"
     }
   },
-  "sih.ait_uf": {
+  "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf": {
     "internacoes": {
-      "id": "sih.ait.internacoes",
-      "label": "Internações — Ataque isquêmico transitório (AIT)",
+      "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.internacoes",
+      "label": "Internações — Otite média e outr transt ouvido médio apóf mast",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -361,10 +361,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.ait.obitos",
-      "label": "Óbitos — Ataque isquêmico transitório (AIT)",
+      "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.obitos",
+      "label": "Óbitos — Otite média e outr transt ouvido médio apóf mast",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -372,10 +372,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.ait.custo",
-      "label": "Custo (valor total) — Ataque isquêmico transitório (AIT)",
+      "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.custo",
+      "label": "Custo (valor total) — Otite média e outr transt ouvido médio apóf mast",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -383,10 +383,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.ait.dias_permanencia",
-      "label": "Dias de permanência — Ataque isquêmico transitório (AIT)",
+      "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.dias_permanencia",
+      "label": "Dias de permanência — Otite média e outr transt ouvido médio apóf mast",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -394,10 +394,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.ait.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Ataque isquêmico transitório (AIT)",
+      "id": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Otite média e outr transt ouvido médio apóf mast",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -405,12 +405,12 @@
       "sourceKey": "sih_morbidade_local_internacao"
     }
   },
-  "sih.doencas_arterias_uf": {
+  "sih.infarto_cerebral_uf": {
     "internacoes": {
-      "id": "sih.doencas_arterias.internacoes",
-      "label": "Internações — Doenças das artérias, arteríolas e capilares",
+      "id": "sih.infarto_cerebral.internacoes",
+      "label": "Internações — Infarto cerebral",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -418,10 +418,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.doencas_arterias.obitos",
-      "label": "Óbitos — Doenças das artérias, arteríolas e capilares",
+      "id": "sih.infarto_cerebral.obitos",
+      "label": "Óbitos — Infarto cerebral",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -429,10 +429,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.doencas_arterias.custo",
-      "label": "Custo (valor total) — Doenças das artérias, arteríolas e capilares",
+      "id": "sih.infarto_cerebral.custo",
+      "label": "Custo (valor total) — Infarto cerebral",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -440,10 +440,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.doencas_arterias.dias_permanencia",
-      "label": "Dias de permanência — Doenças das artérias, arteríolas e capilares",
+      "id": "sih.infarto_cerebral.dias_permanencia",
+      "label": "Dias de permanência — Infarto cerebral",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -451,10 +451,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.doencas_arterias.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Doenças das artérias, arteríolas e capilares",
+      "id": "sih.infarto_cerebral.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Infarto cerebral",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -462,12 +462,582 @@
       "sourceKey": "sih_morbidade_local_internacao"
     }
   },
-  "sih.outras_doencas_vasculares_uf": {
+  "sih.laringite_e_traqueite_agudas_uf": {
     "internacoes": {
-      "id": "sih.outras_doencas_vasculares.internacoes",
+      "id": "sih.laringite_e_traqueite_agudas.internacoes",
+      "label": "Internações — Laringite e traqueíte agudas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.laringite_e_traqueite_agudas.obitos",
+      "label": "Óbitos — Laringite e traqueíte agudas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.laringite_e_traqueite_agudas.custo",
+      "label": "Custo (valor total) — Laringite e traqueíte agudas",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.laringite_e_traqueite_agudas.dias_permanencia",
+      "label": "Dias de permanência — Laringite e traqueíte agudas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.laringite_e_traqueite_agudas.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Laringite e traqueíte agudas",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.outras_doencas_vasculares_perifericas_uf": {
+    "internacoes": {
+      "id": "sih.outras_doencas_vasculares_perifericas.internacoes",
+      "label": "Internações — Outras doenças vasculares periféricas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.outras_doencas_vasculares_perifericas.obitos",
+      "label": "Óbitos — Outras doenças vasculares periféricas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.outras_doencas_vasculares_perifericas.custo",
+      "label": "Custo (valor total) — Outras doenças vasculares periféricas",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.outras_doencas_vasculares_perifericas.dias_permanencia",
+      "label": "Dias de permanência — Outras doenças vasculares periféricas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.outras_doencas_vasculares_perifericas.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Outras doenças vasculares periféricas",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf": {
+    "internacoes": {
+      "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.internacoes",
+      "label": "Internações — Outras doenças das artérias arteríolas e capilares",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.obitos",
+      "label": "Óbitos — Outras doenças das artérias arteríolas e capilares",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.custo",
+      "label": "Custo (valor total) — Outras doenças das artérias arteríolas e capilares",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.dias_permanencia",
+      "label": "Dias de permanência — Outras doenças das artérias arteríolas e capilares",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.outras_doencas_das_arterias_arteriolas_e_capilares.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Outras doenças das artérias arteríolas e capilares",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.insuficiencia_cardiaca_uf": {
+    "internacoes": {
+      "id": "sih.insuficiencia_cardiaca.internacoes",
+      "label": "Internações — Insuficiência cardíaca",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.insuficiencia_cardiaca.obitos",
+      "label": "Óbitos — Insuficiência cardíaca",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.insuficiencia_cardiaca.custo",
+      "label": "Custo (valor total) — Insuficiência cardíaca",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.insuficiencia_cardiaca.dias_permanencia",
+      "label": "Dias de permanência — Insuficiência cardíaca",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.insuficiencia_cardiaca.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Insuficiência cardíaca",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.outras_doencas_do_coracao_uf": {
+    "internacoes": {
+      "id": "sih.outras_doencas_do_coracao.internacoes",
+      "label": "Internações — Outras doenças do coração",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.outras_doencas_do_coracao.obitos",
+      "label": "Óbitos — Outras doenças do coração",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.outras_doencas_do_coracao.custo",
+      "label": "Custo (valor total) — Outras doenças do coração",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.outras_doencas_do_coracao.dias_permanencia",
+      "label": "Dias de permanência — Outras doenças do coração",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.outras_doencas_do_coracao.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Outras doenças do coração",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.hemorragia_intracraniana_uf": {
+    "internacoes": {
+      "id": "sih.hemorragia_intracraniana.internacoes",
+      "label": "Internações — Hemorragia intracraniana",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.hemorragia_intracraniana.obitos",
+      "label": "Óbitos — Hemorragia intracraniana",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.hemorragia_intracraniana.custo",
+      "label": "Custo (valor total) — Hemorragia intracraniana",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.hemorragia_intracraniana.dias_permanencia",
+      "label": "Dias de permanência — Hemorragia intracraniana",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.hemorragia_intracraniana.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Hemorragia intracraniana",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.outras_doencas_cerebrovasculares_uf": {
+    "internacoes": {
+      "id": "sih.outras_doencas_cerebrovasculares.internacoes",
+      "label": "Internações — Outras doenças cerebrovasculares",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.outras_doencas_cerebrovasculares.obitos",
+      "label": "Óbitos — Outras doenças cerebrovasculares",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.outras_doencas_cerebrovasculares.custo",
+      "label": "Custo (valor total) — Outras doenças cerebrovasculares",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.outras_doencas_cerebrovasculares.dias_permanencia",
+      "label": "Dias de permanência — Outras doenças cerebrovasculares",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.outras_doencas_cerebrovasculares.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Outras doenças cerebrovasculares",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.arteroesclerose_uf": {
+    "internacoes": {
+      "id": "sih.arteroesclerose.internacoes",
+      "label": "Internações — Arteroesclerose",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.arteroesclerose.obitos",
+      "label": "Óbitos — Arteroesclerose",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.arteroesclerose.custo",
+      "label": "Custo (valor total) — Arteroesclerose",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.arteroesclerose.dias_permanencia",
+      "label": "Dias de permanência — Arteroesclerose",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.arteroesclerose.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Arteroesclerose",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.veias_varicosas_das_extremidades_inferiores_uf": {
+    "internacoes": {
+      "id": "sih.veias_varicosas_das_extremidades_inferiores.internacoes",
+      "label": "Internações — Veias varicosas das extremidades inferiores",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.veias_varicosas_das_extremidades_inferiores.obitos",
+      "label": "Óbitos — Veias varicosas das extremidades inferiores",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.veias_varicosas_das_extremidades_inferiores.custo",
+      "label": "Custo (valor total) — Veias varicosas das extremidades inferiores",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.veias_varicosas_das_extremidades_inferiores.dias_permanencia",
+      "label": "Dias de permanência — Veias varicosas das extremidades inferiores",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.veias_varicosas_das_extremidades_inferiores.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Veias varicosas das extremidades inferiores",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.hemorroidas_uf": {
+    "internacoes": {
+      "id": "sih.hemorroidas.internacoes",
+      "label": "Internações — Hemorróidas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.hemorroidas.obitos",
+      "label": "Óbitos — Hemorróidas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.hemorroidas.custo",
+      "label": "Custo (valor total) — Hemorróidas",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.hemorroidas.dias_permanencia",
+      "label": "Dias de permanência — Hemorróidas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.hemorroidas.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Hemorróidas",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.outras_doencas_do_aparelho_circulatorio_uf": {
+    "internacoes": {
+      "id": "sih.outras_doencas_do_aparelho_circulatorio.internacoes",
       "label": "Internações — Outras doenças do aparelho circulatório",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -475,10 +1045,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.outras_doencas_vasculares.obitos",
+      "id": "sih.outras_doencas_do_aparelho_circulatorio.obitos",
       "label": "Óbitos — Outras doenças do aparelho circulatório",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -486,10 +1056,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.outras_doencas_vasculares.custo",
+      "id": "sih.outras_doencas_do_aparelho_circulatorio.custo",
       "label": "Custo (valor total) — Outras doenças do aparelho circulatório",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -497,10 +1067,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.outras_doencas_vasculares.dias_permanencia",
+      "id": "sih.outras_doencas_do_aparelho_circulatorio.dias_permanencia",
       "label": "Dias de permanência — Outras doenças do aparelho circulatório",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -508,10 +1078,124 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.outras_doencas_vasculares.taxa_mortalidade",
+      "id": "sih.outras_doencas_do_aparelho_circulatorio.taxa_mortalidade",
       "label": "Taxa de mortalidade hospitalar — Outras doenças do aparelho circulatório",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.faringite_aguda_e_amigdalite_aguda_uf": {
+    "internacoes": {
+      "id": "sih.faringite_aguda_e_amigdalite_aguda.internacoes",
+      "label": "Internações — Faringite aguda e amigdalite aguda",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.faringite_aguda_e_amigdalite_aguda.obitos",
+      "label": "Óbitos — Faringite aguda e amigdalite aguda",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.faringite_aguda_e_amigdalite_aguda.custo",
+      "label": "Custo (valor total) — Faringite aguda e amigdalite aguda",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.faringite_aguda_e_amigdalite_aguda.dias_permanencia",
+      "label": "Dias de permanência — Faringite aguda e amigdalite aguda",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.faringite_aguda_e_amigdalite_aguda.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Faringite aguda e amigdalite aguda",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.outras_doencas_isquemicas_do_coracao_uf": {
+    "internacoes": {
+      "id": "sih.outras_doencas_isquemicas_do_coracao.internacoes",
+      "label": "Internações — Outras doenças isquêmicas do coração",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.outras_doencas_isquemicas_do_coracao.obitos",
+      "label": "Óbitos — Outras doenças isquêmicas do coração",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.outras_doencas_isquemicas_do_coracao.custo",
+      "label": "Custo (valor total) — Outras doenças isquêmicas do coração",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.outras_doencas_isquemicas_do_coracao.dias_permanencia",
+      "label": "Dias de permanência — Outras doenças isquêmicas do coração",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.outras_doencas_isquemicas_do_coracao.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Outras doenças isquêmicas do coração",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -524,7 +1208,7 @@
       "id": "sih.embolia_pulmonar.internacoes",
       "label": "Internações — Embolia pulmonar",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -535,7 +1219,7 @@
       "id": "sih.embolia_pulmonar.obitos",
       "label": "Óbitos — Embolia pulmonar",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -546,7 +1230,7 @@
       "id": "sih.embolia_pulmonar.custo",
       "label": "Custo (valor total) — Embolia pulmonar",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -557,7 +1241,7 @@
       "id": "sih.embolia_pulmonar.dias_permanencia",
       "label": "Dias de permanência — Embolia pulmonar",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -568,7 +1252,7 @@
       "id": "sih.embolia_pulmonar.taxa_mortalidade",
       "label": "Taxa de mortalidade hospitalar — Embolia pulmonar",
       "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -576,12 +1260,12 @@
       "sourceKey": "sih_morbidade_local_internacao"
     }
   },
-  "sih.flebites_tromboflebites_uf": {
+  "sih.transtornos_de_conducao_e_arritmias_cardiacas_uf": {
     "internacoes": {
-      "id": "sih.flebites_tromboflebites.internacoes",
-      "label": "Internações — Flebite e tromboflebite",
+      "id": "sih.transtornos_de_conducao_e_arritmias_cardiacas.internacoes",
+      "label": "Internações — Transtornos de condução e arritmias cardíacas",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -589,10 +1273,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "obitos": {
-      "id": "sih.flebites_tromboflebites.obitos",
-      "label": "Óbitos — Flebite e tromboflebite",
+      "id": "sih.transtornos_de_conducao_e_arritmias_cardiacas.obitos",
+      "label": "Óbitos — Transtornos de condução e arritmias cardíacas",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "n",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -600,10 +1284,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "valor_total": {
-      "id": "sih.flebites_tromboflebites.custo",
-      "label": "Custo (valor total) — Flebite e tromboflebite",
+      "id": "sih.transtornos_de_conducao_e_arritmias_cardiacas.custo",
+      "label": "Custo (valor total) — Transtornos de condução e arritmias cardíacas",
       "variableType": "numerica",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "R$",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -611,10 +1295,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "dias_permanencia": {
-      "id": "sih.flebites_tromboflebites.dias_permanencia",
-      "label": "Dias de permanência — Flebite e tromboflebite",
+      "id": "sih.transtornos_de_conducao_e_arritmias_cardiacas.dias_permanencia",
+      "label": "Dias de permanência — Transtornos de condução e arritmias cardíacas",
       "variableType": "contagem",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "dias",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -622,694 +1306,10 @@
       "sourceKey": "sih_morbidade_local_internacao"
     },
     "taxa_mortalidade": {
-      "id": "sih.flebites_tromboflebites.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Flebite e tromboflebite",
+      "id": "sih.transtornos_de_conducao_e_arritmias_cardiacas.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Transtornos de condução e arritmias cardíacas",
       "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.hipertensao_uf": {
-    "internacoes": {
-      "id": "sih.hipertensao.internacoes",
-      "label": "Internações — Doenças hipertensivas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.hipertensao.obitos",
-      "label": "Óbitos — Doenças hipertensivas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.hipertensao.custo",
-      "label": "Custo (valor total) — Doenças hipertensivas",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.hipertensao.dias_permanencia",
-      "label": "Dias de permanência — Doenças hipertensivas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.hipertensao.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Doenças hipertensivas",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.angina_pectoris_uf": {
-    "internacoes": {
-      "id": "sih.angina_pectoris.internacoes",
-      "label": "Internações — Angina pectoris",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.angina_pectoris.obitos",
-      "label": "Óbitos — Angina pectoris",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.angina_pectoris.custo",
-      "label": "Custo (valor total) — Angina pectoris",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.angina_pectoris.dias_permanencia",
-      "label": "Dias de permanência — Angina pectoris",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.angina_pectoris.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Angina pectoris",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.infarto_agudo_uf": {
-    "internacoes": {
-      "id": "sih.infarto_agudo.internacoes",
-      "label": "Internações — Infarto agudo do miocárdio",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.infarto_agudo.obitos",
-      "label": "Óbitos — Infarto agudo do miocárdio",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.infarto_agudo.custo",
-      "label": "Custo (valor total) — Infarto agudo do miocárdio",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.infarto_agudo.dias_permanencia",
-      "label": "Dias de permanência — Infarto agudo do miocárdio",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.infarto_agudo.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Infarto agudo do miocárdio",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.outras_doencas_arteriais_uf": {
-    "internacoes": {
-      "id": "sih.outras_doencas_arteriais.internacoes",
-      "label": "Internações — Outras doenças das artérias e arteríolas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.outras_doencas_arteriais.obitos",
-      "label": "Óbitos — Outras doenças das artérias e arteríolas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.outras_doencas_arteriais.custo",
-      "label": "Custo (valor total) — Outras doenças das artérias e arteríolas",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.outras_doencas_arteriais.dias_permanencia",
-      "label": "Dias de permanência — Outras doenças das artérias e arteríolas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.outras_doencas_arteriais.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Outras doenças das artérias e arteríolas",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.aterosclerose_uf": {
-    "internacoes": {
-      "id": "sih.aterosclerose.internacoes",
-      "label": "Internações — Aterosclerose",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.aterosclerose.obitos",
-      "label": "Óbitos — Aterosclerose",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.aterosclerose.custo",
-      "label": "Custo (valor total) — Aterosclerose",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.aterosclerose.dias_permanencia",
-      "label": "Dias de permanência — Aterosclerose",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.aterosclerose.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Aterosclerose",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.hemorroidas_uf": {
-    "internacoes": {
-      "id": "sih.hemorroidas.internacoes",
-      "label": "Internações — Hemorroidas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.hemorroidas.obitos",
-      "label": "Óbitos — Hemorroidas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.hemorroidas.custo",
-      "label": "Custo (valor total) — Hemorroidas",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.hemorroidas.dias_permanencia",
-      "label": "Dias de permanência — Hemorroidas",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.hemorroidas.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Hemorroidas",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.outras_doencas_veias_uf": {
-    "internacoes": {
-      "id": "sih.outras_doencas_veias.internacoes",
-      "label": "Internações — Outras doenças das veias",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.outras_doencas_veias.obitos",
-      "label": "Óbitos — Outras doenças das veias",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.outras_doencas_veias.custo",
-      "label": "Custo (valor total) — Outras doenças das veias",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.outras_doencas_veias.dias_permanencia",
-      "label": "Dias de permanência — Outras doenças das veias",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.outras_doencas_veias.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Outras doenças das veias",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.linfedema_uf": {
-    "internacoes": {
-      "id": "sih.linfedema.internacoes",
-      "label": "Internações — Linfadenite / doenças dos vasos linfáticos",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.linfedema.obitos",
-      "label": "Óbitos — Linfadenite / doenças dos vasos linfáticos",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.linfedema.custo",
-      "label": "Custo (valor total) — Linfadenite / doenças dos vasos linfáticos",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.linfedema.dias_permanencia",
-      "label": "Dias de permanência — Linfadenite / doenças dos vasos linfáticos",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.linfedema.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Linfadenite / doenças dos vasos linfáticos",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.hipotensao_uf": {
-    "internacoes": {
-      "id": "sih.hipotensao.internacoes",
-      "label": "Internações — Hipotensão",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.hipotensao.obitos",
-      "label": "Óbitos — Hipotensão",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.hipotensao.custo",
-      "label": "Custo (valor total) — Hipotensão",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.hipotensao.dias_permanencia",
-      "label": "Dias de permanência — Hipotensão",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.hipotensao.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Hipotensão",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.febre_reumatica_uf": {
-    "internacoes": {
-      "id": "sih.febre_reumatica.internacoes",
-      "label": "Internações — Febre reumática aguda",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.febre_reumatica.obitos",
-      "label": "Óbitos — Febre reumática aguda",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.febre_reumatica.custo",
-      "label": "Custo (valor total) — Febre reumática aguda",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.febre_reumatica.dias_permanencia",
-      "label": "Dias de permanência — Febre reumática aguda",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.febre_reumatica.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Febre reumática aguda",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.doencas_reumaticas_cronicas_uf": {
-    "internacoes": {
-      "id": "sih.doencas_reumaticas_cronicas.internacoes",
-      "label": "Internações — Doenças reumáticas crônicas do coração",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.doencas_reumaticas_cronicas.obitos",
-      "label": "Óbitos — Doenças reumáticas crônicas do coração",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.doencas_reumaticas_cronicas.custo",
-      "label": "Custo (valor total) — Doenças reumáticas crônicas do coração",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.doencas_reumaticas_cronicas.dias_permanencia",
-      "label": "Dias de permanência — Doenças reumáticas crônicas do coração",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.doencas_reumaticas_cronicas.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Doenças reumáticas crônicas do coração",
-      "variableType": "taxa",
-      "domain": "vascular",
-      "unit": "%",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    }
-  },
-  "sih.outras_doencas_coracao_uf": {
-    "internacoes": {
-      "id": "sih.outras_doencas_coracao.internacoes",
-      "label": "Internações — Outras formas de doença do coração",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "obitos": {
-      "id": "sih.outras_doencas_coracao.obitos",
-      "label": "Óbitos — Outras formas de doença do coração",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "n",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "valor_total": {
-      "id": "sih.outras_doencas_coracao.custo",
-      "label": "Custo (valor total) — Outras formas de doença do coração",
-      "variableType": "numerica",
-      "domain": "vascular",
-      "unit": "R$",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "dias_permanencia": {
-      "id": "sih.outras_doencas_coracao.dias_permanencia",
-      "label": "Dias de permanência — Outras formas de doença do coração",
-      "variableType": "contagem",
-      "domain": "vascular",
-      "unit": "dias",
-      "sourceSystem": "SIH/SUS",
-      "sourceName": "Morbidade hospitalar — local de internação",
-      "tableOrIndicator": "sih/cnv/nibr.def",
-      "sourceKey": "sih_morbidade_local_internacao"
-    },
-    "taxa_mortalidade": {
-      "id": "sih.outras_doencas_coracao.taxa_mortalidade",
-      "label": "Taxa de mortalidade hospitalar — Outras formas de doença do coração",
-      "variableType": "taxa",
-      "domain": "vascular",
+      "domain": "sih_lista_morb",
       "unit": "%",
       "sourceSystem": "SIH/SUS",
       "sourceName": "Morbidade hospitalar — local de internação",
@@ -18864,6 +18864,63 @@
     "taxa_mortalidade": {
       "id": "sih.agressoes.taxa_mortalidade",
       "label": "Taxa de mortalidade hospitalar — Agressões",
+      "variableType": "taxa",
+      "domain": "sih_lista_morb",
+      "unit": "%",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    }
+  },
+  "sih.todas_as_outras_causas_externas_uf": {
+    "internacoes": {
+      "id": "sih.todas_as_outras_causas_externas.internacoes",
+      "label": "Internações — Todas as outras causas externas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "obitos": {
+      "id": "sih.todas_as_outras_causas_externas.obitos",
+      "label": "Óbitos — Todas as outras causas externas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "n",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "valor_total": {
+      "id": "sih.todas_as_outras_causas_externas.custo",
+      "label": "Custo (valor total) — Todas as outras causas externas",
+      "variableType": "numerica",
+      "domain": "sih_lista_morb",
+      "unit": "R$",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "dias_permanencia": {
+      "id": "sih.todas_as_outras_causas_externas.dias_permanencia",
+      "label": "Dias de permanência — Todas as outras causas externas",
+      "variableType": "contagem",
+      "domain": "sih_lista_morb",
+      "unit": "dias",
+      "sourceSystem": "SIH/SUS",
+      "sourceName": "Morbidade hospitalar — local de internação",
+      "tableOrIndicator": "sih/cnv/nibr.def",
+      "sourceKey": "sih_morbidade_local_internacao"
+    },
+    "taxa_mortalidade": {
+      "id": "sih.todas_as_outras_causas_externas.taxa_mortalidade",
+      "label": "Taxa de mortalidade hospitalar — Todas as outras causas externas",
       "variableType": "taxa",
       "domain": "sih_lista_morb",
       "unit": "%",

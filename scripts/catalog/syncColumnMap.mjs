@@ -51,7 +51,7 @@ function standardColumns(diseaseId, label) {
 
 let added = 0;
 for (const disease of diseases) {
-  if (disease.id === 'embolia_trombose' || disease.id === 'amputacao_mmii') continue;
+  if (disease.id === 'embolia_e_trombose_arteriais' || disease.id === 'amputacao_mmii') continue;
   const packId = `sih.${disease.id}_uf`;
   if (!columnMap[packId]) {
     columnMap[packId] = standardColumns(disease.id, disease.label);

@@ -4,7 +4,7 @@ import type { CatalogEntry } from './types';
 
 function entry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
   return {
-    id: 'sih.embolia_trombose.internacoes',
+    id: 'sih.embolia_e_trombose_arteriais.internacoes',
     label: 'Internações por embolia e trombose arteriais',
     variableType: 'contagem',
     domain: 'vascular',
@@ -15,7 +15,7 @@ function entry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
     officialUrl: 'https://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def',
     methodologyNotes: 'Agregação UF×ano.',
     loadable: true,
-    packId: 'sih.embolia_trombose_uf',
+    packId: 'sih.embolia_e_trombose_arteriais_uf',
     columnKey: 'internacoes_embolia_trombose_arteriais',
     ...overrides,
   };
@@ -52,7 +52,7 @@ const FIXTURES: CatalogEntry[] = [
     columnKey: undefined,
   }),
   entry({
-    id: 'sih.embolia_trombose.taxa_mortalidade',
+    id: 'sih.embolia_e_trombose_arteriais.taxa_mortalidade',
     label: 'Taxa de mortalidade hospitalar — embolia',
     variableType: 'taxa',
     domain: 'vascular',
@@ -71,9 +71,9 @@ describe('filterCatalog', () => {
     expect(filterCatalog(FIXTURES, { query: 'CNES' }).map((e) => e.id)).toEqual([
       'cnes.medicos_vasculares_sus',
     ]);
-    expect(filterCatalog(FIXTURES, { query: 'embolia_trombose.internacoes' }).map((e) => e.id)).toEqual([
-      'sih.embolia_trombose.internacoes',
-    ]);
+    expect(
+      filterCatalog(FIXTURES, { query: 'embolia_e_trombose_arteriais.internacoes' }).map((e) => e.id),
+    ).toEqual(['sih.embolia_e_trombose_arteriais.internacoes']);
     expect(filterCatalog(FIXTURES, { query: 'sidra' }).map((e) => e.id)).toEqual([
       'sidra.populacao_residente',
     ]);
@@ -85,7 +85,7 @@ describe('filterCatalog', () => {
   it('filters by sourceSystem, variableType, domain and loadable', () => {
     expect(filterCatalog(FIXTURES, { sourceSystem: 'CNES' })).toHaveLength(1);
     expect(filterCatalog(FIXTURES, { variableType: 'taxa' }).map((e) => e.id)).toEqual([
-      'sih.embolia_trombose.taxa_mortalidade',
+      'sih.embolia_e_trombose_arteriais.taxa_mortalidade',
     ]);
     expect(filterCatalog(FIXTURES, { domain: 'rh_sus' })).toHaveLength(1);
     expect(filterCatalog(FIXTURES, { loadable: false }).map((e) => e.id)).toEqual([
@@ -100,6 +100,6 @@ describe('filterCatalog', () => {
       variableType: 'contagem',
       loadable: true,
     });
-    expect(result.map((e) => e.id)).toEqual(['sih.embolia_trombose.internacoes']);
+    expect(result.map((e) => e.id)).toEqual(['sih.embolia_e_trombose_arteriais.internacoes']);
   });
 });

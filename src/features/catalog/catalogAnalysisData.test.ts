@@ -29,8 +29,8 @@ describe('catalogAnalysisData', () => {
   });
 
   it('aliases mock.internacoes and mock.obitos to embolia pack columns', () => {
-    expect(resolveVariableId('mock.internacoes')).toBe('sih.embolia_trombose.internacoes');
-    expect(resolveVariableId('mock.obitos')).toBe('sih.embolia_trombose.obitos');
+    expect(resolveVariableId('mock.internacoes')).toBe('sih.embolia_e_trombose_arteriais.internacoes');
+    expect(resolveVariableId('mock.obitos')).toBe('sih.embolia_e_trombose_arteriais.obitos');
   });
 
   it('does not alias mock.taxa_mortalidade (infantil) to hospital rates', () => {
@@ -41,11 +41,11 @@ describe('catalogAnalysisData', () => {
 
   it('getMetricByUfAndYear(embolia internações, 2019) for SP matches pack CSV (not mock weights)', () => {
     const expected = packSpValue(
-      'sih.embolia_trombose_uf',
+      'sih.embolia_e_trombose_arteriais_uf',
       2019,
       'internacoes_embolia_trombose_arteriais',
     );
-    const byUf = getMetricByUfAndYear('sih.embolia_trombose.internacoes', 2019);
+    const byUf = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2019);
     expect(byUf.SP).toBe(expected);
     expect(byUf.SP).toBe(5660);
     // Old didactic UF_WEIGHT formula for mock.internacoes SP ≈ 898000
@@ -54,24 +54,24 @@ describe('catalogAnalysisData', () => {
 
   it('alias mock.internacoes resolves to the same pack value as catalog id', () => {
     const viaAlias = getMetricByUfAndYear('mock.internacoes', 2019);
-    const viaCatalog = getMetricByUfAndYear('sih.embolia_trombose.internacoes', 2019);
+    const viaCatalog = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2019);
     expect(viaAlias.SP).toBe(viaCatalog.SP);
     expect(viaAlias.SP).toBe(5660);
   });
 
   it('getCatalogTimeSeriesYears for rate/density vars excludes nullYears (e.g. 2023)', () => {
-    const years = getCatalogTimeSeriesYears('sih.embolia_trombose.taxa_internacao_100k');
+    const years = getCatalogTimeSeriesYears('sih.embolia_e_trombose_arteriais.taxa_internacao_100k');
     expect(years).not.toContain(2023);
     expect(years.length).toBeGreaterThan(0);
     expect(years).toEqual([...years].sort((a, b) => a - b));
   });
 
   it('getCatalogTimeSeriesYears works for multi-disease packs (numeric cells)', () => {
-    const years = getCatalogTimeSeriesYears('sih.avc.internacoes');
+    const years = getCatalogTimeSeriesYears('sih.outras_doencas_do_olho_e_anexos.internacoes');
     expect(years.length).toBeGreaterThanOrEqual(10);
     expect(years[0]).toBeLessThanOrEqual(2013);
     expect(years[years.length - 1]!).toBeGreaterThanOrEqual(2020);
-    const byUf = getMetricByUfAndYear('sih.avc.internacoes', years[0]!);
+    const byUf = getMetricByUfAndYear('sih.outras_doencas_do_olho_e_anexos.internacoes', years[0]!);
     expect(Object.keys(byUf).length).toBeGreaterThan(0);
   });
 
@@ -90,17 +90,17 @@ describe('catalogAnalysisData', () => {
   });
 
   it('getMetricByUf defaults to latest non-null year for the variable', () => {
-    const years = getCatalogTimeSeriesYears('sih.embolia_trombose.internacoes');
+    const years = getCatalogTimeSeriesYears('sih.embolia_e_trombose_arteriais.internacoes');
     const latest = years[years.length - 1]!;
-    const defaulted = getMetricByUf('sih.embolia_trombose.internacoes');
-    const explicit = getMetricByUfAndYear('sih.embolia_trombose.internacoes', latest);
+    const defaulted = getMetricByUf('sih.embolia_e_trombose_arteriais.internacoes');
+    const explicit = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', latest);
     expect(defaulted.SP).toBe(explicit.SP);
     expect(Number.isFinite(defaulted.SP)).toBe(true);
   });
 
   it('omits null UF cells instead of coercing to 0', () => {
     // 2022 is a nullYear for embolia internações — metrics should be empty / omit UFs
-    const byUf = getMetricByUfAndYear('sih.embolia_trombose.internacoes', 2022);
+    const byUf = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2022);
     for (const value of Object.values(byUf)) {
       expect(value).not.toBe(0);
       expect(Number.isFinite(value)).toBe(true);
@@ -112,6 +112,6 @@ describe('catalogAnalysisData', () => {
     const entry = getCatalogVariableById(id);
     expect(entry?.loadable).toBe(true);
     expect(entry?.variableType).toBe('contagem');
-    expect(id).toMatch(/sih\.(amputacao_mmii|embolia_trombose)\./);
+    expect(id).toMatch(/sih\.(amputacao_mmii|embolia_e_trombose_arteriais)\./);
   });
 });

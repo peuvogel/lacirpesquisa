@@ -6,11 +6,11 @@ import { ChoroplethLegend } from './ChoroplethLegend';
 
 describe('ChoroplethLegend', () => {
   it('renders title and variable subtitle from catalog metrics', () => {
-    const values = Object.values(getMetricByUf('sih.embolia_trombose.internacoes'));
+    const values = Object.values(getMetricByUf('sih.embolia_e_trombose_arteriais.internacoes'));
     render(
       <ChoroplethLegend
         values={values}
-        activeVariableId="sih.embolia_trombose.internacoes"
+        activeVariableId="sih.embolia_e_trombose_arteriais.internacoes"
         variableLabel="Internações por embolia e trombose arteriais"
       />,
     );
@@ -21,11 +21,11 @@ describe('ChoroplethLegend', () => {
   });
 
   it('renders at least three legend ticks with Baixo and Alto labels', () => {
-    const values = Object.values(getMetricByUf('sih.embolia_trombose.internacoes'));
+    const values = Object.values(getMetricByUf('sih.embolia_e_trombose_arteriais.internacoes'));
     render(
       <ChoroplethLegend
         values={values}
-        activeVariableId="sih.embolia_trombose.internacoes"
+        activeVariableId="sih.embolia_e_trombose_arteriais.internacoes"
       />,
     );
 
@@ -37,7 +37,7 @@ describe('ChoroplethLegend', () => {
   it('uses teal scale colors from UI-SPEC, never purple', () => {
     const values = [10, 30, 50, 70, 90];
     const { container } = render(
-      <ChoroplethLegend values={values} activeVariableId="sih.embolia_trombose.obitos" />,
+      <ChoroplethLegend values={values} activeVariableId="sih.embolia_e_trombose_arteriais.obitos" />,
     );
 
     const swatches = container.querySelectorAll('[data-legend-swatch]');

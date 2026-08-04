@@ -49,7 +49,7 @@ describe('SelectionSummaryStrip', () => {
           name: 'Grupo 1',
           territoryIds: [baTerritory, peTerritory],
           time: { mode: 'range', start: '2018', end: '2022' },
-          variableIds: ['sih.embolia_trombose.internacoes', 'sih.embolia_trombose.obitos'],
+          variableIds: ['sih.embolia_e_trombose_arteriais.internacoes', 'sih.embolia_e_trombose_arteriais.obitos'],
         },
         {
           id: 'g2',
@@ -63,7 +63,7 @@ describe('SelectionSummaryStrip', () => {
             },
           ],
           time: { mode: 'point', point: '2020' },
-          variableIds: ['sih.embolia_trombose.internacoes'],
+          variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
         },
       ],
     };
@@ -86,7 +86,7 @@ describe('SelectionSummaryStrip', () => {
           name: 'Grupo 1',
           territoryIds: [baTerritory],
           time: { mode: 'range', start: '2018', end: '2022' },
-          variableIds: ['sih.embolia_trombose.internacoes'],
+          variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
         },
       ],
     };

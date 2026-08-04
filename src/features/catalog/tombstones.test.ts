@@ -11,20 +11,7 @@ import {
 import { renderSeedChunks } from '../../../scripts/catalog/generateDiseaseSeeds.mjs';
 import { generateFromSnapshot } from '../../../scripts/catalog/sync-lista-morb.mjs';
 
-const FIXTURE_PATH = resolve(process.cwd(), 'src/test/fixtures/taxonomy/diseases.pre-migracao.json');
 const SQL_DIR = resolve(process.cwd(), 'scripts/catalog/sql');
-
-interface DiseaseRecord {
-  id: string;
-  label: string;
-  filterKind: string;
-  tabnetCode: string;
-  def: string;
-}
-
-function loadFixture(): DiseaseRecord[] {
-  return JSON.parse(readFileSync(FIXTURE_PATH, 'utf8')) as DiseaseRecord[];
-}
 
 function loadCommittedSql(index: number): string {
   return readFileSync(resolve(SQL_DIR, `${index}.sql`), 'utf8');
@@ -37,8 +24,14 @@ function loadCommittedSql(index: number): string {
 const CYCLE_CANONICAL_IDS = new Set(Object.values(CANONICAL_BY_OLD).filter((c) => TOMBSTONES.includes(c)));
 
 describe('generateDiseaseSeeds — fidelidade byte a byte (TAX-06)', () => {
-  it('renderSeedChunks(fixture pre-migracao, 80) reproduz os 5 sql/*.sql commitados byte a byte', () => {
-    const chunks = renderSeedChunks(loadFixture(), 80);
+  it('renderSeedChunks(taxonomia canonica, 80) reproduz os 5 sql/*.sql commitados byte a byte', () => {
+    // Pos-flip (08-06/D-24): os cinco sql/*.sql commitados sao gerados da taxonomia
+    // CANONICA (generateFromSnapshot()), nao mais da fixture pre-migracao — essa
+    // comparacao era a prova de fidelidade quando os seeds commitados ainda refletiam
+    // o estado corrompido (08-04, antes do flip). Comparar contra a fixture aqui
+    // testaria um dado que os seeds commitados deliberadamente pararam de conter.
+    const { diseases } = generateFromSnapshot();
+    const chunks = renderSeedChunks(diseases, 80);
     expect(chunks).toHaveLength(5);
     for (let i = 0; i < 5; i++) {
       expect(chunks[i]).toBe(loadCommittedSql(i));

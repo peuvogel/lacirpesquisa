@@ -37,7 +37,7 @@ function completeGroup(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGr
 describe('applyCatalogVariableIds', () => {
   it('creates a Catálogo group with resolved loadable IDs and UF layer', () => {
     const next = applyCatalogVariableIds(createInitialMapAnalysisState(), [
-      'sih.embolia_trombose.internacoes',
+      'sih.embolia_e_trombose_arteriais.internacoes',
       'unknown.var',
       'ref.sih.nibr',
       'mock.obitos',
@@ -45,8 +45,8 @@ describe('applyCatalogVariableIds', () => {
     expect(next.groups).toHaveLength(1);
     expect(next.groups[0]!.name).toBe('Catálogo');
     expect(next.groups[0]!.variableIds).toEqual([
-      'sih.embolia_trombose.internacoes',
-      'sih.embolia_trombose.obitos',
+      'sih.embolia_e_trombose_arteriais.internacoes',
+      'sih.embolia_e_trombose_arteriais.obitos',
     ]);
     expect(next.groups[0]!.time.mode).toBe('point');
     expect(next.groups[0]!.time.point).toMatch(/^\d{4}$/);
@@ -64,8 +64,8 @@ describe('applyCatalogVariableIds', () => {
   });
 
   it('ignores unknown ids in resolveCatalogHandoffIds', () => {
-    expect(resolveCatalogHandoffIds(['nope', 'sih.embolia_trombose.internacoes'])).toEqual([
-      'sih.embolia_trombose.internacoes',
+    expect(resolveCatalogHandoffIds(['nope', 'sih.embolia_e_trombose_arteriais.internacoes'])).toEqual([
+      'sih.embolia_e_trombose_arteriais.internacoes',
     ]);
   });
 });
@@ -79,7 +79,7 @@ describe('normalizeMapAnalysisState', () => {
           name: 'BA',
           territoryIds: [sampleTerritory],
           time: { mode: 'range' as const, start: '2015-01', end: '2019-12' },
-          variableIds: ['sih.embolia_trombose.internacoes'],
+          variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
         },
       ],
       activeGroupId: 'g1',
@@ -177,20 +177,20 @@ describe('mapAnalysisReducer', () => {
 
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
 
     expect(state.groups).toHaveLength(2);
     for (const group of state.groups) {
-      expect(group.variableIds).toContain('sih.embolia_trombose.internacoes');
+      expect(group.variableIds).toContain('sih.embolia_e_trombose_arteriais.internacoes');
     }
 
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
     for (const group of state.groups) {
-      expect(group.variableIds).not.toContain('sih.embolia_trombose.internacoes');
+      expect(group.variableIds).not.toContain('sih.embolia_e_trombose_arteriais.internacoes');
     }
   });
 
@@ -201,14 +201,14 @@ describe('mapAnalysisReducer', () => {
     });
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
     state = mapAnalysisReducer(state, {
       type: 'CREATE_GROUP',
       territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
     });
 
-    expect(state.groups[1]!.variableIds).toContain('sih.embolia_trombose.internacoes');
+    expect(state.groups[1]!.variableIds).toContain('sih.embolia_e_trombose_arteriais.internacoes');
   });
 
   it('SET_SHARED_TIME syncs every group while scope is shared', () => {
@@ -235,7 +235,7 @@ describe('mapAnalysisReducer', () => {
     });
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
-      diseaseId: 'embolia_trombose',
+      diseaseId: 'embolia_e_trombose_arteriais',
     });
     state = mapAnalysisReducer(state, { type: 'PREPARE_PERIOD_COMPARE' });
 
