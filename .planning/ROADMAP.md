@@ -130,19 +130,26 @@ Plans:
 
 ### Phase 9: Pipeline confiável + coleta completa
 
-**Goal**: A coleta nunca mais registra falha como sucesso, e as 4 medidas existem para os 330 agravos nos dois grãos
-**Depends on**: Phase 8 (o ledger é chaveado por `disease_id` — migrar antes de coletar)
+**Goal**: O estudante seleciona qualquer um dos 331 agravos e encontra as 4 medidas nos dois grãos — porque a fonte passa a ser o microdado do SIH, não a raspagem de tabela
+**Depends on**: Phase 8 (a taxonomia canônica é a chave de agregação do microdado)
 **Requirements**: PIPE-01, PIPE-02, PIPE-03, PIPE-04, PIPE-05, PIPE-06, DATA-01, DATA-02, DATA-03, DATA-04
 **Success Criteria** (what must be TRUE):
 
-  1. Uma falha injetada de rede/DNS/parse aparece como falha ruidosa e a execução termina com código de saída não-zero — nunca `OK · 0 linhas`
+  1. A lista de arquivos esperados (`RD{UF}{AA}{MM}`, 27 UFs × 12 meses × N anos) é computada antes do download, e a ausência de qualquer um deles é falha ruidosa com saída não-zero — nunca `OK · 0 linhas`
   2. O operador consulta um ledger por (agravo × medida × grão) que distingue coletado, falhou e nunca tentado — e o app consegue lê-lo
   3. Interromper e reexecutar a coleta continua de onde parou, sem duplicar linhas
   4. O cache bruto só é apagado depois que a contagem de linhas é relida do Supabase e confere
-  5. As 4 medidas estão coletadas para os 330 agravos no grão UF e no grão município, com `taxa_mortalidade` derivável em todo o catálogo
-  6. Cada métrica servida carrega a data em que foi coletada
+  5. As 4 medidas estão presentes para os **331** agravos no grão UF e no grão município, com `taxa_mortalidade` derivável em todo o catálogo
+  6. Cada métrica servida carrega a data em que foi derivada e a versão do mapa CID que a produziu
+  7. A agregação reproduz o TabNet nos 85 pares (agravo × UF × ano) que já temos coletados — ou cada categoria divergente tem a razão escrita e a faixa CID corrigida
 
-**Notes**: Duas causas raiz já localizadas: `scrape_one()` imprime `OK` sem consultar a própria lista `errors`, e `scrape_upload_sih.py::main()` chama `mark_uploaded()`/`cleanup_raw()` incondicionalmente. Ordem correta: coletar → verificar contagem → subir → confirmar → só então limpar. Python aqui tem **zero** pacotes de terceiros (3.9.6) — `sqlite3` da stdlib e um helper curto de backoff bastam; não introduzir biblioteca de retry. **Entregar o schema de `sih_collection_status` cedo na fase**, para a Fase 10 poder começar enquanto a coleta longa roda. Rotacionar o `INGEST_SECRET` hardcoded (ver Riscos).
+**Notes**: **Mudança de fonte (spike de 2026-08-04, ver `.planning/notes/2026-08-04-pysus-microdado-spike.md`).** A coleta deixa de raspar o TabNet agravo a agravo e passa a baixar o microdado SIH-RD uma vez (~10 GB para 2013-2025, Brasil inteiro) e agregar localmente com o `lista-morb-cid.json` congelado na Fase 8. Motivo: o scraping atual produziu **424 de 654 CSVs com 0 bytes** e 84 dos 85 agravos com conteúdo trazem só `internacoes` — e com microdado as 4 medidas, os 331 agravos e os dois grãos saem de uma passada só, sem requisição por agravo que possa voltar vazia.
+
+Isto **derruba explicitamente** a decisão anterior de "zero pacotes de terceiros / Python 3.9.6". Pinar `pysus==1.0.1` e **não** a 2.x: a reescrita da 2.0.0 quebrou o índice de arquivos do SIH (devolve um arquivo arbitrário por mês, `group="RD"` vem vazio, arquivos RJ/AIH-rejeitada e SP/serviços-profissionais entram no lugar do RD) — registrar o porquê junto do pin. Requer Python ≥3.10; a máquina já tem 3.11.15 e `uv`.
+
+O critério 7 é o gate de verdade da fase: hoje a agregação bate exato em 31 dos 85 e vem sempre *a mais* (mediana +3,5%). Já descartados por medição: competência×processamento, AIH tipo 5, `N_AIH` duplicado, e erro de agregação do scraper (36.564 pares UF×município conferem sem uma única incoerência). Como um terço bate exato, o desvio está em faixas CID específicas — provavelmente categorias "restante de..." absorvendo o que o TabNet manda para categorias mais estreitas. É depurável categoria a categoria, não difuso.
+
+**Entregar o schema de `sih_collection_status` cedo na fase**, para a Fase 10 poder começar enquanto a coleta roda. Rotacionar o `INGEST_SECRET` hardcoded (ver Riscos). O CR-04 do `08-REVIEW.md` (`uploadSihToSupabase.mjs` lança em diretório com nome de tombstone) cai nesta fase — reavaliar se o caminho de ingest sobrevive à troca de fonte antes de consertá-lo.
 
 **Plans**: TBD
 

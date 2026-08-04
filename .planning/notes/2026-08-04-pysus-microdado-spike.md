@@ -91,10 +91,24 @@ hipóteses já descartadas empiricamente:
 - **AIH tipo 5 (longa permanência)**: só 26 dos 44.589 registros têm `IDENT=5`; excluí-los não muda
   nenhuma contagem (31/85 exatos nas duas hipóteses).
 
-Hipóteses ainda abertas para a Fase 9: filtro por `ESPEC` (leito) ou `CAR_INT` que o `nibr.def`
-aplique; regra de AIH aprovada/paga; ou divergência de faixa CID em categorias específicas. Note
-que **um terço bate exato**, o que indica que o matcher está certo e o desvio se concentra em
-categorias identificáveis — é depurável, não difuso.
+Hipóteses testadas e **descartadas por medição**:
+
+| Hipótese | Medição | Veredito |
+|---|---|---|
+| competência × processamento | `ANO_CMPT` uniformemente 2019 | descartada |
+| AIH tipo 5 (longa permanência) | 26 de 44.589 registros | descartada |
+| `VAL_TOT = 0` (não paga) | 537 (1,2%), = exatamente os `ESPEC='87'` | insuficiente |
+| `N_AIH` duplicado | 26 (0,06%) | descartada |
+| ano de atendimento vs. processamento | 3.496 (7,8%) são internações de 2018; refazendo por `DT_INTER` com arquivos 2019+2020 o desvio vai de +4,14% para +3,45% | real, mas menor |
+| scraper perdendo linhas na soma município→UF | 36.564 pares checados, **0 incoerências** | descartada |
+
+**Onde o desvio realmente está.** Como **31 agravos batem exato** e os demais vêm sempre *a mais*,
+não é filtro global — se fosse, nenhum bateria. É o matcher atribuindo registros a mais em
+categorias específicas: faixas CID onde uma categoria "restante de…" absorve o que o TabNet manda
+para uma categoria mais estreita. Os maiores desvios são obstétricos (+15% edema/hipertensão da
+gravidez, +11% complicações do puerpério), apêndice (+15%) e diabetes (+14%); os menores são
+colelitíase (+2,9%), aborto (+2,9%) e anemia (+1,2%). É depurável categoria a categoria contra os
+85 pares já coletados.
 
 ## 6. Achado colateral: o estado real da coleta atual
 

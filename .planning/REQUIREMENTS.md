@@ -43,7 +43,7 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 - [ ] **PIPE-03**: A coleta é retomável: reexecutar após interrupção continua de onde parou, sem duplicar linhas
 - [ ] **PIPE-04**: O cache bruto só é descartado após o upload correspondente ser confirmado
 - [ ] **PIPE-05**: O operador consegue verificar que uma coleta capturou o que afirma ter capturado
-- [ ] **PIPE-06**: A coleta respeita limites de requisição do TabNet e sobrevive a execuções longas sem supervisão
+- [ ] **PIPE-06**: A coleta respeita a fonte remota (FTP do DATASUS) e sobrevive a execuções longas sem supervisão
 
 ### Cobertura de dados
 
