@@ -1,0 +1,21 @@
+{
+  "medidas": ["internacoes", "obitos", "valor_total", "dias_permanencia"],
+  "graos": ["uf", "municipio"],
+  "locais": ["ocorrencia", "residencia"],
+  "statuses": ["coletado", "falhou", "nunca_tentado"],
+  "sexos": ["M", "F"],
+  "anoMin": 2013,
+  "anoMax": 2025,
+  "faixasEtarias": [
+    { "id": "00-09", "idadeMin": 0, "idadeMax": 9 },
+    { "id": "10-19", "idadeMin": 10, "idadeMax": 19 },
+    { "id": "20-29", "idadeMin": 20, "idadeMax": 29 },
+    { "id": "30-39", "idadeMin": 30, "idadeMax": 39 },
+    { "id": "40-49", "idadeMin": 40, "idadeMax": 49 },
+    { "id": "50-59", "idadeMin": 50, "idadeMax": 59 },
+    { "id": "60-69", "idadeMin": 60, "idadeMax": 69 },
+    { "id": "70-79", "idadeMin": 70, "idadeMax": 79 },
+    { "id": "80+", "idadeMin": 80, "idadeMax": 200 }
+  ],
+  "reason": "medidas tem quatro entradas, nao cinco: taxa_mortalidade e derivada de obitos e mora como coluna nas tabelas de metrica (sih_metric_uf.taxa_mortalidade), nunca como um quinto valor de medida — o calculo de 331 x 4 x 2 x 2 x 13 ~= 69 mil linhas do D-13 (sih_collection_status) so fecha com quatro. A idade em ano unico do POPSVS nao sobe ao banco: fica no intermediario local do pipeline Python (D-24), para uma fase futura poder rederivar faixas etarias mais finas sem precisar baixar de novo do FTP do DATASUS. sexos usa o codigo canonico M/F — SIH usa {1,3} e POPSVS usa {1,2}; a normalizacao acontece no pipeline Python (population.py/aggregate.py), nunca no banco. anoMin/anoMax = 2013-2025 e a mesma janela do D-11 (Fase 9), nao o limite do check constraint em banco (que segue o teto largo ja usado por sih_metric_uf/sih_metric_muni: ano <= 2100)."
+}
