@@ -15,7 +15,9 @@ dependencies = [
 # ver README.md "Por que pysus==1.0.1 e não a 2.x" para o porquê do pin exato.
 
 [dependency-groups]
-dev = ["pytest>=8,<9"]
+dev = [
+    "pytest>=8,<9",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
