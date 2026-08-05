@@ -1,9 +1,9 @@
 ---
 phase: 9
 slug: pipeline-confi-vel-coleta-completa
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-04
 ---
 
@@ -115,11 +115,12 @@ só o `.dbc`, grande demais para um gate leve.
 
 ## Validation Sign-Off
 
-- [ ] Todas as tasks têm verify `<automated>` ou dependência de Wave 0
-- [ ] Continuidade de amostragem: não há 3 tasks consecutivas sem verify automatizado
-- [ ] Wave 0 cobre todas as referências MISSING
-- [ ] Sem flags de watch-mode
-- [ ] Latência de feedback < 60 s
-- [ ] `nyquist_compliant: true` no frontmatter
+- [x] Todas as tasks têm verify `<automated>` ou dependência de Wave 0
+- [x] Continuidade de amostragem: não há 3 tasks consecutivas sem verify automatizado
+- [x] Wave 0 cobre todas as referências MISSING — entregue pelo plano `09-02` (Onda 1)
+- [x] Sem flags de watch-mode
+- [x] Latência de feedback < 60 s — `npm run gate` foi retirado de todo `<verify><automated>` na revisão 1
+- [x] `nyquist_compliant: true` no frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-08-05 — `gsd-plan-checker` retornou `VERIFICATION PASSED` sobre os 14 planos
+(0 blockers), confirmando verify automatizado em todas as 40+ tasks e Onda 0 completa.
