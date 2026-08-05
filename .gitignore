@@ -24,3 +24,23 @@ trabalhos datasus/Congresso Vascular/
 supabase/.branches/
 supabase/.temp/
 .local/
+
+# Fase 9 — pipeline SIH (D-17/D-12)
+# .env.pipeline guarda a senha do banco Postgres (Session Pooler, D-17) e a service_role key
+# do Supabase — nunca com prefixo VITE_, nunca no bundle Vite. Variáveis esperadas dentro dele:
+# SIH_PIPELINE_DB_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL.
+.env.pipeline
+# .venv/ é o ambiente virtual Python local do pipeline, regenerado por operador, não versionado.
+pipeline/sih/.venv/
+# cache/ guarda os ~10 GB de parquet bruto baixado do DataSUS e os agregados intermediários —
+# ficam na máquina do operador, fora do controle de versão e fora do bundle (ver CONTEXT
+# §"Localização do parquet bruto (~10 GB) e dos agregados intermediários").
+pipeline/sih/cache/
+# Apenas os *.log de corrida são ruído — o diretório reports/ NÃO é ignorado por inteiro: os
+# relatórios em Markdown que ele contém (reconciliacao-sc7.md, oracle-descartados.md,
+# populacao-dimensionamento.md, particoes-dimensionamento.md, confirmacao-uf-grande.md,
+# cobertura-final.md) são a razão escrita que o D-02 exige, o registro de descarte do D-04 e as
+# medições que o D-21/D-24 pedem antes de travar decisão — são versionados.
+pipeline/sih/reports/*.log
+pipeline/sih/.pytest_cache/
+pipeline/sih/**/__pycache__/
