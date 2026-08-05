@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 9 context gathered
-last_updated: "2026-08-05T10:25:09.678Z"
-last_activity: 2026-08-05 -- Phase 09 planning complete
+stopped_at: Fase 09 Plano 01 — checkpoint human-action (Task 1) aguardando operador
+last_updated: "2026-08-05T10:36:25.997Z"
+last_activity: 2026-08-05 -- Plano 09-01 Task 1 (.gitignore) commitado; pausado no checkpoint human-action da credencial D-17
 progress:
   total_phases: 6
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** Tornar a escolha, aplicação e interpretação de testes estatísticos (e mapas DataSUS) fácil, autoexplicativa e pronta para a aula prática da liga.
-**Current focus:** Phase 08 — taxonomia-can-nica-integridade
+**Current focus:** Phase 09 — pipeline-confi-vel-coleta-completa
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-08-05 -- Phase 09 planning complete
+Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
+Plan: 1 of 14
+Status: Plano 01 pausado — Task 1 (checkpoint:human-action, credencial Postgres D-17) aguardando o operador; Task 2 (checkpoint:decision, ordem D-23) ainda não iniciada
+Last activity: 2026-08-05 -- Plano 09-01 Task 1 (.gitignore) commitado (1817b1b); pausado no checkpoint human-action
 
 ## Accumulated Context
 
@@ -143,13 +143,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+- [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 
 ## Session Continuity
 
-Last session: 2026-08-04T16:21:49.993Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-CONTEXT.md
+Last session: 2026-08-05T10:36:25.994Z
+Stopped at: Fase 09 Plano 01 — checkpoint human-action (Task 1: credencial Postgres D-17) aguardando o operador; Task 2 (decisão D-23) ainda não iniciada
+Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-01-PLAN.md
 
 ## Performance Metrics
 
