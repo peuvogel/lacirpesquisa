@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
-status: Plano 02 completo (9a888c5, 3e2a869, dffb6ea, 59a9b93); Plano 01 permanece pausado em checkpoint humano — Task 1 (credencial Postgres D-17) aguardando o operador, Task 2 (decisão D-23) ainda não iniciada
-stopped_at: "Fase 09 Plano 02 completo (Onda 0 do pipeline Python); Plano 01 permanece pausado em checkpoint human-action (Task 1: credencial Postgres D-17) aguardando o operador — Task 2 (decisão D-23) ainda não iniciada"
-last_updated: "2026-08-05T10:55:29.535Z"
-last_activity: "2026-08-05 -- Plano 09-02 (Onda 0 do pipeline Python: uv/pysus==1.0.1, guarda de caminho ASVS V12, 10 esqueletos com dono, npm run gate fail-closed sobre pytest, uv no CI) completo"
+status: "Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 [BLOCKING] (supabase db push --linked em producao) aguarda SUPABASE_ACCESS_TOKEN — mesma credencial D-17 do checkpoint 09-01 Task 1. Plano 01 permanece pausado (Task 1 credencial, Task 2 decisao D-23)."
+stopped_at: "Fase 09 Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5) — schema-v3.json/gerador/migracao/rollback/verify gerados e testados localmente (docker supabase/postgres:17.6.1.147); teste sihSchemaMigration.test.ts (12 casos) impede edicao manual. Task 3 (supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN indisponivel (mesma credencial D-17 do checkpoint 09-01 Task 1)."
+last_updated: "2026-08-05T11:13:26.848Z"
+last_activity: 2026-08-05 -- Plano 09-03 Tasks 1-2 completas (schema-v3.json, gerador up/down/verify da migracao sih_v3_schema, teste de nao-edicao-manual); Task 3 bloqueada aguardando SUPABASE_ACCESS_TOKEN
 progress:
   total_phases: 6
   completed_phases: 2
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
 Plan: 2 of 14
-Status: Plano 02 completo (9a888c5, 3e2a869, dffb6ea, 59a9b93); Plano 01 permanece pausado em checkpoint humano — Task 1 (credencial Postgres D-17) aguardando o operador, Task 2 (decisão D-23) ainda não iniciada
-Last activity: 2026-08-05 -- Plano 09-02 (Onda 0 do pipeline Python: uv/pysus==1.0.1, guarda de caminho ASVS V12, 10 esqueletos com dono, npm run gate fail-closed sobre pytest, uv no CI) completo
+Status: Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 [BLOCKING] (supabase db push --linked em producao) aguarda SUPABASE_ACCESS_TOKEN — mesma credencial D-17 do checkpoint 09-01 Task 1. Plano 01 permanece pausado (Task 1 credencial, Task 2 decisao D-23).
+Last activity: 2026-08-05 -- Plano 09-03 Tasks 1-2 completas (schema-v3.json, gerador up/down/verify da migracao sih_v3_schema, teste de nao-edicao-manual); Task 3 bloqueada aguardando SUPABASE_ACCESS_TOKEN
 
 ## Accumulated Context
 
@@ -147,12 +147,13 @@ None yet.
 ### Blockers/Concerns
 
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
+- [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
 
 ## Session Continuity
 
-Last session: 2026-08-05T10:55:29.533Z
-Stopped at: Fase 09 Plano 02 completo (Onda 0 do pipeline Python); Plano 01 permanece pausado em checkpoint human-action (Task 1: credencial Postgres D-17) aguardando o operador — Task 2 (decisão D-23) ainda não iniciada
-Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-01-PLAN.md
+Last session: 2026-08-05T11:12:47.809Z
+Stopped at: Fase 09 Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5) — schema-v3.json/gerador/migracao/rollback/verify gerados e testados localmente (docker supabase/postgres:17.6.1.147); teste sihSchemaMigration.test.ts (12 casos) impede edicao manual. Task 3 (supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN indisponivel (mesma credencial D-17 do checkpoint 09-01 Task 1).
+Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-03-PLAN.md
 
 ## Performance Metrics
 
