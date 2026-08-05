@@ -151,7 +151,23 @@ O critério 7 é o gate de verdade da fase: hoje a agregação bate exato em 31 
 
 **Entregar o schema de `sih_collection_status` cedo na fase**, para a Fase 10 poder começar enquanto a coleta roda. Rotacionar o `INGEST_SECRET` hardcoded (ver Riscos). O CR-04 do `08-REVIEW.md` (`uploadSihToSupabase.mjs` lança em diretório com nome de tombstone) cai nesta fase — reavaliar se o caminho de ingest sobrevive à troca de fonte antes de consertá-lo.
 
-**Plans**: TBD
+**Plans**: 14 planos em 9 ondas
+
+Plans:
+- [ ] 09-01-PLAN.md — Pré-requisitos humanos: credencial Postgres do D-17 e ordem de relevância cirúrgica do D-23 (Onda 1)
+- [ ] 09-02-PLAN.md — Onda 0 do pipeline Python: projeto `uv` com `pysus==1.0.1`, guarda de caminho ASVS V12, e `npm run gate` fail-closed sobre a suíte Python (Onda 1)
+- [ ] 09-03-PLAN.md — Schema v3 em produção: dimensão `local`, `sih_collection_status` e as quatro tabelas de população, tudo gerado de `schema-v3.json` (Onda 1)
+- [ ] 09-04-PLAN.md — Enumeração determinística (SC-1), ledger de arquivo, download com isolamento de falha por arquivo, e o disparo da corrida completa (Onda 2)
+- [ ] 09-05-PLAN.md — Raspador mínimo do TabNet e o oráculo dos 85 pares re-raspado ao vivo, com os descartes escritos (Onda 2)
+- [ ] 09-06-PLAN.md — População POPSVS 2013–2025 nos dois grãos, com checkpoint de dimensionamento e confirmação da fonte do denominador (Onda 4)
+- [ ] 09-07-PLAN.md — Canonização compartilhada, matcher CID com camada de correção, e a agregação das 4 medidas × 2 grãos × 2 locais (Onda 3)
+- [ ] 09-08-PLAN.md — Depuração do SC-7 categoria a categoria em AC/2019, e a divergência residual como dado com razão escrita (Onda 4)
+- [ ] 09-09-PLAN.md — As 27 partições de município no Supabase Storage e o consumidor TypeScript com `DecompressionStream` (Onda 5)
+- [ ] 09-10-PLAN.md — `COPY` para staging, swap transacional pelo Session Pooler, e o PIPE-04: cache só some depois da recontagem paginada (Onda 6)
+- [ ] 09-11-PLAN.md — Confirmação em UF grande, checkpoint clínico em lote, e o gate permanente do SC-7 (Onda 5)
+- [ ] 09-12-PLAN.md — Conclusão da corrida, ledger de cobertura completo e auditoria com conferência humana (Onda 7)
+- [ ] 09-13-PLAN.md — Os 10 packs regerados do dado novo e o corpus legado de 654 CSVs fora do caminho de build (Onda 8)
+- [ ] 09-14-PLAN.md — Aposentadoria por remoção: uploader, scrapers, Edge Function, `INGEST_SECRET` e `sih_metric_muni`, mais o contrato documentado (Onda 9)
 
 ### Phase 10: Mapas dinâmicos sobre Supabase
 

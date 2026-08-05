@@ -476,7 +476,7 @@ Não aplicável — esta fase não é rename/refactor/migração de dado existen
 ### Pitfall 11: `Content-Encoding: gzip` não é suportado pelo SDK de upload do Supabase Storage hoje
 **What goes wrong:** a ideia registrada em "Claude's Discretion" (JSON colunar + gzip, servido com `Content-Encoding: gzip` para descompressão nativa do navegador) depende de poder setar esse cabeçalho no upload. `supabase-js`'s `storage.from(bucket).upload()` **não suporta** `contentEncoding` como opção — é uma issue aberta (`supabase/supabase-js#1883`, aberta 2025-11-21, ainda sem PR mesclado no momento desta pesquisa).
 **How to avoid:** não depender do `Content-Encoding` do servidor. Fazer o upload do `.json.gz` como um blob opaco (`Content-Type: application/octet-stream` ou similar) e descomprimir explicitamente no cliente com `DecompressionStream('gzip')` (Web API nativa, Baseline amplamente disponível desde maio de 2023 — funciona em todos os browsers relevantes para uma sala de aula em 2026). Isso também é mais robusto: não depende de nenhum comportamento de CDN/cache do Supabase em relação a `Content-Encoding`.
-**Open question:** o endpoint S3-compatível do Supabase Storage (que fala o protocolo S3 genérico, que TEM suporte nativo a `Content-Encoding` como metadado de objeto) pode ser um caminho alternativo não testado nesta pesquisa — ver `## Open Questions`.
+**Open question:** o endpoint S3-compatível do Supabase Storage (que fala o protocolo S3 genérico, que TEM suporte nativo a `Content-Encoding` como metadado de objeto) pode ser um caminho alternativo não testado nesta pesquisa — ver `## Open Questions (RESOLVED)`.
 **Confidence:** HIGH para a limitação do SDK JS (issue verificada ao vivo). LOW/não verificado para o caminho S3.
 
 ### Pitfall 12: Conexão direta do Postgres no plano gratuito é só IPv6
@@ -594,22 +594,29 @@ async function fetchGzippedPartition(url: string): Promise<unknown> {
 | A4 | CID-10 B91 = sequelas de poliomielite, B92 = sequelas de hanseníase (usado para interpretar o achado de sobreposição código 75/76) | Common Pitfalls / SC-7 debugging leads (abaixo) | Se a memória de treinamento estiver errada sobre o código B91 exato, a pista fica menos específica — mas o achado estrutural em si (75 e 76 apontam para o mesmo valor `B92` em `lista-morb-cid.json`, o que é uma inconsistência independentemente de qual é o código "correto") continua válido e verificado |
 | A5 | Estimativas de tamanho de partição por UF de Storage (Storage Partition Sizing, abaixo) são um cálculo aproximado, não uma medição | Storage Partition Sizing | Se a estimativa subestimar o tamanho real (ex.: SP muito maior que os ~15-20% assumidos da linha de base), uma partição pode passar do limite de 50 MB por objeto do plano gratuito — por isso D-21 já exige medição real antes de travar, e esta pesquisa reforça essa exigência com a math explícita |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+As três perguntas abertas desta pesquisa foram **resolvidas durante o planejamento da Fase 9**. Cada
+uma carrega abaixo um marcador `RESOLVED:` nomeando o plano que a resolve e como. Nenhuma delas
+permanece como pendência de pesquisa.
 
 1. **O endpoint S3-compatível do Supabase Storage aceita `Content-Encoding` como metadado nativo de objeto (via `aws s3 cp --content-encoding gzip` ou `PutObject`)?**
    - What we know: o SDK `supabase-js` não suporta isso (issue aberta, confirmada). A documentação de autenticação S3 do Supabase não menciona metadados de objeto explicitamente.
    - What's unclear: se o servidor de Storage (que implementa o protocolo S3 de forma bastante completa) preserva e ecoa esse cabeçalho.
    - Recommendation: não é bloqueante — a recomendação primária (`DecompressionStream` no cliente) já resolve o problema sem depender disso. Só vale testar se, no futuro, quiser eliminar a descompressão explícita no cliente.
+   - **RESOLVED** pelo plano `09-09`: o consumidor `src/features/catalog/loadMunicipioPartition.ts` descomprime com `DecompressionStream('gzip')` no cliente, e os critérios de aceitação da Task 1 e da Task 3 proíbem tanto depender de `Content-Encoding` do servidor quanto acrescentar dependência npm de descompressão (`pako`/`fflate`/`jszip`). O endpoint S3-compatível deixa de ser caminho necessário e fica registrado como possibilidade futura, não como pendência desta fase.
 
 2. **Qual é exatamente a semântica de exclusão nas categorias "resto de..." do `nibr.def` do TabNet, além dos dois pares de duplicata exata encontrados nesta pesquisa?**
    - What we know: a análise estrutural encontrou apenas 2 pares de sobreposição exata (75/76→B92; 142/274→G02) — não é o suficiente para explicar sozinho um viés sistemático de +3,45% mediano em dezenas de categorias divergentes.
    - What's unclear: o mecanismo por trás da maioria das divergências (obstétrico +15%, apêndice +15%, diabetes +14%) continua sem uma causa estrutural estática identificada — pode ser o efeito de competência×processamento (já parcialmente medido no spike, reduz mas não elimina), ou outra semântica do `.def` não visível na renderização HTML plana que `lista-morb-cid.json` capturou.
    - Recommendation: o planner deve tratar os 2 achados desta pesquisa como as duas primeiras entradas concretas da tabela de correções do D-05, e usar o procedimento de depuração AC/2019 (D-03) para o restante — ver `## Validation Architecture` para o desenho do gate que precisa acompanhar essa depuração.
+   - **RESOLVED** pelos planos `09-08` e `09-11`: a Task 2 do `09-08` abre `scripts/catalog/cid-corrections.json` justamente com os dois pares de sobreposição exata (75/76→B92 e 142/274→G02) e depura o restante categoria a categoria contra AC/2019, registrando no relatório inclusive as hipóteses descartadas por medição; o `09-11` confirma o resultado numa UF grande e dá saída explícita ao que resistir (aprovar, devolver uma vez ao `09-08`, ou registrar como divergência não explicada honesta com as hipóteses descartadas listadas). A semântica do `.def` deixa de ser bloqueio de pesquisa e vira trabalho de depuração produtora de evidência, com gate permanente no `09-11` Task 3.
 
 3. **O agregado por UF (D-24) deve vir de somar `POPSVS` por prefixo de `COD_MUN`, ou existe uma tabela oficial de totais por UF que já é o que o TabNet usa como denominador de taxa?**
    - What we know: `projpop` (`PROJUF*.dbf`) já vem pronto por UF, estratificado por sexo/idade — mas é uma fonte diferente de `POPSVS`.
    - What's unclear: se os dois convergem numericamente ou não.
    - Recommendation: preferir agregação de `POPSVS` por consistência interna (Pitfall 6); medir a diferença contra `projpop` como checagem de sanidade durante a implementação, não como bloqueio de pesquisa.
+   - **RESOLVED** pelo plano `09-06`: a Task 1 agrega a UF a partir do próprio `POPSVS` por prefixo de `COD_MUN` (consistência interna, Pitfall 6, com teste que afirma que UF é igual à soma dos seus municípios), e a Task 2 mede a diferença percentual `POPSVS` × `POPTCU` para ao menos uma UF/ano e a apresenta ao usuário no checkpoint de decisão que confirma a fonte única do denominador — o D-24 tratado como hipótese a confirmar, exatamente como pedido.
 
 ## Environment Availability
 
