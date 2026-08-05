@@ -59,7 +59,7 @@ patterns-established:
   - "paths.py: todo módulo futuro do pipeline que escreve arquivo usa cache_path()/ledger_path()/reports_path(), nunca monta caminho manualmente"
   - "Scripts pipeline:* apontam para sih_pipeline.cli (dono 09-04); até o cli.py existir, qualquer chamada falha alto — nenhum script npm desta família pode sair 0 sem implementação real"
 
-requirements-completed: [PIPE-01, PIPE-03, PIPE-04, DATA-03]
+requirements-completed: []  # PIPE-01/PIPE-03/PIPE-04/DATA-03 declarados no plano mas NÃO completos — Wave 0 só cria os stubs; comportamento real entregue em 09-04/09-07/09-10 (ver "Nota sobre REQUIREMENTS.md" abaixo)
 
 # Metrics
 duration: ~12min
@@ -141,6 +141,13 @@ Os dez esqueletos de teste em `pipeline/sih/tests/` são stubs **intencionais e 
 | `test_reconcile_gate.py` | SC-7/D-06 | 09-11 |
 
 O plano `09-14` fecha um gate que falha se algum `allow_module_level=True` sobreviver ao fim da fase. Os 9 scripts `pipeline:enumerate`/`download`/`aggregate`/`population`/`reconcile`/`partitions`/`upload`/`oracle-scrape`/`audit` também apontam para `sih_pipeline.cli`, que só nasce no plano `09-04` — até lá, chamá-los sai com código 2 nomeando o plano dono (não é stub silencioso: falha alto).
+
+**Nota sobre REQUIREMENTS.md:** este plano declara `requirements: [PIPE-01, PIPE-03, PIPE-04, DATA-03]`
+no frontmatter, mas **não** foram marcados `[x]` em `.planning/REQUIREMENTS.md` — a própria
+`09-VALIDATION.md` §"Requirement → Test Map" lista o `<automated>` desses quatro requisitos como
+"❌ Wave 0" (os testes reais nascem em `09-04`/`09-07`/`09-10`; aqui eles só existem como stub
+`pytest.skip`). Marcar como `Complete` agora seria falso — a checkbox correta é apagada quando o
+plano dono de cada requisito (não este) entregar o comportamento real e o teste passar de verdade.
 
 ## Issues Encountered
 

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
-status: executing
-stopped_at: Fase 09 Plano 01 — checkpoint human-action (Task 1) aguardando operador
-last_updated: "2026-08-05T10:36:25.997Z"
-last_activity: 2026-08-05 -- Plano 09-01 Task 1 (.gitignore) commitado; pausado no checkpoint human-action da credencial D-17
+status: Plano 02 completo (9a888c5, 3e2a869, dffb6ea, 59a9b93); Plano 01 permanece pausado em checkpoint humano — Task 1 (credencial Postgres D-17) aguardando o operador, Task 2 (decisão D-23) ainda não iniciada
+stopped_at: "Fase 09 Plano 02 completo (Onda 0 do pipeline Python); Plano 01 permanece pausado em checkpoint human-action (Task 1: credencial Postgres D-17) aguardando o operador — Task 2 (decisão D-23) ainda não iniciada"
+last_updated: "2026-08-05T10:55:29.535Z"
+last_activity: "2026-08-05 -- Plano 09-02 (Onda 0 do pipeline Python: uv/pysus==1.0.1, guarda de caminho ASVS V12, 10 esqueletos com dono, npm run gate fail-closed sobre pytest, uv no CI) completo"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 31
-  completed_plans: 17
+  completed_plans: 18
   percent: 33
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 1 of 14
-Status: Plano 01 pausado — Task 1 (checkpoint:human-action, credencial Postgres D-17) aguardando o operador; Task 2 (checkpoint:decision, ordem D-23) ainda não iniciada
-Last activity: 2026-08-05 -- Plano 09-01 Task 1 (.gitignore) commitado (1817b1b); pausado no checkpoint human-action
+Plan: 2 of 14
+Status: Plano 02 completo (9a888c5, 3e2a869, dffb6ea, 59a9b93); Plano 01 permanece pausado em checkpoint humano — Task 1 (credencial Postgres D-17) aguardando o operador, Task 2 (decisão D-23) ainda não iniciada
+Last activity: 2026-08-05 -- Plano 09-02 (Onda 0 do pipeline Python: uv/pysus==1.0.1, guarda de caminho ASVS V12, 10 esqueletos com dono, npm run gate fail-closed sobre pytest, uv no CI) completo
 
 ## Accumulated Context
 
@@ -136,6 +136,9 @@ Last activity: 2026-08-05 -- Plano 09-01 Task 1 (.gitignore) commitado (1817b1b)
 - [Phase ?]: [Phase 08-09]: noTombstoneLiterals.test.ts allowlist extended 5->7 paths (MeasureDiseasePicker.test.tsx, VariaveisPage.test.tsx) — same class of exclusion as diseaseAliases.test.ts (08-07): alias terms typed as search queries, never disease ids
 - [Phase ?]: [Phase 08-10]: supabase db query --linked -f used instead of the dashboard SQL Editor for contagens.sql — non-interactive agent has no browser/db password; same single-execution, read-only semantics via the CLI's own Management-API session
 - [Phase ?]: [Phase 08-10]: Production migration applied (supabase db push, 46.6s wall vs rehearsal's 3.674s SQL-only time) — 21 disease ids renamed, code-330 inserted, live verified 331/30313/1099403 (PostgREST), TAX-06 set-identity confirmed byte-for-byte against seed SQL. TAX-03/TAX-04 closed.
+- [Phase 09-02]: pysus pinado exatamente em 1.0.1 (nunca >=/~=) — a 2.x devolve arquivos RJ/SP sob o nome do grupo RD pedido, defeito medido no spike 2026-08-04
+- [Phase 09-02]: cli.py (despachante dos subcomandos pipeline:*) tem dono único: plano 09-04 — nenhum outro plano da fase o edita
+- [Phase 09-02]: astral-sh/setup-uv pinado por SHA de commit (c771a70e6277c0a99b617c7a806ffedaca235ff9, tag v9.0.0) resolvido ao vivo via gh api, não hardcoded
 
 ### Pending Todos
 
@@ -147,8 +150,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T10:36:25.994Z
-Stopped at: Fase 09 Plano 01 — checkpoint human-action (Task 1: credencial Postgres D-17) aguardando o operador; Task 2 (decisão D-23) ainda não iniciada
+Last session: 2026-08-05T10:55:29.533Z
+Stopped at: Fase 09 Plano 02 completo (Onda 0 do pipeline Python); Plano 01 permanece pausado em checkpoint human-action (Task 1: credencial Postgres D-17) aguardando o operador — Task 2 (decisão D-23) ainda não iniciada
 Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-01-PLAN.md
 
 ## Performance Metrics
@@ -192,3 +195,4 @@ Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-01-PLAN.m
 | Phase 08-taxonomia-can-nica-integridade P08 | ~48min | 3 tasks | 1 files |
 | Phase 08-taxonomia-can-nica-integridade P09 | ~20min | 3 tasks | 7 files |
 | Phase 08-taxonomia-can-nica-integridade P10 | ~15min (continuation session) | 4 tasks | 2 files |
+| Phase 09-pipeline-confi-vel-coleta-completa P02 | ~12min | 3 tasks | 20 files |
