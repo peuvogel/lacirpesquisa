@@ -1,0 +1,77 @@
+[
+  {
+    "nivel": 1,
+    "label": "Vascular — agravos já servidos hoje",
+    "diseaseIds": [
+      "embolia_e_trombose_arteriais",
+      "flebite_tromboflebite_embolia_e_trombose_venosa",
+      "outras_doencas_vasculares_perifericas",
+      "outras_doencas_das_arterias_arteriolas_e_capilares",
+      "infarto_cerebral",
+      "acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem",
+      "amputacao_mmii"
+    ],
+    "reason": "Estes sete agravos são, ao mesmo tempo, o núcleo clínico da liga de cirurgia vascular e sete dos dez packs que a tela Variáveis já serve hoje em public/data/catalog/packs/. Servi-los primeiro fecha a janela em que o app entrega o corpus TabNet que esta própria fase declarou não confiável (424 de 654 CSVs com 0 bytes): enquanto o restante do catálogo é agregado, o que o aluno já consegue abrir passa a vir do microdado reconciliado. É o nível de maior retorno por unidade de espera."
+  },
+  {
+    "nivel": 2,
+    "label": "Demais packs vivos (não-vasculares)",
+    "diseaseIds": [
+      "laringite_e_traqueite_agudas",
+      "otite_media_e_outr_transt_ouvido_medio_apof_mast",
+      "outras_doencas_do_olho_e_anexos"
+    ],
+    "reason": "Os três packs vivos restantes não são vasculares, mas estão publicados: se o nível 1 subisse sozinho, o app passaria a conviver com sete agravos em microdado e três em TabNet, exatamente a mistura que o D-16 proíbe. Este nível existe para que a substituição dos dados já servidos seja completa antes de o catálogo crescer, e não por relevância cirúrgica."
+  },
+  {
+    "nivel": 3,
+    "label": "Cerebrovascular complementar",
+    "diseaseIds": [
+      "acid_vascular_cerebr_isquem_transit_e_sindr_correl",
+      "outras_doencas_cerebrovasculares"
+    ],
+    "reason": "Fecham a família cerebrovascular iniciada no nível 1. Sem eles, uma aula sobre AVC consegue abrir infarto cerebral e o AVC não especificado, mas não consegue contrastar com o isquêmico transitório — o recorte fica clinicamente truncado justamente na comparação que a capacitação exercita."
+  },
+  {
+    "nivel": 4,
+    "label": "Cirúrgico geral de alto volume",
+    "diseaseIds": [
+      "doencas_do_apendice",
+      "colelitiase_e_colecistite",
+      "hernia_inguinal",
+      "outras_hernias",
+      "ileo_paralitico_e_obstrucao_intestinal_sem_hernia"
+    ],
+    "reason": "Alto volume de internação e as urgências cirúrgicas mais frequentes do SUS — o repertório em que qualquer aluno de cirurgia encosta primeiro. Apêndice e colelitíase são também os agravos que o spike mediu como divergentes na reconciliação contra o TabNet, então subi-los cedo mantém sob observação precoce justamente os casos onde o SC-7 tem menos folga."
+  },
+  {
+    "nivel": 5,
+    "label": "Obstétrico de alto volume",
+    "diseaseIds": [
+      "parto_unico_espontaneo",
+      "trabalho_de_parto_obstruido",
+      "hemorragia_pos_parto",
+      "outras_complicacoes_da_gravidez_e_do_parto",
+      "edema_protein_transt_hipertens_gravid_parto_puerp",
+      "compl_pred_rel_puerperio_e_outr_afecc_obstetr_ncop"
+    ],
+    "reason": "O maior bloco isolado de internações do SIH: parto único espontâneo sozinho domina a contagem nacional. Não é cirurgia vascular, mas é o material didático mais robusto que existe para ensinar denominador, taxa por 100 mil e variação regional — e é onde a agregação, se estiver errada, erra de forma mais visível. Serve como caso de carga e prova de escala."
+  },
+  {
+    "nivel": 6,
+    "label": "Comorbidades que contextualizam o risco vascular",
+    "diseaseIds": [
+      "diabetes_mellitus",
+      "infarto_agudo_do_miocardio",
+      "embolia_pulmonar",
+      "ulcera_gastrica_e_duodenal"
+    ],
+    "reason": "Não são o desfecho vascular em si, mas o pano de fundo que explica a amputação e a trombose: diabetes é o principal fator de risco para amputação de membros inferiores, e IAM e embolia pulmonar são o mesmo fenômeno trombótico em outro território. Ter os dois lados disponíveis permite a comparação que dá sentido clínico ao nível 1."
+  },
+  {
+    "nivel": 99,
+    "label": "Restante do catálogo",
+    "diseaseIds": [],
+    "reason": "Todos os demais agravos da taxonomia canônica, em ordem alfabética de id. Esta entrada existe para deixar registrado por construção que NENHUM agravo é excluído da coleta (D-23): o teto de 500 MB que outrora forçaria uma escolha foi removido pelo D-20, que mandou o grão município para o Storage. O que está registrado aqui é ordem de chegada, nunca exclusão — os 331 agravos são coletados, agregados e servidos; os níveis acima apenas decidem quem chega antes enquanto a corrida longa termina."
+  }
+]
