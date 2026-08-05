@@ -45,6 +45,59 @@ uv run python -m sih_pipeline.<módulo>     # roda um módulo do pipeline direta
 Da raiz do repositório, os comandos equivalentes estão em `package.json` sob o prefixo
 `pipeline:*` (ex.: `npm run pipeline:test`).
 
+## Operação da corrida completa (D-01)
+
+A coleta é por arquivo (`RD{UF}{AA}{MM}`, 4.212 arquivos, janela 2013-2025, ~10 GB total) —
+`enumerate.py` computa a lista esperada e falha ruidosamente se o FTP não tiver algum (SC-1);
+`download.py` baixa um arquivo por vez, isola qualquer exceção no próprio arquivo (nunca aborta
+o resto da corrida, PIPE-06) e grava prova (hash + contagem de linhas) no ledger local
+(`ledger.py`, `<cache_root>/ledger/files.json` — nunca depende de rede para saber o que já
+baixou, D-12 Camada 1).
+
+**Iniciar (ou continuar) a corrida**, desanexada do terminal, com log em
+`pipeline/sih/reports/download.log`:
+
+```bash
+cd pipeline/sih
+mkdir -p reports
+nohup uv run python -m sih_pipeline.cli download > reports/download.log 2>&1 &
+disown
+```
+
+(`reports/download.log` é o mesmo caminho que `reports_path("download.log")` resolve — só os
+`.log` são ignorados pelo git dentro de `pipeline/sih/reports/`, não o diretório inteiro.)
+
+**Conferir o progresso** (não precisa parar a corrida):
+
+```bash
+cd pipeline/sih && uv run python -m sih_pipeline.cli download --status
+# ou, equivalente, ler o summary() do ledger diretamente:
+uv run python -c "from sih_pipeline.ledger import FileLedger; print(FileLedger.load().summary())"
+```
+
+**Retomar depois de uma interrupção** (crash, reboot, `kill`): rodar o mesmo comando de novo.
+A retomada é por arquivo inteiro, nunca por byte — `File.download()` não guarda progresso
+parcial de um arquivo (RESEARCH Pitfall 8), então o `.dbc` de um arquivo interrompido é
+re-baixado do zero, mas nenhum arquivo já `baixado` no ledger é refeito ou duplicado (PIPE-03,
+provado por `test_resume_no_duplicate`).
+
+**Estimativa de volume:** ~10 GB, 4.212 arquivos, janela 2013-2025 — ver `du -sh` sobre
+`cache_path("parquet")` para o tamanho real acumulado a qualquer momento.
+
+**Pré-requisito de espaço em disco:** confirme espaço livre suficiente (~12-15 GB de folga)
+ANTES de iniciar a corrida completa — `download_all()` isola falha por arquivo (PIPE-06), mas
+isso cobre erros de rede/parse por arquivo, não o disco do sistema operacional ficando sem
+espaço livre. Rodar a corrida completa com pouco espaço livre pode levar o disco a zero e
+comprometer o resto do sistema do operador, não só a coleta — verificar com `df -h` antes de
+lançar em produção.
+
+**Status em 2026-08-05 (09-04):** a corrida completa NÃO foi iniciada nesta execução — o
+disco do operador media ~1,5 GB livres num único volume interno de 228 GB (`df -h /`, sem
+volume externo montado), muito abaixo da folga de ~12-15 GB necessária para os ~10 GB da
+corrida. Ver `09-04-SUMMARY.md` para a medição completa. O mecanismo foi provado com um
+recorte seguro (`download --limit 2`, ~570 KB, dois arquivos do Acre) antes de decidir não
+lançar a corrida cheia.
+
 ## Variáveis de ambiente
 
 Lidas de `.env.pipeline` na raiz do repositório (fora do git — ver `.gitignore`, D-17),
