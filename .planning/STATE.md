@@ -4,7 +4,7 @@ milestone: v3.0
 milestone_name: milestone
 status: "Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 [BLOCKING] (supabase db push --linked em producao) aguarda SUPABASE_ACCESS_TOKEN — mesma credencial D-17 do checkpoint 09-01 Task 1. Plano 01 permanece pausado (Task 1 credencial, Task 2 decisao D-23)."
 stopped_at: "Fase 09 Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5) — schema-v3.json/gerador/migracao/rollback/verify gerados e testados localmente (docker supabase/postgres:17.6.1.147); teste sihSchemaMigration.test.ts (12 casos) impede edicao manual. Task 3 (supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN indisponivel (mesma credencial D-17 do checkpoint 09-01 Task 1)."
-last_updated: "2026-08-05T11:13:26.848Z"
+last_updated: "2026-08-05T16:41:36.313Z"
 last_activity: 2026-08-05 -- Plano 09-03 Tasks 1-2 completas (schema-v3.json, gerador up/down/verify da migracao sih_v3_schema, teste de nao-edicao-manual); Task 3 bloqueada aguardando SUPABASE_ACCESS_TOKEN
 progress:
   total_phases: 6
@@ -26,9 +26,15 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 2 of 14
-Status: Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 [BLOCKING] (supabase db push --linked em producao) aguarda SUPABASE_ACCESS_TOKEN — mesma credencial D-17 do checkpoint 09-01 Task 1. Plano 01 permanece pausado (Task 1 credencial, Task 2 decisao D-23).
-Last activity: 2026-08-05 -- Plano 09-03 Tasks 1-2 completas (schema-v3.json, gerador up/down/verify da migracao sih_v3_schema, teste de nao-edicao-manual); Task 3 bloqueada aguardando SUPABASE_ACCESS_TOKEN
+Plan: 4 of 14
+Status: Onda 1 completa (09-01, 09-02, 09-03 — schema v3 aplicado e provado em producao; Fase 10 destravada). Plano 09-04: Tasks 1-3 commitadas (bc93cda, d890b06, 945e984, c8f115e) mas a corrida completa NAO foi disparada e nao ha SUMMARY — BLOQUEIO DE DISCO: 1,7 GB livres de 228 GB, contra ~12-15 GB necessarios para os ~10 GB / 4.212 arquivos. Mecanismo provado com recorte de 2 arquivos (~570 KB). Escape hatch existe: SIH_PIPELINE_CACHE_DIR aponta o cache para volume externo (paths.py:22).
+Last activity: 2026-08-05 -- 09-04 Tasks 1-3 implementadas e commitadas (enumeracao determinista dos 4.212 arquivos, ledger Camada 1 com retomada idempotente, download com isolamento de falha por arquivo + cli.py); corrida longa retida por falta de disco
+
+### Bloqueios abertos
+
+- **09-04 Task 3 (disco):** a corrida de ~10 GB precisa de ~12-15 GB livres; ha 1,7 GB. Resolver com volume externo via `SIH_PIPELINE_CACHE_DIR`, ou liberar espaco (~2,7 GB em ~/Library/Caches, ~2,4 GB em ~/.cache, ~531 MB em ~/.npm). Sem isso, 09-07 em diante nao tem microdado para agregar.
+- **`supabase ... --linked` nos planos 09-10 (4x), 09-12 (1x), 09-14 (6x):** exigem SUPABASE_ACCESS_TOKEN, que nao existe. Contorno provado: trocar por `--db-url "$SIH_PIPELINE_DB_URL"` (funciona em db push, db query e db dump). Alternativa: operador gera Personal Access Token.
+- **`psql` fora do PATH default:** exige `export PATH="$(brew --prefix libpq)/bin:$PATH"`. Necessario em 09-10 e 09-14.
 
 ## Accumulated Context
 
