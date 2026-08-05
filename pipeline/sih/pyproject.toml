@@ -1,0 +1,30 @@
+[project]
+name = "sih-pipeline"
+version = "0.1.0"
+description = "Pipeline de coleta confiável do SIH-RD (DataSUS) para o Supabase da LACIR"
+readme = "README.md"
+authors = [
+    { name = "peuvogel", email = "peuvogel@gmail.com" }
+]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pysus==1.0.1",
+    "psycopg[binary]==3.3.4",
+]
+# pyarrow, pandas, dbfread e pyreaddbc entram transitivamente via pysus==1.0.1 —
+# ver README.md "Por que pysus==1.0.1 e não a 2.x" para o porquê do pin exato.
+
+[dependency-groups]
+dev = ["pytest>=8,<9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q --strict-markers"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sih_pipeline"]
