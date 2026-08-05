@@ -156,9 +156,9 @@ O critério 7 é o gate de verdade da fase: hoje a agregação bate exato em 31 
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — Pré-requisitos humanos: credencial Postgres do D-17 e ordem de relevância cirúrgica do D-23 (Onda 1)
+- [x] 09-01-PLAN.md — Pré-requisitos humanos: credencial Postgres do D-17 e ordem de relevância cirúrgica do D-23 (Onda 1)
 - [x] 09-02-PLAN.md — Onda 0 do pipeline Python: projeto `uv` com `pysus==1.0.1`, guarda de caminho ASVS V12, e `npm run gate` fail-closed sobre a suíte Python (Onda 1)
-- [ ] 09-03-PLAN.md — Schema v3 em produção: dimensão `local`, `sih_collection_status` e as quatro tabelas de população, tudo gerado de `schema-v3.json` (Onda 1)
+- [x] 09-03-PLAN.md — Schema v3 em produção: dimensão `local`, `sih_collection_status` e as quatro tabelas de população, tudo gerado de `schema-v3.json` (Onda 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -270,7 +270,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
 | 8. Taxonomia canônica + integridade | 10/10 | Complete    | 2026-08-04 |
-| 9. Pipeline confiável + coleta completa | 1/14 | In Progress|  |
+| 9. Pipeline confiável + coleta completa | 3/14 | In Progress|  |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |
 | 12. Varredura de bugs + UAT | 0/TBD | Not started | - |
