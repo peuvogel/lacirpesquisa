@@ -49,7 +49,7 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 
 - [ ] **DATA-01**: As 4 medidas (Internações, Óbitos, Valor_total, Dias_permanência) estão coletadas para os 330 agravos no grão UF
 - [ ] **DATA-02**: As 4 medidas estão coletadas para os 330 agravos no grão município
-- [ ] **DATA-03**: `taxa_mortalidade` é derivável em todo o catálogo, não só nos 5 agravos atuais
+- [x] **DATA-03**: `taxa_mortalidade` é derivável em todo o catálogo, não só nos 5 agravos atuais
 - [ ] **DATA-04**: Cada métrica servida ao app carrega a data em que foi coletada
 
 ### Mapas dinâmicos
@@ -124,7 +124,7 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 | PIPE-06 | Phase 9 | Pending |
 | DATA-01 | Phase 9 | Pending |
 | DATA-02 | Phase 9 | Pending |
-| DATA-03 | Phase 9 | Pending |
+| DATA-03 | Phase 9 | Complete |
 | DATA-04 | Phase 9 | Pending |
 | MAPA-01 | Phase 10 | Pending |
 | MAPA-02 | Phase 10 | Pending |

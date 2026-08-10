@@ -163,11 +163,11 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [ ] 09-04-PLAN.md — Enumeração determinística (SC-1), ledger de arquivo, download com isolamento de falha por arquivo, e o disparo da corrida completa (Onda 2)
-- [ ] 09-05-PLAN.md — Raspador mínimo do TabNet e o oráculo dos 85 pares re-raspado ao vivo, com os descartes escritos (Onda 2)
+- [x] 09-05-PLAN.md — Raspador mínimo do TabNet e o oráculo dos 85 pares re-raspado ao vivo, com os descartes escritos (Onda 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 09-07-PLAN.md — Canonização compartilhada, matcher CID com camada de correção, e a agregação das 4 medidas × 2 grãos × 2 locais (Onda 3)
+- [x] 09-07-PLAN.md — Canonização compartilhada, matcher CID com camada de correção, e a agregação das 4 medidas × 2 grãos × 2 locais (Onda 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -270,7 +270,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
 | 8. Taxonomia canônica + integridade | 10/10 | Complete    | 2026-08-04 |
-| 9. Pipeline confiável + coleta completa | 3/14 | In Progress|  |
+| 9. Pipeline confiável + coleta completa | 5/14 | In Progress|  |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |
 | 12. Varredura de bugs + UAT | 0/TBD | Not started | - |

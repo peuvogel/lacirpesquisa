@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
-status: "Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 [BLOCKING] (supabase db push --linked em producao) aguarda SUPABASE_ACCESS_TOKEN — mesma credencial D-17 do checkpoint 09-01 Task 1. Plano 01 permanece pausado (Task 1 credencial, Task 2 decisao D-23)."
-stopped_at: "Fase 09 Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5) — schema-v3.json/gerador/migracao/rollback/verify gerados e testados localmente (docker supabase/postgres:17.6.1.147); teste sihSchemaMigration.test.ts (12 casos) impede edicao manual. Task 3 (supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN indisponivel (mesma credencial D-17 do checkpoint 09-01 Task 1)."
-last_updated: "2026-08-05T16:41:36.313Z"
-last_activity: 2026-08-05 -- Plano 09-03 Tasks 1-2 completas (schema-v3.json, gerador up/down/verify da migracao sih_v3_schema, teste de nao-edicao-manual); Task 3 bloqueada aguardando SUPABASE_ACCESS_TOKEN
+status: executing
+stopped_at: "Fase 09 Plano 07 completo: codigos.py/matcher.py/corrections.py/aggregate.py + fixture rdac_2019.parquet (AC/2019, 44.589 registros, 267 KB) commitados (3c809a0..eb4ba30); DATA-03 marcado completo, DATA-01/DATA-02 permanecem Pending ate a corrida completa (09-04) e a reconciliacao SC-7 (09-08/09-11)."
+last_updated: "2026-08-10T01:35:03.559Z"
+last_activity: 2026-08-10
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 31
-  completed_plans: 18
+  completed_plans: 22
   percent: 33
 ---
 
@@ -26,13 +26,13 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 4 of 14
-Status: Onda 1 completa (09-01, 09-02, 09-03 — schema v3 aplicado e provado em producao; Fase 10 destravada). Plano 09-04: Tasks 1-3 commitadas (bc93cda, d890b06, 945e984, c8f115e) mas a corrida completa NAO foi disparada e nao ha SUMMARY — BLOQUEIO DE DISCO: 1,7 GB livres de 228 GB, contra ~12-15 GB necessarios para os ~10 GB / 4.212 arquivos. Mecanismo provado com recorte de 2 arquivos (~570 KB). Escape hatch existe: SIH_PIPELINE_CACHE_DIR aponta o cache para volume externo (paths.py:22).
-Last activity: 2026-08-05 -- 09-04 Tasks 1-3 implementadas e commitadas (enumeracao determinista dos 4.212 arquivos, ledger Camada 1 com retomada idempotente, download com isolamento de falha por arquivo + cli.py); corrida longa retida por falta de disco
+Plan: 7 of 14 (09-07 completo; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint — ver Bloqueios abertos)
+Status: Onda 3 (09-07) completa. Onda 4 (09-08, reconciliacao SC-7) pronta para iniciar — depende so de 09-05 (oraculo, completo) e 09-07 (matcher/aggregate, completo), nao de 09-04 estar 100% baixado.
+Last activity: 2026-08-09
 
 ### Bloqueios abertos
 
-- **09-04 Task 3 (disco):** a corrida de ~10 GB precisa de ~12-15 GB livres; ha 1,7 GB. Resolver com volume externo via `SIH_PIPELINE_CACHE_DIR`, ou liberar espaco (~2,7 GB em ~/Library/Caches, ~2,4 GB em ~/.cache, ~531 MB em ~/.npm). Sem isso, 09-07 em diante nao tem microdado para agregar.
+- **09-04 Task 3 (disco):** a corrida completa de ~10 GB (todas as 331 agravos x 27 UF x 2013-2025) ainda nao foi disparada. Disco verificado em 09-07 com ~7,3 GB livres — folga maior que o ~1,7 GB registrado antes, mas ainda abaixo dos ~12-15 GB estimados para a corrida inteira; resolver com volume externo via `SIH_PIPELINE_CACHE_DIR` ou liberar mais espaco antes de disparar. NAO bloqueou 09-07: a plan baixou so os 12 arquivos de AC/2019 (~3 MB) via `cli.py download --only`, suficientes para a fixture de gate. Bloqueia DATA-01/DATA-02 (coleta de fato dos 331 agravos) e a corrida real que 09-08/09-11/09-12 vao precisar.
 - **`supabase ... --linked` nos planos 09-10 (4x), 09-12 (1x), 09-14 (6x):** exigem SUPABASE_ACCESS_TOKEN, que nao existe. Contorno provado: trocar por `--db-url "$SIH_PIPELINE_DB_URL"` (funciona em db push, db query e db dump). Alternativa: operador gera Personal Access Token.
 - **`psql` fora do PATH default:** exige `export PATH="$(brew --prefix libpq)/bin:$PATH"`. Necessario em 09-10 e 09-14.
 
@@ -145,6 +145,9 @@ Last activity: 2026-08-05 -- 09-04 Tasks 1-3 implementadas e commitadas (enumera
 - [Phase 09-02]: pysus pinado exatamente em 1.0.1 (nunca >=/~=) — a 2.x devolve arquivos RJ/SP sob o nome do grupo RD pedido, defeito medido no spike 2026-08-04
 - [Phase 09-02]: cli.py (despachante dos subcomandos pipeline:*) tem dono único: plano 09-04 — nenhum outro plano da fase o edita
 - [Phase 09-02]: astral-sh/setup-uv pinado por SHA de commit (c771a70e6277c0a99b617c7a806ffedaca235ff9, tag v9.0.0) resolvido ao vivo via gh api, não hardcoded
+- [Phase 09-07]: MORTE chega como string (nao Int64 como o RESEARCH assumiu) -- medido ao vivo em RDAC1901.parquet; _cast_morte() verifica o tipo real e levanta TypeError para tipo inesperado
+- [Phase 09-07]: build_index (matcher.py) agrupa tokens por letra inicial do CID, provado identico a varredura linear do spike por teste dedicado -- real speedup sem mudar semantica de primeira-correspondencia
+- [Phase 09-07]: disease_id resolvido de diseases.json por tabnetCode (dict), nunca slugify(label) local -- evita reintroduzir defeito de ids da Fase 8
 
 ### Pending Todos
 
@@ -157,9 +160,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T11:12:47.809Z
-Stopped at: Fase 09 Plano 03: Tasks 1-2 completas e commitadas (882221c, 03abaf5) — schema-v3.json/gerador/migracao/rollback/verify gerados e testados localmente (docker supabase/postgres:17.6.1.147); teste sihSchemaMigration.test.ts (12 casos) impede edicao manual. Task 3 (supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN indisponivel (mesma credencial D-17 do checkpoint 09-01 Task 1).
-Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-03-PLAN.md
+Last session: 2026-08-10T01:35:03.556Z
+Stopped at: Fase 09 Plano 07 completo: codigos.py/matcher.py/corrections.py/aggregate.py + fixture rdac_2019.parquet (AC/2019, 44.589 registros, 267 KB) commitados (3c809a0..eb4ba30); DATA-03 marcado completo, DATA-01/DATA-02 permanecem Pending ate a corrida completa (09-04) e a reconciliacao SC-7 (09-08/09-11).
+Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-08-PLAN.md
 
 ## Performance Metrics
 
@@ -203,3 +206,4 @@ Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-03-PLAN.m
 | Phase 08-taxonomia-can-nica-integridade P09 | ~20min | 3 tasks | 7 files |
 | Phase 08-taxonomia-can-nica-integridade P10 | ~15min (continuation session) | 4 tasks | 2 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P02 | ~12min | 3 tasks | 20 files |
+| Phase 09-pipeline-confi-vel-coleta-completa P07 | 35min | 3 tasks | 9 files |
