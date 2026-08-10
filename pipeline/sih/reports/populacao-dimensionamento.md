@@ -118,9 +118,48 @@ bases, o que por si só não invalida `POPSVS`, mas é uma diferença real que f
 
 **Não foi possível, dentro do escopo desta medição, confirmar de forma definitiva qual base o
 TabNet usa como denominador oficial das taxas que a Fase 9 tenta reconciliar** — a suposição A3 do
-RESEARCH (confiança MEDIUM) continua sendo suposição. A diferença medida (~1-3%) é pequena o
-bastante para não invalidar `POPSVS` como escolha, mas grande o bastante para valer registro
-explícito na proveniência de qualquer taxa que a Fase 10 exibir (D-08).
+RESEARCH (confiança MEDIUM) continuava sendo suposição só até a medição. A diferença medida
+(~1-3%) é pequena o bastante para não invalidar `POPSVS` como escolha, mas grande o bastante para
+valer registro explícito na proveniência de qualquer taxa que a Fase 10 exibir (D-08). **A
+suposição A3 foi resolvida no checkpoint desta plan — ver §7.**
+
+## 7. Assumption A3 resolvida — julgamento de domínio do operador
+
+A Assumption A3 do RESEARCH ("`POPSVS` é a fonte institucionalmente mais alinhada como
+denominador de taxas hospitalares/mortalidade do SUS, em vez de `POPTCU`" — confiança MEDIUM,
+nunca confirmada contra um dicionário de dados oficial) foi resolvida no checkpoint desta plan
+pelo **julgamento de domínio do operador** (liga acadêmica de cirurgia vascular, domínio de saúde
+pública) — não é um achado do agente, e é registrado aqui com o mesmo crédito que a decisão D-23
+já recebeu:
+
+> O TabNet **não usa fonte demográfica única**. Ele hospeda ambas as bases, e o denominador varia
+> conforme o módulo de tabulação:
+>
+> - **POPSVS** (Secretaria de Vigilância em Saúde) é o denominador padrão dos **módulos de
+>   indicadores epidemiológicos** — taxas de mortalidade, incidência, cobertura vacinal. É
+>   projeção demográfica intercensitária (método das componentes, ajustando natalidade,
+>   mortalidade e migração), e fornece o detalhamento por **faixa etária e sexo**.
+> - **POPTCU** é a estimativa bruta que o IBGE envia ao TCU, usada para consultas demográficas
+>   brutas, per capita global e repasses financeiros (FPM). Em muitos módulos do TabNet ela traz
+>   apenas o total residente por município, **sem os recortes de idade e sexo** exigidos na
+>   epidemiologia.
+>
+> A divergência de 1–3% que foi medida decorre das metodologias: a POPTCU usa crescimento
+> matemático focado no volume total municipal para fins administrativos; a POPSVS usa projeção
+> por componentes, que evita distorção irreal em grupos etários específicos.
+>
+> Conclusão: para denominadores detalhados e estabilidade longitudinal no período recente,
+> **POPSVS é a fonte correta** e é a que os painéis epidemiológicos do TabNet usam.
+
+Isto casa exatamente com o uso deste projeto — taxa por 100 mil e mortalidade estratificada por
+sexo e faixa etária (D-24). A `POPTCU` não serviria nem que fosse preferida: ela não traz o
+recorte de idade/sexo que a estratificação exige. A divergência medida no §4 (−2,72% AC/2019,
+−1,07% Brasil/2019) deixa de ser "risco não quantificado de suposição errada" e passa a ser **a
+diferença metodológica esperada entre duas bases com propósitos distintos** — evidência que
+confirma a escolha, não um alerta pendente.
+
+**Assumption A3: RESOLVIDA.** `POPSVS` confirmado como fonte única do denominador, com
+justificativa de domínio registrada, não mais como hipótese de confiança MEDIUM.
 
 ## 5. Nota sobre o espaço ocupado hoje × o desenho já decidido da fase (D-16/D-20)
 
@@ -151,26 +190,36 @@ Nenhuma das duas comparações depende de estimativa para a parte da população
 são medidos (§2.1). A parte que seria estimada (`sih_metric_uf`/`sih_collection_status` em
 cobertura completa) pertence a outras plans (09-04/09-10), fora do escopo de medição desta plan.
 
-## 6. Recomendação preliminar (não é a decisão — ver checkpoint)
+## 6. Leitura que embasou a decisão
 
 A medição real (§2.1, 146 MB) é ordens de grandeza mais confiável que a projeção conservadora
 (§2.2, 420 MB) porque usa o schema real e dado real, não uma razão importada de uma tabela com
 formato de coluna muito diferente. Sob o regime permanente que D-16/D-20 já decidiram para esta
-mesma fase, as quatro tabelas de população cabem no banco gratuito com folga confortável — nenhuma
-das opções B/C do checkpoint (Storage ou faixas mais largas) parece necessária **se** o regime
-permanente for o cenário relevante. A única situação onde a margem fica de fato apertada é a
-comparação "hoje" (§5), que é transitória por construção do próprio desenho da fase e não deveria
-persistir além do 09-10.
-
-Esta seção é uma leitura, não uma decisão — a decisão (fonte + onde mora o estrato) é do operador,
-registrada abaixo.
+mesma fase, as quatro tabelas de população cabem no banco gratuito com folga confortável. A única
+situação onde a margem fica de fato apertada é a comparação "hoje" (§5), que é transitória por
+construção do próprio desenho da fase — não é um problema de capacidade, é um problema de
+**sequenciamento** entre o upload da população e a evacuação de `sih_metric_muni` (ambos no
+09-10). O operador levou essa leitura em conta na decisão abaixo.
 
 ---
 
-## Decisão do operador
+## Decisão do operador (2026-08-10)
 
-**Data:** _(preencher no momento da resposta ao checkpoint)_
-**Fonte do denominador (POPSVS confirmada ou corrigida):** _(pendente)_
-**Opção escolhida (`popsvs-no-banco` / `popsvs-estratificado-no-storage` / `faixas-mais-largas`):**
-_(pendente)_
-**Justificativa registrada pelo operador:** _(pendente)_
+**Decisão 1 — armazenamento:** `popsvs-no-banco`. As quatro tabelas vão para o Postgres, como o
+D-24 escreveu — zero desvio de decisão travada.
+
+Justificativa registrada pelo operador: a medição real de ~146 MB (§2.1) — e não a projeção
+conservadora de ~420 MB (§2.2) — é o número que decidiu, porque a projeção extrapolava de
+`sih_metric_muni`, que carrega `disease_id` textual duplicado em 2 índices, enquanto as tabelas de
+população têm um único índice PK enxuto. A pressão sobre o teto de 500 MB não vem da população;
+vem dos 319 MB de `sih_metric_muni` aguardando evacuação para o Storage pelo D-20/09-10.
+
+**Risco registrado explicitamente como sequenciamento, não como capacidade:** se a população subir
+ANTES de o 09-10 evacuar `sih_metric_muni`, o pior caso fica em ~472 MB contra o teto de 500 MB —
+margem de ~28 MB (ou ~4,5 MB se o teto for lido como 500.000.000 bytes decimais). **Restrição de
+ORDEM que o 09-10 precisa honrar: evacuar o município antes (ou junto, na mesma transação) de
+subir a população.** Não é um problema de espaço; é um problema de ordem de execução — ver
+`09-06-SUMMARY.md` §"Next Phase Readiness" para o registro formal desta restrição.
+
+**Decisão 2 — denominador:** `POPSVS` confirmado como fonte única, com a Assumption A3 resolvida
+por julgamento de domínio — ver §7 para o raciocínio completo, creditado ao operador.
