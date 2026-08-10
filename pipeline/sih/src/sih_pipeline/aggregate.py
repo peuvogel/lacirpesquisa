@@ -15,6 +15,15 @@ abaixo trata os dois casos possíveis (string ou inteiro) e levanta `TypeError` 
 outro tipo — nunca assume, sempre verifica (é exatamente a disciplina que o plano já pedia:
 "o código precisa **verificar** o tipo e falhar alto se ele mudar, em vez de assumir").
 
+Correção 2026-08-10 (achado 09-08-INVESTIGACAO, decisão do operador): `IDENT` (tipo de AIH) só
+conta `'1'` (AIH normal/nova admissão) em `internacoes`. `IDENT='5'` é renovação MENSAL de
+faturamento de uma internação de longa permanência — a MESMA hospitalização, não uma nova —
+contá-la infla categorias crônicas (demência, Parkinson, Alzheimer, formas graves de
+tuberculose) em ordens de grandeza sem afetar condições agudas. Ver
+`pipeline/sih/reports/reconciliacao-sc7.md` §"Investigação nova, 2026-08-10" para a medição
+completa (deltas SP/2019 colapsam de +45%/+108%/+665% para +3,7%/+21,1% ao filtrar só
+`IDENT='1'`).
+
 A janela de anos (D-11, `schema-v3.json` `anoMin`/`anoMax`) e os valores canônicos de `grao`/
 `local`/`medidas` vêm do próprio `schema-v3.json` — nunca reescritos como literal solto aqui, a
 mesma disciplina de fonte única que `codigos.py` aplica a UF/município.
@@ -45,7 +54,11 @@ NEEDED_COLUMNS = [
     "VAL_TOT",
     "DIAS_PERM",
     "ANO_CMPT",
+    "IDENT",
 ]
+
+# IDENT='1' é a única AIH que conta como internação nova -- ver docstring do módulo.
+_IDENT_AIH_NORMAL = "1"
 
 # Taxa de descarte (DIAG_PRINC sem categoria) acima da qual a agregação levanta -- T-09-30,
 # spike mediu 0,016% em 44.589 registros de AC/2019.
@@ -113,11 +126,16 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     """Lê `path` (diretório ou arquivo `.parquet`, real ou fixture) numa passada só e agrega
     por `(disease_id, grao, local, territorio_codigo, ano)`.
 
-    Cada registro válido (ano dentro da janela D-11 E `DIAG_PRINC` casado pelo matcher)
-    contribui para EXATAMENTE 4 linhas de saída: `(uf, ocorrencia)`, `(uf, residencia)`,
+    Cada registro válido (ano dentro da janela D-11 E `IDENT='1'` E `DIAG_PRINC` casado pelo
+    matcher) contribui para EXATAMENTE 4 linhas de saída: `(uf, ocorrencia)`, `(uf, residencia)`,
     `(municipio, ocorrencia)`, `(municipio, residencia)` — `MUNIC_MOV` alimenta ocorrência,
     `MUNIC_RES` alimenta residência (D-09), e o grão UF é derivado do grão município via
     `uf_de_municipio`, nunca lido de uma coluna separada.
+
+    Registros com `IDENT` diferente de `'1'` (achado 09-08-INVESTIGACAO, 2026-08-10: `'5'` é
+    renovação de faturamento da MESMA internação de longa permanência, não uma nova admissão)
+    são excluídos ANTES do matcher — nunca contados como descarte, porque não é falha de
+    categorização do CID, é exclusão semântica deliberada da medida `internacoes`.
 
     Registros cujo `DIAG_PRINC` não casa em nenhuma categoria são contados como descarte; acima
     de `_MAX_TAXA_DESCARTE` (0,1%) a função levanta `ValueError` (T-09-30).
@@ -129,6 +147,7 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     dias_perm = pc.cast(pc.utf8_trim_whitespace(table["DIAS_PERM"]), "int64").to_pylist()
     morte = _cast_morte(table["MORTE"]).to_pylist()
     ano_cmpt = pc.cast(pc.utf8_trim_whitespace(table["ANO_CMPT"]), "int64").to_pylist()
+    ident = pc.utf8_trim_whitespace(table["IDENT"]).to_pylist()
     diag_princ = table["DIAG_PRINC"].to_pylist()
     munic_mov = table["MUNIC_MOV"].to_pylist()
     munic_res = table["MUNIC_RES"].to_pylist()
@@ -142,6 +161,9 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     for i in range(total):
         ano = ano_cmpt[i]
         if ano is None or not (ANO_MIN <= ano <= ANO_MAX):
+            continue
+
+        if ident[i] != _IDENT_AIH_NORMAL:
             continue
 
         tabnet_code = match_category(diag_princ[i], index)
