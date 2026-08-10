@@ -4,7 +4,7 @@ milestone: v3.0
 milestone_name: milestone
 status: executing
 stopped_at: "Fase 09 Plano 09 completo: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21), bucket sih-municipio criado e auditado ao vivo (leitura anonima comprovada, escrita anonima recusada, teto de 50 MB confirmado), loadMunicipioPartition.ts (consumidor TS com DecompressionStream nativo e cache por promessa). Checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado, com item de acompanhamento registrado para remedir SP apos a corrida completa do 09-04."
-last_updated: "2026-08-10T15:13:46.457Z"
+last_updated: "2026-08-10T15:41:27.459Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 11 of 14 (09-09 completo — partitions.py, bucket sih-municipio criado e auditado, loadMunicipioPartition.ts; checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado. 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
-Status: Ready to execute
+Plan: 11 of 14 (09-11 Task 1 completa e commitada — confirmacao SC-7 contra SP/2019, D-03. Task 2 PAUSADA em checkpoint clinico humano D-07, gate=blocking — aguardando aprovacao da tabela de correcoes. Task 3 nao iniciada. 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
+Status: Paused at checkpoint (Task 2 of 09-11 — human-verify, gate=blocking)
 Last activity: 2026-08-10
 
 ### Bloqueios abertos
@@ -169,12 +169,13 @@ None yet.
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 - [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
 - [09-09] RESOLVIDO 2026-08-10: checkpoint D-21 respondido pelo operador -- `manter-por-uf` confirmado (27 particoes, uma por UF, zero desvio). Item de acompanhamento registrado para o futuro (nao bloqueia nada hoje): a decisao se apoiou em MEDICAO real so para o AC (66.109 B comprimidos, 14/156 arquivos-mes locais disponiveis) e em PROJECAO rotulada para as 26 UFs restantes (metodo ponderado pela distribuicao real do sih_metric_muni legado por UF -- 139,0 MB total projetado, SP=maior com 15,2-20,5 MB, 2,4x-3,3x abaixo do teto de 50 MB/objeto confirmado AO VIVO). **Depois que a corrida completa do 09-04 rodar, a particao de SP (e idealmente MG/BA/RS/PR) precisa ser MEDIDA de verdade e conferida contra o teto de 50 MB** -- sugerido o 09-12 (auditoria de cobertura) como dono natural dessa verificacao; nenhum plano da fase tem isso no escopo declarado hoje. Ver pipeline/sih/reports/particoes-dimensionamento.md §9 e 09-09-SUMMARY.md §"Next Phase Readiness".
+- [09-11] BLOQUEADO em checkpoint humano (Task 2, D-07, gate=blocking): Task 1 completa e commitada (`c5468cc`, `pipeline/sih/reports/confirmacao-uf-grande.md`) -- confirmacao contra SP/2019 (113 pares, 8 exato, 7 explicado, 98 inexplicado, `cid-corrections.json` inalterado, confirmado). Achados novos que ampliam o que o 09-08 levou ao checkpoint: (1) as duas colisoes residuais `9<->14 A19` e `77<->274 P35-P37` sao muito mais materiais em SP (133 e 1.992 internacoes reais ausentes do agregado, contra 3 e 50 no AC); (2) 7 categorias novas com delta extremo (25%-3.451%, 4 delas do capitulo de tuberculose) que o AC nunca exercitou com volume suficiente para revelar, sem sobreposicao estrutural de faixa -- recomendadas como trabalho novo para o 09-08, nao investigadas mais fundo aqui (D-03, confirmar nao e redepurar). Task 2 aguarda aprovacao humana em lote da tabela de 4 correcoes (`cid-corrections.json`) + 9 divergencias residuais (`cid-divergencias.json`) + decisao sobre o residuo de 58/98 pares inexplicados do AC (herdado do 09-08). Nenhum upload liberado ate a resposta -- `09-10` depende deste plano.
 
 ## Session Continuity
 
-Last session: 2026-08-10T15:12:49.407Z
-Stopped at: Fase 09 Plano 09 completo: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21), bucket sih-municipio criado e auditado ao vivo (leitura anonima comprovada, escrita anonima recusada, teto de 50 MB confirmado), loadMunicipioPartition.ts (consumidor TS com DecompressionStream nativo e cache por promessa). Checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado, com item de acompanhamento registrado para remedir SP apos a corrida completa do 09-04.
-Resume file: None
+Last session: 2026-08-10T15:41:27.459Z
+Stopped at: Fase 09 Plano 11 Task 1 completa (confirmacao SC-7 contra SP/2019, `c5468cc`) — PAUSADO no checkpoint clinico humano da Task 2 (D-07, gate=blocking): tabela de 4 correcoes CID (`cid-corrections.json`) + 9 divergencias residuais (`cid-divergencias.json`) + achados novos da confirmacao em UF grande aguardando aprovacao. Task 3 (gate permanente D-06) nao iniciada -- depende da resolucao da Task 2.
+Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-11-PLAN.md
 
 ## Performance Metrics
 
