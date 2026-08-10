@@ -19,16 +19,33 @@ fonte autoritativa (tabela oficial DATASUS `mxcid10lm.htm`) + medição empíric
 `cid-corrections.json` (tabnetCodes 9/15/77) e `pipeline/sih/reports/reconciliacao-sc7.md`. Isso
 libera o efeito das correções já aprovadas dos códigos `14`/`274`: `tuberculose_miliar` passa a
 bater EXATO (era ausente) e `doencas_infecciosas_e_parasitarias_congenitas` passa a ser
-EXPLICADO (era ausente). Novo estado: `exato=34, explicado=61, inexplicado=3`. Os 3 inexplicados
-restantes (`doenca_de_alzheimer`, `tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar`) têm
-faixa CID correta (confirmada contra a mesma fonte autoritativa) — o mecanismo do delta foi
-IDENTIFICADO nesta mesma investigação (AIH tipo 5/longa permanência, `IDENT='5'`, não filtrada
-por `aggregate.py`), mas a correção pertence a `aggregate.py` (fora do escopo de arquivo desta
-investigação, dono 09-07) — ver `cid-divergencias.json`,
-`PENDENTE_sete_categorias_delta_extremo_sp`. Continuam BLOQUEANDO o upload do `09-10` por essa
-razão, não mais por "mecanismo desconhecido". `ReconciliationResult.ok` é `False` sobre esta
-fixture HOJE, DE PROPÓSITO: o gate não pode fingir sucesso sobre uma pendência que segue aberta
-(D-02 proíbe inventar mecanismo tanto quanto proíbe banda de tolerância).
+EXPLICADO (era ausente). Novo estado: `exato=34, explicado=61, inexplicado=3`.
+
+ATUALIZADO DE NOVO em 2026-08-10 (fix aprovado pelo operador em `aggregate.py`, 09-07, commits
+`53b7323`/`defa477`, resolução de `PENDENTE_sete_categorias_delta_extremo_sp`): `aggregate.py`
+agora conta só `IDENT='1'` (AIH normal) em `internacoes` — `IDENT='5'` é renovação de faturamento
+da MESMA internação de longa permanência, não uma nova admissão. Remedido em SP/2019 com o código
+real (não um script ad-hoc): as 7 categorias de delta extremo colapsam de +45%–+3.451% para
++3,7%–+21,1%, dentro da banda já aceita de divergência de lote — `PENDENTE_sete_categorias_delta_
+extremo_sp` tem `bloqueiaUpload: false` em `cid-divergencias.json`.
+
+**A composição do gate AC/2019 (`exato=34, explicado=61, inexplicado=3`) fica BYTE-IDÊNTICA antes
+e depois deste fix** — medido diretamente (não assumido): os 3 inexplicados restantes
+(`doenca_de_alzheimer`, `tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar`) têm 0% de
+`IDENT='5'` em AC/2019 nestas 3 categorias especificamente (os 26 registros `IDENT='5'` do
+dataset inteiro de AC/2019 pertencem 100% a `esquizofrenia_transt_esquizotipicos_e_delirantes`
+(24) e `outros_transtornos_mentais_e_comportamentais` (2), nenhuma das quais tem par no oráculo
+AC/2019) — por isso o fix não move nenhum valor agregado desta fixture pequena. O resíduo AC
+destas 3 categorias (deltas +12,12%/+50%/+50%, denominadores de 33/2/4 -- ruído de amostra
+pequena) é genuíno, mas de mecanismo DIFERENTE do delta extremo de SP (que era IDENT) — a mesma
+classe de ruído da divergência de lote já aceita para as outras 53 categorias, mas que a decisão
+4 do checkpoint clínico do 09-11 excluiu deliberadamente dessa aceitação em lote, pendente de
+investigação individual. Este teste NÃO inventa essa investigação — mantém os 3 pares
+honestamente `inexplicado`. `ReconciliationResult.ok` é `False` sobre esta fixture HOJE, DE
+PROPÓSITO: o gate não pode fingir sucesso sobre um resíduo que segue sem razão escrita própria
+(D-02 proíbe inventar mecanismo tanto quanto proíbe banda de tolerância). Ver
+`pipeline/sih/reports/reconciliacao-sc7.md` §"Remedição pós-fix IDENT, 2026-08-10" para a
+medição completa (SP/2019, código real, não script ad-hoc).
 
 O que este gate protege não é "zero inexplicado" — é a COMPOSIÇÃO EXATA do conjunto inexplicado.
 Se o conjunto mudar (para mais OU para menos entradas), o matcher, `cid-corrections.json` ou
@@ -61,13 +78,23 @@ _MEDIDAS = ("internacoes", "obitos", "valor_total", "dias_permanencia")
 # códigos 9/77 foi resolvida (PENDENTE_colisao_codigos_9_e_77), liberando o efeito das correções
 # já aprovadas dos códigos 14/274 -- tuberculose_miliar agora bate EXATO, e
 # doencas_infecciosas_e_parasitarias_congenitas agora é EXPLICADO.
+#
+# ATUALIZADO DE NOVO 2026-08-10 (fix em aggregate.py, IDENT='1' só): estes 3 disease_ids
+# PERMANECEM neste conjunto -- medido, não assumido: AC/2019 tem 0% de IDENT='5' nestas 3
+# categorias especificamente (os 26 registros IDENT='5' do dataset inteiro pertencem a
+# esquizofrenia/outros transtornos mentais, sem par no oráculo AC), então o fix não move nenhum
+# valor agregado desta fixture. O mecanismo que causava o delta EXTREMO em SP (IDENT) está
+# corrigido -- PENDENTE_sete_categorias_delta_extremo_sp tem bloqueiaUpload=false -- mas o
+# resíduo pequeno e específico do AC (+12,12%/+50%/+50%, ruído de amostra pequena, denominadores
+# 33/2/4) é um mecanismo DIFERENTE, sem razão escrita própria, que a decisão 4 do checkpoint do
+# 09-11 excluiu deliberadamente da aceitação em lote. Ver docstring do módulo.
 _INEXPLICADOS_CONHECIDOS = frozenset(
     {
-        "doenca_de_alzheimer",  # tabnetCode 146 -- delta extremo; mecanismo IDENTIFICADO (AIH tipo 5,
-        # IDENT='5', não filtrada por aggregate.py) mas correção fora do escopo de arquivo desta
-        # investigação (dono: 09-07)
-        "tuberculose_do_sistema_nervoso",  # tabnetCode 10 -- mesmo mecanismo (AIH tipo 5), mesma razão
-        "tuberculose_pulmonar",  # tabnetCode 7 -- mesmo mecanismo (AIH tipo 5), mesma razão
+        "doenca_de_alzheimer",  # tabnetCode 146 -- delta extremo em SP RESOLVIDO (IDENT='1' só);
+        # resíduo de AC (+50%, agregado=6/tabnet=4) inalterado pelo fix, 0% IDENT='5' nesta
+        # categoria em AC/2019 -- ruído de amostra pequena, sem razão escrita própria
+        "tuberculose_do_sistema_nervoso",  # tabnetCode 10 -- mesma situação (+50%, agregado=3/tabnet=2)
+        "tuberculose_pulmonar",  # tabnetCode 7 -- mesma situação (+12,12%, agregado=37/tabnet=33)
     }
 )
 
@@ -131,9 +158,11 @@ def test_gate_agrega_fixture_pequena_e_compara_com_oraculo_congelado():
     assert len(resultado.exato) == 34
     assert len(resultado.explicado) == 61
     assert len(resultado.inexplicado) == 3
-    # result.ok é False hoje, DE PROPÓSITO -- ver docstring do módulo: o gate não finge sucesso
-    # sobre uma pendência que segue aberta (mecanismo AIH tipo 5 identificado, correção pendente
-    # em aggregate.py, fora do escopo de arquivo desta investigação -- dono 09-07).
+    # result.ok é False hoje, DE PROPÓSITO -- ver docstring do módulo: 34/61/3 é a composição
+    # TRUE medida DEPOIS do fix de IDENT='1' em aggregate.py (09-07, 2026-08-10) -- byte-idêntica
+    # à composição pré-fix, porque AC/2019 tem 0% de IDENT='5' nas 3 categorias que permanecem
+    # inexplicado. O gate não finge sucesso sobre um resíduo pequeno de AC que segue sem razão
+    # escrita própria (mecanismo diferente do delta extremo de SP, já resolvido).
     assert resultado.ok is False
 
 

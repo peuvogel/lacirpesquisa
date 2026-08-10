@@ -408,3 +408,142 @@ não só nas sete categorias nomeadas.
 Gate AC/2019: `exato=34, explicado=61, inexplicado=3` (`doenca_de_alzheimer`,
 `tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar` — os três representantes da pendência B
 visíveis no recorte pequeno do Acre). `result.ok = False`, de propósito.
+
+---
+
+## Remedição pós-fix IDENT, 2026-08-10
+
+**Contexto:** o operador aprovou o fix (2026-08-10, sem PLAN.md — brief avulso do coordenador,
+mesmo padrão da investigação anterior): filtrar `aggregate.py` para contar só `IDENT='1'` (AIH
+normal). Rationale registrada pelo operador: uma renovação de AIH de longa permanência é
+faturamento continuado da MESMA hospitalização, não uma nova admissão — contar as duas juntas
+duplica a internação; e o TabNet (oráculo) evidentemente já conta só a AIH inicial. Este fix
+fecha a pendência B, a segunda das duas pendências que bloqueavam o upload (09-10).
+
+### O fix
+
+TDD RED→GREEN sobre `pipeline/sih/tests/test_aggregate.py`/`aggregate.py`:
+
+- **RED** (`defa477`): dois testes novos — um sintético (4 registros, 2×`IDENT='1'` +
+  1×`IDENT='5'` + 1×`IDENT='9'`, afirma que só os 2 primeiros contam) e um sobre dado real (a
+  fixture de gate `rdac_2019.parquet`, afirma `total_ocorrencia == 44.563` = 44.589 − 26
+  registros `IDENT='5'` medidos ao vivo em AC/2019, 0 descartes do matcher nesta fixture).
+  Verificado RED isoladamente: restaurando a versão commitada de `aggregate.py` e da fixture
+  antes do commit, `3 failed / 13 passed`, zero erros de coleção (o `NEEDED_COLUMNS` também
+  falha, como esperado).
+- **GREEN** (`53b7323`): `NEEDED_COLUMNS` ganha `IDENT`; excluído ANTES do `match_category`
+  (`continue` explícito), nunca contado como descarte — não é falha de categorização do CID, é
+  exclusão semântica deliberada da medida `internacoes`. A fixture `rdac_2019.parquet` foi
+  regenerada a partir dos mesmos 12 arquivos reais de AC/2019 (`RDAC1901`..`RDAC1912`) do 09-07,
+  agora projetando `IDENT` também — 44.589 registros preservados, 267 KB → 347 KB.
+
+Invariantes preexistentes confirmados intactos após o fix: ocorrência==residência (mesmo
+conjunto de AIHs), soma de município==grão UF, `VAL_TOT` soma como float positivo, `_cast_morte`
+trata `MORTE` como string com padding (achado do 09-07).
+
+### Remedição do gate SC-7 (AC/2019) — composição BYTE-IDÊNTICA, medida não assumida
+
+Rodando o gate real (`test_reconcile_gate.py`) e o comparador (`reconcile.compare`) diretamente
+sobre a fixture regenerada: `exato=34, explicado=61, inexplicado=3`, **exatamente os mesmos 98
+disease_ids nos mesmos três buckets** de antes do fix (conferido conjunto a conjunto, não só a
+contagem). Comparado também, um a um, o `agregado` pós-fix contra o `agregado` pré-fix
+registrado em `paresQueMotivaram` de cada uma das 60 divergências já aceitas em
+`cid-divergencias.json` (decisão 2 do checkpoint + as 7 categorias originais do 09-08): **zero
+categorias mudaram de valor** — a única mudança nos 98 pares do oráculo AC/2019 continua sendo a
+já registrada pela investigação anterior (`tuberculose_miliar` e
+`doencas_infecciosas_e_parasitarias_congenitas`, resolução da pendência A, não deste fix).
+
+**Por que o fix não move nenhum número em AC/2019, medido:** dos 26 registros `IDENT='5'` do
+dataset inteiro de AC/2019 (44.589 registros), **100% pertencem a duas categorias só** —
+`esquizofrenia_transt_esquizotipicos_e_delirantes` (24 registros) e
+`outros_transtornos_mentais_e_comportamentais` (2 registros) — condições de saúde mental de
+longa permanência, confirmando por medição a hipótese não-testada que a investigação anterior
+tinha registrado ("é plausível... que outras categorias crônicas [incluindo] saúde mental de
+longa permanência... tenham o mesmo problema"). **Nenhuma das duas tem par no oráculo AC/2019**
+(98 pares) — por isso a remoção destes 26 registros não altera nenhum valor agregado que o gate
+compara. Isto é consistente com, e explica com mecanismo, o achado original do spike de
+2026-08-04 ("só 26 dos 44.589 registros têm IDENT=5; excluí-los não muda nenhuma contagem") — o
+spike media contra um oráculo diferente (85 pares do corpus legado) mas a mesma causa raiz
+(nenhum dos pares comparados intersecta as categorias psiquiátricas) explica por que AC nunca
+revelou nem esta parte do problema.
+
+`test_reconcile_gate.py` foi atualizado (docstring + comentários), mas **a composição numérica
+(34/61/3) e o conjunto exato de disease_ids permanecem os mesmos** — não é uma regressão, é a
+composição TRUE medida diretamente contra o código real pós-fix. Nenhum número foi afrouxado.
+
+### Remedição das 7 categorias contra SP/2019 — mecanismo confirmado, deltas colapsam
+
+Reagregado o cache local completo de SP/2019 (`RDSP1901`..`RDSP1912`, 2.606.482 registros) com o
+`aggregate.py` real (pós-fix), não um script ad-hoc — reproduzindo exatamente o caminho de
+código que vai rodar em produção:
+
+| Categoria | tabnetCode | Agregado pós-fix | TabNet | Delta pós-fix | Delta pré-fix |
+|---|---|---|---|---|---|
+| `restante_de_outras_tuberculoses` | 15 | 85 | 72 | **+18,06%** | +3.451,39% (bruto) / +33,33% (faixa já corrigida) |
+| `demencia` | 132 | 559 | 521 | **+7,29%** | +665,07% |
+| `tuberculose_pulmonar` | 7 | 2.372 | 2.287 | **+3,72%** | +108,22% |
+| `doenca_de_parkinson` | 145 | 245 | 221 | **+10,86%** | +47,51% |
+| `tuberculose_do_sistema_nervoso` | 10 | 92 | 76 | **+21,05%** | +47,37% |
+| `doenca_de_alzheimer` | 146 | 435 | 405 | **+7,41%** | +45,68% |
+| `tuberc_intest_peritonio_glangl_mesentericos` | 11 | 20 | 18 | **+11,11%** | +44,44% |
+
+Os sete deltas pós-fix (medidos com o código real, agosto de 2026) reproduzem, dentro de
+arredondamento, os deltas que a investigação anterior tinha calculado com um script auxiliar —
+boa validação cruzada independente. Todas as sete caem agora entre **+3,7% e +21,1%**, na mesma
+ordem de grandeza de divergências de lote já aceitas em `cid-divergencias.json` (ex.:
+`insuficiencia_cardiaca` +15,96%, `outras_tuberculoses_respiratorias` +18,18%,
+`doenca_pelo_virus_da_imunodeficiencia_humana_hiv` +15,87%, `infarto_cerebral` +24,81%,
+`embolia_e_trombose_arteriais` +40,0%) — não são mais delta extremo.
+
+**`PENDENTE_sete_categorias_delta_extremo_sp` RESOLVIDA** — `bloqueiaUpload` alterado para
+`false` em `cid-divergencias.json`. As duas pendências que bloqueavam o upload do 09-10 (A —
+colisão 9/77, e B — sete categorias de delta extremo) estão agora ambas resolvidas.
+
+### A divergência de lote (competência de processamento) continua valendo, na mesma magnitude
+
+Pergunta explícita do coordenador: o fix de IDENT absorveu parte do que estava sendo atribuído
+ao efeito de competência de processamento (`ANO_CMPT` vs `DT_INTER`)? **Medido, não assumido: em
+AC/2019, não** — comparação categoria a categoria (seção acima) mostra zero mudança nos valores
+agregados das 60 categorias já explicadas por essa divergência de lote. Isso faz sentido: os 26
+únicos registros `IDENT='5'` de AC/2019 pertencem a duas categorias psiquiátricas sem par no
+oráculo, então não podiam ter contribuído para o resíduo geral daquela UF em primeiro lugar.
+
+Em SP/2019, não foi re-executado o `reconcile.compare` completo sobre os 113 pares do oráculo
+(re-raspar SP inteiro está fora do orçamento deste fix — a tabela acima já mede exatamente as 7
+categorias que a pendência B cobria, com o código real). É plausível que outras categorias de
+SP/2019 (fora as 7 nomeadas) tenham alguma fração de `IDENT='5'`, reduzindo levemente seus
+deltas também — mas isso não contradiz nem esvazia o mecanismo de competência de processamento:
+a baseline de `IDENT='5'` no dataset inteiro de SP é 2,7% (69.283 de 2.606.482, medido), baixa o
+bastante para não explicar sozinha o resíduo mediano de +5,10% já registrado. **Não medido nesta
+rodada** (fora do escopo do fix, que é as 7 categorias designadas) — registrado honestamente como
+item de acompanhamento, não como conclusão.
+
+### Resíduo honesto que permanece (não-bloqueante)
+
+Das 7 categorias, 3 (`tuberculose_pulmonar`/7, `tuberculose_do_sistema_nervoso`/10,
+`doenca_de_alzheimer`/146) têm par no oráculo AC/2019 e permanecem **inexplicado** no gate
+congelado, com os MESMOS deltas de antes do fix (+12,12%/+50%/+50%, denominadores pequenos —
+33/2/4 internações). Isto não é uma regressão nem uma pendência nova: é o resíduo pequeno já
+conhecido do AC (decisão 4 do checkpoint do 09-11 excluiu deliberadamente estas 3 da aceitação
+em lote), que o fix de IDENT não tinha como resolver porque, em AC especificamente, IDENT não é
+a causa (0% de `IDENT='5'` nestas 3 categorias). Não bloqueia o upload — é a mesma classe de
+ruído de amostra pequena já tolerada para dezenas de outras categorias de baixo volume, apenas
+sem uma entrada de divergência individual escrita (decisão do operador, não deste fix, de não
+aceitar em lote sem investigação própria). Registrado em `cid-divergencias.json` (campo
+`residuoNaoBloqueante` da entrada `PENDENTE_sete_categorias_delta_extremo_sp`).
+
+### Resumo final
+
+| Pendência | Status | `bloqueiaUpload` |
+|---|---|---|
+| A — colisão residual códigos 9/77 | RESOLVIDA (investigação anterior) | `false` |
+| B — 7 categorias de delta extremo | **RESOLVIDA** (este fix — IDENT='1' em `aggregate.py`) | `false` |
+
+**As duas pendências que bloqueavam o upload do 09-10 estão resolvidas.** O 09-10 continua
+sujeito às demais restrições registradas em `STATE.md` §"Bloqueios abertos" (ordem de evacuação
+de `sih_metric_muni`, credencial `SUPABASE_ACCESS_TOKEN`, `psql` fora do PATH) — nenhuma delas
+relacionada ao SC-7.
+
+Commits: `defa477` (test, RED), `53b7323` (feat, GREEN aggregate.py). Ver
+`.planning/phases/09-pipeline-confi-vel-coleta-completa/09-07-IDENT-FIX-SUMMARY.md` para o
+resumo completo da tarefa.
