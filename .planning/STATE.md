@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "Fase 09 Plano 08 completo: reconcile.py comparador fail-closed, cid-corrections.json (4 correcoes) + cid-divergencias.json (9 entradas) + reconciliacao-sc7.md; 33/98 exato + 7/98 explicado medidos contra AC/2019; 58 pares inexplicado levados honestamente ao checkpoint do 09-11, junto com a pergunta sobre os codigos 9/77."
-last_updated: "2026-08-10T02:19:19.505Z"
+stopped_at: "Fase 09 Plano 06: Task 1 completo e commitado (population.py, TDD RED->GREEN + fix do desvio POPSBR25 minusculo). Task 2 (checkpoint:decision, gate=blocking) parada aguardando decisao do operador -- medicao real em pipeline/sih/reports/populacao-dimensionamento.md, SUMMARY.md ainda nao escrito."
+last_updated: "2026-08-10T10:33:33.308Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 8 of 14 (09-07 completo; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint — ver Bloqueios abertos)
-Status: Ready to execute
+Plan: 9 of 14 (09-06 Task 1 completo/commitado; Task 2 parada em checkpoint:decision aguardando o operador — ver Bloqueios abertos; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
+Status: Paused at checkpoint (09-06 Task 2)
 Last activity: 2026-08-10
 
 ### Bloqueios abertos
@@ -162,12 +162,13 @@ None yet.
 
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 - [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
+- [09-06] CHECKPOINT PENDENTE (Task 2, checkpoint:decision, gate=blocking): dimensionamento medido em pipeline/sih/reports/populacao-dimensionamento.md -- 1.382.478 linhas nas 4 tabelas sih_population_* (13 anos, 0% descarte), 146 MB medido via carga real em Postgres local com o schema da 09-03 (vs 420 MB na projecao conservadora pedida pelo plano), 327 MB ja ocupados hoje (319 MB sao sih_metric_muni legado, ja destinado a evacuacao por D-16/D-20 no 09-10), POPSVS x POPTCU medido (AC/2019 -2,72%, Brasil/2019 -1,07%). Aguardando resposta do operador: confirmar POPSVS como fonte e escolher popsvs-no-banco / popsvs-estratificado-no-storage / faixas-mais-largas. Nenhuma tabela sih_population_* recebeu upload (D-01: upload e do 09-10).
 
 ## Session Continuity
 
-Last session: 2026-08-10T02:18:54.826Z
-Stopped at: Fase 09 Plano 08 completo: reconcile.py comparador fail-closed, cid-corrections.json (4 correcoes) + cid-divergencias.json (9 entradas) + reconciliacao-sc7.md; 33/98 exato + 7/98 explicado medidos contra AC/2019; 58 pares inexplicado levados honestamente ao checkpoint do 09-11, junto com a pergunta sobre os codigos 9/77.
-Resume file: None
+Last session: 2026-08-10T10:33:33.304Z
+Stopped at: Fase 09 Plano 06: Task 1 completo e commitado (population.py, TDD RED->GREEN + fix do desvio POPSBR25 minusculo). Task 2 (checkpoint:decision, gate=blocking) parada aguardando decisao do operador -- medicao real em pipeline/sih/reports/populacao-dimensionamento.md, SUMMARY.md ainda nao escrito.
+Resume file: pipeline/sih/reports/populacao-dimensionamento.md
 
 ## Performance Metrics
 
