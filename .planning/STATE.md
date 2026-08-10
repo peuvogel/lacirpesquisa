@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "Fase 09 Plano 09 completo: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21), bucket sih-municipio criado e auditado ao vivo (leitura anonima comprovada, escrita anonima recusada, teto de 50 MB confirmado), loadMunicipioPartition.ts (consumidor TS com DecompressionStream nativo e cache por promessa). Checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado, com item de acompanhamento registrado para remedir SP apos a corrida completa do 09-04."
-last_updated: "2026-08-10T15:41:27.459Z"
+stopped_at: "Fase 09 Plano 11 completo: confirmacao SC-7 contra SP/2019 (Task 1), checkpoint clinico do operador respondido com 4 decisoes (Task 2 -- 4 correcoes aprovadas, residuo aceito como divergencia de lote, codigos 9/77 e 7 categorias de delta extremo bloqueiam o upload do 09-10), gate permanente do SC-7 congelado (Task 3, D-06). 09-10 permanece bloqueado por duas pendencias de dados explicitas, nao mais por credenciais."
+last_updated: "2026-08-10T16:10:04.798Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 31
-  completed_plans: 25
+  completed_plans: 26
   percent: 33
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 11 of 14 (09-11 Task 1 completa e commitada — confirmacao SC-7 contra SP/2019, D-03. Task 2 PAUSADA em checkpoint clinico humano D-07, gate=blocking — aguardando aprovacao da tabela de correcoes. Task 3 nao iniciada. 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
-Status: Paused at checkpoint (Task 2 of 09-11 — human-verify, gate=blocking)
+Plan: 12 of 14 (09-11 COMPLETO — confirmacao SC-7 contra SP/2019, checkpoint clinico do operador respondido, gate permanente do SC-7 congelado. Duas pendencias de dados bloqueiam o 09-10 -- ver "Bloqueios abertos". 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
+Status: Ready to execute
 Last activity: 2026-08-10
 
 ### Bloqueios abertos
@@ -36,7 +36,7 @@ Last activity: 2026-08-10
 - **`supabase ... --linked` nos planos 09-10 (4x), 09-12 (1x), 09-14 (6x):** exigem SUPABASE_ACCESS_TOKEN, que nao existe. Contorno provado: trocar por `--db-url "$SIH_PIPELINE_DB_URL"` (funciona em db push, db query e db dump). Alternativa: operador gera Personal Access Token.
 - **`psql` fora do PATH default:** exige `export PATH="$(brew --prefix libpq)/bin:$PATH"`. Necessario em 09-10 e 09-14.
 - **RESTRICAO DE ORDEM PARA O 09-10 (nao e bloqueio de capacidade, registrada pelo 09-06):** o dimensionamento real da populacao (D-24) mediu ~146 MB para as 4 tabelas `sih_population_*` (13 anos, medido via carga real num Postgres local com o schema da 09-03 -- nao a projecao conservadora de ~420 MB). O operador confirmou `popsvs-no-banco` (2026-08-10): as 4 tabelas vao para o Postgres, sem desvio do D-24. Mas o espaco ja ocupado hoje (327 MB, medido) inclui 319 MB de `sih_metric_muni` -- dado TabNet legado que D-16/D-20 ja decidiram evacuar para o Storage no proprio 09-10. **Se o `COPY` da populacao rodar ANTES de o 09-10 evacuar `sih_metric_muni`, o combinado mede ~472 MB contra o teto de 500 MB -- margem de so ~28 MB (ou ~4,5 MB em bytes decimais).** O 09-10 precisa evacuar o grao municipio (D-20) antes, ou na mesma transacao, de subir a populacao. Ver `pipeline/sih/reports/populacao-dimensionamento.md` §5-6 e `09-06-SUMMARY.md` §"Next Phase Readiness" para a medicao completa.
-- **SC-7 NAO FECHADO (09-08):** 33/98 exato, 7/98 explicado, **58/98 inexplicado**, `ReconciliationResult.ok = False`. O SC-7 do ROADMAP (linha 144) exige exato OU razao escrita por categoria divergente, sem banda de tolerancia (D-02) — logo o criterio NAO esta atendido hoje. A hipotese central do 09-RESEARCH (faixa CID larga absorvendo faixa estreita) foi **testada e descartada por medicao** nas 7 categorias de maior delta: toda faixa declarada e exatamente a faixa oficial da Lista Morb. A causa provavel restante e competencia de processamento (`ANO_CMPT`) vs data de internacao (`DT_INTER`), ja medida pelo spike: reagregar por `DT_INTER` leva o vies de +4,14% para +3,45% — **reduz mas nao zera**. Nenhum mecanismo conhecido fecha o SC-7 em zero inexplicados, e nenhum plano da fase tem no escopo mexer em `aggregate.py` (dono: 09-07) nem baixar 2020. DECISAO DO OPERADOR (2026-08-10): seguir para 09-06/09-09 e decidir o residuo no checkpoint clinico em lote do **09-11**. Sobreposicoes residuais abertas para aquele checkpoint: `9 A19 <-> 14 A19` e `77 P35-P37 <-> 274 P35-P37`.
+- **SC-7 (09-08/09-11): checkpoint clinico respondido, mas NAO totalmente fechado.** Estado final apos as decisoes do operador (2026-08-10): `exato=33, explicado=60, inexplicado=5` sobre AC/2019 (gate congelado em `test_reconcile_gate.py`, `result.ok=False` DE PROPOSITO). As 4 correcoes de faixa CID foram aprovadas; o residuo geral foi aceito como divergencia de lote (mecanismo de competencia de processamento `ANO_CMPT`/`DT_INTER`, confirmado em duas UFs). Mas **2 pendencias continuam abertas e BLOQUEIAM O UPLOAD do 09-10** -- ver as duas entradas "[09-11 -> 09-10] BLOQUEIA O UPLOAD" logo abaixo na secao "Blockers/Concerns" (codigos `9`/`77`, colisao residual, 2.254 internacoes reais em SP no codigo errado; e 7 categorias de delta extremo, 4 delas do capitulo de tuberculose, mecanismo desconhecido). Dono do proximo passo para as duas: 09-08.
 
 ## Accumulated Context
 
@@ -159,6 +159,9 @@ Last activity: 2026-08-10
 - [Phase 09-09]: Decisao do operador (D-21, 2026-08-10): manter-por-uf -- 27 particoes, uma por UF, zero desvio. SP (maior UF projetada) cabe com folga de 2,4x no teto de 50 MB/objeto confirmado ao vivo (tentativa real de elevar para 100 MB rejeitada pela plataforma, 413 EntityTooLarge)
 - [Phase 09-09]: Item de acompanhamento registrado -- decisao manter-por-uf se apoiou em medicao real so do AC (14/156 arquivos-mes) e projecao rotulada para as 26 UFs restantes; SP precisa ser remedida de verdade apos a corrida completa do 09-04, sugerido o 09-12 (auditoria de cobertura) como dono
 - [Phase 09-09]: Bucket sih-municipio auditado -- RLS habilitado com zero policies em storage.objects (default-deny confirmado por pg_policies E por tentativa real de escrita anonima recusada); leitura anonima funciona pelo caminho separado do endpoint publico do bucket, nao por RLS de objects
+- [Phase ?]: [Phase 09-11] Operador aprovou as 4 correcoes de faixa CID (75/74/14/274) como estao, ciente de que 274 (P35-P37) e aproximacao textual, nao titulo CID-10 exato como as outras tres -- aprovacao consciente registrada em cid-corrections.json
+- [Phase ?]: [Phase 09-11] Operador aceitou o residuo de 58/98 pares inexplicados do AC como divergencia de lote (mecanismo de competencia de processamento ANO_CMPT/DT_INTER, confirmado em duas UFs: AC +7,90%, SP +5,10%) -- MAS excluiu deliberadamente 3 categorias (7/146/10) que permanecem inexplicado
+- [Phase ?]: [Phase 09-11] Operador recusou divergencia honesta para os codigos 9/77 (colisao residual, 2.254 internacoes reais em SP no codigo errado) e para as 7 categorias de delta extremo (+3.451% restante_de_outras_tuberculoses, +665% demencia) -- ambas voltam ao 09-08 como pendencia que BLOQUEIA o upload do 09-10
 
 ### Pending Todos
 
@@ -169,13 +172,15 @@ None yet.
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 - [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
 - [09-09] RESOLVIDO 2026-08-10: checkpoint D-21 respondido pelo operador -- `manter-por-uf` confirmado (27 particoes, uma por UF, zero desvio). Item de acompanhamento registrado para o futuro (nao bloqueia nada hoje): a decisao se apoiou em MEDICAO real so para o AC (66.109 B comprimidos, 14/156 arquivos-mes locais disponiveis) e em PROJECAO rotulada para as 26 UFs restantes (metodo ponderado pela distribuicao real do sih_metric_muni legado por UF -- 139,0 MB total projetado, SP=maior com 15,2-20,5 MB, 2,4x-3,3x abaixo do teto de 50 MB/objeto confirmado AO VIVO). **Depois que a corrida completa do 09-04 rodar, a particao de SP (e idealmente MG/BA/RS/PR) precisa ser MEDIDA de verdade e conferida contra o teto de 50 MB** -- sugerido o 09-12 (auditoria de cobertura) como dono natural dessa verificacao; nenhum plano da fase tem isso no escopo declarado hoje. Ver pipeline/sih/reports/particoes-dimensionamento.md §9 e 09-09-SUMMARY.md §"Next Phase Readiness".
-- [09-11] BLOQUEADO em checkpoint humano (Task 2, D-07, gate=blocking): Task 1 completa e commitada (`c5468cc`, `pipeline/sih/reports/confirmacao-uf-grande.md`) -- confirmacao contra SP/2019 (113 pares, 8 exato, 7 explicado, 98 inexplicado, `cid-corrections.json` inalterado, confirmado). Achados novos que ampliam o que o 09-08 levou ao checkpoint: (1) as duas colisoes residuais `9<->14 A19` e `77<->274 P35-P37` sao muito mais materiais em SP (133 e 1.992 internacoes reais ausentes do agregado, contra 3 e 50 no AC); (2) 7 categorias novas com delta extremo (25%-3.451%, 4 delas do capitulo de tuberculose) que o AC nunca exercitou com volume suficiente para revelar, sem sobreposicao estrutural de faixa -- recomendadas como trabalho novo para o 09-08, nao investigadas mais fundo aqui (D-03, confirmar nao e redepurar). Task 2 aguarda aprovacao humana em lote da tabela de 4 correcoes (`cid-corrections.json`) + 9 divergencias residuais (`cid-divergencias.json`) + decisao sobre o residuo de 58/98 pares inexplicados do AC (herdado do 09-08). Nenhum upload liberado ate a resposta -- `09-10` depende deste plano.
+- [09-11] RESOLVIDO 2026-08-10: checkpoint clinico da Task 2 (D-07) respondido pelo operador com 4 decisoes -- (1) as 4 correcoes de faixa CID aprovadas como estao, campo `aprovacaoClinica` datado em `cid-corrections.json`; (2) residuo de 58/98 pares inexplicados do AC aceito como divergencia de lote (mecanismo de competencia de processamento, confirmado em duas UFs -- AC +7,90%, SP +5,10%), 53 novas entradas em `cid-divergencias.json`; (3) e (4) NAO aceitas como divergencia honesta -- ver bloqueios abaixo. Gate permanente (Task 3, D-06) congelado em `test_reconcile_gate.py`: `exato=33, explicado=60, inexplicado=5, result.ok=False` sobre AC/2019 -- os 5 inexplicados sao exatamente as pendencias das decisoes 3/4, protegidos por composicao exata (nao "zero inexplicado"). `npm run gate` verde. Ver `09-11-SUMMARY.md`.
+- **[09-11 -> 09-10] BLOQUEIA O UPLOAD -- colisao residual dos codigos `9` e `77`:** codigo `9` (A19) bloqueia o efeito da correcao aprovada do codigo `14` (tuberculose_miliar); codigo `77` (P35-P37) bloqueia o efeito da correcao aprovada do codigo `274` (doencas_infecciosas_e_parasitarias_congenitas). Operador recusou (decisao 3, 2026-08-10) registrar como divergencia honesta -- determinou investigacao da faixa correta antes de qualquer upload. Materialidade medida em SP/2019: **2.254 internacoes reais** atribuidas ao codigo errado (164 A19 + 2.090 P35-P37), contra 56 no AC (3+53). Registrado em `scripts/catalog/cid-divergencias.json` (`PENDENTE_colisao_codigos_9_e_77`, `bloqueiaUpload: true`). Dono do proximo passo: 09-08 (exige `nibr.def` ao vivo ou revisao clinica).
+- **[09-11 -> 09-10] BLOQUEIA O UPLOAD -- 7 categorias com delta extremo, mecanismo desconhecido:** `restante_de_outras_tuberculoses` (+3.451%), `demencia` (+665%), `tuberculose_pulmonar` (+108%), `doenca_de_parkinson` (+47,5%), `tuberculose_do_sistema_nervoso` (+47,4%), `doenca_de_alzheimer` (+45,7%), `tuberc_intest_peritonio_glangl_mesentericos` (+44,4%) -- deltas medidos em SP/2019, sem sobreposicao estrutural de faixa CID encontrada. Operador recusou (decisao 4, 2026-08-10) registrar como divergencia honesta -- 4 das 7 sao do capitulo de tuberculose (junto dos codigos 9/14 ja pendentes), suspeita de defeito estrutural nao mapeado. 3 delas batem EXATO em AC/2019 (17/3/1 casos) -- so a escala de SP revelou a divergencia real (vacuidade do D-03 em acao). Registrado em `scripts/catalog/cid-divergencias.json` (`PENDENTE_sete_categorias_delta_extremo_sp`, `bloqueiaUpload: true`). Dono do proximo passo: 09-08.
 
 ## Session Continuity
 
-Last session: 2026-08-10T15:41:27.459Z
-Stopped at: Fase 09 Plano 11 Task 1 completa (confirmacao SC-7 contra SP/2019, `c5468cc`) — PAUSADO no checkpoint clinico humano da Task 2 (D-07, gate=blocking): tabela de 4 correcoes CID (`cid-corrections.json`) + 9 divergencias residuais (`cid-divergencias.json`) + achados novos da confirmacao em UF grande aguardando aprovacao. Task 3 (gate permanente D-06) nao iniciada -- depende da resolucao da Task 2.
-Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-11-PLAN.md
+Last session: 2026-08-10T16:10:04.795Z
+Stopped at: Fase 09 Plano 11 completo: confirmacao SC-7 contra SP/2019 (Task 1), checkpoint clinico do operador respondido com 4 decisoes (Task 2 -- 4 correcoes aprovadas, residuo aceito como divergencia de lote, codigos 9/77 e 7 categorias de delta extremo bloqueiam o upload do 09-10), gate permanente do SC-7 congelado (Task 3, D-06). 09-10 permanece bloqueado por duas pendencias de dados explicitas, nao mais por credenciais.
+Resume file: None
 
 ## Performance Metrics
 
@@ -223,3 +228,4 @@ Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-11-PLAN.m
 | Phase 09 P08 | ~45min | 3 tasks | 6 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P06 | ~55min | 2 tasks | 4 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P09 | ~25min ativos | 3 tasks | 6 files |
+| Phase 09 P11 | ~55min | 3 tasks | 6 files |
