@@ -176,7 +176,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 09-09-PLAN.md — As 27 partições de município no Supabase Storage e o consumidor TypeScript com `DecompressionStream` (Onda 5)
+- [x] 09-09-PLAN.md — As 27 partições de município no Supabase Storage e o consumidor TypeScript com `DecompressionStream` (Onda 5)
 - [ ] 09-11-PLAN.md — Confirmação em UF grande, checkpoint clínico em lote, e o gate permanente do SC-7 (Onda 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
@@ -270,7 +270,7 @@ Phases execute in numeric order: 7 → 8 → 9 → 10 → 11 → 12
 |-------|-----------------|--------|-----------|
 | 7. Baseline verde | 7/7 | Complete   | 2026-07-29 |
 | 8. Taxonomia canônica + integridade | 10/10 | Complete    | 2026-08-04 |
-| 9. Pipeline confiável + coleta completa | 7/14 | In Progress|  |
+| 9. Pipeline confiável + coleta completa | 8/14 | In Progress|  |
 | 10. Mapas dinâmicos sobre Supabase | 0/TBD | Not started | - |
 | 11. Fluxo pesquisa → estatística | 0/TBD | Not started | - |
 | 12. Varredura de bugs + UAT | 0/TBD | Not started | - |

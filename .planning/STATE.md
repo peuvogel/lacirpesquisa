@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "Fase 09 Plano 09 Task 1+2 completos: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21) e a medicao real das 27 particoes commitados. Task 2 (checkpoint:decision, gate=blocking, D-21) aguardando resposta do operador sobre o formato de particao -- ver pipeline/sih/reports/particoes-dimensionamento.md e Blockers/Concerns [09-09]. Task 3 (loadMunicipioPartition.ts) nao iniciada -- depende da decisao."
-last_updated: "2026-08-10T11:14:42.817Z"
+stopped_at: "Fase 09 Plano 09 completo: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21), bucket sih-municipio criado e auditado ao vivo (leitura anonima comprovada, escrita anonima recusada, teto de 50 MB confirmado), loadMunicipioPartition.ts (consumidor TS com DecompressionStream nativo e cache por promessa). Checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado, com item de acompanhamento registrado para remedir SP apos a corrida completa do 09-04."
+last_updated: "2026-08-10T15:13:46.457Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 31
-  completed_plans: 24
+  completed_plans: 25
   percent: 33
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 10 of 14 (09-09 EM PAUSA — Task 1 [partitions.py] e Task 2 [medicao real + bucket auditado] completos e commitados; Task 2 e `checkpoint:decision` gate=blocking, D-21, aguardando resposta do operador; Task 3 [loadMunicipioPartition.ts] nao iniciada. 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
-Status: Paused at checkpoint (09-09 Task 2, D-21)
+Plan: 11 of 14 (09-09 completo — partitions.py, bucket sih-municipio criado e auditado, loadMunicipioPartition.ts; checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado. 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
+Status: Ready to execute
 Last activity: 2026-08-10
 
 ### Bloqueios abertos
@@ -156,6 +156,9 @@ Last activity: 2026-08-10
 - [Phase ?]: [Phase 09-08] 58/98 pares deixados honestamente inexplicado, nao convertidos em divergencia de lote sem verificacao individual -- residue hidden by tuning e o que o D-02 existe para proibir
 - [Phase 09-06]: Decisao do operador: popsvs-no-banco -- as 4 tabelas sih_population_* vao para o Postgres (D-24 como escrito), decidido pela medicao real de ~146 MB (nao a projecao conservadora de ~420 MB) — Restricao de ORDEM registrada para o 09-10: evacuar sih_metric_muni (D-20) antes ou junto de subir a populacao, senao o combinado mede ~472 MB contra o teto de 500 MB
 - [Phase 09-06]: Decisao do operador: POPSVS confirmado como fonte unica do denominador -- Assumption A3 do RESEARCH (confianca MEDIUM) resolvida por julgamento de dominio (liga academica de cirurgia vascular) — TabNet usa POPSVS nos modulos epidemiologicos (projecao intercensitaria por componentes, com faixa etaria/sexo) e POPTCU so no repasse fiscal (sem esse recorte) -- divergencia medida (AC/2019 -2,72%, Brasil/2019 -1,07%) e a diferenca metodologica esperada, nao um risco de escolha errada
+- [Phase 09-09]: Decisao do operador (D-21, 2026-08-10): manter-por-uf -- 27 particoes, uma por UF, zero desvio. SP (maior UF projetada) cabe com folga de 2,4x no teto de 50 MB/objeto confirmado ao vivo (tentativa real de elevar para 100 MB rejeitada pela plataforma, 413 EntityTooLarge)
+- [Phase 09-09]: Item de acompanhamento registrado -- decisao manter-por-uf se apoiou em medicao real so do AC (14/156 arquivos-mes) e projecao rotulada para as 26 UFs restantes; SP precisa ser remedida de verdade apos a corrida completa do 09-04, sugerido o 09-12 (auditoria de cobertura) como dono
+- [Phase 09-09]: Bucket sih-municipio auditado -- RLS habilitado com zero policies em storage.objects (default-deny confirmado por pg_policies E por tentativa real de escrita anonima recusada); leitura anonima funciona pelo caminho separado do endpoint publico do bucket, nao por RLS de objects
 
 ### Pending Todos
 
@@ -165,12 +168,12 @@ None yet.
 
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 - [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
-- [09-09] Task 2 (checkpoint:decision, gate=blocking): D-21 -- formato de particao (manter-por-uf / uf-por-ano / uf-com-grandes-divididas) aguardando decisao do operador. Medicao real registrada em pipeline/sih/reports/particoes-dimensionamento.md -- AC medido de verdade (66.109 B comprimidos, 14/156 arquivos-mes locais disponiveis; corpus completo bloqueado por disco no 09-04). 26 UFs restantes projetadas por dois metodos rotulados (nunca apresentadas como medicao): metodo ingenuo (fracao do ledger, 18,97 MB total -- subestima por assumir uniformidade entre UFs) e metodo ponderado pela distribuicao real de linhas do sih_metric_muni legado por UF (139,0 MB total, SP=maior com 15,2-20,5 MB -- 2,4x-3,3x abaixo do teto de 50 MB por objeto confirmado AO VIVO por tentativa real de aumento rejeitada pela plataforma). Bucket sih-municipio criado e auditado: GET anonimo real HTTP 200 byte-a-byte identico ao arquivo local; POST/PUT/DELETE anonimo real recusados (corpo 403/AccessDenied, nada escrito -- confirmado por listagem service_role -- mas o codigo HTTP de TRANSPORTE observado e 400, nao 401/403 como o criterio de aceitacao antecipava -- desvio honesto registrado, substancia da recusa comprovada); pg_policies mostra zero policies para storage.objects (colado no relatorio), RLS habilitado, anon/authenticated sem bypassrls. Tasks 1 (partitions.py) e a medicao ja commitadas (cae15ae/e61bef7/a3f8b8b); Task 3 (loadMunicipioPartition.ts) aguarda a decisao para saber se colunas/formato mudam.
+- [09-09] RESOLVIDO 2026-08-10: checkpoint D-21 respondido pelo operador -- `manter-por-uf` confirmado (27 particoes, uma por UF, zero desvio). Item de acompanhamento registrado para o futuro (nao bloqueia nada hoje): a decisao se apoiou em MEDICAO real so para o AC (66.109 B comprimidos, 14/156 arquivos-mes locais disponiveis) e em PROJECAO rotulada para as 26 UFs restantes (metodo ponderado pela distribuicao real do sih_metric_muni legado por UF -- 139,0 MB total projetado, SP=maior com 15,2-20,5 MB, 2,4x-3,3x abaixo do teto de 50 MB/objeto confirmado AO VIVO). **Depois que a corrida completa do 09-04 rodar, a particao de SP (e idealmente MG/BA/RS/PR) precisa ser MEDIDA de verdade e conferida contra o teto de 50 MB** -- sugerido o 09-12 (auditoria de cobertura) como dono natural dessa verificacao; nenhum plano da fase tem isso no escopo declarado hoje. Ver pipeline/sih/reports/particoes-dimensionamento.md §9 e 09-09-SUMMARY.md §"Next Phase Readiness".
 
 ## Session Continuity
 
-Last session: 2026-08-10T11:14:42.814Z
-Stopped at: Fase 09 Plano 09 Task 1+2 completos: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21) e a medicao real das 27 particoes commitados. Task 2 (checkpoint:decision, gate=blocking, D-21) aguardando resposta do operador sobre o formato de particao -- ver pipeline/sih/reports/particoes-dimensionamento.md e Blockers/Concerns [09-09]. Task 3 (loadMunicipioPartition.ts) nao iniciada -- depende da decisao.
+Last session: 2026-08-10T15:12:49.407Z
+Stopped at: Fase 09 Plano 09 completo: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21), bucket sih-municipio criado e auditado ao vivo (leitura anonima comprovada, escrita anonima recusada, teto de 50 MB confirmado), loadMunicipioPartition.ts (consumidor TS com DecompressionStream nativo e cache por promessa). Checkpoint D-21 respondido pelo operador -- manter-por-uf confirmado, com item de acompanhamento registrado para remedir SP apos a corrida completa do 09-04.
 Resume file: None
 
 ## Performance Metrics
@@ -218,3 +221,4 @@ Resume file: None
 | Phase 09-pipeline-confi-vel-coleta-completa P07 | 35min | 3 tasks | 9 files |
 | Phase 09 P08 | ~45min | 3 tasks | 6 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P06 | ~55min | 2 tasks | 4 files |
+| Phase 09-pipeline-confi-vel-coleta-completa P09 | ~25min ativos | 3 tasks | 6 files |
