@@ -131,12 +131,19 @@ def read_popsvs_year(path: str | Path) -> Iterator[dict[str, Any]]:
 
     tabela = dbfread.DBF(str(caminho_extraido), load=False)
     for registro in tabela:
+        # Desvio medido ao vivo nesta plan: POPSBR25 (o ano mais recente da janela D-11) vem
+        # com nomes de campo em minúsculas (`cod_mun`/`ano`/`sexo`/`idade`/`pop`), diferente de
+        # POPSBR13..POPSBR24 (maiúsculas) -- `dbfread`'s `ignorecase=True` só afeta a resolução
+        # do arquivo, nunca as chaves do dict devolvido. Normalizar para maiúsculas aqui é o
+        # único jeito de não falhar alto no ano mais recente da própria janela que esta função
+        # existe para cobrir.
+        campos = {chave.upper(): valor for chave, valor in registro.items()}
         yield {
-            "COD_MUN": str(registro["COD_MUN"]),
-            "ANO": str(registro["ANO"]),
-            "SEXO": str(registro["SEXO"]),
-            "IDADE": str(registro["IDADE"]),
-            "POP": int(registro["POP"]),
+            "COD_MUN": str(campos["COD_MUN"]),
+            "ANO": str(campos["ANO"]),
+            "SEXO": str(campos["SEXO"]),
+            "IDADE": str(campos["IDADE"]),
+            "POP": int(campos["POP"]),
         }
 
 

@@ -9,6 +9,7 @@ idades, os 2 sexos, 486 registros) -- nenhum teste desta suíte toca rede: `down
 from __future__ import annotations
 
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -202,3 +203,36 @@ def test_faixas_etarias_nao_sao_redeclaradas_em_python():
     # As faixas vivem em população._FAIXAS, lidas de schema-v3.json em tempo de import -- nunca
     # uma lista literal solta que possa divergir do check constraint gerado pela 09-03.
     assert population._FAIXAS == _schema_v3()["faixasEtarias"]
+
+
+def test_read_popsvs_year_normaliza_nomes_de_campo_minusculos(monkeypatch, tmp_path, cache_dir):
+    # Desvio medido ao vivo nesta plan (Task 2): POPSBR25 -- o ano mais recente da própria
+    # janela D-11 -- vem com nomes de campo em minúsculas (cod_mun/ano/sexo/idade/pop),
+    # diferente de POPSBR13..POPSBR24 (maiúsculas). dbfread é substituído por um duble que
+    # devolve exatamente essa forma, sem depender de escrever um .dbf binário real.
+    import dbfread
+
+    registros_minusculos = [
+        {"cod_mun": "1200013", "ano": "2025", "sexo": "1", "idade": "000", "pop": 42},
+    ]
+
+    class _DBFDuble:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        def __iter__(self):
+            return iter(registros_minusculos)
+
+    monkeypatch.setattr(dbfread, "DBF", _DBFDuble)
+
+    conteudo_dbf = tmp_path / "pop25.dbf"
+    conteudo_dbf.write_bytes(b"conteudo-irrelevante -- DBF() esta substituido pelo duble acima")
+    caminho_zip = tmp_path / "POPSBR25.zip"
+    with zipfile.ZipFile(caminho_zip, "w") as arquivo_zip:
+        arquivo_zip.write(conteudo_dbf, arcname="pop25.dbf")
+
+    resultado = list(population.read_popsvs_year(caminho_zip))
+
+    assert resultado == [
+        {"COD_MUN": "1200013", "ANO": "2025", "SEXO": "1", "IDADE": "000", "POP": 42}
+    ]
