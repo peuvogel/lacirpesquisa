@@ -73,20 +73,1072 @@
     "diseaseId": "tuberculose_miliar",
     "tabnetCode": "14",
     "deltaPctMediano": -100.0,
-    "razao": "Mecanismo identificado e parcialmente corrigido, mas ainda sem efeito mensurável: scripts/catalog/cid-corrections.json já move o código 14 de B90 para A19 (título CID-10 exato de 'Tuberculose miliar', validado por 3 registros reais de AC/2019 com prefixo A19 contra os 3 que o TabNet relata). Porém o código 9 ('Restante de tuberculose respiratória') reivindica a mesma faixa A19 e vence por ordem de inserção no mapa — resolver isso exigiria também redefinir a faixa do código 9, cujo valor correto não foi possível confirmar sem acesso ao nibr.def ao vivo. Recomendado para o checkpoint do 09-11.",
+    "razao": "Mecanismo identificado e parcialmente corrigido, mas ainda sem efeito mensurável: scripts/catalog/cid-corrections.json já move o código 14 de B90 para A19 (título CID-10 exato de 'Tuberculose miliar', validado por 3 registros reais de AC/2019 com prefixo A19 contra os 3 que o TabNet relata). Porém o código 9 ('Restante de tuberculose respiratória') reivindica a mesma faixa A19 e vence por ordem de inserção no mapa — resolver isso exigiria também redefinir a faixa do código 9, cujo valor correto não foi possível confirmar sem acesso ao nibr.def ao vivo. Recomendado para o checkpoint do 09-11. ATUALIZAÇÃO (checkpoint clínico do 09-11, decisão 3, 2026-08-10): o operador NÃO aceitou registrar esta colisão como divergência honesta — determinou que os códigos 9 e 77 (os vencedores da colisão) voltam ao 09-08 para investigação da faixa correta antes de qualquer upload. Materialidade medida em escala (09-11 Task 1, SP/2019): 133 internações reais (tuberculose_miliar/14) e 1.992 (doenças infecciosas e parasitárias congênitas/274) hoje atribuídas ao código errado — ver ficha de pendência 'PENDENTE_colisao_codigos_9_e_77' abaixo e pipeline/sih/reports/confirmacao-uf-grande.md. BLOQUEIA O UPLOAD (09-10).",
     "paresQueMotivaram": [
       "AC/2019/internacoes: agregado=0 (ausente), TabNet=3 — 3 registros reais com prefixo A19 (A192: 1, A199: 2) confirmados no microdado, absorvidos pelo código 9"
     ],
-    "medidoEm": "2026-08-10T02:09:52Z"
+    "medidoEm": "2026-08-10T02:09:52Z",
+    "bloqueiaUpload": true
   },
   {
     "diseaseId": "doencas_infecciosas_e_parasitarias_congenitas",
     "tabnetCode": "274",
     "deltaPctMediano": -100.0,
-    "razao": "Mecanismo identificado e parcialmente corrigido, mas ainda sem efeito mensurável: scripts/catalog/cid-corrections.json já move o código 274 de G02 (colisão exata com o código 142, achado estrutural do 09-RESEARCH) para P35-P37, a faixa CID-10 de infecções perinatais de caráter congênito mais próxima do rótulo — validado por 53 registros reais de AC/2019 com esse prefixo contra os 50 que o TabNet relata. Porém o código 77 ('Outras doenças infecciosas e parasitárias') já reivindica a mesma faixa P35-P37 e vence por ordem de inserção no mapa — resolver isso exigiria também redefinir a faixa do código 77, cujo valor correto não foi possível confirmar sem acesso ao nibr.def ao vivo. Recomendado para o checkpoint do 09-11.",
+    "razao": "Mecanismo identificado e parcialmente corrigido, mas ainda sem efeito mensurável: scripts/catalog/cid-corrections.json já move o código 274 de G02 (colisão exata com o código 142, achado estrutural do 09-RESEARCH) para P35-P37, a faixa CID-10 de infecções perinatais de caráter congênito mais próxima do rótulo — validado por 53 registros reais de AC/2019 com esse prefixo contra os 50 que o TabNet relata. Porém o código 77 ('Outras doenças infecciosas e parasitárias') já reivindica a mesma faixa P35-P37 e vence por ordem de inserção no mapa — resolver isso exigiria também redefinir a faixa do código 77, cujo valor correto não foi possível confirmar sem acesso ao nibr.def ao vivo. Recomendado para o checkpoint do 09-11. ATUALIZAÇÃO (checkpoint clínico do 09-11, decisão 3, 2026-08-10): o operador NÃO aceitou registrar esta colisão como divergência honesta — determinou que os códigos 9 e 77 (os vencedores da colisão) voltam ao 09-08 para investigação da faixa correta antes de qualquer upload. Materialidade medida em escala (09-11 Task 1, SP/2019): 133 internações reais (tuberculose_miliar/14) e 1.992 (doenças infecciosas e parasitárias congênitas/274) hoje atribuídas ao código errado — ver ficha de pendência 'PENDENTE_colisao_codigos_9_e_77' abaixo e pipeline/sih/reports/confirmacao-uf-grande.md. BLOQUEIA O UPLOAD (09-10).",
     "paresQueMotivaram": [
       "AC/2019/internacoes: agregado=0 (ausente), TabNet=50 — 53 registros reais com prefixo P35-P37 confirmados no microdado, absorvidos pelo código 77"
     ],
-    "medidoEm": "2026-08-10T02:09:52Z"
+    "medidoEm": "2026-08-10T02:09:52Z",
+    "bloqueiaUpload": true
+  },
+  {
+    "diseaseId": "aborto_espontaneo",
+    "tabnetCode": "258",
+    "deltaPctMediano": 3.79,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=466, TabNet=449, delta=+3.79%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "aborto_por_razoes_medicas",
+    "tabnetCode": "259",
+    "deltaPctMediano": 33.33,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=4, TabNet=3, delta=+33.33%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "acid_vascular_cerebr_isquem_transit_e_sindr_correl",
+    "tabnetCode": "150",
+    "deltaPctMediano": 2.22,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=46, TabNet=45, delta=+2.22%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem",
+    "tabnetCode": "179",
+    "deltaPctMediano": 3.28,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=126, TabNet=122, delta=+3.28%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "afecc_hemorrag_e_outr_doenc_sang_e_org_hematopoet",
+    "tabnetCode": "119",
+    "deltaPctMediano": 5.68,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=93, TabNet=88, delta=+5.68%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "anemia_por_deficiencia_de_ferro",
+    "tabnetCode": "117",
+    "deltaPctMediano": 6.75,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=174, TabNet=163, delta=+6.75%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "anticoncepcao",
+    "tabnetCode": "317",
+    "deltaPctMediano": 8.18,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=119, TabNet=110, delta=+8.18%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "artrite_reumatoide_e_outr_poliartropatias_inflamat",
+    "tabnetCode": "224",
+    "deltaPctMediano": 10.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=33, TabNet=30, delta=+10.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "asma",
+    "tabnetCode": "200",
+    "deltaPctMediano": 3.95,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=79, TabNet=76, delta=+3.95%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "bronquite_aguda_e_bronquiolite_aguda",
+    "tabnetCode": "194",
+    "deltaPctMediano": 4.14,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=151, TabNet=145, delta=+4.14%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "bronquite_enfisema_e_outr_doenc_pulm_obstr_cronic",
+    "tabnetCode": "199",
+    "deltaPctMediano": 7.62,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=593, TabNet=551, delta=+7.62%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "cert_compl_prec_traum_compl_cirurg_ass_medic_ncop",
+    "tabnetCode": "312",
+    "deltaPctMediano": 12.75,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=336, TabNet=298, delta=+12.75%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "cistite",
+    "tabnetCode": "240",
+    "deltaPctMediano": 2.82,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=73, TabNet=71, delta=+2.82%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "colelitiase_e_colecistite",
+    "tabnetCode": "219",
+    "deltaPctMediano": 5.05,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=957, TabNet=911, delta=+5.05%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "deformidades_congenitas_dos_pes",
+    "tabnetCode": "287",
+    "deltaPctMediano": 28.57,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=27, TabNet=21, delta=+28.57%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "dengue_dengue_classsico",
+    "tabnetCode": "42",
+    "deltaPctMediano": 11.36,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=294, TabNet=264, delta=+11.36%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "deplecao_de_volume",
+    "tabnetCode": "130",
+    "deltaPctMediano": 14.29,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=8, TabNet=7, delta=+14.29%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "desnutricao",
+    "tabnetCode": "125",
+    "deltaPctMediano": 9.09,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=36, TabNet=33, delta=+9.09%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "diarreia_e_gastroenterite_origem_infecc_presumivel",
+    "tabnetCode": "5",
+    "deltaPctMediano": 1.8,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=283, TabNet=278, delta=+1.80%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doenca_alcoolica_do_figado",
+    "tabnetCode": "217",
+    "deltaPctMediano": 6.82,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=47, TabNet=44, delta=+6.82%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doenca_de_crohn_e_colite_ulcerativa",
+    "tabnetCode": "213",
+    "deltaPctMediano": 10.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=11, TabNet=10, delta=+10.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doenca_de_hodgkin",
+    "tabnetCode": "105",
+    "deltaPctMediano": 25.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=5, TabNet=4, delta=+25.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doenca_diverticular_do_intestino",
+    "tabnetCode": "215",
+    "deltaPctMediano": 7.14,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=15, TabNet=14, delta=+7.14%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doenca_pelo_virus_da_imunodeficiencia_humana_hiv",
+    "tabnetCode": "51",
+    "deltaPctMediano": 15.87,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=73, TabNet=63, delta=+15.87%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doenca_reumatica_cronica_do_coracao",
+    "tabnetCode": "168",
+    "deltaPctMediano": 2.33,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=44, TabNet=43, delta=+2.33%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doencas_cronicas_das_amigdalas_e_das_adenoides",
+    "tabnetCode": "197",
+    "deltaPctMediano": 1.83,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=111, TabNet=109, delta=+1.83%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doencas_renais_tubulo_intersticiais",
+    "tabnetCode": "237",
+    "deltaPctMediano": 2.7,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=114, TabNet=111, delta=+2.70%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "doencas_sistemicas_do_tecido_conjuntivo",
+    "tabnetCode": "228",
+    "deltaPctMediano": 30.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=13, TabNet=10, delta=+30.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "dor_abdominal_e_pelvica",
+    "tabnetCode": "291",
+    "deltaPctMediano": 4.32,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=145, TabNet=139, delta=+4.32%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "efeitos_corpo_estranho_atraves_de_orificio_natural",
+    "tabnetCode": "306",
+    "deltaPctMediano": 7.41,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=29, TabNet=27, delta=+7.41%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "efeitos_toxicos_subst_origem_princ_nao_medicinal",
+    "tabnetCode": "309",
+    "deltaPctMediano": 2.9,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=142, TabNet=138, delta=+2.90%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "embolia_e_trombose_arteriais",
+    "tabnetCode": "183",
+    "deltaPctMediano": 40.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=7, TabNet=5, delta=+40.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "embolia_pulmonar",
+    "tabnetCode": "173",
+    "deltaPctMediano": 12.5,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=9, TabNet=8, delta=+12.50%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "enxaqueca_e_outras_sindromes_de_algias_cefalicos",
+    "tabnetCode": "149",
+    "deltaPctMediano": 9.8,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=56, TabNet=51, delta=+9.80%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "flebite_tromboflebite_embolia_e_trombose_venosa",
+    "tabnetCode": "185",
+    "deltaPctMediano": 15.19,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=91, TabNet=79, delta=+15.19%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "fratura_do_cranio_e_dos_ossos_da_face",
+    "tabnetCode": "295",
+    "deltaPctMediano": 6.1,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=87, TabNet=82, delta=+6.10%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "hanseniase_lepra",
+    "tabnetCode": "18",
+    "deltaPctMediano": 9.09,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=48, TabNet=44, delta=+9.09%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "hidrocele_e_espermatocele",
+    "tabnetCode": "244",
+    "deltaPctMediano": 9.38,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=35, TabNet=32, delta=+9.38%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "hiperplasia_da_prostata",
+    "tabnetCode": "242",
+    "deltaPctMediano": 4.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=52, TabNet=50, delta=+4.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "hipertensao_essencial_primaria",
+    "tabnetCode": "169",
+    "deltaPctMediano": 7.14,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=105, TabNet=98, delta=+7.14%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "hipoxia_intrauterina_e_asfixia_ao_nascer",
+    "tabnetCode": "272",
+    "deltaPctMediano": 52.17,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=35, TabNet=23, delta=+52.17%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "ileo_paralitico_e_obstrucao_intestinal_sem_hernia",
+    "tabnetCode": "214",
+    "deltaPctMediano": 12.04,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=121, TabNet=108, delta=+12.04%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "infeccao_meningococica",
+    "tabnetCode": "23",
+    "deltaPctMediano": 100.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=2, TabNet=1, delta=+100.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "infeccoes_da_pele_e_do_tecido_subcutaneo",
+    "tabnetCode": "222",
+    "deltaPctMediano": 6.73,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=555, TabNet=520, delta=+6.73%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "leptospirose_nao_especificada",
+    "tabnetCode": "27",
+    "deltaPctMediano": 3.45,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=30, TabNet=29, delta=+3.45%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "outras_doencas_das_arterias_arteriolas_e_capilares",
+    "tabnetCode": "184",
+    "deltaPctMediano": 2.7,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=38, TabNet=37, delta=+2.70%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "outras_doencas_do_coracao",
+    "tabnetCode": "176",
+    "deltaPctMediano": 4.62,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=181, TabNet=173, delta=+4.62%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "outras_doencas_do_olho_e_anexos",
+    "tabnetCode": "163",
+    "deltaPctMediano": 14.29,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=40, TabNet=35, delta=+14.29%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "outras_formas_de_leptospirose",
+    "tabnetCode": "26",
+    "deltaPctMediano": 20.0,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=6, TabNet=5, delta=+20.00%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "outras_tuberculoses_respiratorias",
+    "tabnetCode": "8",
+    "deltaPctMediano": 18.18,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=26, TabNet=22, delta=+18.18%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "restante_de_outras_doencas_bacterianas",
+    "tabnetCode": "28",
+    "deltaPctMediano": 6.83,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=626, TabNet=586, delta=+6.83%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "septicemia",
+    "tabnetCode": "24",
+    "deltaPctMediano": 12.61,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=134, TabNet=119, delta=+12.61%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "sifilis_congenita",
+    "tabnetCode": "29",
+    "deltaPctMediano": 4.3,
+    "razao": "Divergência de lote aprovada pelo operador em 2026-08-10 (checkpoint clínico do 09-11, D-07), decisão 2, após o resíduo de 58/98 pares inexplicados do AC/2019 (09-08) ter sido levado ao checkpoint. Mecanismo nomeado: competência de processamento (ANO_CMPT, sempre o ano do arquivo processado) vs. data real de internação (DT_INTER) — internações cuja DT_INTER real é do ano anterior ficam contadas no ano de processamento. Duas medições independentes sustentam o mecanismo: (1) spike de 2026-08-04, AC/2019 — reagregar por DT_INTER com arquivos 2019+2020 leva o viés mediano de +4,14% para +3,45% (real, mas não zera); (2) esta plan (09-11), confirmação em SP/2019 — mediana do resíduo +5,10% (89 de 98 pares), mesma ordem de grandeza do +7,90% do AC (09-08) — a hipótese deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. Hipóteses alternativas testadas e descartadas por medição (spike de 2026-08-04, 44.589 registros de AC/2019): faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta absoluto em AC/2019 pelo 09-08 — toda faixa declarada é a oficial e completa da Lista Morb, sem sobreposição); AIH tipo 5/longa permanência (IDENT=5, 26 de 44.589 registros, excluí-los não muda nenhuma contagem); N_AIH duplicado (26 registros, 0,06%, sem efeito na contagem); erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências). Honestidade explícita: este mecanismo REDUZ mas NÃO ZERA o viés — corrigi-lo por completo exigiria arquivos de 2020 (fora do recorte AC/2019 do D-03) e uma mudança em aggregate.py (fora do escopo de arquivo de todo plano da fase até agora). Esta é uma explicação de lote aceita por decisão do operador, não uma investigação categoria a categoria individual desta linha específica — ver reconciliacao-sc7.md e confirmacao-uf-grande.md para o método.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=97, TabNet=93, delta=+4.30%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "mecanismoIdentificado": true,
+    "hipotesesDescartadas": [
+      "faixa CID larga absorvendo faixa estreita (testada nas 7 categorias de maior delta em AC/2019, sem sobreposição encontrada)",
+      "AIH tipo 5 / longa permanência (IDENT=5, 26 de 44.589 registros, sem efeito)",
+      "N_AIH duplicado (26 registros, 0,06%, sem efeito)",
+      "erro de agregação do scraper na soma município→UF (36.564 pares checados, 0 incoerências)"
+    ],
+    "aprovadoPor": "operador",
+    "aprovadoEm": "2026-08-10"
+  },
+  {
+    "diseaseId": "PENDENTE_colisao_codigos_9_e_77",
+    "tabnetCode": "9,77",
+    "bloqueiaUpload": true,
+    "mecanismoIdentificado": false,
+    "razao": "PENDÊNCIA que bloqueia o upload (09-10) — decisão do operador, checkpoint clínico do 09-11, decisão 3, 2026-08-10. O operador NÃO aceitou registrar como divergência honesta a colisão residual dos códigos 9 (A19, bloqueia a correção aprovada do código 14/tuberculose_miliar) e 77 (P35-P37, bloqueia a correção aprovada do código 274/doenças infecciosas e parasitárias congênitas) — determinou investigação da faixa correta desses dois códigos antes de qualquer upload. Materialidade medida em escala (09-11 Task 1, SP/2019): 2.254 internações reais atribuídas ao código errado (164 com prefixo A19 hoje contadas em 'restante de tuberculose respiratória' em vez de 'tuberculose miliar'; 2.090 com prefixo P35+P36+P37 hoje contadas em 'outras doenças infecciosas e parasitárias' em vez de 'doenças infecciosas e parasitárias congênitas') — contra 56 no AC/2019 (3+53). Hipóteses descartadas por medição: nenhuma faixa alternativa livre foi encontrada para 9/77 numa varredura manual da vizinhança do capítulo I (A00-B99) e do bloco perinatal (P00-P96) — determinar a faixa correta exige acesso ao nibr.def ao vivo ou revisão clínica direta, fora do alcance de arquivo do 09-08/09-11 (mesma classe de decisão que a Fase 8 tratou com checkpoint humano em 08-07).",
+    "hipotesesDescartadas": [
+      "faixa CID alternativa livre para o código 9 na vizinhança do capítulo I (A00-B99) — nenhuma encontrada por varredura manual",
+      "faixa CID alternativa livre para o código 77 no bloco perinatal (P00-P96) — nenhuma encontrada por varredura manual"
+    ],
+    "paresQueMotivaram": [
+      "AC/2019: tuberculose_miliar (14) ausente, TabNet=3; congênitas (274) ausente, TabNet=50",
+      "SP/2019: tuberculose_miliar (14) ausente, TabNet=133; congênitas (274) ausente, TabNet=1992",
+      "SP/2019, DIAG_PRINC real medido (09-11 Task 1): A19=164, P35+P36+P37=2090 — todos hoje atribuídos aos códigos 9 e 77 respectivamente"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "decididoPor": "operador",
+    "decididoEm": "2026-08-10",
+    "proximoDono": "09-08"
+  },
+  {
+    "diseaseId": "PENDENTE_sete_categorias_delta_extremo_sp",
+    "tabnetCode": "15,132,7,145,10,146,11",
+    "bloqueiaUpload": true,
+    "mecanismoIdentificado": false,
+    "razao": "PENDÊNCIA que bloqueia o upload (09-10) — decisão do operador, checkpoint clínico do 09-11, decisão 4, 2026-08-10. O operador NÃO aceitou registrar como divergência honesta (nem incluir na divergência de lote da decisão 2) as 7 categorias com delta extremo reveladas pela confirmação em SP/2019 (09-11 Task 1) — determinou que +3.451% (restante_de_outras_tuberculoses) e +665% (demência) são grandes demais para o mecanismo de competência de processamento (ANO_CMPT vs DT_INTER) explicar, e que quase certamente há outro defeito. Concentração no capítulo de tuberculose (4 das 7: tabnetCode 15/restante_de_outras_tuberculoses, 7/tuberculose_pulmonar, 10/tuberculose_do_sistema_nervoso, 11/tuberc_intest_peritonio_glangl_mesentericos — somadas aos códigos 9/14 já pendentes na ficha acima) reforça a suspeita de defeito estrutural ainda não mapeado naquele capítulo. As outras 3 (132/demência, 145/doença_de_parkinson, 146/doença_de_alzheimer) não são do capítulo de tuberculose e não têm sobreposição de faixa CID com nenhum código vizinho verificada por varredura manual — mecanismo desconhecido. IMPORTANTE (vacuidade, D-03): das 7, demência(132)/parkinson(145)/tuberc_intest(11) batem EXATO em AC/2019 (delta=0, volumes de 17/3/1 casos) — só a escala de SP/2019 revelou a divergência real (521 vs 3.986, 221 vs 326, 18 vs 26); restante_de_outras_tuberculoses(15) nem aparece no oráculo AC/2019 (zero registros no corpus legado); as outras 3 (tuberculose_pulmonar/7, tuberculose_do_sistema_nervoso/10, doença_de_alzheimer/146) já apareciam inexplicadas em AC/2019 com delta menor (+12,12%/+50%/+50%) e continuam assim, deliberadamente EXCLUÍDAS da divergência de lote da decisão 2 para que o gate do 09-11 (Task 3) continue refletindo esta pendência sem inventar explicação.",
+    "hipotesesDescartadas": [
+      "sobreposição estrutural de faixa CID com código vizinho (verificada por varredura manual das 7 faixas declaradas — nenhuma sobreposição encontrada, diferente dos pares 75/76 e 142/274)"
+    ],
+    "paresQueMotivaram": [
+      "SP/2019: restante_de_outras_tuberculoses(15) agregado=2557 tabnet=72 delta=+3451,39%",
+      "SP/2019: demencia(132) agregado=3986 tabnet=521 delta=+665,07%",
+      "SP/2019: tuberculose_pulmonar(7) agregado=4762 tabnet=2287 delta=+108,22%",
+      "SP/2019: doenca_de_parkinson(145) agregado=326 tabnet=221 delta=+47,51%",
+      "SP/2019: tuberculose_do_sistema_nervoso(10) agregado=112 tabnet=76 delta=+47,37%",
+      "SP/2019: doenca_de_alzheimer(146) agregado=590 tabnet=405 delta=+45,68%",
+      "SP/2019: tuberc_intest_peritonio_glangl_mesentericos(11) agregado=26 tabnet=18 delta=+44,44%"
+    ],
+    "medidoEm": "2026-08-10T00:00:00Z",
+    "decididoPor": "operador",
+    "decididoEm": "2026-08-10",
+    "proximoDono": "09-08"
   }
 ]

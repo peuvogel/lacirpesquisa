@@ -314,3 +314,58 @@ Nenhuma correção foi alterada nesta task. `git diff --stat scripts/catalog/cid
 permanece vazio. Estes achados (a materialidade maior das duas colisões conhecidas, o achado novo
 de 7 categorias extremas, e o resíduo honesto de 58 pares inexplicados do AC que o 09-08 já havia
 levado ao checkpoint) seguem juntos para o checkpoint clínico da Task 2 deste plano.
+
+## Checkpoint clínico (Task 2) — decisões do operador, 2026-08-10
+
+O operador respondeu o checkpoint em lote (D-07) com quatro decisões. Registro aqui o resultado;
+os arquivos JSON (`scripts/catalog/cid-corrections.json` e `scripts/catalog/cid-divergencias.json`)
+são a fonte de verdade — este é só um resumo legível.
+
+**Decisão 1 — as 4 correções de faixa CID: APROVADAS como estão.** `75` (B92→B91), `74`
+(B91→B90), `14` (B90→A19), `274` (G02→P35-P37). Cada entrada de `cid-corrections.json` ganhou um
+campo `aprovacaoClinica` datado, citando a evidência que sustentou a aprovação (incluindo a
+medição desta Task 1 em SP/2019). Para a `274`, a aprovação registra explicitamente que
+`P35-P37` é a melhor aproximação textual encontrada, **não** um título CID-10 exato como as
+outras três — aprovação consciente da aproximação, não descuido.
+
+**Decisão 2 — resíduo de 58/98 pares inexplicados do AC: aceito como divergência de lote.** O que
+pesou foi a medição desta Task 1 em SP/2019 (mediana +5,10% em 89/98 pares, mesma ordem de
+grandeza do +7,90% do AC) — a hipótese de competência de processamento (`ANO_CMPT` vs `DT_INTER`)
+deixou de ser de uma UF só e passou a estar confirmada em duas UFs independentes. 53 novas entradas
+em `cid-divergencias.json` (58 menos os 2 já ausentes — `14`/`274` — e menos 3 excluídas
+deliberadamente por decisão 4 — `7`/`146`/`10`), cada uma com o mecanismo nomeado, as duas medições
+que o sustentam, as hipóteses alternativas descartadas por medição (faixa larga absorvendo
+estreita, AIH tipo 5, `N_AIH` duplicado, erro de agregação do scraper), e a honestidade explícita
+de que o mecanismo **reduz mas não zera** o viés.
+
+**Decisão 3 — códigos `9` e `77`: NÃO aceito como divergência honesta, volta ao 09-08.** O
+operador quer investigação para determinar as faixas corretas, não uma divergência registrada. O
+que pesou: as duas correções aprovadas na decisão 1 (`14`, `274`) ficam sem efeito enquanto isso
+não for resolvido, e a Task 1 mediu 2.254 internações reais (164 A19 + 2.090 P35-P37) atribuídas
+ao código errado em SP/2019, contra 56 no AC. Registrado como ficha de pendência
+`PENDENTE_colisao_codigos_9_e_77` em `cid-divergencias.json`, com `bloqueiaUpload: true` e
+`mecanismoIdentificado: false` — um `diseaseId` sintético que nunca casa com nenhum par real do
+oráculo, então não é resgatado por `compare()` como "explicado": os pares `14`/`274` continuam
+`ausente`/`inexplicado` no gate, exatamente como devem.
+
+**Decisão 4 — as 7 categorias de delta extremo: NÃO aceito como divergência honesta, volta ao
+09-08.** `+3.451%` (`restante_de_outras_tuberculoses`) e `+665%` (`demência`) são grandes demais
+para o mecanismo de competência de processamento explicar; a concentração no capítulo de
+tuberculose (4 das 7) reforça a suspeita de defeito estrutural ainda não mapeado. Registrado como
+ficha de pendência `PENDENTE_sete_categorias_delta_extremo_sp` em `cid-divergencias.json`, mesmo
+padrão de `diseaseId` sintético. Três das sete (`7`/`146`/`10`) já apareciam inexplicadas em
+AC/2019 com delta menor (+12,12%/+50%/+50%) e foram deliberadamente **excluídas** da divergência
+de lote da decisão 2, para que o gate do AC/2019 (Task 3) continue refletindo esta pendência sem
+inventar explicação. As outras três (`132`/`145`/`11`) batem **exato** em AC/2019 (volumes de
+17/3/1 casos) — só a escala de SP revelou a divergência real; a sétima (`15`) nem aparece no
+oráculo AC/2019.
+
+**Resultado medido em AC/2019 após as decisões 1 e 2:** `exato=33, explicado=60, inexplicado=5,
+result.ok=False`. Os 5 inexplicados restantes são exatamente os 5 códigos das decisões 3/4 que o
+operador determinou não resolver agora: `146` (doença de Alzheimer), `274` (doenças infecciosas e
+parasitárias congênitas, ausente), `10` (tuberculose do sistema nervoso), `14` (tuberculose
+miliar, ausente), `7` (tuberculose pulmonar). Isto é o comportamento correto e esperado — o gate
+não pode fingir sucesso sobre uma pendência que o operador explicitamente manteve aberta.
+
+**Estas duas pendências (decisões 3 e 4) BLOQUEIAM o upload do 09-10** — ver SUMMARY deste plano,
+seção "Bloqueia o 09-10", para os números completos.
