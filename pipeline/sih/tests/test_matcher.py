@@ -149,9 +149,15 @@ def test_sem_cid_caindo_em_duas_categorias_exceto_pares_conhecidos(cid_map):
     assert achados == PARES_CONHECIDOS, achados
 
 
-def test_load_corrections_devolve_lista_vazia_nesta_plan():
-    # scripts/catalog/cid-corrections.json nasce vazio -- preenchido pela depuração do 09-08
-    assert load_corrections() == []
+def test_load_corrections_preenchido_pela_depuracao_do_09_08():
+    # scripts/catalog/cid-corrections.json nasceu vazio no 09-07; a depuração categoria a
+    # categoria do 09-08 o preenche com entradas com razão escrita >= 20 caracteres (o piso
+    # que load_corrections aplica -- o piso de 40 caracteres do critério de aceitação do 09-08
+    # é verificado em pipeline/sih/tests/test_reconcile.py e no script node do próprio plano).
+    correcoes = load_corrections()
+    assert len(correcoes) >= 2
+    for correcao in correcoes:
+        assert len(correcao["reason"]) >= 20
 
 
 def test_corrections_path_aponta_para_scripts_catalog():
