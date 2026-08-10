@@ -172,3 +172,19 @@ o disco permitir) e pela reconciliação SC-7 (`09-08`/`09-11`) antes do upload.
 Todos os 9 arquivos listados em Files Created/Modified existem no disco; todos os 6 hashes de
 commit (`3c809a0`, `217b09a`, `3c33b70`, `a6d572e`, `554068b`, `eb4ba30`) existem em
 `git log --oneline --all`.
+
+## Nota tardia (2026-08-10): `aggregate.py` foi amendado -- esta SUMMARY já NÃO descreve o
+comportamento atual
+
+**Este SUMMARY descreve `aggregate.py` como ele existia em 2026-08-09. Em 2026-08-10,
+`aggregate.py` foi alterado** para fechar a pendência B do SC-7 (ver
+`09-08-INVESTIGACAO-SUMMARY.md` e `09-07-IDENT-FIX-SUMMARY.md`): a medida `internacoes` agora
+conta só `IDENT='1'` (AIH normal), excluindo `IDENT='5'` (AIH de longa permanência, renovação de
+faturamento da MESMA internação) — decisão aprovada pelo operador. `NEEDED_COLUMNS` ganhou
+`IDENT`; a fixture `tests/fixtures/rdac_2019.parquet` foi regenerada para incluir essa coluna
+(44.589 registros preservados, 267 KB → 347 KB). Ninguém deve ler este SUMMARY e assumir que
+`aggregate.py` ainda conta toda linha do microdado sem filtrar `IDENT` — não conta mais.
+
+Commits do fix: `defa477` (test, RED), `53b7323` (feat, GREEN). Ver
+`09-07-IDENT-FIX-SUMMARY.md` para o resumo completo (TDD, remedição do SC-7, resolução da
+pendência B).
