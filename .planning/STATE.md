@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "Fase 09 Plano 07 completo: codigos.py/matcher.py/corrections.py/aggregate.py + fixture rdac_2019.parquet (AC/2019, 44.589 registros, 267 KB) commitados (3c809a0..eb4ba30); DATA-03 marcado completo, DATA-01/DATA-02 permanecem Pending ate a corrida completa (09-04) e a reconciliacao SC-7 (09-08/09-11)."
-last_updated: "2026-08-10T01:35:03.559Z"
+stopped_at: "Fase 09 Plano 08 completo: reconcile.py comparador fail-closed, cid-corrections.json (4 correcoes) + cid-divergencias.json (9 entradas) + reconciliacao-sc7.md; 33/98 exato + 7/98 explicado medidos contra AC/2019; 58 pares inexplicado levados honestamente ao checkpoint do 09-11, junto com a pergunta sobre os codigos 9/77."
+last_updated: "2026-08-10T02:19:19.505Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 31
-  completed_plans: 22
+  completed_plans: 23
   percent: 33
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 7 of 14 (09-07 completo; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint — ver Bloqueios abertos)
-Status: Onda 3 (09-07) completa. Onda 4 (09-08, reconciliacao SC-7) pronta para iniciar — depende so de 09-05 (oraculo, completo) e 09-07 (matcher/aggregate, completo), nao de 09-04 estar 100% baixado.
-Last activity: 2026-08-09
+Plan: 8 of 14 (09-07 completo; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint — ver Bloqueios abertos)
+Status: Ready to execute
+Last activity: 2026-08-10
 
 ### Bloqueios abertos
 
@@ -148,6 +148,10 @@ Last activity: 2026-08-09
 - [Phase 09-07]: MORTE chega como string (nao Int64 como o RESEARCH assumiu) -- medido ao vivo em RDAC1901.parquet; _cast_morte() verifica o tipo real e levanta TypeError para tipo inesperado
 - [Phase 09-07]: build_index (matcher.py) agrupa tokens por letra inicial do CID, provado identico a varredura linear do spike por teste dedicado -- real speedup sem mudar semantica de primeira-correspondencia
 - [Phase 09-07]: disease_id resolvido de diseases.json por tabnetCode (dict), nunca slugify(label) local -- evita reintroduzir defeito de ids da Fase 8
+- [Phase ?]: [Phase 09-08] Row.territorio_codigo no grao UF e codigo IBGE numerico (12); oraculo chaveia por sigla (AC) -- reconcile.py traduz via codigos.UF_POR_CODIGO antes de comparar, achado ao vivo na primeira medicao (todos os 98 pares apareciam ausentes ate o fix)
+- [Phase ?]: [Phase 09-08] Correcao em cadeia de 3 codigos (14->A19, 74->B90, 75->B91) para resolver a colisao estrutural 75/76 sem criar colisao nova com 74 -- decidido apos medir que a correcao isolada de 75 colidiria com o valor atual de 74
+- [Phase ?]: [Phase 09-08] Hipotese faixa larga absorve faixa estreita testada e DESCARTADA por medicao nas sete categorias de maior delta absoluto em AC/2019 -- todas as faixas CID declaradas ja sao as oficiais e completas da Lista Morb, sem sobreposicao
+- [Phase ?]: [Phase 09-08] 58/98 pares deixados honestamente inexplicado, nao convertidos em divergencia de lote sem verificacao individual -- residue hidden by tuning e o que o D-02 existe para proibir
 
 ### Pending Todos
 
@@ -160,9 +164,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-10T01:35:03.556Z
-Stopped at: Fase 09 Plano 07 completo: codigos.py/matcher.py/corrections.py/aggregate.py + fixture rdac_2019.parquet (AC/2019, 44.589 registros, 267 KB) commitados (3c809a0..eb4ba30); DATA-03 marcado completo, DATA-01/DATA-02 permanecem Pending ate a corrida completa (09-04) e a reconciliacao SC-7 (09-08/09-11).
-Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-08-PLAN.md
+Last session: 2026-08-10T02:18:54.826Z
+Stopped at: Fase 09 Plano 08 completo: reconcile.py comparador fail-closed, cid-corrections.json (4 correcoes) + cid-divergencias.json (9 entradas) + reconciliacao-sc7.md; 33/98 exato + 7/98 explicado medidos contra AC/2019; 58 pares inexplicado levados honestamente ao checkpoint do 09-11, junto com a pergunta sobre os codigos 9/77.
+Resume file: None
 
 ## Performance Metrics
 
@@ -207,3 +211,4 @@ Resume file: .planning/phases/09-pipeline-confi-vel-coleta-completa/09-08-PLAN.m
 | Phase 08-taxonomia-can-nica-integridade P10 | ~15min (continuation session) | 4 tasks | 2 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P02 | ~12min | 3 tasks | 20 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P07 | 35min | 3 tasks | 9 files |
+| Phase 09 P08 | ~45min | 3 tasks | 6 files |
