@@ -1,0 +1,92 @@
+[
+  {
+    "diseaseId": "doencas_do_apendice",
+    "tabnetCode": "210",
+    "deltaPctMediano": 13.36,
+    "razao": "A faixa CID declarada (K35-K38) é a oficial e completa da Lista Morb para 'Doenças do apêndice' — conferida DIAG_PRINC a DIAG_PRINC contra os 679 registros reais de AC/2019, todos dentro de K35-K38, sem nenhuma sobreposição com código vizinho (K29 gastrite/duodenite, K40 hérnia inguinal). O excedente de 80 internações sobre o valor do TabNet é consistente com o efeito de competência de processamento (ANO_CMPT) vs. data real de internação (DT_INTER) medido no spike de 2026-08-04: ANO_CMPT inclui internações cuja DT_INTER real é do ano anterior (~7,8% dos registros medidos), o que reduz o viés mediano de +4,14% para +3,45% sem eliminá-lo. Corrigir isso exigiria reagregar por DT_INTER com arquivos de 2020 incluídos, fora do escopo desta plan (fixture é só AC/2019, D-03).",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=679, TabNet=599, delta=+80 (+13,36%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "diabetes_mellitus",
+    "tabnetCode": "124",
+    "deltaPctMediano": 12.44,
+    "razao": "A faixa CID declarada (E10-E14) é a oficial e completa da Lista Morb para 'Diabetes mellitus' — os 461 registros reais de AC/2019 se distribuem por 34 subcódigos diferentes de E10-E14 (E115, E108, E148...), todos dentro da faixa, sem sobreposição com código vizinho. O excedente de 51 internações é consistente com o mesmo efeito de competência de processamento (ANO_CMPT vs. DT_INTER) medido no spike de 2026-08-04, que afeta o dataset inteiro de forma sistemática e não é um problema de faixa CID para esta categoria específica.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=461, TabNet=410, delta=+51 (+12,44%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "edema_protein_transt_hipertens_gravid_parto_puerp",
+    "tabnetCode": "261",
+    "deltaPctMediano": 9.41,
+    "razao": "A faixa CID declarada (O10-O16) é a oficial e completa da Lista Morb para transtornos hipertensivos da gravidez, parto e puerpério — os 721 registros reais de AC/2019 caem inteiramente dentro de O10-O16 (dominados por O141/O140, pré-eclâmpsia), sem sobreposição com código vizinho. O excedente de 62 internações é consistente com o efeito de competência de processamento (ANO_CMPT vs. DT_INTER) já medido no spike de 2026-08-04, não com uma faixa CID incorreta para esta categoria.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=721, TabNet=659, delta=+62 (+9,41%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "compl_pred_rel_puerperio_e_outr_afecc_obstetr_ncop",
+    "tabnetCode": "268",
+    "deltaPctMediano": 8.3,
+    "razao": "A faixa CID declarada (O85-O99) é a oficial e completa da Lista Morb para 'Complicações predominantemente relacionadas ao puerpério e outras afecções obstétricas NCOP' — os 600 registros reais de AC/2019 se distribuem por 32 subcódigos diferentes de O85-O99, todos dentro da faixa, sem absorver nada de categoria vizinha (O10-O16 já é tratado por outro código, sem sobreposição). O excedente de 46 internações acompanha o mesmo padrão sistemático de competência de processamento (ANO_CMPT vs. DT_INTER) do spike de 2026-08-04.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=600, TabNet=554, delta=+46 (+8,30%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "outras_doencas_infecciosas_intestinais",
+    "tabnetCode": "6",
+    "deltaPctMediano": 9.93,
+    "razao": "A faixa CID declarada (A02, A04-A05, A07-A08) é a composta oficial da Lista Morb para 'Outras doenças infecciosas intestinais' — os 609 registros reais de AC/2019 (dominados por A084/A049) caem inteiramente dentro dessa composição, sem sobreposição com A00/A01/A03/A06/A09 (que têm código próprio) nem com A02/A04-A05/A07-A08 de nenhum outro código. O excedente de 55 internações é consistente com o efeito sistemático de competência de processamento (ANO_CMPT vs. DT_INTER) medido no spike de 2026-08-04, não com absorção de faixa CID vizinha.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=609, TabNet=554, delta=+55 (+9,93%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "infarto_cerebral",
+    "tabnetCode": "178",
+    "deltaPctMediano": 24.81,
+    "razao": "A faixa CID declarada (I63, exata) é a oficial da Lista Morb para 'Infarto cerebral' — os 327 registros reais de AC/2019 (321 deles I638) caem inteiramente em I63, sem sobreposição com I64 (código 179, acidente vascular não especificado) nem com I60-I62 (código 177, hemorragia intracraniana). É o maior delta percentual medido nesta rodada (+24,81%, 65 internações); mesmo sem colisão de faixa, o volume alto e a natureza sazonal/aguda do AVC tornam este par mais sensível ao efeito de competência de processamento (ANO_CMPT vs. DT_INTER, spike de 2026-08-04) do que categorias crônicas — hipótese não descartada, mas também não confirmada individualmente por reagregação com DT_INTER (fora do escopo desta plan, exigiria dados de 2020).",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=327, TabNet=262, delta=+65 (+24,81%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "insuficiencia_cardiaca",
+    "tabnetCode": "175",
+    "deltaPctMediano": 15.96,
+    "razao": "A faixa CID declarada (I50, exata) é a oficial da Lista Morb para 'Insuficiência cardíaca' — os 327 registros reais de AC/2019 (I509 e I500 somam 325 deles) caem inteiramente em I50, sem sobreposição com I27-I43/I51-I52 (código 176, outras doenças do coração). O excedente de 45 internações (+15,96%) é consistente com o efeito sistemático de competência de processamento (ANO_CMPT vs. DT_INTER) medido no spike de 2026-08-04, sem indício de faixa CID incorreta para esta categoria.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=327, TabNet=282, delta=+45 (+15,96%)"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "tuberculose_miliar",
+    "tabnetCode": "14",
+    "deltaPctMediano": -100.0,
+    "razao": "Mecanismo identificado e parcialmente corrigido, mas ainda sem efeito mensurável: scripts/catalog/cid-corrections.json já move o código 14 de B90 para A19 (título CID-10 exato de 'Tuberculose miliar', validado por 3 registros reais de AC/2019 com prefixo A19 contra os 3 que o TabNet relata). Porém o código 9 ('Restante de tuberculose respiratória') reivindica a mesma faixa A19 e vence por ordem de inserção no mapa — resolver isso exigiria também redefinir a faixa do código 9, cujo valor correto não foi possível confirmar sem acesso ao nibr.def ao vivo. Recomendado para o checkpoint do 09-11.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=0 (ausente), TabNet=3 — 3 registros reais com prefixo A19 (A192: 1, A199: 2) confirmados no microdado, absorvidos pelo código 9"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  },
+  {
+    "diseaseId": "doencas_infecciosas_e_parasitarias_congenitas",
+    "tabnetCode": "274",
+    "deltaPctMediano": -100.0,
+    "razao": "Mecanismo identificado e parcialmente corrigido, mas ainda sem efeito mensurável: scripts/catalog/cid-corrections.json já move o código 274 de G02 (colisão exata com o código 142, achado estrutural do 09-RESEARCH) para P35-P37, a faixa CID-10 de infecções perinatais de caráter congênito mais próxima do rótulo — validado por 53 registros reais de AC/2019 com esse prefixo contra os 50 que o TabNet relata. Porém o código 77 ('Outras doenças infecciosas e parasitárias') já reivindica a mesma faixa P35-P37 e vence por ordem de inserção no mapa — resolver isso exigiria também redefinir a faixa do código 77, cujo valor correto não foi possível confirmar sem acesso ao nibr.def ao vivo. Recomendado para o checkpoint do 09-11.",
+    "paresQueMotivaram": [
+      "AC/2019/internacoes: agregado=0 (ausente), TabNet=50 — 53 registros reais com prefixo P35-P37 confirmados no microdado, absorvidos pelo código 77"
+    ],
+    "medidoEm": "2026-08-10T02:09:52Z"
+  }
+]
