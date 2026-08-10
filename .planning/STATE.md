@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "Fase 09 Plano 06: Task 1 completo e commitado (population.py, TDD RED->GREEN + fix do desvio POPSBR25 minusculo). Task 2 (checkpoint:decision, gate=blocking) parada aguardando decisao do operador -- medicao real em pipeline/sih/reports/populacao-dimensionamento.md, SUMMARY.md ainda nao escrito."
-last_updated: "2026-08-10T10:33:33.308Z"
+stopped_at: "Fase 09 Plano 06 completo: population.py (POPSVS lido pelo diretorio certo, agregado por faixa etaria/sexo nos dois graos), dimensionamento real medido (146 MB via Postgres local vs 420 MB projetado), checkpoint respondido pelo operador -- popsvs-no-banco confirmado, POPSVS confirmado como fonte unica (Assumption A3 resolvida por julgamento de dominio), restricao de ordem registrada para o 09-10 (evacuar sih_metric_muni antes de subir populacao)."
+last_updated: "2026-08-10T10:48:25.510Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 31
-  completed_plans: 23
+  completed_plans: 24
   percent: 33
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 9 of 14 (09-06 Task 1 completo/commitado; Task 2 parada em checkpoint:decision aguardando o operador — ver Bloqueios abertos; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
-Status: Paused at checkpoint (09-06 Task 2)
+Plan: 10 of 14 (09-06 completo — population.py + dimensionamento real medido + checkpoint respondido pelo operador; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
+Status: Ready to execute
 Last activity: 2026-08-10
 
 ### Bloqueios abertos
@@ -35,6 +35,7 @@ Last activity: 2026-08-10
 - **09-04 Task 3 (disco):** a corrida completa de ~10 GB (todas as 331 agravos x 27 UF x 2013-2025) ainda nao foi disparada. Disco verificado em 09-07 com ~7,3 GB livres — folga maior que o ~1,7 GB registrado antes, mas ainda abaixo dos ~12-15 GB estimados para a corrida inteira; resolver com volume externo via `SIH_PIPELINE_CACHE_DIR` ou liberar mais espaco antes de disparar. NAO bloqueou 09-07: a plan baixou so os 12 arquivos de AC/2019 (~3 MB) via `cli.py download --only`, suficientes para a fixture de gate. Bloqueia DATA-01/DATA-02 (coleta de fato dos 331 agravos) e a corrida real que 09-08/09-11/09-12 vao precisar.
 - **`supabase ... --linked` nos planos 09-10 (4x), 09-12 (1x), 09-14 (6x):** exigem SUPABASE_ACCESS_TOKEN, que nao existe. Contorno provado: trocar por `--db-url "$SIH_PIPELINE_DB_URL"` (funciona em db push, db query e db dump). Alternativa: operador gera Personal Access Token.
 - **`psql` fora do PATH default:** exige `export PATH="$(brew --prefix libpq)/bin:$PATH"`. Necessario em 09-10 e 09-14.
+- **RESTRICAO DE ORDEM PARA O 09-10 (nao e bloqueio de capacidade, registrada pelo 09-06):** o dimensionamento real da populacao (D-24) mediu ~146 MB para as 4 tabelas `sih_population_*` (13 anos, medido via carga real num Postgres local com o schema da 09-03 -- nao a projecao conservadora de ~420 MB). O operador confirmou `popsvs-no-banco` (2026-08-10): as 4 tabelas vao para o Postgres, sem desvio do D-24. Mas o espaco ja ocupado hoje (327 MB, medido) inclui 319 MB de `sih_metric_muni` -- dado TabNet legado que D-16/D-20 ja decidiram evacuar para o Storage no proprio 09-10. **Se o `COPY` da populacao rodar ANTES de o 09-10 evacuar `sih_metric_muni`, o combinado mede ~472 MB contra o teto de 500 MB -- margem de so ~28 MB (ou ~4,5 MB em bytes decimais).** O 09-10 precisa evacuar o grao municipio (D-20) antes, ou na mesma transacao, de subir a populacao. Ver `pipeline/sih/reports/populacao-dimensionamento.md` §5-6 e `09-06-SUMMARY.md` §"Next Phase Readiness" para a medicao completa.
 - **SC-7 NAO FECHADO (09-08):** 33/98 exato, 7/98 explicado, **58/98 inexplicado**, `ReconciliationResult.ok = False`. O SC-7 do ROADMAP (linha 144) exige exato OU razao escrita por categoria divergente, sem banda de tolerancia (D-02) — logo o criterio NAO esta atendido hoje. A hipotese central do 09-RESEARCH (faixa CID larga absorvendo faixa estreita) foi **testada e descartada por medicao** nas 7 categorias de maior delta: toda faixa declarada e exatamente a faixa oficial da Lista Morb. A causa provavel restante e competencia de processamento (`ANO_CMPT`) vs data de internacao (`DT_INTER`), ja medida pelo spike: reagregar por `DT_INTER` leva o vies de +4,14% para +3,45% — **reduz mas nao zera**. Nenhum mecanismo conhecido fecha o SC-7 em zero inexplicados, e nenhum plano da fase tem no escopo mexer em `aggregate.py` (dono: 09-07) nem baixar 2020. DECISAO DO OPERADOR (2026-08-10): seguir para 09-06/09-09 e decidir o residuo no checkpoint clinico em lote do **09-11**. Sobreposicoes residuais abertas para aquele checkpoint: `9 A19 <-> 14 A19` e `77 P35-P37 <-> 274 P35-P37`.
 
 ## Accumulated Context
@@ -153,6 +154,8 @@ Last activity: 2026-08-10
 - [Phase ?]: [Phase 09-08] Correcao em cadeia de 3 codigos (14->A19, 74->B90, 75->B91) para resolver a colisao estrutural 75/76 sem criar colisao nova com 74 -- decidido apos medir que a correcao isolada de 75 colidiria com o valor atual de 74
 - [Phase ?]: [Phase 09-08] Hipotese faixa larga absorve faixa estreita testada e DESCARTADA por medicao nas sete categorias de maior delta absoluto em AC/2019 -- todas as faixas CID declaradas ja sao as oficiais e completas da Lista Morb, sem sobreposicao
 - [Phase ?]: [Phase 09-08] 58/98 pares deixados honestamente inexplicado, nao convertidos em divergencia de lote sem verificacao individual -- residue hidden by tuning e o que o D-02 existe para proibir
+- [Phase 09-06]: Decisao do operador: popsvs-no-banco -- as 4 tabelas sih_population_* vao para o Postgres (D-24 como escrito), decidido pela medicao real de ~146 MB (nao a projecao conservadora de ~420 MB) — Restricao de ORDEM registrada para o 09-10: evacuar sih_metric_muni (D-20) antes ou junto de subir a populacao, senao o combinado mede ~472 MB contra o teto de 500 MB
+- [Phase 09-06]: Decisao do operador: POPSVS confirmado como fonte unica do denominador -- Assumption A3 do RESEARCH (confianca MEDIUM) resolvida por julgamento de dominio (liga academica de cirurgia vascular) — TabNet usa POPSVS nos modulos epidemiologicos (projecao intercensitaria por componentes, com faixa etaria/sexo) e POPTCU so no repasse fiscal (sem esse recorte) -- divergencia medida (AC/2019 -2,72%, Brasil/2019 -1,07%) e a diferenca metodologica esperada, nao um risco de escolha errada
 
 ### Pending Todos
 
@@ -162,13 +165,12 @@ None yet.
 
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 - [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
-- [09-06] CHECKPOINT PENDENTE (Task 2, checkpoint:decision, gate=blocking): dimensionamento medido em pipeline/sih/reports/populacao-dimensionamento.md -- 1.382.478 linhas nas 4 tabelas sih_population_* (13 anos, 0% descarte), 146 MB medido via carga real em Postgres local com o schema da 09-03 (vs 420 MB na projecao conservadora pedida pelo plano), 327 MB ja ocupados hoje (319 MB sao sih_metric_muni legado, ja destinado a evacuacao por D-16/D-20 no 09-10), POPSVS x POPTCU medido (AC/2019 -2,72%, Brasil/2019 -1,07%). Aguardando resposta do operador: confirmar POPSVS como fonte e escolher popsvs-no-banco / popsvs-estratificado-no-storage / faixas-mais-largas. Nenhuma tabela sih_population_* recebeu upload (D-01: upload e do 09-10).
 
 ## Session Continuity
 
-Last session: 2026-08-10T10:33:33.304Z
-Stopped at: Fase 09 Plano 06: Task 1 completo e commitado (population.py, TDD RED->GREEN + fix do desvio POPSBR25 minusculo). Task 2 (checkpoint:decision, gate=blocking) parada aguardando decisao do operador -- medicao real em pipeline/sih/reports/populacao-dimensionamento.md, SUMMARY.md ainda nao escrito.
-Resume file: pipeline/sih/reports/populacao-dimensionamento.md
+Last session: 2026-08-10T10:48:25.506Z
+Stopped at: Fase 09 Plano 06 completo: population.py (POPSVS lido pelo diretorio certo, agregado por faixa etaria/sexo nos dois graos), dimensionamento real medido (146 MB via Postgres local vs 420 MB projetado), checkpoint respondido pelo operador -- popsvs-no-banco confirmado, POPSVS confirmado como fonte unica (Assumption A3 resolvida por julgamento de dominio), restricao de ordem registrada para o 09-10 (evacuar sih_metric_muni antes de subir populacao).
+Resume file: None
 
 ## Performance Metrics
 
@@ -214,3 +216,4 @@ Resume file: pipeline/sih/reports/populacao-dimensionamento.md
 | Phase 09-pipeline-confi-vel-coleta-completa P02 | ~12min | 3 tasks | 20 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P07 | 35min | 3 tasks | 9 files |
 | Phase 09 P08 | ~45min | 3 tasks | 6 files |
+| Phase 09-pipeline-confi-vel-coleta-completa P06 | ~55min | 2 tasks | 4 files |
