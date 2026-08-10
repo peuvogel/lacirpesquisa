@@ -7,13 +7,27 @@ completos, nunca uma requisição de rede. O refresh do oráculo é comando expl
 (`uv run python -m sih_pipeline.cli oracle-scrape --uf AC --ano 2019`), jamais parte automática
 deste gate (mesmo padrão "snapshot versionado em vez de busca ao vivo" da Fase 8 D-09).
 
-Estado conhecido em 2026-08-10 (checkpoint clínico do 09-11, D-07 — quatro decisões do operador
-registradas em `scripts/catalog/cid-corrections.json`/`cid-divergencias.json`):
-`exato=33, explicado=60, inexplicado=5`. Os 5 inexplicados são pendências que BLOQUEIAM o upload
-do `09-10` por decisão explícita do operador (códigos `9`/`77`, colisão residual; e 3 das 7
-categorias de delta extremo reveladas pela confirmação em SP/2019) — não foram varridas para
-"explicado" por decisão deliberada. `ReconciliationResult.ok` é `False` sobre esta fixture HOJE,
-DE PROPÓSITO: o gate não pode fingir sucesso sobre uma pendência que o operador manteve aberta
+Estado em 2026-08-10 (checkpoint clínico do 09-11, D-07 — quatro decisões do operador registradas
+em `scripts/catalog/cid-corrections.json`/`cid-divergencias.json`): `exato=33, explicado=60,
+inexplicado=5`. Os 5 inexplicados eram pendências que BLOQUEAVAM o upload do `09-10` por decisão
+explícita do operador (códigos `9`/`77`, colisão residual; e 3 das 7 categorias de delta extremo
+reveladas pela confirmação em SP/2019).
+
+ATUALIZADO em 2026-08-10 (investigação nova, `09-08-INVESTIGACAO`, resolução de
+`PENDENTE_colisao_codigos_9_e_77`): a faixa correta dos códigos `9` e `77` foi determinada por
+fonte autoritativa (tabela oficial DATASUS `mxcid10lm.htm`) + medição empírica ao vivo — ver
+`cid-corrections.json` (tabnetCodes 9/15/77) e `pipeline/sih/reports/reconciliacao-sc7.md`. Isso
+libera o efeito das correções já aprovadas dos códigos `14`/`274`: `tuberculose_miliar` passa a
+bater EXATO (era ausente) e `doencas_infecciosas_e_parasitarias_congenitas` passa a ser
+EXPLICADO (era ausente). Novo estado: `exato=34, explicado=61, inexplicado=3`. Os 3 inexplicados
+restantes (`doenca_de_alzheimer`, `tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar`) têm
+faixa CID correta (confirmada contra a mesma fonte autoritativa) — o mecanismo do delta foi
+IDENTIFICADO nesta mesma investigação (AIH tipo 5/longa permanência, `IDENT='5'`, não filtrada
+por `aggregate.py`), mas a correção pertence a `aggregate.py` (fora do escopo de arquivo desta
+investigação, dono 09-07) — ver `cid-divergencias.json`,
+`PENDENTE_sete_categorias_delta_extremo_sp`. Continuam BLOQUEANDO o upload do `09-10` por essa
+razão, não mais por "mecanismo desconhecido". `ReconciliationResult.ok` é `False` sobre esta
+fixture HOJE, DE PROPÓSITO: o gate não pode fingir sucesso sobre uma pendência que segue aberta
 (D-02 proíbe inventar mecanismo tanto quanto proíbe banda de tolerância).
 
 O que este gate protege não é "zero inexplicado" — é a COMPOSIÇÃO EXATA do conjunto inexplicado.
@@ -40,16 +54,20 @@ ORACLE_AC_2019_PATH = FIXTURES_DIR / "oracle_ac_2019.json"
 
 _MEDIDAS = ("internacoes", "obitos", "valor_total", "dias_permanencia")
 
-# Conjunto conhecido dos 5 pares que permanecem inexplicado por decisão explícita do operador
-# (checkpoint clínico do 09-11, 2026-08-10) -- ver cid-divergencias.json, entradas
-# "PENDENTE_colisao_codigos_9_e_77" e "PENDENTE_sete_categorias_delta_extremo_sp".
+# Conjunto conhecido dos 3 pares que permanecem inexplicado (atualizado 2026-08-10, investigação
+# nova 09-08-INVESTIGACAO -- ver cid-divergencias.json, entrada
+# "PENDENTE_sete_categorias_delta_extremo_sp"). tuberculose_miliar e
+# doencas_infecciosas_e_parasitarias_congenitas SAÍRAM deste conjunto: a colisão residual dos
+# códigos 9/77 foi resolvida (PENDENTE_colisao_codigos_9_e_77), liberando o efeito das correções
+# já aprovadas dos códigos 14/274 -- tuberculose_miliar agora bate EXATO, e
+# doencas_infecciosas_e_parasitarias_congenitas agora é EXPLICADO.
 _INEXPLICADOS_CONHECIDOS = frozenset(
     {
-        "doenca_de_alzheimer",  # tabnetCode 146 -- decisão 4: delta extremo, mecanismo desconhecido
-        "doencas_infecciosas_e_parasitarias_congenitas",  # tabnetCode 274 -- decisão 3: colisão com 77
-        "tuberculose_do_sistema_nervoso",  # tabnetCode 10 -- decisão 4: delta extremo
-        "tuberculose_miliar",  # tabnetCode 14 -- decisão 3: colisão com 9
-        "tuberculose_pulmonar",  # tabnetCode 7 -- decisão 4: delta extremo
+        "doenca_de_alzheimer",  # tabnetCode 146 -- delta extremo; mecanismo IDENTIFICADO (AIH tipo 5,
+        # IDENT='5', não filtrada por aggregate.py) mas correção fora do escopo de arquivo desta
+        # investigação (dono: 09-07)
+        "tuberculose_do_sistema_nervoso",  # tabnetCode 10 -- mesmo mecanismo (AIH tipo 5), mesma razão
+        "tuberculose_pulmonar",  # tabnetCode 7 -- mesmo mecanismo (AIH tipo 5), mesma razão
     }
 )
 
@@ -110,11 +128,12 @@ def test_gate_agrega_fixture_pequena_e_compara_com_oraculo_congelado():
         "STATE.md) ou regressão silenciosa (reverta a mudança).\n"
         + resultado.render_markdown()
     )
-    assert len(resultado.exato) == 33
-    assert len(resultado.explicado) == 60
-    assert len(resultado.inexplicado) == 5
+    assert len(resultado.exato) == 34
+    assert len(resultado.explicado) == 61
+    assert len(resultado.inexplicado) == 3
     # result.ok é False hoje, DE PROPÓSITO -- ver docstring do módulo: o gate não finge sucesso
-    # sobre uma pendência que o operador manteve aberta (decisões 3/4 do checkpoint do 09-11).
+    # sobre uma pendência que segue aberta (mecanismo AIH tipo 5 identificado, correção pendente
+    # em aggregate.py, fora do escopo de arquivo desta investigação -- dono 09-07).
     assert resultado.ok is False
 
 
