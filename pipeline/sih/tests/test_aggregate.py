@@ -52,6 +52,7 @@ def test_needed_columns_contem_as_colunas_obrigatorias():
         "VAL_TOT",
         "DIAS_PERM",
         "ANO_CMPT",
+        "IDENT",
     }
 
 
@@ -165,6 +166,7 @@ def test_registros_sem_categoria_sao_contados_e_acima_de_01_por_cento_levanta(in
             "VAL_TOT": ["  100.00"] * 5,
             "DIAS_PERM": ["  1"] * 5,
             "ANO_CMPT": ["2019"] * 5,
+            "IDENT": ["1"] * 5,
         }
     )
     caminho = tmp_path / "descarte_alto.parquet"
@@ -186,6 +188,7 @@ def test_registros_sem_categoria_abaixo_do_limite_nao_levanta(index, tmp_path):
             "VAL_TOT": ["  100.00"] * (n_ok + 1),
             "DIAS_PERM": ["  1"] * (n_ok + 1),
             "ANO_CMPT": ["2019"] * (n_ok + 1),
+            "IDENT": ["1"] * (n_ok + 1),
         }
     )
     caminho = tmp_path / "descarte_baixo.parquet"
@@ -207,6 +210,7 @@ def test_ano_fora_da_janela_e_excluido(index, tmp_path):
             "VAL_TOT": ["  100.00", "  100.00"],
             "DIAS_PERM": ["  1", "  1"],
             "ANO_CMPT": ["2010", "2019"],
+            "IDENT": ["1", "1"],
         }
     )
     caminho = tmp_path / "janela_ano.parquet"
@@ -229,6 +233,7 @@ def test_morte_tipo_inesperado_levanta_tyoe_error(index, tmp_path):
             "VAL_TOT": ["  100.00"],
             "DIAS_PERM": ["  1"],
             "ANO_CMPT": ["2019"],
+            "IDENT": ["1"],
         }
     )
     caminho = tmp_path / "morte_tipo_errado.parquet"
@@ -246,3 +251,44 @@ def test_codigo_330_sem_dado_em_ac_2019_medido(fixture_rows):
     # do limite de 0,1%). Ver SUMMARY "Deviations" para a medição completa.
     ids_presentes = {row.disease_id for row in fixture_rows}
     assert "todas_as_outras_causas_externas" not in ids_presentes
+
+
+def test_ident_diferente_de_1_e_excluido_da_contagem(index, tmp_path):
+    # IDENT (tipo de AIH) marca '1' = AIH normal (nova admissão) e '5' = AIH de longa
+    # permanência (renovação MENSAL de faturamento para o MESMO paciente internado, não uma
+    # nova internação). Contar '5' junto com '1' infla internacoes em ordens de grandeza para
+    # categorias crônicas (achado 09-08-INVESTIGACAO, 2026-08-10 -- ver
+    # pipeline/sih/reports/reconciliacao-sc7.md "Investigação nova, 2026-08-10"; decisão do
+    # operador 2026-08-10: contar só IDENT='1'). Fixture sintética: 2 registros IDENT='1' + 1
+    # IDENT='5' (renovação) + 1 IDENT='9' (qualquer outro valor não-'1', mesmo tratamento) --
+    # só os 2 primeiros contam.
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * 4,
+            "MUNIC_MOV": ["120040"] * 4,
+            "MUNIC_RES": ["120040"] * 4,
+            "MORTE": ["0"] * 4,
+            "VAL_TOT": ["  100.00"] * 4,
+            "DIAS_PERM": ["  1"] * 4,
+            "ANO_CMPT": ["2019"] * 4,
+            "IDENT": ["1", "1", "5", "9"],
+        }
+    )
+    caminho = tmp_path / "ident_longa_permanencia.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    total_ocorrencia_uf = sum(r.internacoes for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert total_ocorrencia_uf == 2
+
+
+def test_ident_5_excluido_da_contagem_real_ac_2019(fixture_rows):
+    # Prova sobre dado real (não sintético): AC/2019 tem exatamente 26 registros com IDENT='5'
+    # entre os 44.589 do dataset inteiro, e 0 descartes de matcher nesta fixture (medido ao
+    # vivo, 2026-08-10 -- ver reconciliacao-sc7.md). O total de internacoes (grão uf, local
+    # ocorrência, somado sobre todas as doenças) tem que refletir só os IDENT='1':
+    # 44.589 - 26 = 44.563.
+    total_ocorrencia = sum(
+        r.internacoes for r in fixture_rows if r.grao == "uf" and r.local == "ocorrencia"
+    )
+    assert total_ocorrencia == 44_563
