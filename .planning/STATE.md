@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "Fase 09 Plano 06 completo: population.py (POPSVS lido pelo diretorio certo, agregado por faixa etaria/sexo nos dois graos), dimensionamento real medido (146 MB via Postgres local vs 420 MB projetado), checkpoint respondido pelo operador -- popsvs-no-banco confirmado, POPSVS confirmado como fonte unica (Assumption A3 resolvida por julgamento de dominio), restricao de ordem registrada para o 09-10 (evacuar sih_metric_muni antes de subir populacao)."
-last_updated: "2026-08-10T10:48:25.510Z"
+stopped_at: "Fase 09 Plano 09 Task 1+2 completos: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21) e a medicao real das 27 particoes commitados. Task 2 (checkpoint:decision, gate=blocking, D-21) aguardando resposta do operador sobre o formato de particao -- ver pipeline/sih/reports/particoes-dimensionamento.md e Blockers/Concerns [09-09]. Task 3 (loadMunicipioPartition.ts) nao iniciada -- depende da decisao."
+last_updated: "2026-08-10T11:14:42.817Z"
 last_activity: 2026-08-10
 progress:
   total_phases: 6
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
-Plan: 10 of 14 (09-06 completo — population.py + dimensionamento real medido + checkpoint respondido pelo operador; 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
-Status: Ready to execute
+Plan: 10 of 14 (09-09 EM PAUSA — Task 1 [partitions.py] e Task 2 [medicao real + bucket auditado] completos e commitados; Task 2 e `checkpoint:decision` gate=blocking, D-21, aguardando resposta do operador; Task 3 [loadMunicipioPartition.ts] nao iniciada. 09-01/09-03/09-04 permanecem pausados em bloqueio/checkpoint)
+Status: Paused at checkpoint (09-09 Task 2, D-21)
 Last activity: 2026-08-10
 
 ### Bloqueios abertos
@@ -165,11 +165,12 @@ None yet.
 
 - [09-01] Bloqueado em checkpoint humano: Task 1 (credencial Postgres D-17, Session Pooler) exige que o operador crie `.env.pipeline` fora do agente — `.gitignore` já cobre o arquivo (commit 1817b1b). Task 2 (ordem de coleta D-23) é `checkpoint:decision` e só roda depois.
 - [09-03] Task 3 (aplicar supabase db push --linked em producao) bloqueada: SUPABASE_ACCESS_TOKEN nao disponivel (nem env var, nem ~/.supabase/access-token, nem .env.pipeline — mesma credencial D-17 que bloqueia 09-01 Task 1). Tasks 1-2 completas e commitadas (882221c, 03abaf5); Task 3 aguarda o operador criar .env.pipeline com o token.
+- [09-09] Task 2 (checkpoint:decision, gate=blocking): D-21 -- formato de particao (manter-por-uf / uf-por-ano / uf-com-grandes-divididas) aguardando decisao do operador. Medicao real registrada em pipeline/sih/reports/particoes-dimensionamento.md -- AC medido de verdade (66.109 B comprimidos, 14/156 arquivos-mes locais disponiveis; corpus completo bloqueado por disco no 09-04). 26 UFs restantes projetadas por dois metodos rotulados (nunca apresentadas como medicao): metodo ingenuo (fracao do ledger, 18,97 MB total -- subestima por assumir uniformidade entre UFs) e metodo ponderado pela distribuicao real de linhas do sih_metric_muni legado por UF (139,0 MB total, SP=maior com 15,2-20,5 MB -- 2,4x-3,3x abaixo do teto de 50 MB por objeto confirmado AO VIVO por tentativa real de aumento rejeitada pela plataforma). Bucket sih-municipio criado e auditado: GET anonimo real HTTP 200 byte-a-byte identico ao arquivo local; POST/PUT/DELETE anonimo real recusados (corpo 403/AccessDenied, nada escrito -- confirmado por listagem service_role -- mas o codigo HTTP de TRANSPORTE observado e 400, nao 401/403 como o criterio de aceitacao antecipava -- desvio honesto registrado, substancia da recusa comprovada); pg_policies mostra zero policies para storage.objects (colado no relatorio), RLS habilitado, anon/authenticated sem bypassrls. Tasks 1 (partitions.py) e a medicao ja commitadas (cae15ae/e61bef7/a3f8b8b); Task 3 (loadMunicipioPartition.ts) aguarda a decisao para saber se colunas/formato mudam.
 
 ## Session Continuity
 
-Last session: 2026-08-10T10:48:25.506Z
-Stopped at: Fase 09 Plano 06 completo: population.py (POPSVS lido pelo diretorio certo, agregado por faixa etaria/sexo nos dois graos), dimensionamento real medido (146 MB via Postgres local vs 420 MB projetado), checkpoint respondido pelo operador -- popsvs-no-banco confirmado, POPSVS confirmado como fonte unica (Assumption A3 resolvida por julgamento de dominio), restricao de ordem registrada para o 09-10 (evacuar sih_metric_muni antes de subir populacao).
+Last session: 2026-08-10T11:14:42.814Z
+Stopped at: Fase 09 Plano 09 Task 1+2 completos: partitions.py (produtor colunar+gzip das particoes de municipio, D-20/D-21) e a medicao real das 27 particoes commitados. Task 2 (checkpoint:decision, gate=blocking, D-21) aguardando resposta do operador sobre o formato de particao -- ver pipeline/sih/reports/particoes-dimensionamento.md e Blockers/Concerns [09-09]. Task 3 (loadMunicipioPartition.ts) nao iniciada -- depende da decisao.
 Resume file: None
 
 ## Performance Metrics
