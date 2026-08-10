@@ -366,9 +366,47 @@ reafirmada aqui porque o critério de aceitação pede o registro explícito.
 
 ---
 
-## 9. Decisão pendente — apresentada ao operador no checkpoint desta task
+## 9. Decisão do operador (2026-08-10)
 
-Este relatório termina aqui sem registrar uma decisão do operador — ela é coletada pelo checkpoint
-`type="checkpoint:decision"` da Task 2, que apresenta os três formatos de partição possíveis
-(`manter-por-uf`, `uf-por-ano`, `uf-com-grandes-divididas`) à luz dos números medidos acima. A
-seção "Decisão do operador" será acrescentada a este arquivo quando a resposta chegar.
+**Decisão: `manter-por-uf`.** 27 partições, uma por UF — o D-21 como escrito. Zero desvio de
+decisão travada.
+
+Razões registradas pelo operador, à luz dos números medidos/projetados acima:
+
+1. **A maior partição cabe com folga de 2,4×.** SP projetada em 15,2–20,5 MB (§3.2/§4) contra o
+   teto de 50 MB por objeto confirmado **ao vivo** pela tentativa recusada de elevar o bucket para
+   100 MB (`413 EntityTooLarge`, §6.2) — não uma suposição de documentação de terceiros.
+2. **O egresso cabe.** 30 alunos baixando SP (a maior UF) numa única aula ≈ 615 MB — 12% do teto
+   mensal de 5 GB (§7), com mais 5 GB de egresso cacheado de reserva para downloads repetidos do
+   mesmo objeto popular.
+3. **Preserva o caso de uso que o D-21 existe para proteger.** A série temporal municipal para
+   Prais-Winsten continua sendo **um** download, não 13 — `uf-por-ano` teria quebrado exatamente
+   essa propriedade (o `<context>` do checkpoint já registrava isso como o principal contra dessa
+   opção), e `uf-com-grandes-divididas` traria duas formas de partição convivendo, mais um
+   manifesto para o consumidor escolher qual usar, para resolver um problema que a medição desta
+   task mostrou **não existir**.
+
+### Ressalva registrada explicitamente — projeção, não medição, para 26 de 27 UFs
+
+A decisão foi tomada sobre **projeção** (método B, §3.2), não medição direta, para 26 das 27 UFs
+— só o AC tem dado local hoje (14 de 4.212 arquivos esperados, 0,33% — §1). O método B é bem
+fundamentado (usa a distribuição real por UF do `sih_metric_muni` legado, já em produção, não uma
+suposição de uniformidade), mas **não é medição de SP**.
+
+**Item de acompanhamento, não detalhe:** depois que a corrida completa do 09-04 rodar, a partição
+de SP (e idealmente as demais UFs grandes: MG, BA, RS, PR) deve ser **medida de verdade** e
+conferida contra o teto de 50 MB por objeto. A folga projetada é de 2,4× (15,2–20,5 MB contra 50
+MB), então mesmo um erro de 2× na extrapolação do método B ainda caberia — mas a confirmação é
+barata e o custo de descobrir tarde é alto, porque a essa altura o formato já estaria travado em
+produção e o consumidor TypeScript (Task 3) já estaria escrito assumindo `v1/{sigla}.json.gz`
+como objeto único por UF. **Sugestão registrada:** o `09-12` (auditoria de cobertura) é o
+candidato natural para incluir essa verificação, porque roda depois da coleta completa — nenhum
+plano desta fase tem isso no escopo declarado hoje, então fica como handoff explícito, não como
+suposição de que "alguém vai lembrar".
+
+### Consequência para `partitions.py` (Task 1) e `loadMunicipioPartition.ts` (Task 3)
+
+**Nenhuma.** `manter-por-uf` é o D-21 como já escrito — `BUCKET`/`PARTITION_PREFIX`/o formato
+`v1/{sigla}.json.gz` (Task 1, já commitado) e a guarda de origem de
+`loadMunicipioPartition.ts` (Task 3, a seguir) continuam exatamente como o bloco `<interfaces>`
+do plano especificava. Não há refinamento de recorte a implementar.
