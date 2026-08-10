@@ -157,3 +157,35 @@ def test_load_divergencias_rejeita_razao_curta(tmp_path):
     )
     with pytest.raises(ValueError):
         load_divergencias(caminho)
+
+
+def test_join_com_agregado_real_usa_sigla_de_uf_nao_codigo_ibge():
+    # Regressão: Row.territorio_codigo no grão UF é o código IBGE numérico ("12"), não a sigla
+    # ("AC") que o oráculo usa como chave -- sem a tradução em main(), TODO par do oráculo
+    # aparenta "ausente no agregado" por erro de chave, nunca por divergência real de dado.
+    from sih_pipeline.aggregate import GRAO_UF, LOCAL_OCORRENCIA, aggregate_parquet_dir
+    from sih_pipeline.codigos import UF_POR_CODIGO
+    from sih_pipeline.corrections import apply_corrections, load_corrections
+    from sih_pipeline.matcher import build_index, load_cid_map
+
+    fixture = (
+        __import__("pathlib").Path(__file__).resolve().parent / "fixtures" / "rdac_2019.parquet"
+    )
+    index = build_index(apply_corrections(load_cid_map(), load_corrections()))
+    linhas = aggregate_parquet_dir(fixture, index)
+
+    agregado = {}
+    for linha in linhas:
+        if linha.grao != GRAO_UF or linha.local != LOCAL_OCORRENCIA:
+            continue
+        uf_sigla = UF_POR_CODIGO[linha.territorio_codigo]
+        agregado[(linha.disease_id, uf_sigla, linha.ano, "internacoes")] = linha.internacoes
+
+    oraculo_ac_2019 = [e for e in load_oracle() if e["uf"] == "AC" and e["ano"] == 2019]
+    resultado = compare(agregado, oraculo_ac_2019, [])
+
+    # Não afirma um número exato aqui (isso é trabalho da Task 2) -- só que a chave junta de
+    # verdade: se a tradução de UF quebrar de novo, TODOS os 98 pares voltam a ficar sem
+    # correspondente no agregado (valor_agregado is None), o que este teste pega.
+    sem_correspondente = sum(1 for p in resultado.inexplicado if p.valor_agregado is None)
+    assert sem_correspondente < len(oraculo_ac_2019)

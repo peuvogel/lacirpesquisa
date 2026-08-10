@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from sih_pipeline.aggregate import GRAO_UF, LOCAL_OCORRENCIA, aggregate_years
+from sih_pipeline.codigos import UF_POR_CODIGO
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import build_index, load_cid_map
 from sih_pipeline.paths import cache_path, repo_root
@@ -246,11 +247,21 @@ def main(argv: list[str]) -> int:
     for linha in linhas:
         if linha.grao != GRAO_UF or linha.local != LOCAL_OCORRENCIA:
             continue
+        # O oráculo (oracle_scrape.py, 09-05) chaveia por sigla de UF ("AC"), exatamente como o
+        # TabNet devolve; Row.territorio_codigo no grão UF é o código IBGE numérico de 2 dígitos
+        # ("12") -- sem esta tradução, NENHUM par junta e a reconciliação inteira aparenta zero
+        # agregado por engano de chave, não por divergência real de dado.
+        uf_sigla = UF_POR_CODIGO.get(linha.territorio_codigo)
+        if uf_sigla is None:
+            raise KeyError(
+                f"reconcile: código de UF {linha.territorio_codigo!r} sem sigla em "
+                "codigos.UF_POR_CODIGO — mapa desatualizado."
+            )
         for medida in _MEDIDAS:
             valor = getattr(linha, medida)
             if valor is None:
                 continue
-            agregado[(linha.disease_id, linha.territorio_codigo, linha.ano, medida)] = valor
+            agregado[(linha.disease_id, uf_sigla, linha.ano, medida)] = valor
 
     oraculo = load_oracle(ORACLE_PATH)
     if args.uf:
