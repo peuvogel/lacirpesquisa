@@ -210,3 +210,201 @@ individual para os 51 pares que não tiveram investigação categoria-a-categori
 evitar. Levado ao checkpoint do 09-11 como pergunta aberta: aceitar o mecanismo geral (competência de
 processamento) como explicação de lote para o resíduo, ou aprofundar a depuração categoria a
 categoria.
+
+---
+
+## Investigação nova, 2026-08-10 — as duas pendências que bloqueiam o upload (09-08-INVESTIGACAO)
+
+**Contexto:** o checkpoint clínico do 09-11 (D-07, 2026-08-10) aprovou as 4 correções acima e
+aceitou o resíduo geral como divergência de lote, mas recusou fechar duas questões como
+divergência honesta — determinou investigação nova antes de qualquer upload. Registradas em
+`scripts/catalog/cid-divergencias.json` como `PENDENTE_colisao_codigos_9_e_77` (decisão 3) e
+`PENDENTE_sete_categorias_delta_extremo_sp` (decisão 4), ambas com `bloqueiaUpload: true`. Esta
+seção é o registro da investigação que resolveu a primeira e caracterizou (sem resolver por
+completo) a segunda. Não há um novo PLAN.md — este é um round de investigação avulso, escopado
+diretamente aos artefatos do 09-08.
+
+### Pendência A — faixa correta dos códigos 9 e 77
+
+**Método (protocolo em ordem, conforme a instrução do coordenador):**
+
+1. **Fonte autoritativa primeiro.** `oracle_scrape.py` fala com
+   `http://tabnet.datasus.gov.br/cgi/tabcgi.exe?sih/cnv/nibr.def`, mas esse formulário só expõe
+   o `<select>` de categorias (rótulo + um id sequencial 1..333, não a faixa CID). A faixa CID
+   vive numa página DIFERENTE, já mapeada pelo 08-RESEARCH §1.3 mas nunca absorvida:
+   `http://tabnet.datasus.gov.br/cgi/sih/mxcid10lm.htm` — "Morbidade Hospitalar do SUS — CID-10 —
+   Lista de Tabulação para Morbidade", uma tabela HTML oficial com colunas Capítulo/Código/
+   Descrição/Códigos da CID-10. Buscada ao vivo em 2026-08-10: **51.116 bytes**, exatamente o
+   mesmo tamanho já registrado pelo 08-RESEARCH em 2026-08-03 — a página não mudou. Cache local
+   em `pipeline/sih/cache/mxcid10lm.htm` (gitignored, `pipeline/sih/cache/` — reproduzível por
+   qualquer um com um `curl`/`urllib` simples, sem segredo nem rate-limit especial — é uma página
+   pública, GET simples, sem POST ao `nibr.def`).
+
+2. **Join por rótulo normalizado** (mesmo método do 08-RESEARCH §1.3, que mediu 74% de match
+   exato entre o `<select>` e a tabela oficial): 334 opções do `<select>` × 341 itens da tabela
+   oficial, normalizados (minúsculas, sem acento, espaço colapsado) → **247/333 batem exato**
+   (mesma proporção do 08-RESEARCH). Os 86 sem match exato são majoritariamente truncamento de
+   rótulo (ex. "Diarréia e gastroenterite origem infecc presumível" vs. nome completo oficial) —
+   já catalogado pelo 08-RESEARCH como fricção conhecida, não um problema novo.
+
+3. **Achado principal:** dentro do capítulo I (`001`–`057`, "Algumas doenças infecciosas e
+   parasitárias", `A00-B99`), a tabela oficial tem exatamente 57 itens de topo — e o mapa
+   `lista-morb-cid.json` tem um **deslocamento estrutural de atribuição envolvendo TRÊS
+   códigos**, não dois:
+
+   | tabnetCode | Rótulo (`<select>`) | Valor ANTIGO no mapa | Item oficial cujo rótulo bate EXATO | Valor oficial | A quem o valor antigo pertence de verdade |
+   |---|---|---|---|---|---|
+   | `9` | Restante de tuberculose respiratória | `A19` | *(nenhum — ver abaixo)* | — | Pertence ao item `008.5 Tuberculose miliar` = rótulo do código `14` |
+   | `15` | Restante de outras tuberculoses | `A65-A67, A69-A70, A74, A77-A79, B58-B64, B85-B89, B94-B99` | `008.9 Restante de outras tuberculoses` | `A18.2, A18.4-A18.8` | Pertence ao item `057 Outras doenças infecciosas e parasitárias` = rótulo do código `77` |
+   | `77` | Outras doenças infecciosas e parasitárias | `P35-P37` | `057 Outras doenças infecciosas e parasitárias` | `A65-A67, A69-A70, A74, A77-A79, B58-B64, B85-B89, B94-B99` | Pertence ao item `250 Doenças infecciosas e parasitárias congênitas` = rótulo do código `274` (já corrigido pelo 09-08, aprovado pelo 09-11) |
+
+   Ou seja: `9` tinha o valor de `14`; `15` tinha o valor de `77`; `77` tinha o valor de `274`.
+   Três códigos, três valores emprestados de três OUTROS códigos — não um erro isolado. Isso é a
+   mesma família de defeito dos achados 75/76 e 142/274 originais (um rótulo reivindicando a
+   faixa exata de outro), mas numa cadeia mais longa, presumivelmente herdada da construção
+   original de `lista-morb-cid.json` (anterior à Fase 8, nunca revalidada contra `mxcid10lm.htm`
+   até esta investigação — o 08-RESEARCH mediu o join mas recomendou explicitamente **não**
+   absorver os intervalos por causa da fricção de truncamento, e essa decisão nunca foi
+   revisitada para os casos que a fricção escondia).
+
+4. **Código `9` — sem item próprio na tabela oficial, resolvido por medição empírica (protocolo
+   passo 2).** O item `007 Tuberculose respiratória` (`A15-A16`) tem só dois filhos na tabela
+   impressa — `007.1` (código `7`, `A15.0-A15.3, A16.0-A16.3`) e `007.2` (código `8`,
+   `A15.4-A15.9, A16.4-A16.9`) — que juntos já esgotam todos os dígitos `.0`-`.9` de A15 e A16.
+   Por leitura estrita da tabela impressa, "restante" seria conjunto vazio. Mas a mesma página
+   tem uma nota técnica: *"Alguns agrupamentos, como malária, tuberculoses respiratórias etc.,
+   foram subdivididos para atender necessidades específicas da realidade brasileira"* — aviso
+   explícito de que a tabela de 3 colunas não esgota o que o TabNet realmente usa. Medido ao
+   vivo (`oracle_scrape.post_tabnet`, `REQUEST_DELAY_SEC=1.5` respeitado):
+
+   | UF/ano | TabNet (código 9) | `DIAG_PRINC` sem 4º dígito no microdado (`"A15"`/`"A16"`, 3 caracteres) |
+   |---|---|---|
+   | SP/2019 | **26** | **26** (18×`A15` + 8×`A16`) |
+   | AC/2019 | **0** (erro "nenhum município da UF 12" — zero genuíno) | **0** |
+
+   Coincidência exata, não aproximação — `DIAG_PRINC` gravado sem subcategoria (código de 3
+   caracteres, sem ponto) é o "resto" real: tuberculose respiratória notificada sem
+   especificidade suficiente para cair em `007.1`/`007.2`. `newRange = "A15, A16"` (token de 3
+   caracteres, cobre por design todo subcódigo — ver `matcher.py`) é seguro porque os tokens de
+   `7`/`8` (4 caracteres, com ponto) vêm ANTES de `9` na ordem numérica do mapa e vencem por
+   primeira correspondência qualquer `DIAG_PRINC` de 4 dígitos — o token de `9` só alcança, na
+   prática, os registros sem 4º dígito.
+
+5. **Correções aplicadas** (`scripts/catalog/cid-corrections.json`, tabnetCodes `9`, `15`, `77`):
+   corrigir `77` sem corrigir `15` primeiro criaria uma colisão NOVA (os dois reivindicando o
+   mesmo intervalo) — as três formam uma cadeia, igual à cadeia `74`/`75`/`14` do 09-08 original.
+
+6. **Prova de ausência de colisão nova:** varredura de sobreposição sobre o mapa inteiro (331
+   códigos, 493 tokens após parsing) com as três correções aplicadas juntas — **zero
+   sobreposições**, mesmo método do script de sobreposição do 09-RESEARCH usado pelo 09-08.
+
+7. **Efeito medido sobre a fixture congelada do gate (AC/2019):**
+
+   | Categoria | Antes | Depois | TabNet | Status |
+   |---|---|---|---|---|
+   | `tuberculose_miliar` (14) | ausente | agregado=3 | 3 | **EXATO** |
+   | `doencas_infecciosas_e_parasitarias_congenitas` (274) | ausente | agregado=53 | 50 | **EXPLICADO** (delta +6%, banda de competência de processamento já aceita) |
+
+   Composição do gate: `exato` 33→**34**, `explicado` 60→**61**, `inexplicado` 5→**3** (saem
+   `tuberculose_miliar` e `doencas_infecciosas_e_parasitarias_congenitas`). `test_reconcile_gate.py`
+   atualizado com a nova composição — `result.ok` continua `False` (3 inexplicados restantes, ver
+   pendência B). `uv run pytest` (todos os testes) e `npm run pipeline:reconcile-gate` verdes.
+
+8. **Efeito medido em SP/2019** (raspagem ao vivo 2026-08-10, mesmo método): código `77` ―
+   agregado (`DIAG_PRINC` real no novo intervalo) = 2.557, TabNet = 2.424, delta +5,5% — dentro
+   da banda aceita. Código `274` (já medido pelo 09-11 Task 1): agregado = 2.090, TabNet = 1.992,
+   delta +4,9% — agora com efeito mensurável de verdade, passa a ser resgatado pela divergência
+   já existente. Código `15`: agregado (novo intervalo `A18.2, A18.4-A18.8`) = 96, TabNet = 72,
+   delta +33% — ver pendência B abaixo (mecanismo diferente, mistura faixa CID + AIH tipo 5).
+
+**Resultado:** `PENDENTE_colisao_codigos_9_e_77` **RESOLVIDA** — `bloqueiaUpload` alterado para
+`false` em `cid-divergencias.json`. As hipóteses "descartadas" originais (faixa livre na
+vizinhança) continuam corretas — a faixa certa não estava livre ao lado, estava **numa
+atribuição trocada** com dois outros códigos existentes, um mecanismo mais sutil que a varredura
+manual do 09-08 não podia detectar sem a tabela `mxcid10lm.htm` como referência cruzada.
+
+### Pendência B — sete categorias de delta extremo em SP/2019
+
+**Confirmação inicial (herdada do 09-11):** nenhuma das sete faixas CID declaradas colide
+estruturalmente com um código vizinho — confirmado de novo nesta investigação contra
+`mxcid10lm.htm`: `demência` (132, `F00-F03`), `doença de Parkinson` (145, `G20`) e `doença de
+Alzheimer` (146, `G30`) batem EXATO por rótulo com os itens oficiais `112`, `121`, `122` — mesmos
+valores já no mapa, **sem bug de faixa**. `tuberculose_pulmonar` (7, já confirmado pelo 09-08),
+`tuberculose_do_sistema_nervoso` (10) e `tuberc_intest...` (11) também já tinham faixa correta.
+Só `restante_de_outras_tuberculoses` (15) tinha faixa errada — corrigida junto da pendência A
+acima (faz parte da mesma cadeia 9/15/77).
+
+**Mecanismo identificado (novo nesta investigação):** o campo `IDENT` (tipo de AIH, presente no
+microdado SIH-RD, coluna `IDENT` do parquet) não é filtrado pela agregação. `IDENT='5'` marca
+"AIH de longa permanência" — uma renovação MENSAL de faturamento para um paciente que CONTINUA
+internado, não uma nova admissão. `IDENT='1'` é a AIH normal/inicial. A base inteira de SP/2019
+tem 97,3% `IDENT='1'` (2.537.199 de 2.606.482) — a esmagadora maioria dos registros já é limpa.
+Mas nas sete categorias de delta extremo, a proporção de `IDENT='5'` é muito acima dessa
+baseline:
+
+| Categoria | tabnetCode | `IDENT='5'` em SP/2019 | % | `IDENT='5'` em AC/2019 |
+|---|---|---|---|---|
+| demência | 132 | 3.427 de 3.986 | **86,0%** | 0 de 17 |
+| tuberculose_pulmonar | 7 | 2.390 de 4.762 | **50,2%** | 0 de 37 |
+| doença de Alzheimer | 146 | 155 de 590 | **26,3%** | 0 de 6 |
+| doença de Parkinson | 145 | 81 de 326 | **24,8%** | 0 de 3 |
+| tuberc. intest./peritônio/gânglios | 11 | 6 de 26 | **23,1%** | 0 de 1 |
+| tuberculose do sistema nervoso | 10 | 20 de 112 | **17,9%** | 0 de 3 |
+| restante de outras tuberculoses | 15 | 11 de 96 | **11,5%** | 0 de 1 |
+
+Todas as sete têm **0% de `IDENT='5'` em AC/2019** — explica, com mecanismo, por que o Acre
+nunca revelou este defeito (a vacuidade do D-03, já flagrada pelo 09-11, agora com causa
+identificada, não só volume): não parece ter havido internação de longa permanência para estas
+condições crônicas no Acre em 2019, enquanto São Paulo tem rede de cuidado geriátrico/
+psiquiátrico de longa permanência que gera renovação mensal de AIH para os mesmos pacientes.
+Contraprova com categorias "normais": apendicite (`K35-K38`, já exata no 09-08) e colelitíase
+(`K80-K81`) têm **0% de `IDENT='5'` em SP/2019** — condições agudas não geram longa permanência.
+
+**Filtrando só `IDENT='1'`, os deltas colapsam** para a mesma ordem de grandeza da banda de
+competência de processamento já aceita (~+4% a +8%):
+
+| Categoria | Delta bruto (hoje) | Delta com `IDENT='1'` só |
+|---|---|---|
+| demência | +665,1% | **+7,3%** |
+| tuberculose_pulmonar | +108,2% | **+3,7%** |
+| doença de Alzheimer | +45,7% | **+7,4%** |
+| doença de Parkinson | +47,5% | **+10,9%** |
+| tuberc. intest./peritônio/gânglios | +44,4% | **+11,1%** |
+| tuberculose do sistema nervoso | +47,4% | **+21,1%** |
+| restante de outras tuberculoses (após corrigir a faixa, pendência A) | +33,3% (bruto, faixa já corrigida) | **+18,1%** |
+
+**Hipóteses descartadas nesta rodada:** sobreposição estrutural de faixa CID (confirmado de novo
+contra `mxcid10lm.htm` — nenhuma, exceto o caso já corrigido do código 15); erro de agregação do
+scraper (as contagens ao vivo do TabNet e o microdado local usam fontes independentes e ainda
+assim reproduzem a mesma ordem de grandeza uma vez filtrado `IDENT='1'`).
+
+**Por que isto NÃO está resolvido, mesmo com o mecanismo identificado:** a correção pertence ao
+cálculo da medida `internacoes` em `aggregate.py` (precisa excluir `IDENT='5'`, ou equivalente) —
+arquivo de propriedade do 09-07, **fora do escopo de arquivo desta investigação** (instrução
+explícita: não editar `aggregate.py`, `matcher.py` nem `codigos.py`). Subir os dados hoje ainda
+inflaria estas sete categorias. `PENDENTE_sete_categorias_delta_extremo_sp` continua com
+`bloqueiaUpload: true`, mas `mecanismoIdentificado` passa para `true` e a razão registrada em
+`cid-divergencias.json` documenta o achado completo, com o próximo dono explícito: 09-07 (ou
+uma plan nova dedicada), fora do escopo desta investigação.
+
+**Nota de escopo, não escondida:** esta investigação mediu `IDENT='5'` só para as sete categorias
+designadas pelo checkpoint do 09-11 (mais as duas da pendência A). Não foi feita uma varredura
+de `IDENT='5'` sobre as 331 categorias — é plausível, por analogia clínica (câncer terminal,
+cuidados paliativos, diálise crônica, saúde mental de longa permanência são também perfis de
+internação prolongada), que outras categorias tenham o mesmo problema em grau menor, inclusive
+contribuindo parcialmente para o resíduo geral de +5,1%/+7,9% já aceito como divergência de lote
+pela decisão 2 do checkpoint do 09-11. Esta é uma HIPÓTESE não testada aqui — levantá-la não
+reabre a decisão 2 (fora do mandato desta investigação, que é as duas pendências específicas),
+mas fica registrada para quem eventualmente corrigir `aggregate.py` verificar o efeito completo,
+não só nas sete categorias nomeadas.
+
+### Resumo do estado depois desta investigação
+
+| Pendência | Status | `bloqueiaUpload` |
+|---|---|---|
+| A — colisão residual códigos 9/77 | **RESOLVIDA** (faixa correta determinada e aplicada) | `false` |
+| B — 7 categorias de delta extremo | Mecanismo IDENTIFICADO (AIH tipo 5), correção fora de escopo (aggregate.py, 09-07) | `true` |
+
+Gate AC/2019: `exato=34, explicado=61, inexplicado=3` (`doenca_de_alzheimer`,
+`tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar` — os três representantes da pendência B
+visíveis no recorte pequeno do Acre). `result.ok = False`, de propósito.
