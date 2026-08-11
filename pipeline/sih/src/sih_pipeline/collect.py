@@ -109,6 +109,17 @@ RAZAO_LINHAS_VS_AC: dict[str, float] = {
 # então superestimar é seguro e subestimar é o único resultado que não pode acontecer.
 BYTES_PER_RATIO_UNIT_SEED: int = int(1.9 * 1024**3 / 29.20)
 
+# Achado real da primeira corrida (2026-08-10/11, UF=DF): 163,45 MB brutos medidos contra uma
+# projeção de ~13,3 MB (semente) -- ~12x acima. DF é capital federal e polo de referência: volume
+# BRUTO de internação desproporcional à razão do `sih_metric_muni` (que mede só 93/331 agravos e
+# só local=ocorrência do dado legado). Dividir bytes medidos por uma razão PEQUENA (DF=0,20)
+# amplifica qualquer excentricidade de UF isolada em muitas ordens de grandeza quando extrapolada
+# para uma razão GRANDE (SP=29,20, 146x maior) -- projetaria ~24 GB para SP a partir de uma UF
+# 146x menor na razão, quando o real medido de SP (via SP/2019 já em cache) é ~1,9 GB. Por isso
+# uma medição real só é usada para calibrar OUTRAS UFs cuja razão está dentro deste raio de
+# confiança (múltiplo da razão medida) -- nunca extrapolada através de duas ordens de grandeza.
+RAIO_CONFIANCA_RAZAO: float = 5.0
+
 # Margem de segurança default da guarda de disco — nunca deixa o livre projetado rente ao
 # necessário; ajustável via `--margem-mb` na CLI.
 DISK_SAFETY_MARGIN_BYTES: int = 500 * 1024 * 1024
@@ -241,14 +252,22 @@ def project_uf_bytes(uf: str, *, medicoes: dict[str, int] | None = None) -> int:
     Usa o MAIOR entre a semente conservadora (`BYTES_PER_RATIO_UNIT_SEED`) e qualquer
     bytes-por-unidade já observado de verdade em `medicoes` (uf -> bytes reciclados, de UFs já
     processadas nesta corrida) — a projeção fica mais precisa conforme a corrida avança, sempre
-    por cima, nunca por baixo (uma guarda de disco não pode subestimar)."""
+    por cima, nunca por baixo (uma guarda de disco não pode subestimar).
+
+    Uma UF medida só calibra outra dentro de `RAIO_CONFIANCA_RAZAO` (razão contra razão, nunca
+    através de duas ordens de grandeza) — ver o comentário de `RAIO_CONFIANCA_RAZAO` para o
+    achado real (DF) que motivou este limite."""
     razao = RAZAO_LINHAS_VS_AC[uf]
     bytes_por_unidade = float(BYTES_PER_RATIO_UNIT_SEED)
     if medicoes:
         for uf_medida, bytes_medidos in medicoes.items():
             razao_medida = RAZAO_LINHAS_VS_AC.get(uf_medida)
-            if razao_medida:
-                bytes_por_unidade = max(bytes_por_unidade, bytes_medidos / razao_medida)
+            if not razao_medida:
+                continue
+            distancia = max(razao, razao_medida) / min(razao, razao_medida)
+            if distancia > RAIO_CONFIANCA_RAZAO:
+                continue
+            bytes_por_unidade = max(bytes_por_unidade, bytes_medidos / razao_medida)
     return int(razao * bytes_por_unidade)
 
 

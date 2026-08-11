@@ -268,6 +268,29 @@ def test_project_uf_bytes_usa_medicao_real_quando_maior_que_semente():
     assert inflado > base
 
 
+def test_project_uf_bytes_nao_extrapola_medicao_de_razao_pequena_para_razao_grande():
+    # Achado real da primeira corrida (2026-08-10/11): DF (razao=0,20) mediu 163,45 MB brutos --
+    # ~12x acima da semente. Extrapolar ISSO para SP (razao=29,20, 146x maior) projetaria ~24 GB
+    # quando o real medido de SP (SP/2019 ja em cache) e ~1,9 GB -- a UF pequena nao pode inflar
+    # a projecao de uma UF ordens de grandeza maior na razao (RAIO_CONFIANCA_RAZAO).
+    medicao_df_real = {"DF": 163_452_924}
+    projetado_sp = collect.project_uf_bytes("SP", medicoes=medicao_df_real)
+    projetado_sp_sem_medicao = collect.project_uf_bytes("SP")
+
+    assert projetado_sp == projetado_sp_sem_medicao  # DF nao influencia SP (fora do raio)
+    assert projetado_sp < 3 * 1024**3  # continua perto da semente (~1,9 GB), nunca ~24 GB
+
+
+def test_project_uf_bytes_extrapola_medicao_dentro_do_raio_de_confianca():
+    # AC (razao=1,00) e SE (razao=0,98) estao dentro do raio -- uma medicao real de AC PODE
+    # calibrar a projecao de SE.
+    medicao_ac_real = {"AC": 5 * collect.BYTES_PER_RATIO_UNIT_SEED}
+    projetado_se = collect.project_uf_bytes("SE", medicoes=medicao_ac_real)
+    projetado_se_sem_medicao = collect.project_uf_bytes("SE")
+
+    assert projetado_se > projetado_se_sem_medicao
+
+
 # ---------------------------------------------------------------------------
 # CollectLedger -- estado explícito por UF.
 # ---------------------------------------------------------------------------
