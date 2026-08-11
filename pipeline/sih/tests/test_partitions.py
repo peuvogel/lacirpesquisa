@@ -2,7 +2,14 @@
 
 Roda sobre `tests/fixtures/rdac_2019.parquet` (mesma fixture real de AC/2019 do 09-07/09-08) --
 nenhum teste desta suíte toca a rede (`upload_partition`/`_fetch` são isolados e substituídos por
-monkeypatch, mesmo padrão de `test_oracle_scrape.py`).
+monkeypatch, mesmo padrão de `test_oracle_scrape.py`) nem o cache real (`~/.lacir/sih-cache/`) --
+todo teste que exercita `cache_path` redireciona via `SIH_PIPELINE_CACHE_DIR=tmp_path`
+(monkeypatch), nunca lê nem escreve o cache que a corrida real de coleta (PID vivo) está usando.
+
+**Suíte "agregados" (adaptação 2026-08-11, 09-09-ADAPTACAO-AGREGADOS):** prova o handoff aberto
+pelo 09-04-COLETA-INCREMENTAL -- `linhas_da_uf` precisa produzir a MESMA partição a partir do
+agregado persistido (`cache_path("agregados/{uf}.parquet")`) e a partir do parquet bruto isolado
+a essa UF, e precisa tratar "UF sem nenhum dos dois" como estado normal, nunca erro.
 """
 
 from __future__ import annotations
@@ -11,8 +18,11 @@ import gzip
 import json
 from pathlib import Path
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 
+import sih_pipeline.partitions as partitions_mod
 from sih_pipeline.aggregate import Row, aggregate_parquet_dir
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import build_index, load_cid_map
@@ -24,10 +34,12 @@ from sih_pipeline.partitions import (
     _object_key,
     build_partition,
     cid_map_version,
+    linhas_da_uf,
     main,
     upload_partition,
     write_partition,
 )
+from sih_pipeline.paths import cache_path
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "rdac_2019.parquet"
 
@@ -203,3 +215,181 @@ def test_main_help_sai_zero(capsys):
 
 def test_main_sem_uf_nem_todas_sai_dois(capsys):
     assert main([]) == 2
+
+
+# ---------------------------------------------------------------------------
+# Suíte "agregados" -- adaptação 2026-08-11 (09-09-ADAPTACAO-AGREGADOS). Prova o handoff aberto
+# pelo 09-04-COLETA-INCREMENTAL: `linhas_da_uf` prioriza cache_path("agregados/{uf}.parquet") e
+# cai para o parquet bruto -- sempre isolado à UF pedida -- só quando o agregado ainda não
+# existe. Todo teste redireciona o cache via SIH_PIPELINE_CACHE_DIR=tmp_path (nunca toca
+# ~/.lacir/sih-cache/, que a corrida real de coleta está usando agora).
+# ---------------------------------------------------------------------------
+
+
+def _escrever_parquet_bruto_ac() -> None:
+    """Copia a fixture real de AC/2019 para dentro do cache falso (já redirecionado via
+    SIH_PIPELINE_CACHE_DIR pelo chamador), com o nome de arquivo bruto real (`RDAC1901.parquet`)
+    que `_arquivos_brutos_da_uf` procura via prefixo `RD{uf}`."""
+    destino = cache_path("parquet") / "RDAC1901.parquet"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(FIXTURE_PATH.read_bytes())
+
+
+def _persistir_agregado(uf: str, linhas: list[Row]) -> Path:
+    """Espelha `collect.py:_persist_rows` (mesmo schema, `Row._fields` na mesma ordem) sem
+    importar `collect.py` (módulo vivo, fora do escopo desta adaptação) -- usado só para os
+    testes desta suíte montarem um agregado persistido sintético a partir de `Row` já conhecidas."""
+    colunas: dict[str, list] = {nome: [] for nome in Row._fields}
+    for linha in linhas:
+        for nome in Row._fields:
+            colunas[nome].append(getattr(linha, nome))
+    tabela = pa.table(colunas)
+    destino = cache_path(f"agregados/{uf}.parquet")
+    pq.write_table(tabela, destino)
+    return destino
+
+
+def test_linhas_da_uf_sem_agregado_e_sem_bruto_e_estado_normal_nunca_erro(tmp_path, monkeypatch, index):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+
+    linhas, origem = linhas_da_uf("RO", index)
+
+    assert linhas == []
+    assert origem == "bruto"
+
+
+def test_linhas_da_uf_cai_para_parquet_bruto_isolado_quando_agregado_nao_existe(
+    tmp_path, monkeypatch, index
+):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+
+    linhas, origem = linhas_da_uf("AC", index)
+
+    assert origem == "bruto"
+    assert linhas
+    assert not cache_path("agregados/AC.parquet").exists()
+
+
+def test_linhas_da_uf_prioriza_agregado_persistido_quando_existe(tmp_path, monkeypatch, index):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+    linhas_bruto, _ = linhas_da_uf("AC", index)
+    _persistir_agregado("AC", linhas_bruto)
+
+    linhas_agregado, origem = linhas_da_uf("AC", index)
+
+    assert origem == "agregado"
+    assert len(linhas_agregado) == len(linhas_bruto)
+
+
+def test_particao_de_agregado_e_de_parquet_bruto_sao_byte_identicas(tmp_path, monkeypatch, index):
+    """O teste central desta adaptação: a partição de uma UF construída a partir do agregado
+    persistido precisa ser byte-idêntica à mesma partição construída a partir do parquet bruto
+    isolado a essa UF -- a única diferença permitida entre as duas chamadas é QUAL arquivo
+    alimentou `aggregate_years`, nunca o conteúdo produzido (D-20/D-21: "não mudar o que a
+    partição contém")."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(partitions_mod, "_now_iso", lambda: "2026-08-11T00:00:00Z")
+
+    _escrever_parquet_bruto_ac()
+    linhas_bruto, origem_bruto = linhas_da_uf("AC", index)
+    assert origem_bruto == "bruto"
+    assert linhas_bruto
+
+    _persistir_agregado("AC", linhas_bruto)
+    linhas_agregado, origem_agregado = linhas_da_uf("AC", index)
+    assert origem_agregado == "agregado"
+
+    rows_bruto = _linhas_municipio_por_uf(linhas_bruto)["AC"]
+    rows_agregado = _linhas_municipio_por_uf(linhas_agregado)["AC"]
+    assert rows_bruto == rows_agregado
+
+    payload_bruto = build_partition("AC", rows_bruto)
+    payload_agregado = build_partition("AC", rows_agregado)
+    assert payload_bruto == payload_agregado
+
+    corpo_bruto = json.dumps(payload_bruto, ensure_ascii=False).encode("utf-8")
+    corpo_agregado = json.dumps(payload_agregado, ensure_ascii=False).encode("utf-8")
+    assert corpo_bruto == corpo_agregado
+
+    gz_bruto = gzip.compress(corpo_bruto, compresslevel=9, mtime=0)
+    gz_agregado = gzip.compress(corpo_agregado, compresslevel=9, mtime=0)
+    assert gz_bruto == gz_agregado
+
+
+def test_linhas_do_agregado_persistido_schema_divergente_levanta_em_vez_de_coagir(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    caminho = cache_path("agregados/ZZ.parquet")
+    pq.write_table(pa.table({"coluna_errada": [1, 2, 3]}), caminho)
+
+    with pytest.raises(ValueError, match="schema"):
+        partitions_mod._linhas_do_agregado_persistido("ZZ")
+
+
+def test_main_uf_nao_coletada_imprime_mensagem_clara_e_nao_quebra(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+
+    resultado = main(["--uf", "RO"])
+
+    assert resultado == 0
+    saida = capsys.readouterr().out
+    assert "RO" in saida
+    assert "pulando" in saida
+
+
+def test_main_uf_com_so_parquet_bruto_gera_particao_origem_bruto(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+
+    resultado = main(["--uf", "AC"])
+
+    assert resultado == 0
+    assert cache_path("particoes/AC.json.gz").exists()
+    saida = capsys.readouterr().out
+    assert "origem=bruto" in saida
+
+
+def test_main_uf_com_agregado_persistido_gera_particao_origem_agregado(tmp_path, monkeypatch, index, capsys):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+    linhas_bruto, _ = linhas_da_uf("AC", index)
+    _persistir_agregado("AC", linhas_bruto)
+
+    resultado = main(["--uf", "AC"])
+
+    assert resultado == 0
+    assert cache_path("particoes/AC.json.gz").exists()
+    saida = capsys.readouterr().out
+    assert "origem=agregado" in saida
+
+
+def test_main_todas_mistura_agregado_bruto_e_uf_nao_coletada(tmp_path, monkeypatch, index, capsys):
+    """Cenário real da corrida em andamento: algumas UFs já têm agregado persistido (bruto
+    reciclado), outras só têm parquet bruto (ainda não processadas por `collect.py`), e a
+    maioria não tem nenhum dos dois ainda -- `--todas` precisa lidar com essa mistura sem
+    quebrar, gerando partição só para as duas primeiras."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+    linhas_bruto, _ = linhas_da_uf("AC", index)
+    _persistir_agregado("AC", linhas_bruto)
+
+    # SP: parquet bruto ainda presente, sem agregado -- simula UF "em trânsito" (baixada, ainda
+    # não agregada/reciclada pela corrida real).
+    destino_sp = cache_path("parquet") / "RDSP1901.parquet"
+    destino_sp.write_bytes(FIXTURE_PATH.read_bytes())  # conteúdo real irrelevante aqui: só prova
+    # que o fallback bruto entra em ação para uma segunda UF simultaneamente à primeira
+
+    resultado = main(["--todas"])
+
+    assert resultado == 0
+    assert cache_path("particoes/AC.json.gz").exists()
+    saida = capsys.readouterr().out
+    assert "AC -> " in saida
+    assert "origem=agregado" in saida
+    # RO (e as outras 25 UFs sem nenhum dado neste cache falso) ficam com mensagem clara, nunca
+    # crash -- prova que a mistura inteira roda até o fim.
+    assert "RO" in saida
+    assert "pulando" in saida

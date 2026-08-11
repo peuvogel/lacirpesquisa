@@ -20,6 +20,34 @@ seria produzida se o checkpoint do 09-06 tivesse escolhido `popsvs-estratificado
 o operador confirmou `popsvs-no-banco` (ver `pipeline/sih/reports/populacao-dimensionamento.md`
 §"Decisão do operador"), então essa família nunca é gerada em produção; o parâmetro existe e o
 default é testado mesmo assim, exatamente como o plano pede.
+
+**Adaptação 2026-08-11 (09-09-ADAPTACAO-AGREGADOS, ad-hoc, handoff aberto pelo
+09-04-COLETA-INCREMENTAL).** `collect.py` agora recicla (apaga) o parquet BRUTO de cada UF logo
+depois de persistir o agregado pequeno em `cache_path("agregados/{uf}.parquet")`. `linhas_da_uf`
+é a função que fecha esse handoff: para uma UF pedida, prioriza o agregado persistido (pequeno,
+rápido, sobrevive à reciclagem) e só cai para o parquet bruto -- sempre ISOLADO a essa UF, nunca
+`cache_path("parquet")` inteira, que pode ter sobras de outras UFs ainda não recicladas -- quando
+o agregado ainda não existe. Uma UF sem nenhum dos dois é estado NORMAL (a corrida de coleta
+processa 27 UFs uma de cada vez), nunca erro.
+
+**Achado real, não corrigido aqui (fora do escopo desta adaptação -- `collect.py` é módulo vivo,
+intocável durante a corrida em produção):** o isolamento por UF de `collect.py`
+(`_aggregate_uf`, só os arquivos `RD{uf}*`) captura cada hospitalização pela UF onde ela
+OCORREU, incluindo as linhas de grão-município `local=residencia` cujo `MUNIC_RES` aponta para
+OUTRA UF (D-09: paciente internado numa UF pode residir em outra). Isso significa que o
+agregado de uma UF X carrega alguma residência de fora de X (descartada por `build_partition`,
+correto -- não pertence à partição de X) MAS a residência de X capturada dentro do agregado de
+uma UF Y (paciente de X internado em Y) fica presa em `agregados/Y.parquet` e nunca chega à
+partição de X, que só lê `agregados/X.parquet`. Medido ao vivo nesta adaptação (parquet bruto
+real, AC e SP, ainda em cache): SP tem 192 registros de residência do AC presos no arquivo bruto
+de SP (paciente internado em SP, mora no AC); AC tem 11 registros de residência de SP presos no
+arquivo bruto do AC -- de 53.381 e 2.606.482 registros totais respectivamente, uma fração
+pequena mas real. É uma característica arquitetural do isolamento por UF do `collect.py`
+(09-04-COLETA-INCREMENTAL), não uma regressão desta adaptação: mesmo a leitura antiga (a pasta
+`cache_path("parquet")` inteira) só capturava isso quando TODAS as 27 UFs estavam simultaneamente
+em cache -- o que o disco do operador nunca permitiu (a razão de `collect.py` existir). Registrado
+como achado real para decisão futura (ex.: reagregar `agregados/*.parquet` inteiro depois da
+corrida completa, se a completude de residência cross-UF for exigida) -- não resolvido aqui.
 """
 
 from __future__ import annotations
@@ -30,17 +58,20 @@ import hashlib
 import json
 import os
 import sys
+import tempfile
 import urllib.request
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import pyarrow.parquet as pq
+
 from sih_pipeline.aggregate import GRAO_MUNICIPIO, Row, aggregate_years
 from sih_pipeline.codigos import UF_POR_CODIGO, uf_de_municipio
 from sih_pipeline.corrections import CORRECTIONS_PATH, apply_corrections, load_corrections
 from sih_pipeline.enumerate import UFS
-from sih_pipeline.matcher import LISTA_MORB_CID_PATH, build_index, load_cid_map
+from sih_pipeline.matcher import CidIndex, LISTA_MORB_CID_PATH, build_index, load_cid_map
 from sih_pipeline.paths import cache_path
 
 BUCKET = "sih-municipio"
@@ -248,6 +279,100 @@ def _linhas_municipio_por_uf(linhas: list[Row]) -> dict[str, list[Row]]:
     return grupos
 
 
+# ---------------------------------------------------------------------------
+# Fonte de dado por UF: agregado persistido (prioridade) ou parquet bruto isolado (fallback) --
+# ver docstring do módulo, seção "Adaptação 2026-08-11".
+# ---------------------------------------------------------------------------
+
+# Schema esperado de cache_path("agregados/{uf}.parquet") -- derivado de Row._fields (fonte
+# única), nunca um literal solto: se `collect.py` alguma vez persistir colunas diferentes, a
+# comparação em `_linhas_do_agregado_persistido` detecta a divergência e levanta, em vez de
+# coagir por posição silenciosamente.
+_AGREGADOS_COLUMNS: tuple[str, ...] = tuple(Row._fields)
+
+
+def _linhas_do_agregado_persistido(uf: str) -> list[Row] | None:
+    """Lê `cache_path("agregados/{uf}.parquet")` -- o agregado pequeno e durável que
+    `collect.py` (09-04-COLETA-INCREMENTAL) persiste antes de reciclar o parquet bruto da UF.
+
+    Devolve `None` (estado NORMAL, nunca erro) quando o arquivo ainda não existe -- a corrida de
+    coleta processa as 27 UFs uma de cada vez, então "esta UF ainda não tem agregado" é esperado
+    para a maioria das UFs na maior parte do tempo.
+
+    O schema do arquivo persistido precisa casar exatamente com `Row._fields`, na mesma ordem --
+    uma divergência é um achado real (contrato quebrado entre `collect.py` e este módulo), nunca
+    coagida silenciosamente: levanta `ValueError` nomeando a diferença exata em vez de tentar
+    adivinhar o mapeamento de coluna."""
+    caminho = cache_path(f"agregados/{uf}.parquet")
+    if not caminho.exists():
+        return None
+
+    tabela = pq.read_table(caminho)
+    colunas_presentes = tuple(tabela.column_names)
+    if colunas_presentes != _AGREGADOS_COLUMNS:
+        raise ValueError(
+            f"partitions: schema de cache_path('agregados/{uf}.parquet') diverge do esperado -- "
+            f"esperado {_AGREGADOS_COLUMNS!r}, encontrado {colunas_presentes!r}. collect.py e "
+            "partitions.py dessincronizaram; investigar antes de prosseguir (nunca coagir "
+            "colunas por posição)."
+        )
+
+    colunas: dict[str, list[Any]] = {
+        nome: tabela.column(nome).to_pylist() for nome in _AGREGADOS_COLUMNS
+    }
+    return [
+        Row(**{nome: colunas[nome][i] for nome in _AGREGADOS_COLUMNS})
+        for i in range(tabela.num_rows)
+    ]
+
+
+def _arquivos_brutos_da_uf(uf: str) -> list[Path]:
+    """Lista as entradas `RD{uf}*.parquet` presentes em `cache_path("parquet")`, isoladas a esta
+    UF -- mesmo princípio de `collect.py:_aggregate_uf` (nunca agregar a pasta inteira, que pode
+    ter sobras de outras UFs ainda não recicladas). Reimplementado aqui via glob direto em vez de
+    importar `collect.py` (módulo vivo, fora do escopo desta adaptação) -- lista vazia quando a
+    UF não tem nenhum arquivo bruto em cache (coleta ainda não chegou nela, ou já foi
+    reciclada)."""
+    parquet_root = cache_path("parquet")
+    if not parquet_root.exists():
+        return []
+    prefixo = f"RD{uf}"
+    return sorted(p for p in parquet_root.iterdir() if p.name.startswith(prefixo))
+
+
+def _linhas_do_parquet_bruto_isolado(uf: str, index: CidIndex) -> list[Row]:
+    """Agrega só os arquivos brutos de `uf` (nunca `cache_path("parquet")` inteira) -- um
+    diretório temporário de symlinks dá a `aggregate_years` uma visão restrita sem duplicar bytes
+    e sem tocar em `collect.py`, mesmo padrão de isolamento que aquele módulo já usa. Lista vazia
+    quando a UF não tem nenhum arquivo bruto em cache."""
+    arquivos = _arquivos_brutos_da_uf(uf)
+    if not arquivos:
+        return []
+    with tempfile.TemporaryDirectory(prefix=f"sih-partitions-{uf}-") as tmp:
+        tmp_path = Path(tmp)
+        for origem in arquivos:
+            (tmp_path / origem.name).symlink_to(origem)
+        return aggregate_years(tmp_path, index)
+
+
+def linhas_da_uf(uf: str, index: CidIndex) -> tuple[list[Row], str]:
+    """Linhas (todos os grãos) de `uf`, priorizando o agregado persistido e caindo para o
+    parquet bruto -- sempre isolado a esta UF -- só quando o agregado ainda não existe.
+
+    Devolve `(linhas, origem)` -- `origem` é só rótulo de log (`"agregado"`/`"bruto"`), nunca
+    decide conteúdo: as duas fontes precisam produzir exatamente as mesmas `Row` para a mesma UF
+    (provado por teste, ver `test_partitions.py`). Lista vazia (com `origem="bruto"`) quando nem
+    o agregado nem o parquet bruto existem -- UF ainda não alcançada pela corrida de coleta,
+    estado normal, nunca erro.
+
+    Reaproveitada por `reconcile.py` (mesmo handoff, ver auditoria da adaptação 2026-08-11) --
+    por isso exposta sem `_` inicial, ao contrário dos três helpers acima."""
+    linhas_agregado = _linhas_do_agregado_persistido(uf)
+    if linhas_agregado is not None:
+        return linhas_agregado, "agregado"
+    return _linhas_do_parquet_bruto_isolado(uf, index), "bruto"
+
+
 def main(argv: list[str]) -> int:
     """CLI do subcomando `partitions` (contrato resolvido pelo `cli.py` do 09-04, dono único)."""
     parser = argparse.ArgumentParser(prog="sih_pipeline.partitions")
@@ -262,25 +387,27 @@ def main(argv: list[str]) -> int:
         print("partitions: informe --uf SIGLA ou --todas", file=sys.stderr)
         return 2
 
-    parquet_root = cache_path("parquet")
-    if not parquet_root.exists() or not any(parquet_root.iterdir()):
-        print("partitions: nenhum parquet em cache_path('parquet') -- nada a particionar")
-        return 0
-
     cid_map = apply_corrections(load_cid_map(), load_corrections())
     index = build_index(cid_map)
-    linhas = aggregate_years(parquet_root, index)
-    grupos = _linhas_municipio_por_uf(linhas)
 
     alvo_ufs = list(UFS) if args.todas else [args.uf]
     for uf in alvo_ufs:
-        rows = grupos.get(uf, [])
-        if not rows:
-            print(f"partitions: UF {uf} sem linha agregada em cache -- pulando")
+        linhas, origem = linhas_da_uf(uf, index)
+        if not linhas:
+            print(
+                f"partitions: UF {uf} sem dado em cache (nem agregado persistido, nem parquet "
+                "bruto) -- pulando (coleta ainda não chegou nesta UF)"
+            )
             continue
+
+        rows = _linhas_municipio_por_uf(linhas).get(uf, [])
+        if not rows:
+            print(f"partitions: UF {uf} sem linha de grão município (origem={origem}) -- pulando")
+            continue
+
         payload = build_partition(uf, rows)
         destino = write_partition(uf, payload)
-        print(f"partitions: {uf} -> {destino} ({len(rows)} linha(s))")
+        print(f"partitions: {uf} -> {destino} ({len(rows)} linha(s), origem={origem})")
         if args.upload:
             upload_partition(destino, uf)
             print(f"partitions: {uf} enviado ao Storage ({BUCKET}/{_object_key(uf)})")
