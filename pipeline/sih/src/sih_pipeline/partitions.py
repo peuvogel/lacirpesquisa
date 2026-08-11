@@ -30,24 +30,52 @@ rápido, sobrevive à reciclagem) e só cai para o parquet bruto -- sempre ISOLA
 o agregado ainda não existe. Uma UF sem nenhum dos dois é estado NORMAL (a corrida de coleta
 processa 27 UFs uma de cada vez), nunca erro.
 
-**Achado real, não corrigido aqui (fora do escopo desta adaptação -- `collect.py` é módulo vivo,
-intocável durante a corrida em produção):** o isolamento por UF de `collect.py`
-(`_aggregate_uf`, só os arquivos `RD{uf}*`) captura cada hospitalização pela UF onde ela
-OCORREU, incluindo as linhas de grão-município `local=residencia` cujo `MUNIC_RES` aponta para
-OUTRA UF (D-09: paciente internado numa UF pode residir em outra). Isso significa que o
-agregado de uma UF X carrega alguma residência de fora de X (descartada por `build_partition`,
-correto -- não pertence à partição de X) MAS a residência de X capturada dentro do agregado de
-uma UF Y (paciente de X internado em Y) fica presa em `agregados/Y.parquet` e nunca chega à
-partição de X, que só lê `agregados/X.parquet`. Medido ao vivo nesta adaptação (parquet bruto
-real, AC e SP, ainda em cache): SP tem 192 registros de residência do AC presos no arquivo bruto
-de SP (paciente internado em SP, mora no AC); AC tem 11 registros de residência de SP presos no
-arquivo bruto do AC -- de 53.381 e 2.606.482 registros totais respectivamente, uma fração
-pequena mas real. É uma característica arquitetural do isolamento por UF do `collect.py`
-(09-04-COLETA-INCREMENTAL), não uma regressão desta adaptação: mesmo a leitura antiga (a pasta
-`cache_path("parquet")` inteira) só capturava isso quando TODAS as 27 UFs estavam simultaneamente
-em cache -- o que o disco do operador nunca permitiu (a razão de `collect.py` existir). Registrado
-como achado real para decisão futura (ex.: reagregar `agregados/*.parquet` inteiro depois da
-corrida completa, se a completude de residência cross-UF for exigida) -- não resolvido aqui.
+**Correção 2026-08-11 (09-09-FIX-RESIDENCIA, sem `PLAN.md` formal -- o brief operacional do
+usuário é o spec).** A adaptação anterior (09-09-ADAPTACAO-AGREGADOS) registrou, mas não
+corrigiu, um defeito real de `linhas_da_uf`: a função selecionava linhas por QUAL ARQUIVO elas
+moram, não por qual território elas DESCREVEM. O isolamento por UF de `collect.py`
+(`_aggregate_uf`, só os arquivos `RD{uf}*`) captura cada hospitalização pela UF onde ela OCORREU,
+mas cada hospitalização também produz uma linha `local=residencia` (D-09: `MUNIC_RES`, onde o
+paciente MORA) que pode apontar para QUALQUER outra UF -- pacientes viajam. Isso quebrava
+`linhas_da_uf` nas duas direções: (1) **contaminação** -- `agregados/{X}.parquet` devolvia TODO
+território que passou pela UF X (SE/2019 mede 1.066 códigos de território distintos, incluindo
+municípios do RO/AC/AM, dos quais só uma fração é da própria SE); (2) **subcontagem** -- a
+residência PRÓPRIA de X, capturada dentro do agregado de OUTRA UF Y (paciente de X internado em
+Y), nunca chegava ao resultado de X, que só lia `agregados/X.parquet`. Medido ao vivo nesta
+correção (parquet bruto real, AC e SP, medição anterior): 11 registros de residência do AC presos
+no bruto de SP; medido de novo agora contra os agregados persistidos reais (7 UFs já coletadas):
+**862 registros de residência do AC presos sozinhos no agregado do DF** (polo de referência,
+mesmo padrão do achado de disco da `collect.py`), mais dezenas presas em AL/AP/RR/SE/TO -- a
+fração cresce, não encolhe, conforme a corrida avança.
+
+A correção: `linhas_da_uf(uf, index)` agora devolve toda linha, de QUALQUER fonte disponível
+(agregado persistido de qualquer UF + fallback bruto isolado das UFs ainda não coletadas), cujo
+`territorio_codigo` PERTENCE a `uf` -- nunca "tudo que está no arquivo de `uf`". Dono do
+território é decidido pelo código IBGE em si (`_uf_dona`: grão UF usa o código de 2 dígitos
+direto; grão município usa `uf_de_municipio` sobre os 2 primeiros dígitos), nunca pelo nome do
+arquivo de origem. Quando a MESMA chave `(disease_id, grao, local, territorio_codigo, ano)`
+aparece em mais de uma fonte (ex.: um residente do AC internado no próprio AC E outro residente
+do AC internado no DF, mesma categoria/ano), as duas são **somadas** (`_somar_rows`) -- elas
+descrevem internações de PACIENTES DIFERENTES que só coincidem em território/categoria/ano;
+escolher uma e descartar a outra perderia internações reais, e `aggregate_parquet_dir` já garante
+que uma chave nunca repete DENTRO de um único arquivo (o acumulador dele soma por chave antes de
+`linhas_da_uf` sequer ver o resultado), então somar ENTRE arquivos é a leitura correta, nunca uma
+duplicação. `taxa_mortalidade` é recalculada sobre os totais somados (nunca somada ela mesma --
+é razão, não medida aditiva), reaproveitando `aggregate._taxa_mortalidade` (fonte única).
+
+**Custo (evitar O(27²)):** ler cada fonte disponível uma vez por UF PEDIDA daria 27 UFs × até 27
+arquivos = até 729 leituras. Em vez disso, `construir_indice_territorial(index)` lê cada fonte
+disponível EXATAMENTE UMA VEZ (`_todas_fontes_disponiveis`, uma passada sobre as 27 UFs
+candidatas) e monta o índice territorial completo (as 27 UFs) numa tacada só -- O(27) leituras
+totais, não O(27²). `linhas_da_uf(uf, index)` (mantida, mesma assinatura, reaproveitada por
+`reconcile.py`) chama `construir_indice_territorial` a cada invocação -- correto e barato para
+UMA UF isolada, mas quem precisa de VÁRIAS UFs na mesma execução (`main()` de `partitions.py` com
+`--todas`, o laço de `reconcile.py` sobre as UFs que o oráculo precisa) chama
+`construir_indice_territorial` diretamente uma vez e reaproveita o resultado, em vez de chamar
+`linhas_da_uf` em laço.
+
+UF sem nenhuma fonte (nem própria, nem contribuição de outra UF) continua estado NORMAL --
+lista vazia, `origem="bruto"` por convenção, nunca erro.
 """
 
 from __future__ import annotations
@@ -67,7 +95,7 @@ from typing import Any
 
 import pyarrow.parquet as pq
 
-from sih_pipeline.aggregate import GRAO_MUNICIPIO, Row, aggregate_years
+from sih_pipeline.aggregate import GRAO_MUNICIPIO, GRAO_UF, Row, _taxa_mortalidade, aggregate_years
 from sih_pipeline.codigos import UF_POR_CODIGO, uf_de_municipio
 from sih_pipeline.corrections import CORRECTIONS_PATH, apply_corrections, load_corrections
 from sih_pipeline.enumerate import UFS
@@ -355,22 +383,124 @@ def _linhas_do_parquet_bruto_isolado(uf: str, index: CidIndex) -> list[Row]:
         return aggregate_years(tmp_path, index)
 
 
-def linhas_da_uf(uf: str, index: CidIndex) -> tuple[list[Row], str]:
-    """Linhas (todos os grãos) de `uf`, priorizando o agregado persistido e caindo para o
-    parquet bruto -- sempre isolado a esta UF -- só quando o agregado ainda não existe.
+# ---------------------------------------------------------------------------
+# Índice territorial cruzado -- correção 2026-08-11 (09-09-FIX-RESIDENCIA, ver "Correção
+# 2026-08-11" na docstring do módulo). Uma UF não é mais "tudo que está no arquivo daquela UF" --
+# é "toda linha, de QUALQUER fonte, cujo território pertence a essa UF".
+# ---------------------------------------------------------------------------
 
-    Devolve `(linhas, origem)` -- `origem` é só rótulo de log (`"agregado"`/`"bruto"`), nunca
-    decide conteúdo: as duas fontes precisam produzir exatamente as mesmas `Row` para a mesma UF
-    (provado por teste, ver `test_partitions.py`). Lista vazia (com `origem="bruto"`) quando nem
-    o agregado nem o parquet bruto existem -- UF ainda não alcançada pela corrida de coleta,
-    estado normal, nunca erro.
+
+def _uf_dona(linha: Row) -> str | None:
+    """Sigla da UF DONA do território de `linha` -- pelo código IBGE em si, nunca pelo arquivo de
+    onde a linha veio (essa confusão era exatamente o defeito corrigido em 2026-08-11). Grão UF:
+    `territorio_codigo` já É o código de 2 dígitos. Grão município: os 2 primeiros dígitos do
+    código de 6 dígitos (`uf_de_municipio`). Devolve `None` só se o código não estiver em
+    `UF_POR_CODIGO` -- nunca deveria acontecer com dado real do SIH (os 27 códigos são fechados),
+    mas não quebra silenciosamente coagindo para uma UF errada."""
+    codigo_uf = linha.territorio_codigo if linha.grao == GRAO_UF else uf_de_municipio(linha.territorio_codigo)
+    return UF_POR_CODIGO.get(codigo_uf)
+
+
+def _somar_rows(a: Row, b: Row) -> Row:
+    """Combina (SOMA) duas `Row` que compartilham a mesma chave
+    `(disease_id, grao, local, territorio_codigo, ano)` mas vieram de FONTES (arquivos)
+    diferentes -- ver "Correção 2026-08-11" na docstring do módulo para o raciocínio completo
+    (as duas descrevem internações de pacientes DIFERENTES que só coincidem em
+    território/categoria/ano; somar é a única leitura que não perde nem duplica dado real).
+
+    `taxa_mortalidade` é RECALCULADA sobre os totais somados (nunca somada ela mesma -- é uma
+    razão, não uma medida aditiva), reaproveitando `aggregate._taxa_mortalidade` (fonte única,
+    nunca duplicada aqui)."""
+    internacoes = a.internacoes + b.internacoes
+    obitos = a.obitos + b.obitos
+    valor_total = a.valor_total + b.valor_total
+    dias_permanencia = a.dias_permanencia + b.dias_permanencia
+    return a._replace(
+        internacoes=internacoes,
+        obitos=obitos,
+        valor_total=valor_total,
+        dias_permanencia=dias_permanencia,
+        taxa_mortalidade=_taxa_mortalidade(obitos=obitos, internacoes=internacoes),
+    )
+
+
+def _todas_fontes_disponiveis(index: CidIndex) -> dict[str, tuple[list[Row], str]]:
+    """Lê a fonte de CADA UF candidata (as 27 de `UFS`) que tem algum dado em cache -- agregado
+    persistido com prioridade, parquet bruto isolado como fallback -- EXATAMENTE UMA VEZ por UF
+    candidata, nunca uma vez por UF pedida. `uf -> (linhas cruas do arquivo daquela UF, rótulo de
+    origem)`; UFs sem nenhuma fonte simplesmente não entram no dict (nunca uma entrada vazia) --
+    `construir_indice_territorial` trata ausência como zero linhas contribuídas por aquela UF,
+    nunca como erro.
+
+    Este é o ponto de custo desta correção: 27 checagens de existência + leitura real só das UFs
+    que já têm dado -- O(27) no total, nunca O(27²) (ver `construir_indice_territorial`)."""
+    fontes: dict[str, tuple[list[Row], str]] = {}
+    for candidata in UFS:
+        linhas_agregado = _linhas_do_agregado_persistido(candidata)
+        if linhas_agregado is not None:
+            fontes[candidata] = (linhas_agregado, "agregado")
+            continue
+        linhas_bruto = _linhas_do_parquet_bruto_isolado(candidata, index)
+        if linhas_bruto:
+            fontes[candidata] = (linhas_bruto, "bruto")
+    return fontes
+
+
+def construir_indice_territorial(index: CidIndex) -> dict[str, tuple[list[Row], str]]:
+    """Índice territorial completo das 27 UFs -- o ponto único que resolve "quais linhas
+    pertencem a esta UF" de forma correta (dono pelo território, nunca pelo arquivo) E barata
+    (cada fonte lida uma vez só, ver `_todas_fontes_disponiveis`) -- O(27) leituras totais para as
+    27 UFs, não O(27²).
+
+    Para cada linha de cada fonte, decide a UF dona pelo território (`_uf_dona`) e SOMA
+    (`_somar_rows`) quando a mesma chave aparece em mais de uma fonte -- nunca sobrescreve.
+
+    Devolve `uf -> (linhas somadas e filtradas por dono, rótulo de origem DA FONTE PRÓPRIA dessa
+    UF)` -- o rótulo descreve só se a UF pedida tinha, ela mesma, um agregado persistido ou um
+    bruto isolado (ou nenhum dos dois, `"bruto"` por convenção); não descreve de onde vieram as
+    linhas contribuídas por OUTRAS UFs, que é informação de auditoria, não de rotina.
+
+    Chame esta função UMA VEZ por execução que precise de VÁRIAS UFs (`--todas` de
+    `partitions.py`, o laço de `reconcile.py` sobre as UFs que o oráculo precisa) -- nunca
+    `linhas_da_uf` em laço, que repetiria a leitura completa a cada UF."""
+    fontes = _todas_fontes_disponiveis(index)
+
+    por_uf: dict[str, dict[tuple[str, str, str, str, int], Row]] = {sigla: {} for sigla in UFS}
+    for linhas, _rotulo in fontes.values():
+        for linha in linhas:
+            dona = _uf_dona(linha)
+            if dona is None:
+                continue
+            chave = (linha.disease_id, linha.grao, linha.local, linha.territorio_codigo, linha.ano)
+            existente = por_uf[dona].get(chave)
+            por_uf[dona][chave] = linha if existente is None else _somar_rows(existente, linha)
+
+    return {
+        sigla: (list(por_uf[sigla].values()), fontes[sigla][1] if sigla in fontes else "bruto")
+        for sigla in UFS
+    }
+
+
+def linhas_da_uf(uf: str, index: CidIndex) -> tuple[list[Row], str]:
+    """Linhas (todos os grãos, todos os locais) que PERTENCEM a `uf` -- pelo território
+    (`territorio_codigo`), nunca pelo arquivo de origem (correção 2026-08-11, ver "Correção
+    2026-08-11" na docstring do módulo).
+
+    Devolve `(linhas, origem)` -- `origem` é só rótulo de log da fonte PRÓPRIA de `uf`
+    (`"agregado"`/`"bruto"`), nunca decide conteúdo: o conteúdo vem do índice territorial completo
+    (`construir_indice_territorial`), que produz exatamente as mesmas `Row` para `uf` não importa
+    se a fonte própria de `uf` é agregado ou bruto -- provado por teste (ver `test_partitions.py`).
+    UF sem nenhuma linha (nem fonte própria, nem contribuição de outra UF) devolve lista vazia com
+    `origem="bruto"` -- estado normal, nunca erro.
+
+    Chamada isolada (uma UF por vez) recalcula o índice completo a cada chamada -- correto e
+    barato para UMA UF (O(27) leituras). Quem precisa de VÁRIAS UFs na mesma execução deve chamar
+    `construir_indice_territorial` diretamente uma vez e reaproveitar o resultado (ver `main()`
+    abaixo e `reconcile.py`), para não pagar O(27²).
 
     Reaproveitada por `reconcile.py` (mesmo handoff, ver auditoria da adaptação 2026-08-11) --
-    por isso exposta sem `_` inicial, ao contrário dos três helpers acima."""
-    linhas_agregado = _linhas_do_agregado_persistido(uf)
-    if linhas_agregado is not None:
-        return linhas_agregado, "agregado"
-    return _linhas_do_parquet_bruto_isolado(uf, index), "bruto"
+    por isso exposta sem `_` inicial, ao contrário dos helpers acima."""
+    return construir_indice_territorial(index).get(uf, ([], "bruto"))
 
 
 def main(argv: list[str]) -> int:
@@ -391,8 +521,14 @@ def main(argv: list[str]) -> int:
     index = build_index(cid_map)
 
     alvo_ufs = list(UFS) if args.todas else [args.uf]
+    # Índice territorial construído UMA VEZ por execução -- nunca uma vez por UF pedida (custo
+    # O(27), não O(27²); ver construir_indice_territorial). Correto tanto para --uf quanto para
+    # --todas: mesmo uma UF isolada precisa do índice completo, porque uma linha de residência de
+    # `uf` pode estar presa em QUALQUER outra UF (ver "Correção 2026-08-11" na docstring).
+    indice = construir_indice_territorial(index)
+
     for uf in alvo_ufs:
-        linhas, origem = linhas_da_uf(uf, index)
+        linhas, origem = indice.get(uf, ([], "bruto"))
         if not linhas:
             print(
                 f"partitions: UF {uf} sem dado em cache (nem agregado persistido, nem parquet "

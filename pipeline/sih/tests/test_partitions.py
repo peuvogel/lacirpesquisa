@@ -10,6 +10,13 @@ todo teste que exercita `cache_path` redireciona via `SIH_PIPELINE_CACHE_DIR=tmp
 pelo 09-04-COLETA-INCREMENTAL -- `linhas_da_uf` precisa produzir a MESMA partição a partir do
 agregado persistido (`cache_path("agregados/{uf}.parquet")`) e a partir do parquet bruto isolado
 a essa UF, e precisa tratar "UF sem nenhum dos dois" como estado normal, nunca erro.
+
+**Suíte "território" (correção 2026-08-11, 09-09-FIX-RESIDENCIA):** prova a correção do defeito
+registrado (mas não corrigido) pela adaptação acima -- `linhas_da_uf` selecionava por qual ARQUIVO
+uma linha mora, não por qual TERRITÓRIO ela descreve. Prova as duas direções do defeito
+(contaminação: uma UF devolvia território de outras UFs; subcontagem: a residência própria de uma
+UF presa no arquivo de outra UF nunca chegava ao resultado), a soma entre fontes na mesma chave, o
+custo O(27) (não O(27²)), e que a prova byte-idêntica original continua valendo com correção.
 """
 
 from __future__ import annotations
@@ -23,7 +30,7 @@ import pyarrow.parquet as pq
 import pytest
 
 import sih_pipeline.partitions as partitions_mod
-from sih_pipeline.aggregate import Row, aggregate_parquet_dir
+from sih_pipeline.aggregate import GRAO_MUNICIPIO, GRAO_UF, LOCAL_OCORRENCIA, LOCAL_RESIDENCIA, Row, aggregate_parquet_dir
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import build_index, load_cid_map
 from sih_pipeline.partitions import (
@@ -34,6 +41,7 @@ from sih_pipeline.partitions import (
     _object_key,
     build_partition,
     cid_map_version,
+    construir_indice_territorial,
     linhas_da_uf,
     main,
     upload_partition,
@@ -249,6 +257,41 @@ def _persistir_agregado(uf: str, linhas: list[Row]) -> Path:
     return destino
 
 
+def _escrever_parquet_bruto_sp_sintetico() -> None:
+    """Escreve um parquet BRUTO mínimo, mas GENUÍNO, para SP -- um único registro real (mesmo
+    `DIAG_PRINC` que casa de verdade na fixture do AC, T-09-30) com `MUNIC_MOV`/`MUNIC_RES` de SP
+    (`355030`, São Paulo capital), nunca uma cópia dos bytes reais do AC sob um nome de arquivo de
+    SP: sob a correção 2026-08-11, dono é decidido pelo CONTEÚDO (`MUNIC_MOV`/`MUNIC_RES`), não
+    pelo nome do arquivo -- copiar bytes do AC "como se fossem" de SP contaminaria o próprio teste
+    (o "SP" resultante seria, na verdade, mais AC, duplicando o AC real por soma de chave)."""
+    tabela = pa.table(
+        {
+            "DIAG_PRINC": ["O808"],
+            "MUNIC_MOV": ["355030"],
+            "MUNIC_RES": ["355030"],
+            "MORTE": ["0"],
+            "VAL_TOT": ["        459.40"],
+            "DIAS_PERM": ["    2"],
+            "ANO_CMPT": ["2019"],
+            "IDENT": ["1"],
+        }
+    )
+    destino = cache_path("parquet") / "RDSP1901.parquet"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    pq.write_table(tabela, destino)
+
+
+def _persistir_agregado_realista(uf: str, index) -> Path:
+    """Persiste o agregado de `uf` exatamente como `collect.py` faz de verdade: a agregação BRUTA
+    do arquivo isolado dessa UF, SEM filtrar por dono -- `collect.py` não sabe (nem precisa saber)
+    que uma fração dessas linhas descreve território de outra UF (D-09), é papel de `linhas_da_uf`
+    filtrar isso NA LEITURA (correção 2026-08-11), não na escrita. Usar o resultado JÁ FILTRADO de
+    `linhas_da_uf` aqui simularia um cenário que nunca acontece em produção -- este helper evita
+    esse erro nos testes desta suíte."""
+    linhas_brutas = partitions_mod._linhas_do_parquet_bruto_isolado(uf, index)
+    return _persistir_agregado(uf, linhas_brutas)
+
+
 def test_linhas_da_uf_sem_agregado_e_sem_bruto_e_estado_normal_nunca_erro(tmp_path, monkeypatch, index):
     monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
 
@@ -274,13 +317,19 @@ def test_linhas_da_uf_cai_para_parquet_bruto_isolado_quando_agregado_nao_existe(
 def test_linhas_da_uf_prioriza_agregado_persistido_quando_existe(tmp_path, monkeypatch, index):
     monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
     _escrever_parquet_bruto_ac()
-    linhas_bruto, _ = linhas_da_uf("AC", index)
-    _persistir_agregado("AC", linhas_bruto)
+    linhas_via_bruto, origem_bruto = linhas_da_uf("AC", index)  # já filtrado por dono
+    assert origem_bruto == "bruto"
+
+    # collect.py persiste a agregação BRUTA (não filtrada por dono) do arquivo -- ver
+    # _persistir_agregado_realista.
+    _persistir_agregado_realista("AC", index)
 
     linhas_agregado, origem = linhas_da_uf("AC", index)
 
     assert origem == "agregado"
-    assert len(linhas_agregado) == len(linhas_bruto)
+    # mesmo lendo de uma fonte NÃO filtrada, o resultado é idêntico ao lido via bruto isolado --
+    # a filtragem por dono acontece na LEITURA (linhas_da_uf), não depende de quem persistiu.
+    assert linhas_agregado == linhas_via_bruto
 
 
 def test_particao_de_agregado_e_de_parquet_bruto_sao_byte_identicas(tmp_path, monkeypatch, index):
@@ -297,7 +346,9 @@ def test_particao_de_agregado_e_de_parquet_bruto_sao_byte_identicas(tmp_path, mo
     assert origem_bruto == "bruto"
     assert linhas_bruto
 
-    _persistir_agregado("AC", linhas_bruto)
+    # collect.py persiste a agregação BRUTA (não filtrada por dono) -- ver
+    # _persistir_agregado_realista.
+    _persistir_agregado_realista("AC", index)
     linhas_agregado, origem_agregado = linhas_da_uf("AC", index)
     assert origem_agregado == "agregado"
 
@@ -355,8 +406,7 @@ def test_main_uf_com_so_parquet_bruto_gera_particao_origem_bruto(tmp_path, monke
 def test_main_uf_com_agregado_persistido_gera_particao_origem_agregado(tmp_path, monkeypatch, index, capsys):
     monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
     _escrever_parquet_bruto_ac()
-    linhas_bruto, _ = linhas_da_uf("AC", index)
-    _persistir_agregado("AC", linhas_bruto)
+    _persistir_agregado_realista("AC", index)
 
     resultado = main(["--uf", "AC"])
 
@@ -370,17 +420,22 @@ def test_main_todas_mistura_agregado_bruto_e_uf_nao_coletada(tmp_path, monkeypat
     """Cenário real da corrida em andamento: algumas UFs já têm agregado persistido (bruto
     reciclado), outras só têm parquet bruto (ainda não processadas por `collect.py`), e a
     maioria não tem nenhum dos dois ainda -- `--todas` precisa lidar com essa mistura sem
-    quebrar, gerando partição só para as duas primeiras."""
+    quebrar, gerando partição só para as duas primeiras.
+
+    SP recebe um parquet bruto GENUÍNO (nunca uma cópia dos bytes do AC sob nome de SP -- sob a
+    correção 2026-08-11 isso contaminaria o teste, ver `_escrever_parquet_bruto_sp_sintetico`).
+    A UF "sem dado nenhum" desta prova é TO (não RO): a fixture real do AC tem residência
+    presa apontando para RO (`MUNIC_RES` prefixo `11`), então RO deixou de estar "sem dado"
+    depois da correção -- é exatamente o comportamento que a correção existe para produzir, mas
+    quebraria esta asserção se TO não tivesse sido escolhido no lugar (TO/PI/AL/SE/ES estão
+    totalmente ausentes de `MUNIC_MOV`/`MUNIC_RES` na fixture, medido ao vivo)."""
     monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
     _escrever_parquet_bruto_ac()
-    linhas_bruto, _ = linhas_da_uf("AC", index)
-    _persistir_agregado("AC", linhas_bruto)
+    _persistir_agregado_realista("AC", index)
 
     # SP: parquet bruto ainda presente, sem agregado -- simula UF "em trânsito" (baixada, ainda
     # não agregada/reciclada pela corrida real).
-    destino_sp = cache_path("parquet") / "RDSP1901.parquet"
-    destino_sp.write_bytes(FIXTURE_PATH.read_bytes())  # conteúdo real irrelevante aqui: só prova
-    # que o fallback bruto entra em ação para uma segunda UF simultaneamente à primeira
+    _escrever_parquet_bruto_sp_sintetico()
 
     resultado = main(["--todas"])
 
@@ -389,7 +444,214 @@ def test_main_todas_mistura_agregado_bruto_e_uf_nao_coletada(tmp_path, monkeypat
     saida = capsys.readouterr().out
     assert "AC -> " in saida
     assert "origem=agregado" in saida
-    # RO (e as outras 25 UFs sem nenhum dado neste cache falso) ficam com mensagem clara, nunca
-    # crash -- prova que a mistura inteira roda até o fim.
-    assert "RO" in saida
+    # TO (e as outras UFs sem nenhum dado neste cache falso, real ou contribuído) ficam com
+    # mensagem clara, nunca crash -- prova que a mistura inteira roda até o fim.
+    assert "TO" in saida
     assert "pulando" in saida
+
+
+# ---------------------------------------------------------------------------
+# Suíte "território" -- correção 2026-08-11 (09-09-FIX-RESIDENCIA). Prova o defeito real
+# registrado (mas não corrigido) pela adaptação acima: `linhas_da_uf` selecionava por qual
+# ARQUIVO uma linha mora, nunca por qual TERRITÓRIO ela descreve. Ver "Correção 2026-08-11" na
+# docstring do módulo para o raciocínio completo.
+# ---------------------------------------------------------------------------
+
+
+def _row(**overrides) -> Row:
+    """`Row` sintética mínima para os testes desta suíte -- os campos default descrevem uma
+    internação qualquer; cada teste sobrescreve só o que importa para a prova."""
+    base = dict(
+        disease_id="teste_sintetico",
+        grao=GRAO_MUNICIPIO,
+        local=LOCAL_RESIDENCIA,
+        territorio_codigo="120040",
+        ano=2019,
+        internacoes=1,
+        obitos=0,
+        valor_total=100.0,
+        dias_permanencia=1,
+        taxa_mortalidade=0.0,
+    )
+    base.update(overrides)
+    return Row(**base)
+
+
+def test_uf_dona_deriva_do_territorio_nunca_do_arquivo():
+    """Unidade isolada de `_uf_dona`: grão UF usa o código de 2 dígitos direto, grão município
+    usa os 2 primeiros dígitos do código de 6 -- nos dois casos, o resultado só depende do
+    território, nunca de qual arquivo a `Row` veio (esta função nem recebe essa informação)."""
+    linha_uf = _row(grao=GRAO_UF, territorio_codigo="12", local=LOCAL_OCORRENCIA)
+    linha_municipio = _row(grao=GRAO_MUNICIPIO, territorio_codigo="120040", local=LOCAL_RESIDENCIA)
+
+    assert partitions_mod._uf_dona(linha_uf) == "AC"
+    assert partitions_mod._uf_dona(linha_municipio) == "AC"
+
+
+def test_linhas_da_uf_nao_inclui_territorio_de_outra_uf_mesmo_estando_no_proprio_arquivo(
+    tmp_path, monkeypatch, index
+):
+    """CONTAMINAÇÃO corrigida: o arquivo bruto real do AC contém milhares de linhas de residência
+    cujo território é de OUTRA UF (`MUNIC_RES` aponta para fora do AC, D-09 -- medido ao vivo:
+    2.000/44.589 registros da fixture têm `MUNIC_RES` fora do prefixo `12`). A versão anterior de
+    `linhas_da_uf` devolvia TUDO que estava no arquivo do AC, incluindo essas -- agora só as
+    linhas cujo território é DO AC entram no resultado."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+
+    linhas, _origem = linhas_da_uf("AC", index)
+
+    assert linhas  # sanity: AC tem dado real
+    for linha in linhas:
+        assert partitions_mod._uf_dona(linha) == "AC", (
+            f"linha de território {linha.territorio_codigo!r} (grao={linha.grao!r}) não é "
+            "dona do AC -- contaminação por arquivo, não por dono"
+        )
+
+
+def test_linhas_da_uf_recupera_residencia_propria_presa_em_outra_uf_undercount(
+    tmp_path, monkeypatch, index
+):
+    """SUBCONTAGEM corrigida: uma linha de residência do AC (grão município, território do AC)
+    presa no agregado de OUTRA UF (SP -- paciente do AC internado em SP) precisa aparecer no
+    resultado de `linhas_da_uf("AC", ...)`. A versão anterior só lia o arquivo do AC e nunca via
+    essa linha -- e o resultado de SP, simetricamente, NUNCA deve incluí-la (ela não é dona)."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+
+    linha_residencia_ac_presa_em_sp = _row(
+        disease_id="teste_undercount",
+        grao=GRAO_MUNICIPIO,
+        local=LOCAL_RESIDENCIA,
+        territorio_codigo="120040",  # Rio Branco, AC
+        ano=2019,
+        internacoes=3,
+        obitos=1,
+        valor_total=900.0,
+        dias_permanencia=10,
+        taxa_mortalidade=1 / 3,
+    )
+    _persistir_agregado("SP", [linha_residencia_ac_presa_em_sp])
+
+    linhas_ac, _origem_ac = linhas_da_uf("AC", index)
+    linhas_sp, _origem_sp = linhas_da_uf("SP", index)
+
+    assert linhas_ac == [linha_residencia_ac_presa_em_sp]
+    assert linhas_sp == []
+
+
+def test_linhas_da_uf_soma_mesma_chave_vinda_de_fontes_diferentes(tmp_path, monkeypatch, index):
+    """Duas fontes diferentes (AC e SP) contribuem a MESMA chave
+    (disease_id, grao, local, territorio_codigo, ano) para o território do AC -- ex.: um
+    residente do AC internado no próprio AC (fonte AC) e outro residente do AC internado em SP
+    (fonte SP), mesma categoria, mesmo ano. As duas precisam ser SOMADAS, nunca uma sobrescrevendo
+    a outra -- elas descrevem pacientes DIFERENTES que só coincidem em território/categoria/ano;
+    perder uma seria pior que somar (nenhuma das duas é "a errada")."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+
+    chave_comum = dict(
+        disease_id="teste_soma",
+        grao=GRAO_MUNICIPIO,
+        local=LOCAL_RESIDENCIA,
+        territorio_codigo="120040",
+        ano=2020,
+    )
+    linha_ac = _row(**chave_comum, internacoes=5, obitos=1, valor_total=500.0, dias_permanencia=20, taxa_mortalidade=0.2)
+    linha_presa_em_sp = _row(**chave_comum, internacoes=2, obitos=0, valor_total=100.0, dias_permanencia=4, taxa_mortalidade=0.0)
+
+    _persistir_agregado("AC", [linha_ac])
+    _persistir_agregado("SP", [linha_presa_em_sp])
+
+    linhas_ac, _origem = linhas_da_uf("AC", index)
+
+    assert len(linhas_ac) == 1
+    combinada = linhas_ac[0]
+    assert combinada.internacoes == 7
+    assert combinada.obitos == 1
+    assert combinada.valor_total == 600.0
+    assert combinada.dias_permanencia == 24
+    # taxa_mortalidade é RECALCULADA sobre os totais somados, nunca somada ela mesma (não é
+    # medida aditiva) -- 1 óbito / 7 internações, não 0.2 + 0.0.
+    assert combinada.taxa_mortalidade == pytest.approx(1 / 7)
+
+
+def test_linhas_da_uf_uf_sem_fonte_propria_e_sem_contribuicao_continua_estado_normal(
+    tmp_path, monkeypatch, index
+):
+    """UF sem fonte própria (nem agregado, nem bruto) E sem nenhuma linha de outra UF apontando
+    para o seu território continua estado normal -- lista vazia, nunca erro -- mesmo quando
+    OUTRAS UFs já têm dado real em cache (cenário real da corrida em andamento). TO (não RO) é a
+    UF usada aqui: medido ao vivo que a fixture do AC não toca TO em nenhum grão/local, enquanto
+    RO aparece como residência presa (ver suíte acima) -- usar RO aqui provaria o oposto do que
+    o teste quer provar."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+
+    linhas_to, origem_to = linhas_da_uf("TO", index)
+
+    assert linhas_to == []
+    assert origem_to == "bruto"
+
+
+def test_particao_do_ac_identica_entre_bruto_e_agregado_mesmo_com_outra_uf_contribuindo(
+    tmp_path, monkeypatch, index
+):
+    """A prova byte-idêntica original (suíte "agregados" acima, uma UF só na cache) precisa
+    continuar valendo quando OUTRA UF também contribui uma linha para o território do AC -- o
+    cenário real que motivou esta correção. A diferença entre ler o AC via agregado persistido ou
+    via bruto isolado não pode depender de quantas outras fontes estão presentes."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(partitions_mod, "_now_iso", lambda: "2026-08-11T00:00:00Z")
+
+    linha_extra_de_sp = _row(
+        disease_id="teste_contribuicao_externa",
+        grao=GRAO_MUNICIPIO,
+        local=LOCAL_RESIDENCIA,
+        territorio_codigo="120040",
+        ano=2019,
+        internacoes=1,
+        obitos=0,
+        valor_total=50.0,
+        dias_permanencia=1,
+        taxa_mortalidade=0.0,
+    )
+    _persistir_agregado("SP", [linha_extra_de_sp])
+
+    _escrever_parquet_bruto_ac()
+    linhas_bruto, origem_bruto = linhas_da_uf("AC", index)
+    assert origem_bruto == "bruto"
+
+    _persistir_agregado_realista("AC", index)
+    linhas_agregado, origem_agregado = linhas_da_uf("AC", index)
+    assert origem_agregado == "agregado"
+
+    rows_bruto = _linhas_municipio_por_uf(linhas_bruto)["AC"]
+    rows_agregado = _linhas_municipio_por_uf(linhas_agregado)["AC"]
+    assert rows_bruto == rows_agregado
+
+    payload_bruto = build_partition("AC", rows_bruto)
+    payload_agregado = build_partition("AC", rows_agregado)
+    assert payload_bruto == payload_agregado
+
+
+def test_construir_indice_territorial_le_cada_fonte_uma_unica_vez(tmp_path, monkeypatch, index):
+    """Custo (ver "Correção 2026-08-11" na docstring do módulo): cada fonte (agregado persistido
+    OU parquet bruto isolado) é lida EXATAMENTE UMA VEZ para as 27 UFs candidatas, nunca uma vez
+    por UF pedida -- O(27), não O(27²). Provado contando chamadas ao leitor de baixo nível."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    _escrever_parquet_bruto_ac()
+    _persistir_agregado_realista("AC", index)  # AC tem agregado -- bruto nem é tentado
+
+    chamadas: list[str] = []
+    original = partitions_mod._linhas_do_agregado_persistido
+
+    def contador(uf):
+        chamadas.append(uf)
+        return original(uf)
+
+    monkeypatch.setattr(partitions_mod, "_linhas_do_agregado_persistido", contador)
+
+    indice = construir_indice_territorial(index)
+
+    assert len(chamadas) == len(partitions_mod.UFS)  # uma checagem por UF candidata, nunca mais
+    assert len(set(chamadas)) == len(chamadas)  # nenhuma UF lida duas vezes
+    assert indice["AC"][0]  # sanity: o índice ainda funciona
