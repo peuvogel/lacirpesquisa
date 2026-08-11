@@ -1,9 +1,13 @@
-"""Despachante declarativo preguiçoso dos nove subcomandos `pipeline:*` — dono único: 09-04.
+"""Despachante declarativo preguiçoso dos subcomandos `pipeline:*` — dono único: 09-04.
 
 Nenhum outro plano da fase edita este arquivo. Registrar um subcomando novo é acrescentar uma
 linha a `SUBCOMANDOS`; acender um já registrado é entregar `main(argv: list[str]) -> int` no
 módulo dono, sem tocar aqui. O `argparse` mora nos módulos donos, não neste despachante: `main`
 só separa o primeiro argumento (nome do subcomando) e repassa o resto intacto.
+
+`collect` (2026-08-10, ad-hoc 09-04-COLETA-INCREMENTAL) foi acrescentado depois dos nove
+originais: o laço incremental por UF que desbloqueia a Task 3 do 09-04 sem exigir ~10-13 GB de
+disco simultâneos. Mesma disciplina de registro — uma linha nova no dict, nenhuma lógica aqui.
 """
 
 from __future__ import annotations
@@ -12,11 +16,13 @@ import importlib
 import sys
 from typing import Callable, Optional
 
-# nome do subcomando -> (módulo, plano dono). Mesmo registro fixo declarado no 09-02
-# (package.json) — nenhum subcomando é acrescentado ou removido fora deste dict.
+# nome do subcomando -> (módulo, plano dono). Registro fixo declarado no 09-02 (package.json),
+# mais `collect` (09-04-COLETA-INCREMENTAL) — nenhum subcomando é acrescentado ou removido fora
+# deste dict.
 SUBCOMANDOS: dict[str, tuple[str, str]] = {
     "enumerate": ("sih_pipeline.enumerate", "09-04"),
     "download": ("sih_pipeline.download", "09-04"),
+    "collect": ("sih_pipeline.collect", "09-04-COLETA-INCREMENTAL"),
     "oracle-scrape": ("sih_pipeline.oracle_scrape", "09-05"),
     "aggregate": ("sih_pipeline.aggregate", "09-07"),
     "population": ("sih_pipeline.population", "09-06"),

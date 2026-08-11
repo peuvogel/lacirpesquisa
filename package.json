@@ -31,6 +31,7 @@
     "pipeline:reconcile-gate": "cd pipeline/sih && uv run pytest tests/test_reconcile_gate.py -x -q",
     "pipeline:enumerate": "cd pipeline/sih && uv run python -m sih_pipeline.cli enumerate",
     "pipeline:download": "cd pipeline/sih && uv run python -m sih_pipeline.cli download",
+    "pipeline:collect": "cd pipeline/sih && uv run python -m sih_pipeline.cli collect",
     "pipeline:aggregate": "cd pipeline/sih && uv run python -m sih_pipeline.cli aggregate",
     "pipeline:population": "cd pipeline/sih && uv run python -m sih_pipeline.cli population",
     "pipeline:reconcile": "cd pipeline/sih && uv run python -m sih_pipeline.cli reconcile",
