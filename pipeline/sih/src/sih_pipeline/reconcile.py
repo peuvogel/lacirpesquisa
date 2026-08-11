@@ -14,6 +14,19 @@ D-10: só o lado ocorrência é reconciliado — residência não tem oráculo e
 `nibr.def` (o TabNet só publica por local de internação). `main()` filtra `grao == uf` e
 `local == ocorrencia` antes de comparar; comparar residência contra um oráculo de ocorrência
 produziria divergência espúria que consumiria a depuração inteira sem sinalizar nada real.
+
+**Adaptação 2026-08-11 (09-09-ADAPTACAO-AGREGADOS):** o gate permanente (`test_reconcile_gate.py`)
+agrega a fixture congelada (`tests/fixtures/rdac_2019.parquet`) direto via `aggregate_parquet_dir`
+— nunca passa por `main()` nem por `cache_path("parquet")` — então continua intocado por esta
+adaptação (verificado, não assumido: `npm run pipeline:reconcile-gate` permanece
+`exato=34, explicado=61, inexplicado=3`). Mas `main()` (o subcomando `pipeline:reconcile`, usado
+para checagens ad-hoc contra o cache real — ex.: a confirmação de SP/2019 do 09-11) lia
+`cache_path("parquet")` direto, o mesmo defeito que `partitions.py` tinha: uma UF cujo bruto
+`collect.py` já reciclou aparentaria "nada a reconciliar". `main()` agora usa
+`sih_pipeline.partitions.linhas_da_uf` (mesma priorização agregado-persistido > bruto-isolado)
+por UF, restrita ao conjunto de UFs que o oráculo filtrado (`--uf`, se dado) realmente precisa —
+uma UF sem dado nenhum vira aviso em stderr e é pulada, nunca crash nem comparação silenciosamente
+incompleta sem aviso.
 """
 
 from __future__ import annotations
@@ -25,11 +38,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sih_pipeline.aggregate import GRAO_UF, LOCAL_OCORRENCIA, aggregate_years
+from sih_pipeline.aggregate import GRAO_UF, LOCAL_OCORRENCIA, Row
 from sih_pipeline.codigos import UF_POR_CODIGO
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import build_index, load_cid_map
-from sih_pipeline.paths import cache_path, repo_root
+from sih_pipeline.partitions import linhas_da_uf
+from sih_pipeline.paths import repo_root
 
 _PIPELINE_SIH_ROOT = Path(__file__).resolve().parents[2]
 ORACLE_PATH = _PIPELINE_SIH_ROOT / "tests" / "fixtures" / "oracle_tabnet.json"
@@ -218,11 +232,18 @@ def compare(
 
 
 def main(argv: list[str]) -> int:
-    """CLI do subcomando `reconcile` (registrado em `cli.py` desde a Onda 1). Agrega o parquet
-    em cache, aplica a camada de correção (D-05), filtra `grao=uf` e `local=ocorrencia` (D-10 —
-    só ocorrência é reconciliada, residência não tem oráculo externo comparável no `nibr.def`),
-    compara contra o oráculo re-raspado do 09-05 e imprime `render_markdown()`. Sai não-zero
-    quando há `inexplicado` — nunca finge sucesso com divergência sem razão."""
+    """CLI do subcomando `reconcile` (registrado em `cli.py` desde a Onda 1). Para cada UF que o
+    oráculo (filtrado por `--uf`, se dado) realmente precisa, lê as linhas via
+    `partitions.linhas_da_uf` (agregado persistido > parquet bruto isolado a essa UF -- mesma
+    priorização de `partitions.py`, adaptação 2026-08-11), aplica a camada de correção (D-05),
+    filtra `grao=uf` e `local=ocorrencia` (D-10 — só ocorrência é reconciliada, residência não tem
+    oráculo externo comparável no `nibr.def`), compara e imprime `render_markdown()`. Sai
+    não-zero quando há `inexplicado` — nunca finge sucesso com divergência sem razão.
+
+    Uma UF sem agregado nem parquet bruto em cache vira aviso em stderr e é pulada -- estado
+    normal (a corrida de coleta processa 27 UFs uma de cada vez), nunca crash. Se NENHUMA UF
+    necessária tiver dado, a comparação não roda e a função devolve 0 com aviso -- nunca finge
+    ter comparado algo que não comparou."""
     parser = argparse.ArgumentParser(prog="sih_pipeline.reconcile")
     parser.add_argument("--uf", type=str, default=None, help="filtra o oráculo por sigla de UF")
     parser.add_argument("--ano", type=int, default=None, help="filtra a agregação por um único ano")
@@ -234,12 +255,38 @@ def main(argv: list[str]) -> int:
     cid_map = apply_corrections(load_cid_map(), load_corrections())
     index = build_index(cid_map)
 
-    parquet_root = cache_path("parquet")
-    if not parquet_root.exists() or not any(parquet_root.iterdir()):
-        print("reconcile: nenhum parquet em cache_path('parquet') — nada a reconciliar")
+    oraculo = load_oracle(ORACLE_PATH)
+    if args.uf:
+        oraculo = [entry for entry in oraculo if entry["uf"] == args.uf]
+
+    if not oraculo:
+        print("reconcile: oráculo vazio após filtro --uf -- nada a comparar")
         return 0
 
-    linhas = aggregate_years(parquet_root, index, anos=[args.ano] if args.ano is not None else None)
+    ufs_necessarias = sorted({entry["uf"] for entry in oraculo})
+    linhas: list[Row] = []
+    ufs_sem_dado: list[str] = []
+    for uf in ufs_necessarias:
+        linhas_uf, _origem = linhas_da_uf(uf, index)
+        if not linhas_uf:
+            ufs_sem_dado.append(uf)
+            continue
+        linhas.extend(linhas_uf)
+
+    if ufs_sem_dado:
+        print(
+            f"reconcile: sem dado em cache (nem agregado persistido, nem parquet bruto) para "
+            f"{ufs_sem_dado} -- essas UFs ficam fora desta comparação (coleta ainda não chegou "
+            "nelas)",
+            file=sys.stderr,
+        )
+
+    if not linhas:
+        print("reconcile: nenhuma UF necessária tem dado em cache -- nada a reconciliar")
+        return 0
+
+    if args.ano is not None:
+        linhas = [linha for linha in linhas if linha.ano == args.ano]
 
     # D-10: só ocorrência é reconciliada -- residência não tem oráculo externo comparável no
     # nibr.def (o TabNet só publica a Lista Morb por município/UF de internação, MUNIC_MOV).
@@ -262,10 +309,6 @@ def main(argv: list[str]) -> int:
             if valor is None:
                 continue
             agregado[(linha.disease_id, uf_sigla, linha.ano, medida)] = valor
-
-    oraculo = load_oracle(ORACLE_PATH)
-    if args.uf:
-        oraculo = [entry for entry in oraculo if entry["uf"] == args.uf]
 
     divergencias = load_divergencias(DIVERGENCIAS_PATH)
 

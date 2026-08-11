@@ -3,13 +3,23 @@ razão registrada para todo desvio — nunca banda de aceitação percentual —
 
 Dados sintéticos pequenos (não a fixture inteira) — a fixture real é exercitada pela Task 2 e
 pelo gate permanente do 09-11 (`test_reconcile_gate.py`).
+
+**Suíte `main()` (adaptação 2026-08-11, 09-09-ADAPTACAO-AGREGADOS):** prova que o CLI `reconcile`
+usa `partitions.linhas_da_uf` (agregado persistido > parquet bruto isolado) em vez de ler
+`cache_path("parquet")` inteira direto -- mesmo handoff fechado em `partitions.py`. Todo teste
+redireciona o cache via `SIH_PIPELINE_CACHE_DIR=tmp_path`, nunca toca `~/.lacir/sih-cache/` (a
+corrida real de coleta está usando agora).
 """
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
-from sih_pipeline.reconcile import compare, load_divergencias, load_oracle
+from sih_pipeline.paths import cache_path
+from sih_pipeline.reconcile import compare, load_divergencias, load_oracle, main
 
 
 def _oraculo(**over):
@@ -189,3 +199,77 @@ def test_join_com_agregado_real_usa_sigla_de_uf_nao_codigo_ibge():
     # correspondente no agregado (valor_agregado is None), o que este teste pega.
     sem_correspondente = sum(1 for p in resultado.inexplicado if p.valor_agregado is None)
     assert sem_correspondente < len(oraculo_ac_2019)
+
+
+# ---------------------------------------------------------------------------
+# Suíte main() -- adaptação 2026-08-11 (09-09-ADAPTACAO-AGREGADOS). `main()` agora usa
+# `partitions.linhas_da_uf` por UF necessária (agregado persistido > parquet bruto isolado) em
+# vez de agregar `cache_path("parquet")` inteira de uma vez.
+# ---------------------------------------------------------------------------
+
+FIXTURE_AC = Path(__file__).resolve().parent / "fixtures" / "rdac_2019.parquet"
+
+
+def _escrever_oraculo(caminho: Path, entradas: list[dict]) -> None:
+    caminho.write_text(json.dumps(entradas), encoding="utf-8")
+
+
+def _entrada_oraculo(uf: str) -> dict:
+    return {
+        "diseaseId": "aborto_espontaneo",
+        "tabnetCode": "258",
+        "uf": uf,
+        "ano": 2019,
+        "medida": "internacoes",
+        "valorTabnet": 10,
+    }
+
+
+def test_main_uf_unica_sem_dado_avisa_e_nao_reconcilia(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    oraculo_path = tmp_path / "oraculo.json"
+    _escrever_oraculo(oraculo_path, [_entrada_oraculo("RO")])
+    monkeypatch.setattr("sih_pipeline.reconcile.ORACLE_PATH", oraculo_path)
+
+    resultado = main([])
+
+    assert resultado == 0
+    saida = capsys.readouterr()
+    assert "RO" in saida.err
+    assert "nada a reconciliar" in saida.out
+
+
+def test_main_uf_com_so_parquet_bruto_reconcilia_via_fallback_isolado(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    destino = cache_path("parquet") / "RDAC1901.parquet"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(FIXTURE_AC.read_bytes())
+
+    oraculo_path = tmp_path / "oraculo.json"
+    _escrever_oraculo(oraculo_path, [_entrada_oraculo("AC")])
+    monkeypatch.setattr("sih_pipeline.reconcile.ORACLE_PATH", oraculo_path)
+
+    main([])
+
+    saida = capsys.readouterr()
+    # roda a comparação de verdade (nunca "nada a reconciliar") -- AC tinha dado via fallback
+    assert "nada a reconciliar" not in saida.out
+    assert "exato" in saida.out or "explicado" in saida.out or "inexplicado" in saida.out
+
+
+def test_main_mistura_uf_com_dado_e_uf_sem_dado_reconcilia_so_a_disponivel(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    destino = cache_path("parquet") / "RDAC1901.parquet"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(FIXTURE_AC.read_bytes())
+
+    oraculo_path = tmp_path / "oraculo.json"
+    _escrever_oraculo(oraculo_path, [_entrada_oraculo("AC"), _entrada_oraculo("RO")])
+    monkeypatch.setattr("sih_pipeline.reconcile.ORACLE_PATH", oraculo_path)
+
+    main([])
+
+    saida = capsys.readouterr()
+    # RO avisada em stderr e pulada; AC (que tinha dado) segue para a comparação de verdade
+    assert "RO" in saida.err
+    assert "nada a reconciliar" not in saida.out
