@@ -27,6 +27,19 @@ para checagens ad-hoc contra o cache real — ex.: a confirmação de SP/2019 do
 por UF, restrita ao conjunto de UFs que o oráculo filtrado (`--uf`, se dado) realmente precisa —
 uma UF sem dado nenhum vira aviso em stderr e é pulada, nunca crash nem comparação silenciosamente
 incompleta sem aviso.
+
+**Correção 2026-08-11 (09-09-FIX-RESIDENCIA):** `linhas_da_uf`/`construir_indice_territorial`
+(`partitions.py`) passaram a selecionar linhas por TERRITÓRIO, não por arquivo de origem (ver a
+docstring de `partitions.py`, seção "Correção 2026-08-11", para o defeito completo). Efeito
+colateral que `main()` precisou absorver: uma UF cuja ÚNICA contribuição em cache é uma linha de
+`local=residencia` de OUTRA UF já coletada (ex.: um paciente de RO tratado no AC, capturado no
+agregado do AC, agora corretamente atribuído a RO) passou a ter `linhas_da_uf(uf)` não-vazio, mas
+essa UF continua SEM nenhum dado `grao=uf`/`local=ocorrencia` — a única coisa que esta
+reconciliação compara (D-10). Tratar "tem QUALQUER linha" como "tem dado reconciliável" faria essa
+UF aparentar "inexplicado" (comparação que nunca teve como ser feita) em vez do diagnóstico
+correto "coleta ainda não chegou nesta UF". `main()` agora checa especificamente
+`grao=uf`/`local=ocorrencia` antes de decidir se uma UF entra na comparação -- nunca "tem
+qualquer linha".
 """
 
 from __future__ import annotations
@@ -42,7 +55,7 @@ from sih_pipeline.aggregate import GRAO_UF, LOCAL_OCORRENCIA, Row
 from sih_pipeline.codigos import UF_POR_CODIGO
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import build_index, load_cid_map
-from sih_pipeline.partitions import linhas_da_uf
+from sih_pipeline.partitions import construir_indice_territorial
 from sih_pipeline.paths import repo_root
 
 _PIPELINE_SIH_ROOT = Path(__file__).resolve().parents[2]
@@ -232,18 +245,22 @@ def compare(
 
 
 def main(argv: list[str]) -> int:
-    """CLI do subcomando `reconcile` (registrado em `cli.py` desde a Onda 1). Para cada UF que o
-    oráculo (filtrado por `--uf`, se dado) realmente precisa, lê as linhas via
-    `partitions.linhas_da_uf` (agregado persistido > parquet bruto isolado a essa UF -- mesma
-    priorização de `partitions.py`, adaptação 2026-08-11), aplica a camada de correção (D-05),
-    filtra `grao=uf` e `local=ocorrencia` (D-10 — só ocorrência é reconciliada, residência não tem
-    oráculo externo comparável no `nibr.def`), compara e imprime `render_markdown()`. Sai
-    não-zero quando há `inexplicado` — nunca finge sucesso com divergência sem razão.
+    """CLI do subcomando `reconcile` (registrado em `cli.py` desde a Onda 1). Para o conjunto de
+    UFs que o oráculo (filtrado por `--uf`, se dado) realmente precisa, lê o índice territorial
+    completo via `partitions.construir_indice_territorial` -- UMA VEZ por execução, nunca uma vez
+    por UF (custo O(27), não O(27²); correção 2026-08-11, ver docstring do módulo e de
+    `partitions.py`) -- aplica a camada de correção (D-05), filtra `grao=uf` e `local=ocorrencia`
+    (D-10 — só ocorrência é reconciliada, residência não tem oráculo externo comparável no
+    `nibr.def`), compara e imprime `render_markdown()`. Sai não-zero quando há `inexplicado` —
+    nunca finge sucesso com divergência sem razão.
 
-    Uma UF sem agregado nem parquet bruto em cache vira aviso em stderr e é pulada -- estado
-    normal (a corrida de coleta processa 27 UFs uma de cada vez), nunca crash. Se NENHUMA UF
-    necessária tiver dado, a comparação não roda e a função devolve 0 com aviso -- nunca finge
-    ter comparado algo que não comparou."""
+    Uma UF sem nenhuma linha `grao=uf`/`local=ocorrencia` -- a única coisa que esta reconciliação
+    compara -- vira aviso em stderr e é pulada -- estado normal (a corrida de coleta processa 27
+    UFs uma de cada vez), nunca crash. Checagem restrita a ocorrência (não "tem qualquer linha")
+    desde a correção 2026-08-11: uma UF pode ter linhas de RESIDÊNCIA contribuídas por outra UF já
+    coletada sem ter, ela mesma, nenhuma ocorrência coletada ainda -- ver "Correção 2026-08-11" na
+    docstring do módulo. Se NENHUMA UF necessária tiver dado reconciliável, a comparação não roda
+    e a função devolve 0 com aviso -- nunca finge ter comparado algo que não comparou."""
     parser = argparse.ArgumentParser(prog="sih_pipeline.reconcile")
     parser.add_argument("--uf", type=str, default=None, help="filtra o oráculo por sigla de UF")
     parser.add_argument("--ano", type=int, default=None, help="filtra a agregação por um único ano")
@@ -264,11 +281,18 @@ def main(argv: list[str]) -> int:
         return 0
 
     ufs_necessarias = sorted({entry["uf"] for entry in oraculo})
+    indice = construir_indice_territorial(index)
     linhas: list[Row] = []
     ufs_sem_dado: list[str] = []
     for uf in ufs_necessarias:
-        linhas_uf, _origem = linhas_da_uf(uf, index)
-        if not linhas_uf:
+        linhas_uf, _origem = indice.get(uf, ([], "bruto"))
+        # só grao=uf/local=ocorrencia entra nesta reconciliação (D-10) -- "tem qualquer linha"
+        # não é mais o mesmo que "tem dado reconciliável" depois da correção 2026-08-11 (uma UF
+        # pode ter só residência contribuída por outra UF já coletada).
+        tem_dado_reconciliavel = any(
+            linha.grao == GRAO_UF and linha.local == LOCAL_OCORRENCIA for linha in linhas_uf
+        )
+        if not tem_dado_reconciliavel:
             ufs_sem_dado.append(uf)
             continue
         linhas.extend(linhas_uf)

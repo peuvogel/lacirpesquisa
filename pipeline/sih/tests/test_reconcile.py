@@ -9,6 +9,12 @@ usa `partitions.linhas_da_uf` (agregado persistido > parquet bruto isolado) em v
 `cache_path("parquet")` inteira direto -- mesmo handoff fechado em `partitions.py`. Todo teste
 redireciona o cache via `SIH_PIPELINE_CACHE_DIR=tmp_path`, nunca toca `~/.lacir/sih-cache/` (a
 corrida real de coleta está usando agora).
+
+**Suíte "território" (correção 2026-08-11, 09-09-FIX-RESIDENCIA):** verifica que a correção da
+seleção de linhas por território (`partitions.construir_indice_territorial`) NÃO move a
+composição do SC-7 (D-10 só reconcilia `grao=uf`/`local=ocorrencia`, que sempre vem do próprio
+arquivo da UF onde ocorreu -- a correção de residência/contaminação nunca as afeta) e prova o
+ajuste que `main()` precisou (checar dado reconciliável, não "qualquer linha").
 """
 
 from __future__ import annotations
@@ -16,8 +22,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 
+from sih_pipeline.aggregate import GRAO_MUNICIPIO, LOCAL_RESIDENCIA, Row
 from sih_pipeline.paths import cache_path
 from sih_pipeline.reconcile import compare, load_divergencias, load_oracle, main
 
@@ -273,3 +282,71 @@ def test_main_mistura_uf_com_dado_e_uf_sem_dado_reconcilia_so_a_disponivel(tmp_p
     # RO avisada em stderr e pulada; AC (que tinha dado) segue para a comparação de verdade
     assert "RO" in saida.err
     assert "nada a reconciliar" not in saida.out
+
+
+# ---------------------------------------------------------------------------
+# Suíte "território" -- correção 2026-08-11 (09-09-FIX-RESIDENCIA).
+# ---------------------------------------------------------------------------
+
+
+def test_main_composicao_sc7_para_ac_e_identica_ao_gate_congelado_apos_correcao_territorio(
+    tmp_path, monkeypatch, capsys
+):
+    """Verificação explícita pedida pela correção 2026-08-11: a correção da seleção por
+    território não pode mover a composição do SC-7 -- só `grao=uf`/`local=ocorrencia` entra
+    nesta reconciliação (D-10), e essas linhas SEMPRE vêm do próprio arquivo `RD{uf}*` onde a
+    internação ocorreu (`MUNIC_MOV` nunca aponta para fora do arquivo que o produz) -- a correção
+    de contaminação/subcontagem de RESIDÊNCIA não as afeta. Prova ao vivo contra a fixture
+    congelada real (`rdac_2019.parquet`, mesma usada pelo gate permanente
+    `test_reconcile_gate.py`), via fallback bruto isolado de `main()`, reproduzindo
+    `exato=34/explicado=61/inexplicado=3` -- medido igual, byte a byte no texto de saída, antes E
+    depois desta correção (medição ao vivo registrada no SUMMARY desta correção)."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+    destino = cache_path("parquet") / "RDAC1901.parquet"
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(FIXTURE_AC.read_bytes())
+
+    resultado = main(["--uf", "AC"])
+
+    saida = capsys.readouterr().out
+    assert "reconcile: 34 exato(s), 61 explicado(s), 3 inexplicado(s)" in saida
+    assert resultado == 1  # ok é False -- 3 inexplicados, mesmo estado do gate congelado
+
+
+def test_main_uf_com_so_residencia_contribuida_por_outra_uf_continua_sem_dado(
+    tmp_path, monkeypatch, capsys
+):
+    """Ajuste que `main()` precisou pela correção 2026-08-11: uma UF cuja ÚNICA presença no
+    índice territorial é uma linha de RESIDÊNCIA contribuída por outra UF já coletada (paciente
+    de RO tratado no AC, corretamente atribuído a RO pela correção) continua "sem dado" para fins
+    de reconciliação -- nunca vira "inexplicado" por uma comparação que nunca teve como ser feita,
+    porque RO não tem nenhuma linha `grao=uf`/`local=ocorrencia` própria."""
+    monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
+
+    linha_residencia_ro_presa_no_ac = Row(
+        disease_id="teste_residencia_ro",
+        grao=GRAO_MUNICIPIO,
+        local=LOCAL_RESIDENCIA,
+        territorio_codigo="110002",  # Ariquemes, RO
+        ano=2019,
+        internacoes=1,
+        obitos=0,
+        valor_total=10.0,
+        dias_permanencia=1,
+        taxa_mortalidade=0.0,
+    )
+    tabela = pa.table(
+        {nome: [getattr(linha_residencia_ro_presa_no_ac, nome)] for nome in Row._fields}
+    )
+    pq.write_table(tabela, cache_path("agregados/AC.parquet"))
+
+    oraculo_path = tmp_path / "oraculo.json"
+    _escrever_oraculo(oraculo_path, [_entrada_oraculo("RO")])
+    monkeypatch.setattr("sih_pipeline.reconcile.ORACLE_PATH", oraculo_path)
+
+    resultado = main([])
+
+    assert resultado == 0
+    saida = capsys.readouterr()
+    assert "RO" in saida.err
+    assert "nada a reconciliar" in saida.out
