@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-04-FIX-AGREGACAO-VAZIO COMPLETO (2026-08-12): crash de agregacao 'Failed to parse string: (empty) as a scalar of type double' em DF/RR corrigido -- causa raiz preexistente (cast eager de VAL_TOT/DIAS_PERM/MORTE/ANO_CMPT vazio antes do filtro por registro), NAO regressao do eixo de procedimento (9f8545c) como o brief hipotetizou -- verificado, nao assumido, contra o codigo pre-9f8545c rodado sobre o mesmo arquivo real. _blank_to_null cirurgico (so string vazia vira null, nunca coerce cego). Eixo CID preservado byte a byte (hash SHA-256 sobre rdac_2019.parquet) e gate SC-7 intocado (exato=34/explicado=61/inexplicado=3). npm run gate verde. Ver 09-04-FIX-AGREGACAO-VAZIO-SUMMARY.md. Re-coleta nacional continua PARADA pelo operador -- pronta para ele reiniciar manualmente."
-last_updated: "2026-08-12T21:53:07.610Z"
+stopped_at: "09-04-AUTOCURA-LEDGER COMPLETO (2026-08-12, ad-hoc sem PLAN.md formal): o deadlock permanente de UF travada 'falhou' para sempre quando um arquivo 'baixado' no FileLedger tem o parquet ausente em disco (medido em producao em RO/PB/PI/RN, reparado a mao 2x, 276 entradas) agora se auto-cura -- _self_heal_ghost_entries (collect.py) reseta essas entradas ANTES da decisao de download, SO para UF que ainda nao e agregado_reciclado; UF completa com o mesmo padrao fantasma (esperado, reciclagem de proposito) fica sempre intocada, provado por teste round-trip real em disco. Safety property original (_aggregate_uf recusa agregar com parquet ausente) preservada byte a byte, nunca enfraquecida. Guarda de repeticao por UF (max 3 self-curas) evita loop escondendo dano real. FileLedger.reset_missing (novo, minimo) e o unico metodo que ignora de proposito a nao-regressao do PIPE-03, so quando a divergencia ja foi confirmada contra o disco. npm run gate verde (231 testes Python + 796 JS/TS + build). Corrida real de coleta (PID 53483) verificada viva antes/durante/depois de cada commit -- nenhum arquivo em ~/.lacir/sih-cache/ tocado, so .py editados (efeito só na proxima corrida). Ver 09-04-AUTOCURA-LEDGER-SUMMARY.md."
+last_updated: "2026-08-12T22:10:10.000Z"
 last_activity: 2026-08-12
 progress:
   total_phases: 6
@@ -38,6 +38,15 @@ pelo tabnetCode do catalogo (provado indice posicional instavel do TabNet). Reco
 AC real (13 anos, +0,74% no total). Re-coleta nacional (27 UFs) EM ANDAMENTO sob acompanhamento
 do coordenador, NAO concluida -- amputacao_mmii continua sem dado em producao ate ela terminar +
 um upload novo. Ver 09-10-PROCEDIMENTO-SUMMARY.md.
+
+09-04-AUTOCURA-LEDGER COMPLETO (2026-08-12, ad-hoc sem PLAN.md formal, brief operacional do
+usuario apos reparo manual de RO/PB/PI/RN) -- `collect.py` agora se auto-cura do deadlock
+permanente "arquivo baixado no FileLedger, parquet ausente em disco": `_self_heal_ghost_entries`
+reseta essas entradas ANTES de decidir o download, restrito a UF ainda nao `agregado_reciclado`
+(UF completa com o mesmo padrao fica sempre intocada, regressao mais importante provada por
+teste). Safety property original (`_aggregate_uf` recusa agregar com parquet ausente) intocada.
+Guarda de repeticao por UF (max 3) isola UF com dano real em vez de tentar para sempre. Ver
+09-04-AUTOCURA-LEDGER-SUMMARY.md.
 
 Proximo: 09-12 pode prosseguir normalmente. **09-14 BLOQUEADO** ate a re-coleta nacional terminar
 e um upload novo subir amputacao_mmii -- rodar antes apagaria a ultima fonte de dado deste
