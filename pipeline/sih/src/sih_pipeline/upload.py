@@ -439,6 +439,21 @@ def carregar_divergencias() -> dict[str, dict[str, Any]]:
     return {entrada["diseaseId"]: entrada for entrada in entradas}
 
 
+_COLLECTION_STATUS_COLUMNS: tuple[str, ...] = (
+    "disease_id",
+    "medida",
+    "grao",
+    "local",
+    "ano",
+    "status",
+    "derived_at",
+    "cid_map_version",
+    "row_count",
+    "divergencia_pct",
+    "divergencia_razao",
+)
+
+
 def _persistir_collection_status(
     conn: psycopg.Connection,
     linhas: Sequence[Row],
@@ -447,10 +462,10 @@ def _persistir_collection_status(
     map_version: str,
 ) -> int:
     """Escreve `sih_collection_status` para TODOS os anos presentes em `linhas` -- D-13/D-14/D-15.
-    `build_collection_status_rows` opera sobre um único `(grao, ano)` por chamada, então esta
-    função laça sobre os anos distintos de grão UF e faz um `INSERT ... ON CONFLICT` por linha,
-    upsert pela PK real `(disease_id, medida, grao, local, ano)` -- idempotente (PIPE-03/SC-3:
-    uma segunda corrida completa regrava exatamente as mesmas linhas, só atualizando
+    `COPY` em lote para uma tabela de staging descartável, seguido de UM
+    `INSERT ... SELECT ... ON CONFLICT`, upsert pela PK real
+    `(disease_id, medida, grao, local, ano)` -- idempotente (PIPE-03/SC-3: uma segunda corrida
+    completa regrava exatamente as mesmas linhas, só atualizando
     `derived_at`/`cid_map_version`/`row_count` para os valores da corrida mais recente).
 
     [Rule 1 - Bug, achado na execução real do Task 3 do 09-10]: `build_collection_status_rows`
@@ -458,42 +473,57 @@ def _persistir_collection_status(
     substituição do D-16 escrevia `sih_metric_uf` sem NUNCA popular o ledger de proveniência que
     a prova (3) de `sih-swap-contagens.sql` exige (todo `(disease_id, uf_codigo, ano, local)` de
     `sih_metric_uf` precisa de uma entrada `coletado` correspondente em `sih_collection_status`).
-    Sem este fix, TODA linha de `sih_metric_uf` apareceria como órfã da fonte TabNet antiga."""
+    Sem este fix, TODA linha de `sih_metric_uf` apareceria como órfã da fonte TabNet antiga.
+
+    [Rule 3 - Blocking, achado na execução real do Task 3]: a primeira versão fazia um
+    `INSERT ... ON CONFLICT` por LINHA -- medido ao vivo contra produção (~33 mil linhas): mais
+    de 35 minutos sem terminar (round-trip síncrono pelo Session Pooler por linha), interrompido
+    antes de comprometer tempo de sessão, sem nada commitado (a escrita inteira vivia numa única
+    transação aberta). Reescrito para o MESMO padrão de `copy_to_staging`: `COPY` em lote, depois
+    UM único `INSERT ... SELECT` -- a mesma lição que já levou `sih_metric_uf` a usar `COPY` em
+    vez de milhões de `INSERT` via HTTP (D-17)."""
     divergencias = carregar_divergencias()
     anos = sorted({linha.ano for linha in linhas if linha.grao == GRAO_UF})
-    total = 0
-    with conn.cursor() as cur:
-        for ano in anos:
-            for row in build_collection_status_rows(
+    rows: list[dict[str, Any]] = []
+    for ano in anos:
+        rows.extend(
+            build_collection_status_rows(
                 linhas,
                 grao=GRAO_UF,
                 ano=ano,
                 divergencias=divergencias,
                 derived_at=derived_at,
                 map_version=map_version,
-            ):
-                cur.execute(
-                    """
-                    insert into sih_collection_status
-                        (disease_id, medida, grao, local, ano, status, derived_at,
-                         cid_map_version, row_count, divergencia_pct, divergencia_razao)
-                    values
-                        (%(disease_id)s, %(medida)s, %(grao)s, %(local)s, %(ano)s,
-                         %(status)s, %(derived_at)s, %(cid_map_version)s, %(row_count)s,
-                         %(divergencia_pct)s, %(divergencia_razao)s)
-                    on conflict (disease_id, medida, grao, local, ano) do update set
-                        status = excluded.status,
-                        derived_at = excluded.derived_at,
-                        cid_map_version = excluded.cid_map_version,
-                        row_count = excluded.row_count,
-                        divergencia_pct = excluded.divergencia_pct,
-                        divergencia_razao = excluded.divergencia_razao
-                    """,
-                    row,
-                )
-                total += 1
+            )
+        )
+
+    if not rows:
+        return 0
+
+    staging = "sih_collection_status_staging"
+    col_list = ", ".join(_COLLECTION_STATUS_COLUMNS)
+    with conn.cursor() as cur:
+        cur.execute(f"DROP TABLE IF EXISTS {staging}")
+        cur.execute(f"CREATE TABLE {staging} (LIKE sih_collection_status)")
+        with cur.copy(f"COPY {staging} ({col_list}) FROM STDIN") as copy:
+            for row in rows:
+                copy.write_row(tuple(row[coluna] for coluna in _COLLECTION_STATUS_COLUMNS))
+        cur.execute(
+            f"""
+            insert into sih_collection_status ({col_list})
+            select {col_list} from {staging}
+            on conflict (disease_id, medida, grao, local, ano) do update set
+                status = excluded.status,
+                derived_at = excluded.derived_at,
+                cid_map_version = excluded.cid_map_version,
+                row_count = excluded.row_count,
+                divergencia_pct = excluded.divergencia_pct,
+                divergencia_razao = excluded.divergencia_razao
+            """
+        )
+        cur.execute(f"DROP TABLE {staging}")
     conn.commit()
-    return total
+    return len(rows)
 
 
 def build_collection_status_rows(
