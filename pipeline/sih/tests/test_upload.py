@@ -37,6 +37,7 @@ from sih_pipeline.ledger import FileLedger
 from sih_pipeline.upload import (
     CYCLE_CANONICAL_IDS,
     TOMBSTONES,
+    _persistir_collection_status,
     build_collection_status_rows,
     carregar_divergencias,
     connect,
@@ -252,11 +253,58 @@ def test_cache_deleted_only_after_row_count_match(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(upload_mod, "swap", lambda conn, tabela: None)
     monkeypatch.setattr(upload_mod, "connect", lambda: _ConnFalsa())
     monkeypatch.setattr(upload_mod, "_linhas_grao_uf", lambda *, nivel: _linhas_sinteticas())
+    monkeypatch.setattr(
+        upload_mod,
+        "_persistir_collection_status",
+        lambda conn, linhas, *, derived_at, map_version: len(linhas),
+    )
 
     codigo = main(["--tabela", "sih_metric_uf"])
 
     assert codigo == 0
     assert len(chamadas) == 1  # release_cache chamada EXATAMENTE uma vez quando a contagem confere
+
+
+def test_main_persiste_collection_status_apos_swap_antes_do_recount(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """[Rule 1 - Bug, achado no Task 3 real] `main()` precisa escrever sih_collection_status
+    depois do swap -- sem isto, TODA linha de sih_metric_uf ficaria órfã na prova (3) do verify
+    (D-16). Prova de ORDEM de chamadas com stub, no mesmo padrão de
+    test_cache_deleted_only_after_row_count_match."""
+    monkeypatch.setenv(
+        "SIH_PIPELINE_DB_URL",
+        "postgresql://u:p@aws-1-us-west-2.pooler.supabase.com:5432/postgres",
+    )
+    ordem: list[str] = []
+    chamadas_status: list[Any] = []
+
+    def _persistir_falso(conn: Any, linhas: Any, *, derived_at: Any, map_version: Any) -> int:
+        chamadas_status.append((derived_at, map_version, list(linhas)))
+        ordem.append("persistir_collection_status")
+        return len(linhas)
+
+    monkeypatch.setattr(upload_mod, "release_cache", lambda nomes: ordem.append("release_cache"))
+    monkeypatch.setattr(
+        upload_mod, "recount_via_postgrest", lambda tabela, filtros=None: ordem.append("recount") or 3
+    )
+    monkeypatch.setattr(
+        upload_mod, "copy_to_staging", lambda conn, tabela, linhas: ordem.append("copy") or 3
+    )
+    monkeypatch.setattr(upload_mod, "swap", lambda conn, tabela: ordem.append("swap"))
+    monkeypatch.setattr(upload_mod, "connect", lambda: _ConnFalsa())
+    monkeypatch.setattr(upload_mod, "_linhas_grao_uf", lambda *, nivel: _linhas_sinteticas())
+    monkeypatch.setattr(upload_mod, "_persistir_collection_status", _persistir_falso)
+
+    codigo = main(["--tabela", "sih_metric_uf"])
+
+    assert codigo == 0
+    assert len(chamadas_status) == 1
+    derived_at, map_version, linhas_recebidas = chamadas_status[0]
+    assert derived_at is not None
+    assert map_version is not None
+    assert linhas_recebidas == _linhas_sinteticas()
+    assert ordem == ["copy", "swap", "persistir_collection_status", "recount", "release_cache"]
 
 
 def test_release_cache_nao_chamada_quando_contagem_diverge(
@@ -273,6 +321,11 @@ def test_release_cache_nao_chamada_quando_contagem_diverge(
     monkeypatch.setattr(upload_mod, "swap", lambda conn, tabela: None)
     monkeypatch.setattr(upload_mod, "connect", lambda: _ConnFalsa())
     monkeypatch.setattr(upload_mod, "_linhas_grao_uf", lambda *, nivel: _linhas_sinteticas())
+    monkeypatch.setattr(
+        upload_mod,
+        "_persistir_collection_status",
+        lambda conn, linhas, *, derived_at, map_version: len(linhas),
+    )
 
     codigo = main(["--tabela", "sih_metric_uf"])
 
@@ -776,3 +829,46 @@ def test_swap_populacao_permite_apos_sih_metric_muni_evacuada(
         "select populacao from sih_population_total_uf where uf_codigo = '12'"
     ).fetchone()[0]
     assert populacao == 900000
+
+
+@requires_docker
+def test_persistir_collection_status_upsert_idempotente_pela_pk_real(
+    pg_conn: psycopg.Connection,
+) -> None:
+    """[Rule 1 - Bug] contra Postgres real: `_persistir_collection_status` escreve pela PK exata
+    `(disease_id, medida, grao, local, ano)`, com derived_at/cid_map_version nunca nulos (o
+    check constraint de proveniência da 09-03 recusaria), e uma segunda chamada com o MESMO lote
+    faz upsert -- nem duplica linha, nem falha em conflito (PIPE-03/SC-3)."""
+    linhas = _linhas_sinteticas()  # 3 linhas, disease_id=doencas_do_apendice, ano=2019, 2 UFs
+
+    n1 = _persistir_collection_status(
+        pg_conn, linhas, derived_at="2026-08-12T00:00:00Z", map_version="hash-corrida-1"
+    )
+    assert n1 > 0
+
+    contagem_1 = pg_conn.execute("select count(*) from sih_collection_status").fetchone()[0]
+    assert contagem_1 == n1
+
+    sem_proveniencia = pg_conn.execute(
+        "select count(*) from sih_collection_status "
+        "where status = 'coletado' and (derived_at is null or cid_map_version is null)"
+    ).fetchone()[0]
+    assert sem_proveniencia == 0
+
+    # Segunda chamada, MESMO lote mas cid_map_version/derived_at novos -- upsert pela PK real,
+    # não duplica linha, e os valores mais recentes vencem.
+    n2 = _persistir_collection_status(
+        pg_conn, linhas, derived_at="2026-08-12T01:00:00Z", map_version="hash-corrida-2"
+    )
+    assert n2 == n1
+
+    contagem_2 = pg_conn.execute("select count(*) from sih_collection_status").fetchone()[0]
+    assert contagem_2 == contagem_1, "upsert não pode duplicar linha na segunda corrida"
+
+    versoes = {
+        r[0]
+        for r in pg_conn.execute(
+            "select distinct cid_map_version from sih_collection_status"
+        ).fetchall()
+    }
+    assert versoes == {"hash-corrida-2"}, "a corrida mais recente precisa vencer no upsert"

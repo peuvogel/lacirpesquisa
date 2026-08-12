@@ -439,6 +439,63 @@ def carregar_divergencias() -> dict[str, dict[str, Any]]:
     return {entrada["diseaseId"]: entrada for entrada in entradas}
 
 
+def _persistir_collection_status(
+    conn: psycopg.Connection,
+    linhas: Sequence[Row],
+    *,
+    derived_at: str,
+    map_version: str,
+) -> int:
+    """Escreve `sih_collection_status` para TODOS os anos presentes em `linhas` -- D-13/D-14/D-15.
+    `build_collection_status_rows` opera sobre um único `(grao, ano)` por chamada, então esta
+    função laça sobre os anos distintos de grão UF e faz um `INSERT ... ON CONFLICT` por linha,
+    upsert pela PK real `(disease_id, medida, grao, local, ano)` -- idempotente (PIPE-03/SC-3:
+    uma segunda corrida completa regrava exatamente as mesmas linhas, só atualizando
+    `derived_at`/`cid_map_version`/`row_count` para os valores da corrida mais recente).
+
+    [Rule 1 - Bug, achado na execução real do Task 3 do 09-10]: `build_collection_status_rows`
+    existia e era testada isoladamente desde a Task 2, mas `main()` nunca a chamava -- a
+    substituição do D-16 escrevia `sih_metric_uf` sem NUNCA popular o ledger de proveniência que
+    a prova (3) de `sih-swap-contagens.sql` exige (todo `(disease_id, uf_codigo, ano, local)` de
+    `sih_metric_uf` precisa de uma entrada `coletado` correspondente em `sih_collection_status`).
+    Sem este fix, TODA linha de `sih_metric_uf` apareceria como órfã da fonte TabNet antiga."""
+    divergencias = carregar_divergencias()
+    anos = sorted({linha.ano for linha in linhas if linha.grao == GRAO_UF})
+    total = 0
+    with conn.cursor() as cur:
+        for ano in anos:
+            for row in build_collection_status_rows(
+                linhas,
+                grao=GRAO_UF,
+                ano=ano,
+                divergencias=divergencias,
+                derived_at=derived_at,
+                map_version=map_version,
+            ):
+                cur.execute(
+                    """
+                    insert into sih_collection_status
+                        (disease_id, medida, grao, local, ano, status, derived_at,
+                         cid_map_version, row_count, divergencia_pct, divergencia_razao)
+                    values
+                        (%(disease_id)s, %(medida)s, %(grao)s, %(local)s, %(ano)s,
+                         %(status)s, %(derived_at)s, %(cid_map_version)s, %(row_count)s,
+                         %(divergencia_pct)s, %(divergencia_razao)s)
+                    on conflict (disease_id, medida, grao, local, ano) do update set
+                        status = excluded.status,
+                        derived_at = excluded.derived_at,
+                        cid_map_version = excluded.cid_map_version,
+                        row_count = excluded.row_count,
+                        divergencia_pct = excluded.divergencia_pct,
+                        divergencia_razao = excluded.divergencia_razao
+                    """,
+                    row,
+                )
+                total += 1
+    conn.commit()
+    return total
+
+
 def build_collection_status_rows(
     linhas: Sequence[Row],
     *,
@@ -597,6 +654,16 @@ def main(argv: list[str]) -> int:
     try:
         n_copiadas = copy_to_staging(conn, args.tabela, staging_rows)
         swap(conn, args.tabela)
+
+        # D-13/D-14/D-15: o ledger de proveniência é escrito logo após o swap bem-sucedido --
+        # a prova (3) de sih-swap-contagens.sql exige que toda linha de sih_metric_uf tenha uma
+        # entrada 'coletado' correspondente aqui, com o MESMO cid_map_version desta corrida.
+        derived_at = _now_iso()
+        map_version = cid_map_version()
+        n_status = _persistir_collection_status(
+            conn, linhas, derived_at=derived_at, map_version=map_version
+        )
+        print(f"upload: {n_status} linha(s) de sih_collection_status registrada(s)")
 
         # PIPE-04: a ordem é copy_to_staging -> swap -> recount_via_postgrest -> só se conferir
         # -> release_cache. Nenhum caminho alternativo chega em release_cache (T-09-43).
