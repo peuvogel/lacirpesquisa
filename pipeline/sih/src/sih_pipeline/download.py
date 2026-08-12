@@ -31,6 +31,32 @@ tentativa — os 9h silenciosos do incidente eram tanto o bug quanto a trava em 
 tentativas, levanta `DownloadStalledError`, que `download_all` trata como qualquer outra exceção
 de arquivo (PIPE-06 existente, `except Exception` -> `ledger.mark_failed` -> `continue`) — nenhum
 caminho de erro novo é criado.
+
+**Correção de download vazio (2026-08-12, FIX-DOWNLOAD-VAZIO -- regressão da guarda acima).**
+Medição em produção: a guarda de trava NUNCA disparou (zero DownloadStalledError/TimeoutError
+no log) e mesmo assim 152 de 420 arquivos da re-coleta vieram corrompidos -- .dbc de 0 bytes,
+detectados só depois, dentro do parser C do pyreaddbc ("Invalid or corrupt DBC file ... has
+implausible header size 0"). Isolado com download real e repetido contra o FTP público do
+DataSUS (ver teste test_download_one_arquivo_real_pequeno_do_datasus..., marcado para pular
+offline): o mecanismo de RETR com caminho absoluto (file.path, o mesmo que File.download() do
+próprio pysus usa) e os dois timeouts de socket da guarda continuam funcionando -- não foi
+possível reproduzir um retrbinary "bem-sucedido" (sem exceção) que devolvesse 0 bytes numa rede
+saudável. O que a investigação confirmou, sim, é uma lacuna real: download_one nunca validava o
+resultado do download (tamanho, cabeçalho) antes de hashear/converter, e o cleanup de .dbc só
+cobria a exceção da própria guarda -- um .dbc vazio ou corrompido que só falhava depois, dentro
+de dbc_to_dbf, ficava esquecido no cache (nunca apagado), e a causa raiz completa de por que o
+FTP às vezes devolve sucesso sem dado nenhum continua sem prova definitiva (documentada como
+residual, não como resolvida). A correção, proporcional ao que FOI medido e comprovado: (1)
+_uma_tentativa_de_download agora confere o tamanho do .dbc logo após o retrbinary retornar sem
+exceção -- 0 bytes vira DownloadVazioError, tratado por _com_guarda_de_trava como a MESMA classe
+de falha transitória que um stall (mesmo retry limitado, mesma reconexão do zero -- a causa mais
+provável continua sendo uma interferência de rede transitória, e negar retry a ela transformaria
+toda flutuação numa falha permanente e desnecessária do arquivo); (2) download_one agora envolve
+TODO o caminho até mark_collected (download + hash + conversão, não só a guarda) num único
+cleanup -- qualquer exceção nessa faixa apaga o .dbc do cache antes de propagar, garantindo que
+uma retomada sempre comece limpa; (3) o contrato do FileLedger não muda: mark_collected continua
+sendo a ÚLTIMA linha de download_one, então nenhum caminho de erro (velho ou novo) passa por
+ela -- um arquivo vazio ou corrompido nunca vira baixado.
 """
 
 from __future__ import annotations
@@ -69,12 +95,29 @@ MAX_STALL_RETRIES = 3
 
 
 class DownloadStalledError(RuntimeError):
-    """Levantado quando `download_one` esgota `MAX_STALL_RETRIES` tentativas sem progresso.
+    """Levantado quando `download_one` esgota `MAX_STALL_RETRIES` tentativas sem progresso
+    (ou sem conseguir um `.dbc` não-vazio -- ver `DownloadVazioError`).
 
     Nunca propaga além de `download_one` sem passar pelo `except Exception` já existente em
     `download_all` — é o mesmo caminho de isolamento por arquivo (PIPE-06) que qualquer outra
     falha de download já usa, só com um tipo de exceção que nomeia a causa real no `reason` do
-    ledger em vez de um `TimeoutError` genérico.
+    ledger em vez de um `TimeoutError`/`DownloadVazioError` genérico.
+    """
+
+
+class DownloadVazioError(RuntimeError):
+    """Levantado por `_uma_tentativa_de_download` quando `ftp.retrbinary` retorna SEM exceção
+    (o FTP respondeu "226 Transfer complete") mas o `.dbc` resultante tem 0 bytes -- a
+    corrupção medida em produção (FIX-DOWNLOAD-VAZIO, 2026-08-12): 152 de 420 arquivos da
+    re-coleta vieram vazios sem nenhum `TimeoutError`, sem nenhum log da guarda de trava (ela
+    nunca disparou), porque o FTP não "travou" no sentido de faltar progresso -- ele só devolveu
+    sucesso sem dado nenhum.
+
+    `_com_guarda_de_trava` trata isso como a MESMA classe de falha transitória que um stall
+    (mesmo retry limitado, mesma reconexão do zero): a causa mais provável continua sendo uma
+    interferência transitória na conexão de dados (rede pública do DataSUS sem SLA), e negar
+    retry a ela transformaria toda flutuação de rede numa falha permanente e desnecessária do
+    arquivo.
     """
 
 
@@ -115,44 +158,60 @@ def _com_guarda_de_trava(
     max_retries: int = MAX_STALL_RETRIES,
     log: Callable[[str], None] = lambda msg: print(msg, file=sys.stderr),
 ) -> None:
-    """Chama `tentativa()` até `max_retries` vezes, tratando `TimeoutError` — disparado pelo
-    timeout de socket que `download_one` arma antes de cada `retrbinary` quando `recv()` não
-    recebe NENHUM byte novo dentro de `STALL_TIMEOUT_SEC` — como uma trava transitória,
-    retentável.
+    """Chama `tentativa()` até `max_retries` vezes, tratando duas classes de falha TRANSITÓRIA:
+    `TimeoutError` — disparado pelo timeout de socket que `download_one` arma antes de cada
+    `retrbinary` quando `recv()` não recebe NENHUM byte novo dentro de `STALL_TIMEOUT_SEC` — e
+    `DownloadVazioError` — disparado quando o `retrbinary` retorna sem exceção mas o `.dbc`
+    resultante tem 0 bytes (FIX-DOWNLOAD-VAZIO, ver docstring da classe). Ambas são tratadas como
+    condição retentável, com a mesma reconexão do zero por tentativa.
 
-    Qualquer OUTRA exceção (permissão, arquivo ausente na listagem, etc.) propaga na primeira
-    ocorrência sem consumir tentativa nenhuma: só falta de progresso é retentada aqui, nunca
-    outra classe de erro — retry cego em erro não-transitório só atrasaria o `mark_failed` que o
-    PIPE-06 já faz corretamente.
+    Qualquer OUTRA exceção (permissão, arquivo ausente na listagem, `.dbc` presente mas com
+    cabeçalho corrompido/implausível, etc.) propaga na primeira ocorrência sem consumir tentativa
+    nenhuma: só falta de progresso ou download vazio são retentados aqui, nunca outra classe de
+    erro — retry cego em erro não-transitório só atrasaria o `mark_failed` que o PIPE-06 já faz
+    corretamente.
 
-    Loga cada tentativa (arquivo, quanto tempo sem progresso, o que fez) — os 9h silenciosos do
-    incidente real eram tanto o bug quanto a trava em si, então esta função nunca falha em
-    silêncio. Esgotadas as tentativas, levanta `DownloadStalledError` encadeada
+    Loga cada tentativa (arquivo, o que aconteceu, o que fez) — os 9h silenciosos do incidente
+    real que originou a guarda de trava eram tanto o bug quanto a trava em si, então esta função
+    nunca falha em silêncio. Esgotadas as tentativas, levanta `DownloadStalledError` encadeada
     (`raise ... from`) para o `except Exception` já existente em `download_all` isolar por
     arquivo (PIPE-06) e seguir para o próximo, sem caminho de erro novo.
     """
-    ultima_falha: TimeoutError | None = None
+    ultima_falha: TimeoutError | DownloadVazioError | None = None
     for numero in range(1, max_retries + 1):
         try:
             tentativa()
             return
-        except TimeoutError as exc:
+        except (TimeoutError, DownloadVazioError) as exc:
             ultima_falha = exc
             acao = "tentando de novo" if numero < max_retries else "desistindo"
-            log(
-                f"download: {file_name} travou -- sem bytes novos por "
-                f"{STALL_TIMEOUT_SEC:.0f}s (tentativa {numero}/{max_retries}), {acao}"
-            )
+            if isinstance(exc, TimeoutError):
+                # Texto idêntico ao da guarda de trava original -- GUARDA-TRAVAMENTO já cobre
+                # este caso com teste próprio, não alterar a string sem atualizar esse teste.
+                log(
+                    f"download: {file_name} travou -- sem bytes novos por "
+                    f"{STALL_TIMEOUT_SEC:.0f}s (tentativa {numero}/{max_retries}), {acao}"
+                )
+            else:
+                log(
+                    f"download: {file_name} voltou vazio -- 0 bytes apesar do FTP reportar "
+                    f"sucesso (tentativa {numero}/{max_retries}), {acao}"
+                )
+
+    if isinstance(ultima_falha, TimeoutError):
+        motivo_final = f"travou (sem progresso por {STALL_TIMEOUT_SEC:.0f}s)"
+    else:
+        motivo_final = "voltou vazio (0 bytes) repetidamente, apesar do FTP reportar sucesso"
 
     raise DownloadStalledError(
-        f"{file_name}: travou (sem progresso por {STALL_TIMEOUT_SEC:.0f}s) em "
-        f"{max_retries} tentativa(s) -- desistindo, isolado por arquivo (PIPE-06)"
+        f"{file_name}: {motivo_final} em {max_retries} tentativa(s) -- desistindo, isolado "
+        "por arquivo (PIPE-06)"
     ) from ultima_falha
 
 
 def _uma_tentativa_de_download(file: Any, dbc_path: Path, *, ftp_factory: Any) -> None:
-    """Uma tentativa completa: reconecta do zero, arma o timeout de socket (guarda de trava) e
-    roda o `RETR`.
+    """Uma tentativa completa: reconecta do zero, arma o timeout de socket (guarda de trava),
+    roda o `RETR` e confere que o resultado não veio vazio (FIX-DOWNLOAD-VAZIO).
 
     Reconectar a cada tentativa (em vez de reaproveitar a conexão que acabou de travar/expirar)
     evita arriscar um segundo travamento silencioso sobre um estado de controle intermediário —
@@ -174,6 +233,18 @@ def _uma_tentativa_de_download(file: Any, dbc_path: Path, *, ftp_factory: Any) -
 
         ftp.retrbinary(f"RETR {file.path}", callback)
 
+    # FIX-DOWNLOAD-VAZIO: o `retrbinary` acima pode retornar SEM exceção (o FTP respondeu
+    # "226 Transfer complete") e mesmo assim não ter escrito nenhum byte -- é exatamente a
+    # corrupção medida em produção (152/420 arquivos, ver docstring do módulo). Conferir aqui,
+    # ANTES de qualquer hash/conversão, torna essa falha visível e retentável em vez de virar um
+    # `.dbc` de 0 bytes que só quebra páginas depois, dentro do parser C do `pyreaddbc`
+    # ("implausible header size 0").
+    if dbc_path.stat().st_size == 0:
+        raise DownloadVazioError(
+            f"{file.name}: download voltou vazio (0 bytes) -- FTP reportou sucesso sem "
+            "transferir dado nenhum"
+        )
+
 
 def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> None:
     """Baixa um arquivo, converte via `pysus` e grava a prova (hash + contagem) no ledger.
@@ -181,11 +252,18 @@ def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> N
     Nunca chamado em lote — cada chamada é isolada pelo `try/except` do laço em `download_all`
     (Pitfall 9: o método em lote do `pysus` não tem `try/except` por item). A retirada FTP em si
     passa pela guarda de trava (`_com_guarda_de_trava` + `STALL_TIMEOUT_SEC`) antes de qualquer
-    conversão — ver docstring do módulo, "Guarda de trava".
+    conversão — ver docstring do módulo, "Guarda de trava" e "Correção de download vazio".
 
     `ftp_factory` (default `None`) é o `FTPSingleton` real do `pysus`, importado dentro do corpo
     (nunca no topo do módulo — mesma disciplina livre-de-rede-no-import de `enumerate.py`); os
     testes injetam um fake para provar a guarda sem tocar FTP de verdade.
+
+    FIX-DOWNLOAD-VAZIO: o cleanup do `.dbc` cobre TODO o caminho até `mark_collected` (download +
+    hash + conversão), não só a guarda de trava — um `.dbc` vazio ou corrompido que só falha
+    dentro de `dbc_to_dbf` (parser C do `pyreaddbc`) também precisa ser apagado, senão fica
+    esquecido no cache indefinidamente. `mark_collected` continua sendo a ÚLTIMA linha desta
+    função: nenhum caminho de erro (velho ou novo) passa por ela, então um arquivo vazio ou
+    corrompido nunca vira `baixado` (contrato do `FileLedger` preservado).
     """
     from pysus.data import dbc_to_dbf, dbf_to_parquet
 
@@ -197,31 +275,51 @@ def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> N
     dbc_path = cache_path(f"parquet/{file.basename}")
 
     try:
-        _com_guarda_de_trava(
-            lambda: _uma_tentativa_de_download(file, dbc_path, ftp_factory=ftp_factory),
-            file_name=file.name,
-        )
+        try:
+            _com_guarda_de_trava(
+                lambda: _uma_tentativa_de_download(file, dbc_path, ftp_factory=ftp_factory),
+                file_name=file.name,
+            )
+        finally:
+            ftp_factory.close()
+
+        # sha256 sobre os bytes do .dbc, ANTES da conversão — defesa detectável contra
+        # adulteração em trânsito no FTP sem TLS (T-09-01, residual aceito e documentado no
+        # README).
+        sha256 = _sha256_of_file(dbc_path)
+
+        # dbc_to_dbf() devolve um caminho .parquet (não .dbf) quando o parquet de uma tentativa
+        # anterior já existe — mesmo guard de suffix que ParquetSet.__init__ faz internamente
+        # (pysus/data/local.py), reproduzido aqui porque download_one não passa pelo ParquetSet.
+        #
+        # Nuance medida (lido do código-fonte instalado, pysus/data/__init__.py): para um .dbc
+        # não-vazio mas com cabeçalho corrompido/truncado, dbc2dbf() (parser C do pyreaddbc) NÃO
+        # levanta em Python -- ele imprime "Invalid or corrupt DBC file ... implausible header
+        # size" em stderr e retorna um .dbf de 0 bytes, já tendo apagado o .dbc de origem sem
+        # condição nenhuma. É só o passo SEGUINTE (dbf_to_parquet -> dbfread.DBF) que levanta de
+        # verdade (struct.error) -- e essa função já se autolimpa nesse except específico
+        # (apaga o .dbf, remove o diretório .parquet vazio que tinha acabado de criar). O
+        # except abaixo é a rede de segurança para os casos que ELA não cobre (qualquer exceção
+        # fora de struct.error aqui, ou uma falha em _count_parquet_rows sobre um parquet que
+        # "terminou" mas ficou malformado) -- nunca assume que o .dbc ainda existe nesse ponto.
+        converted_path = Path(dbc_to_dbf(str(dbc_path)))
+        if converted_path.suffix.lower() == ".dbf":
+            parquet_dir = dbf_to_parquet(str(converted_path))
+        else:
+            parquet_dir = str(converted_path)
+
+        row_count = _count_parquet_rows(parquet_dir)
     except Exception:
+        # FIX-DOWNLOAD-VAZIO: antes desta correção, só a exceção da guarda de trava limpava o
+        # .dbc -- uma falha em sha256/dbc_to_dbf/dbf_to_parquet/_count_parquet_rows deixava
+        # QUALQUER intermediário que ainda existisse (o próprio pysus já limpa alguns casos,
+        # não todos -- ver comentário acima) para trás no cache, indefinidamente, mesmo já
+        # marcado `falhou` no ledger. `dbc_path.exists()` cobre tanto "ainda não foi apagado"
+        # quanto "já foi apagado por outra camada" sem levantar `FileNotFoundError` -- corrigido
+        # cobrindo TODO o caminho até `mark_collected`, não só a guarda.
         if dbc_path.exists():
             dbc_path.unlink()
         raise
-    finally:
-        ftp_factory.close()
-
-    # sha256 sobre os bytes do .dbc, ANTES da conversão — defesa detectável contra
-    # adulteração em trânsito no FTP sem TLS (T-09-01, residual aceito e documentado no README).
-    sha256 = _sha256_of_file(dbc_path)
-
-    # dbc_to_dbf() devolve um caminho .parquet (não .dbf) quando o parquet de uma tentativa
-    # anterior já existe — mesmo guard de suffix que ParquetSet.__init__ faz internamente
-    # (pysus/data/local.py), reproduzido aqui porque download_one não passa pelo ParquetSet.
-    converted_path = Path(dbc_to_dbf(str(dbc_path)))
-    if converted_path.suffix.lower() == ".dbf":
-        parquet_dir = dbf_to_parquet(str(converted_path))
-    else:
-        parquet_dir = str(converted_path)
-
-    row_count = _count_parquet_rows(parquet_dir)
 
     ledger.mark_collected(
         file.name,
