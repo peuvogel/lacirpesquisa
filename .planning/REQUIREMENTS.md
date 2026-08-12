@@ -39,18 +39,18 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 ### Pipeline de coleta
 
 - [ ] **PIPE-01**: Uma falha de rede/DNS/parse é registrada como falha ruidosa, nunca como sucesso com 0 linhas
-- [ ] **PIPE-02**: Existe um ledger consultável que informa, por (agravo × medida × grão), se a combinação foi coletada, falhou ou nunca foi tentada — e o app consegue lê-lo
-- [ ] **PIPE-03**: A coleta é retomável: reexecutar após interrupção continua de onde parou, sem duplicar linhas
-- [ ] **PIPE-04**: O cache bruto só é descartado após o upload correspondente ser confirmado
+- [x] **PIPE-02**: Existe um ledger consultável que informa, por (agravo × medida × grão), se a combinação foi coletada, falhou ou nunca foi tentada — e o app consegue lê-lo
+- [x] **PIPE-03**: A coleta é retomável: reexecutar após interrupção continua de onde parou, sem duplicar linhas
+- [x] **PIPE-04**: O cache bruto só é descartado após o upload correspondente ser confirmado
 - [ ] **PIPE-05**: O operador consegue verificar que uma coleta capturou o que afirma ter capturado
 - [ ] **PIPE-06**: A coleta respeita a fonte remota (FTP do DATASUS) e sobrevive a execuções longas sem supervisão
 
 ### Cobertura de dados
 
-- [ ] **DATA-01**: As 4 medidas (Internações, Óbitos, Valor_total, Dias_permanência) estão coletadas para os 330 agravos no grão UF
+- [x] **DATA-01**: As 4 medidas (Internações, Óbitos, Valor_total, Dias_permanência) estão coletadas para os 330 agravos no grão UF
 - [ ] **DATA-02**: As 4 medidas estão coletadas para os 330 agravos no grão município
 - [x] **DATA-03**: `taxa_mortalidade` é derivável em todo o catálogo, não só nos 5 agravos atuais
-- [ ] **DATA-04**: Cada métrica servida ao app carrega a data em que foi coletada
+- [x] **DATA-04**: Cada métrica servida ao app carrega a data em que foi coletada
 
 ### Mapas dinâmicos
 
@@ -117,15 +117,15 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 | TAX-05 | Phase 8 | Complete |
 | TAX-06 | Phase 8 | Complete |
 | PIPE-01 | Phase 9 | Pending |
-| PIPE-02 | Phase 9 | Pending |
-| PIPE-03 | Phase 9 | Pending |
-| PIPE-04 | Phase 9 | Pending |
+| PIPE-02 | Phase 9 | Complete |
+| PIPE-03 | Phase 9 | Complete |
+| PIPE-04 | Phase 9 | Complete |
 | PIPE-05 | Phase 9 | Pending |
 | PIPE-06 | Phase 9 | Pending |
-| DATA-01 | Phase 9 | Pending |
+| DATA-01 | Phase 9 | Complete |
 | DATA-02 | Phase 9 | Pending |
 | DATA-03 | Phase 9 | Complete |
-| DATA-04 | Phase 9 | Pending |
+| DATA-04 | Phase 9 | Complete |
 | MAPA-01 | Phase 10 | Pending |
 | MAPA-02 | Phase 10 | Pending |
 | MAPA-03 | Phase 10 | Pending |
