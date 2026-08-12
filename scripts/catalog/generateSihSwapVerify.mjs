@@ -34,11 +34,17 @@ export const VERIFY_RELATIVE_PATH = 'supabase/verify/sih-swap-contagens.sql';
 
 /**
  * Contagem REAL de `sih_metric_uf` pós-swap e a `cid_map_version` da corrida que produziu essa
- * contagem -- `null` até a corrida completa das 27 UFs terminar e o upload real (Task 3 do
- * 09-10, gated) rodar. Ver docstring do módulo para o porquê de `null` ser o default seguro.
+ * contagem -- preenchidos em 2026-08-12 com o valor medido na substituição real de produção
+ * (Task 3 do 09-10, D-16): `upload.py` copiou 207131 linhas para staging, o swap trocou a tabela
+ * viva, e `recount_via_postgrest` releu exatamente 207131 linhas via PostgREST paginado (nem uma
+ * a mais, nem a menos) -- 103353 de local=ocorrencia + 103778 de local=residencia, conferido de
+ * novo, de forma independente, direto contra o Postgres de produção. `cid_map_version()` é o
+ * mesmo hash estável de `lista-morb-cid.json` + `cid-corrections.json` que `sih_collection_status`
+ * carrega para cada linha da corrida (D-15) -- nunca recalculado à mão aqui.
  */
-export const ESPERADO_SIH_METRIC_UF = null;
-export const CID_MAP_VERSION_DA_CORRIDA = null;
+export const ESPERADO_SIH_METRIC_UF = 207131;
+export const CID_MAP_VERSION_DA_CORRIDA =
+  '5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f';
 
 /** Grão que `sih_metric_uf` representa -- primeiro valor de `schema-v3.json` `graos` (D-13). */
 const GRAO_UF = 'uf';

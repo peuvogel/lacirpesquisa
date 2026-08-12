@@ -22,8 +22,8 @@ declare
   v_uf bigint;
 begin
   select count(*) into v_uf from sih_metric_uf;
-  if v_uf is distinct from NULL then
-    raise exception 'sih-swap-contagens: sih_metric_uf tem % linha(s), esperado % (medido na corrida, nunca adivinhado -- D-16)', v_uf, NULL;
+  if v_uf is distinct from 207131 then
+    raise exception 'sih-swap-contagens: sih_metric_uf tem % linha(s), esperado % (medido na corrida, nunca adivinhado -- D-16)', v_uf, 207131;
   end if;
 end $$;
 
@@ -73,10 +73,10 @@ begin
       and s.local = m.local
       and s.ano = m.ano
       and s.status = 'coletado'
-      and s.cid_map_version = NULL
+      and s.cid_map_version = '5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f'
   );
   if v_orfao > 0 then
-    raise exception 'sih-swap-contagens: % linha(s) de sih_metric_uf sem sih_collection_status coletado correspondente (cid_map_version %) -- possivel remanescente da fonte TabNet antiga (D-16)', v_orfao, NULL;
+    raise exception 'sih-swap-contagens: % linha(s) de sih_metric_uf sem sih_collection_status coletado correspondente (cid_map_version %) -- possivel remanescente da fonte TabNet antiga (D-16)', v_orfao, '5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f';
   end if;
 end $$;
 
