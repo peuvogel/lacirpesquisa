@@ -112,6 +112,23 @@ def test_summary_soma_row_count_so_dos_baixados(cache_dir):
     assert summary["total_registros"] == 300
 
 
+def test_reset_missing_rebaixa_arquivo_baixado_mesmo_com_a_guarda_de_mark_failed(cache_dir):
+    """`reset_missing` é o único caminho que ignora de propósito a disciplina de
+    não-rebaixamento do PIPE-03 (09-04-AUTOCURA-LEDGER, `collect.py`) -- ao contrário de
+    `mark_failed`, que corretamente recusa rebaixar um `baixado` (provado acima em
+    `test_mark_failed_nao_rebaixa_arquivo_ja_baixado`)."""
+    ledger = FileLedger.load()
+    ledger.mark_collected(
+        "RDAC1901", row_count=10, sha256="a" * 64, parquet_dir="parquet/RDAC1901"
+    )
+
+    ledger.reset_missing("RDAC1901", reason="parquet ausente em disco -- self-cura")
+
+    assert ledger.status("RDAC1901") == STATUS_FALHOU
+    assert ledger.entry("RDAC1901")["reason"] == "parquet ausente em disco -- self-cura"
+    assert "RDAC1901" in ledger.pending(frozenset({"RDAC1901"}))
+
+
 def test_save_atomico_nao_deixa_tmp_sobrevivente(cache_dir):
     ledger = FileLedger.load()
     ledger.mark_collected(

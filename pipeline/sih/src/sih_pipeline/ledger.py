@@ -103,6 +103,26 @@ class FileLedger:
             "updated_at": _now_iso(),
         }
 
+    def reset_missing(self, name: str, *, reason: str) -> None:
+        """Reseta `name` para fora de `baixado` MESMO que a entrada atual esteja `baixado` --
+        único caminho do `FileLedger` que ignora de propósito a disciplina de não-rebaixamento
+        de `mark_failed` (PIPE-03).
+
+        Existe para um único chamador: a self-cura de `collect.py` (09-04-AUTOCURA-LEDGER),
+        quando o chamador já CONFIRMOU contra o disco real que o parquet de `name` não existe
+        mais -- não é uma falha espúria de rerun (que `mark_failed` corretamente recusa
+        rebaixar), é uma divergência ledger/disco provada. Sem isto, um arquivo `baixado` cujo
+        parquet sumiu (reciclagem interrompida no meio, delação externa, etc.) fica preso para
+        sempre: nunca re-baixa (`pending()` só devolve o que não é `baixado`) e nunca agrega
+        (o parquet não existe). Reaproveita `STATUS_FALHOU` como status final -- semanticamente
+        a verificação falhou -- para que `pending()` o devolva sem precisar de um status novo.
+        """
+        self._arquivos[name] = {
+            "status": STATUS_FALHOU,
+            "reason": reason,
+            "updated_at": _now_iso(),
+        }
+
     def pending(self, expected: set[str] | frozenset[str]) -> list[str]:
         """Nomes de `expected` cujo status não é `baixado`, em ordem determinística (sorted).
 
