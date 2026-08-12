@@ -57,20 +57,62 @@ cleanup -- qualquer exceção nessa faixa apaga o .dbc do cache antes de propaga
 uma retomada sempre comece limpa; (3) o contrato do FileLedger não muda: mark_collected continua
 sendo a ÚLTIMA linha de download_one, então nenhum caminho de erro (velho ou novo) passa por
 ela -- um arquivo vazio ou corrompido nunca vira baixado.
+
+**Correção de registro corrompido (2026-08-12, FIX-DBC-CORROMPIDO -- brief avulso do
+coordenador, sem PLAN.md formal).** As duas correções acima (guarda de trava, download vazio)
+cobrem um `.dbc` que nunca chegou a existir de verdade. Existe uma TERCEIRA classe, medida na
+re-coleta nacional em produção: um `.dbc` não-vazio que CONVERTE sem levantar exceção nenhuma
+(`dbc_to_dbf`/`dbf_to_parquet` "funcionam"), mas com registros DESALINHADOS -- bytes de um campo
+vazando para dentro de outro. `collect: PA falhou` e `collect: GO falhou` só na AGREGAÇÃO da UF
+inteira, horas depois de baixar os 156 arquivos: `RDPA2303.parquet` tinha `VAL_TOT` com
+`' 1.87\x90'` (um byte de controle grudado -- parece limpo até se olhar o `repr()`) e
+`RDGO1902.parquet` tinha dezenas de registros `VAL_TOT` como `'.25  23.'`/`'.2523.'` (fragmentos
+de dois campos concatenados, medido: o arquivo tem esse padrão em ~1% dos seus 10.699 registros,
+não é 1 valor isolado). Nos dois casos a agregação (`aggregate.py`, que casta `VAL_TOT`->float64,
+`DIAS_PERM`/`ANO_CMPT`->int64, `MORTE` via `_cast_morte`, SEMPRE sobre a coluna inteira da UF,
+ANTES de qualquer filtro por registro) é quem finalmente quebrava com `ArrowInvalid: Failed to
+parse string: '...' as a scalar of type ...` -- tarde demais para o isolamento por arquivo
+(PIPE-06) já existente agir: a UF inteira (156 arquivos já baixados) falha, e sem saber QUAL
+arquivo é o culpado.
+
+A correção: `_valida_registros_alinhados`, chamada dentro de `download_one` logo depois de
+`row_count`/`sha256` (mesmo ponto onde `_com_guarda_de_trava`/`DownloadVazioError` já rodam,
+antes de `mark_collected`), roda O MESMO cast que `aggregate.py` vai rodar depois -- reutilizando
+`_blank_to_null`/`_cast_morte` de `aggregate.py` (nunca uma cópia, para nunca divergir do que a
+agregação realmente faz) sobre só as 4 colunas afetadas, projetadas via `pyarrow.dataset` (nunca
+as 113 colunas, nunca a pasta da UF inteira). Qualquer `ArrowInvalid` vira `RegistroCorrompidoError`
+(logada com arquivo + coluna + valor exato, via o `except Exception` que já existe e isola por
+arquivo), e o cleanup do `except` de `download_one` passou a apagar também o `parquet_dir` já
+convertido, não só o `.dbc` -- sem isso, a PRÓXIMA tentativa baixaria um `.dbc` novo mas
+`dbc_to_dbf` encontraria o parquet corrompido ainda em disco (o guard de "parquet de tentativa
+anterior já existe", ver comentário em `download_one`) e devolveria ele direto, sem reconverter
+nada -- o arquivo jamais se recuperaria mesmo depois de um download limpo. Ver
+`RegistroCorrompidoError`/`_valida_registros_alinhados` para o custo (barato: 4 colunas
+projetadas, um arquivo por vez, mesma ordem de grandeza que `_count_parquet_rows`) e o que NÃO é
+falso positivo (padding de espaço e vazio genuíno -- `_blank_to_null` já trata os dois, herdado
+sem mudança de `aggregate.py`).
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import shutil
 import sys
 import time
 from pathlib import Path
 from typing import Any, Callable
 
+import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.dataset as ds
 
 from sih_pipeline import enumerate as enumerate_mod
+# _blank_to_null/_cast_morte importados de aggregate.py (nunca copiados) -- FIX-DBC-CORROMPIDO
+# (ver docstring do módulo, seção "Correção de registro corrompido") roda EXATAMENTE o mesmo
+# cast que a agregação vai rodar depois, para que a checagem aqui nunca divirja do que realmente
+# quebra a agregação. aggregate.py não importa nada deste módulo -- sem ciclo.
+from sih_pipeline.aggregate import _blank_to_null, _cast_morte
 from sih_pipeline.ledger import FileLedger
 from sih_pipeline.paths import cache_path
 
@@ -119,6 +161,88 @@ class DownloadVazioError(RuntimeError):
     retry a ela transformaria toda flutuação de rede numa falha permanente e desnecessária do
     arquivo.
     """
+
+
+class RegistroCorrompidoError(RuntimeError):
+    """Levantado por `_valida_registros_alinhados` quando alguma das colunas que `aggregate.py`
+    casta eager (`VAL_TOT`->float64, `DIAS_PERM`/`ANO_CMPT`->int64, `MORTE` via `_cast_morte`,
+    ver `aggregate.py` docstring "Correção de valor numérico vazio") tem pelo menos um valor que
+    não converte -- a assinatura de um `.dbc` truncado/corrompido que converteu para parquet SEM
+    levantar exceção nenhuma (registro DESALINHADO: um fragmento de outro campo vazando para
+    dentro do campo numérico, ou um decimal onde só inteiro é válido -- nunca padding de espaço,
+    que `_blank_to_null`/o `pc.cast` seguinte já toleram, e nunca vazio genuíno, que
+    `_blank_to_null` já trata como `null`).
+
+    Medido em produção (FIX-DBC-CORROMPIDO, 2026-08-12): a re-coleta nacional falhou PA e GO só
+    na AGREGAÇÃO da UF inteira, horas depois de baixar os 156 arquivos -- `RDPA2303.parquet`
+    (VAL_TOT com `' 1.87\\x90'`, um byte de controle grudado num valor que parece limpo até se
+    olhar o `repr()`) e `RDGO1902.parquet` (VAL_TOT com dezenas de registros `'.25  23.'`,
+    `'.2523.'` etc. -- fragmentos de DOIS campos concatenados). Nos dois casos o `.dbc` não
+    veio vazio (`DownloadVazioError` não dispara) e a conversão (`dbc_to_dbf`/`dbf_to_parquet`)
+    não levantou nada -- só o cast eager da agregação, rodando sobre a UF inteira, é que
+    finalmente quebrava, tarde demais para o isolamento por arquivo (PIPE-06) já existente agir.
+
+    Detectada aqui, POR ARQUIVO, dentro de `download_one` (logo depois de `row_count`/`sha256`
+    já computados, antes de `mark_collected`), o `except Exception` que já existe em
+    `download_one`/`download_all` faz o resto: o arquivo vira `falhou` no ledger (nunca
+    `baixado`) em vez da UF inteira morrer na agregação depois de baixar os 156 arquivos, e volta
+    a `pending()` para ser rebaixado E RECONVERTIDO do zero na próxima corrida (ver o cleanup do
+    parquet corrompido no `except` de `download_one` -- sem ele, `dbc_to_dbf` reaproveitaria o
+    parquet corrompido em vez de reconverter, e o arquivo nunca se recuperaria)."""
+
+
+# Colunas que `aggregate.py` casta eager, ANTES de qualquer filtro por registro (ver
+# `aggregate.NEEDED_COLUMNS`/docstring "Correção de valor numérico vazio") -- exatamente as
+# colunas onde um registro desalinhado quebra a agregação da UF inteira. `_valida_registros_
+# alinhados` roda o MESMO cast aqui, por arquivo, usando as MESMAS funções de `aggregate.py`
+# (`_blank_to_null`/`_cast_morte`, nunca uma cópia) para que esta checagem nunca divirja do que a
+# agregação realmente faz depois.
+_COLUNAS_CASTADAS_PELA_AGREGACAO: tuple[str, ...] = ("VAL_TOT", "DIAS_PERM", "ANO_CMPT", "MORTE")
+
+
+def _valida_registros_alinhados(parquet_dir: str, *, file_name: str) -> None:
+    """Confere que `_COLUNAS_CASTADAS_PELA_AGREGACAO` convertem sem erro no parquet recém
+    convertido de UM arquivo -- o mesmo cast que `aggregate.py` aplicaria depois, rodado aqui,
+    por ARQUIVO, logo após `row_count`/`sha256` (FIX-DBC-CORROMPIDO, ver `RegistroCorrompidoError`
+    para o incidente real que motivou esta checagem).
+
+    Custo (roda 4.212 vezes, uma por arquivo da corrida completa): projeta só 4 das 113 colunas
+    via `pyarrow.dataset` (nunca as 113, nunca a pasta da UF inteira que `aggregate.py` lê) e
+    roda um cast vetorizado sobre os registros de UM arquivo mensal (milhares, não os milhões da
+    UF inteira) -- mesma ordem de grandeza de custo que `_count_parquet_rows` (metadado + leitura
+    de poucas colunas), nunca da ordem de uma agregação completa de UF. Barato o suficiente para
+    rodar em toda chamada de `download_one`, sem amostragem: os valores que quebraram produção
+    (`' 1.87\\x90'`, `'.25  23.'`) podem ser 1 registro em 15 mil -- uma amostra teria a mesma
+    chance de errar que já vínhamos tendo.
+
+    Levanta `RegistroCorrompidoError` (encadeada com `raise ... from`) na PRIMEIRA coluna que
+    falhar, com o nome do arquivo e a mensagem original do `pyarrow.ArrowInvalid` (que já
+    contém o valor exato que não converteu) -- é o que torna um arquivo ruim recorrente
+    diagnosticável pelo `reason` do ledger em vez de misterioso."""
+    dataset = ds.dataset(str(parquet_dir), format="parquet")
+    table = dataset.to_table(columns=list(_COLUNAS_CASTADAS_PELA_AGREGACAO))
+
+    casts: dict[str, Callable[[pa.Array | pa.ChunkedArray], pa.Array | pa.ChunkedArray]] = {
+        "VAL_TOT": lambda col: pc.cast(_blank_to_null(col), "float64"),
+        "DIAS_PERM": lambda col: pc.cast(_blank_to_null(col), "int64"),
+        "ANO_CMPT": lambda col: pc.cast(_blank_to_null(col), "int64"),
+        "MORTE": _cast_morte,
+    }
+
+    for nome_coluna, cast_fn in casts.items():
+        try:
+            cast_fn(table[nome_coluna])
+        except pa.lib.ArrowInvalid as exc:
+            print(
+                f"download: {file_name} tem registro corrompido/desalinhado -- coluna "
+                f"{nome_coluna} não converte para o tipo que a agregação exige ({exc}) -- "
+                "isolando por arquivo (PIPE-06), nunca marcando baixado",
+                file=sys.stderr,
+            )
+            raise RegistroCorrompidoError(
+                f"{file_name}: coluna {nome_coluna} tem valor que não converte para o tipo que "
+                f"a agregação exige -- {exc}"
+            ) from exc
 
 
 def _fetch_actual_files() -> dict[str, Any]:
@@ -264,6 +388,16 @@ def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> N
     esquecido no cache indefinidamente. `mark_collected` continua sendo a ÚLTIMA linha desta
     função: nenhum caminho de erro (velho ou novo) passa por ela, então um arquivo vazio ou
     corrompido nunca vira `baixado` (contrato do `FileLedger` preservado).
+
+    FIX-DBC-CORROMPIDO: depois de `row_count`, `_valida_registros_alinhados` roda o MESMO cast
+    que `aggregate.py` vai rodar depois (ver `RegistroCorrompidoError`) -- um `.dbc` que converteu
+    SEM levantar exceção mas cujos registros estão desalinhados (ex.: `RDPA2303`/`RDGO1902`
+    medidos em produção) é pego aqui, por arquivo, em vez de só na agregação da UF inteira horas
+    depois. O cleanup do `except` abaixo agora também apaga o `parquet_dir` já convertido (não só
+    o `.dbc`) -- sem isso, `dbc_to_dbf` veria o parquet corrompido ainda em disco na PRÓXIMA
+    tentativa e devolveria ele direto (é o próprio guard de "parquet de tentativa anterior já
+    existe", comentado abaixo), nunca reconvertendo o `.dbc` recém-baixado -- o arquivo jamais se
+    recuperaria.
     """
     from pysus.data import dbc_to_dbf, dbf_to_parquet
 
@@ -273,6 +407,10 @@ def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> N
         ftp_factory = FTPSingleton
 
     dbc_path = cache_path(f"parquet/{file.basename}")
+    # Só populado depois que a conversão produz um parquet de verdade -- usado pelo cleanup do
+    # `except` abaixo (FIX-DBC-CORROMPIDO) para apagar um parquet corrompido junto com o `.dbc`,
+    # nunca antes disso (None continua significando "nada para limpar além do .dbc").
+    parquet_dir_para_limpeza: Path | None = None
 
     try:
         try:
@@ -307,10 +445,16 @@ def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> N
             parquet_dir = dbf_to_parquet(str(converted_path))
         else:
             parquet_dir = str(converted_path)
+        parquet_dir_para_limpeza = Path(parquet_dir)
 
         row_count = _count_parquet_rows(parquet_dir)
+
+        # FIX-DBC-CORROMPIDO: roda ANTES de mark_collected -- ver RegistroCorrompidoError e a
+        # docstring desta função. Um .dbc que converteu sem levantar exceção mas cujos registros
+        # estão desalinhados nunca pode virar "baixado".
+        _valida_registros_alinhados(parquet_dir, file_name=file.name)
     except Exception:
-        # FIX-DOWNLOAD-VAZIO: antes desta correção, só a exceção da guarda de trava limpava o
+        # FIX-DOWNLOAD-VAZIO: antes daquela correção, só a exceção da guarda de trava limpava o
         # .dbc -- uma falha em sha256/dbc_to_dbf/dbf_to_parquet/_count_parquet_rows deixava
         # QUALQUER intermediário que ainda existisse (o próprio pysus já limpa alguns casos,
         # não todos -- ver comentário acima) para trás no cache, indefinidamente, mesmo já
@@ -319,6 +463,18 @@ def download_one(file: Any, ledger: FileLedger, *, ftp_factory: Any = None) -> N
         # cobrindo TODO o caminho até `mark_collected`, não só a guarda.
         if dbc_path.exists():
             dbc_path.unlink()
+        # FIX-DBC-CORROMPIDO: um parquet JÁ CONVERTIDO (row_count/_valida_registros_alinhados
+        # rodaram sobre ele) que falha depois -- por corrupção de registro OU qualquer outra
+        # exceção nesta faixa -- precisa ser apagado junto, nunca só o .dbc. Sem isto, a PRÓXIMA
+        # tentativa baixaria um .dbc novo mas dbc_to_dbf() (ver comentário acima, "guard de
+        # suffix") encontraria o parquet velho ainda em disco e devolveria ele direto, sem
+        # reconverter nada -- o arquivo corrompido nunca se recuperaria, mesmo depois de N
+        # retries bem-sucedidos de download.
+        if parquet_dir_para_limpeza is not None and parquet_dir_para_limpeza.exists():
+            if parquet_dir_para_limpeza.is_dir():
+                shutil.rmtree(parquet_dir_para_limpeza)
+            else:
+                parquet_dir_para_limpeza.unlink()
         raise
 
     ledger.mark_collected(

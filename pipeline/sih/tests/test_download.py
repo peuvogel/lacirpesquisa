@@ -16,7 +16,10 @@ from __future__ import annotations
 import os
 import socket
 import types
+from pathlib import Path
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 
 from sih_pipeline import download
@@ -24,12 +27,22 @@ from sih_pipeline import enumerate as enumerate_mod
 from sih_pipeline.download import (
     DownloadStalledError,
     DownloadVazioError,
+    RegistroCorrompidoError,
     _com_guarda_de_trava,
     _uma_tentativa_de_download,
+    _valida_registros_alinhados,
     download_all,
     download_one,
 )
 from sih_pipeline.ledger import STATUS_BAIXADO, STATUS_FALHOU, FileLedger
+
+# DF real, competência 2019-02 (RDGO1902.parquet, projetado só às 4 colunas que a agregação
+# casta eager -- VAL_TOT/DIAS_PERM/ANO_CMPT/MORTE), 10.699 registros -- reproduz ao vivo a
+# corrupção medida em produção (FIX-DBC-CORROMPIDO, 2026-08-12): "collect: GO falhou (Failed to
+# parse string: '.25  23.' as a scalar of type double)". Localizado varrendo os 156 arquivos de
+# GO em cache (`~/.lacir/sih-cache/parquet/`) contra o mesmo cast que a agregação roda -- não é
+# um valor sintético, é o VAL_TOT real de dezenas de registros deste arquivo específico.
+FIXTURE_GO_CORROMPIDO_PATH = Path(__file__).parent / "fixtures" / "rdgo_1902_corrompido.parquet"
 
 # ---------------------------------------------------------------------------
 # Prova 1 -- `_com_guarda_de_trava` isolada (sem pysus, sem FTP, sem sleep real).
@@ -255,6 +268,11 @@ def test_download_one_recupera_de_trava_transitoria_e_completa(cache_dir, monkey
 
     monkeypatch.setattr(download, "_sha256_of_file", lambda path: "a" * 64)
     monkeypatch.setattr(download, "_count_parquet_rows", lambda parquet_dir: 0)
+    # FIX-DBC-CORROMPIDO: este teste é sobre a guarda de trava/reconexão, não sobre corrupção de
+    # registro -- o "parquet_dir" aqui é só o conteúdo cru simulado do .dbc (identity abaixo),
+    # nunca um parquet de verdade, então _valida_registros_alinhados não tem schema para ler.
+    # Mesma técnica de dublê já usada para _sha256_of_file/_count_parquet_rows nesta linha acima.
+    monkeypatch.setattr(download, "_valida_registros_alinhados", lambda parquet_dir, *, file_name: None)
     # dbc_to_dbf/dbf_to_parquet são importados de dentro de download_one (pysus.data) -- faz o
     # dublê no módulo real, mesma técnica de import local usada pelo próprio código de produção.
     import pysus.data as pysus_data_mod
@@ -556,6 +574,209 @@ def test_download_all_isola_arquivo_vazio_sem_derrubar_a_corrida(cache_dir, monk
     assert resultado.status("RDAC1301") == STATUS_FALHOU
     assert "vazio" in resultado.entry("RDAC1301")["reason"]
     assert resultado.status("RDMA2110") == STATUS_BAIXADO
+
+    summary = resultado.summary()
+    assert summary["falhou"] == 1
+    assert summary["baixado"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Prova 6 -- FIX-DBC-CORROMPIDO (2026-08-12): registro desalinhado que converteu SEM levantar
+# exceção -- pego por arquivo, no mesmo cast que a agregação roda depois, antes de mark_collected.
+# ---------------------------------------------------------------------------
+
+
+def _escreve_parquet(
+    caminho: Path,
+    *,
+    val_tot: list[str | None],
+    dias_perm: list[str | None],
+    ano_cmpt: list[str | None],
+    morte: list[str | None],
+) -> None:
+    """Escreve um parquet sintético com só as 4 colunas que `_valida_registros_alinhados`
+    projeta -- mesmo formato (string) que o `pysus` devolve para essas colunas na conversão
+    real (nunca int/float nativo, ver `aggregate.py` docstring)."""
+    tabela = pa.table(
+        {
+            "VAL_TOT": pa.array(val_tot, type=pa.string()),
+            "DIAS_PERM": pa.array(dias_perm, type=pa.string()),
+            "ANO_CMPT": pa.array(ano_cmpt, type=pa.string()),
+            "MORTE": pa.array(morte, type=pa.string()),
+        }
+    )
+    pq.write_table(tabela, caminho)
+
+
+def test_valida_registros_alinhados_rejeita_decimal_em_coluna_inteira(tmp_path):
+    """`'1.87'` (verbatim, ver <the_problem>) num campo castado para int64 (DIAS_PERM) é
+    exatamente a assinatura de registro desalinhado que a agregação só descobria horas depois --
+    tem que ser rejeitado aqui, por arquivo, citando o arquivo e a coluna no erro."""
+    caminho = tmp_path / "RDXX9999.parquet"
+    _escreve_parquet(
+        caminho,
+        val_tot=["100.00"],
+        dias_perm=["1.87"],
+        ano_cmpt=["2019"],
+        morte=["0"],
+    )
+
+    with pytest.raises(RegistroCorrompidoError) as exc_info:
+        _valida_registros_alinhados(str(caminho), file_name="RDXX9999")
+
+    assert "RDXX9999" in str(exc_info.value)
+    assert "DIAS_PERM" in str(exc_info.value)
+    assert "1.87" in str(exc_info.value)
+    assert isinstance(exc_info.value.__cause__, pa.lib.ArrowInvalid)  # causa original encadeada
+
+
+def test_valida_registros_alinhados_rejeita_fragmentos_concatenados(tmp_path):
+    """`'.25  23.'` (verbatim, ver <the_problem> -- também o valor real medido em
+    `RDGO1902.parquet`/VAL_TOT, ver Prova real abaixo) é fragmento de dois campos concatenados --
+    registro desalinhado, não padding nem vazio. Tem que ser rejeitado."""
+    caminho = tmp_path / "RDXX9999.parquet"
+    _escreve_parquet(
+        caminho,
+        val_tot=[".25  23."],
+        dias_perm=["2"],
+        ano_cmpt=["2019"],
+        morte=["0"],
+    )
+
+    with pytest.raises(RegistroCorrompidoError) as exc_info:
+        _valida_registros_alinhados(str(caminho), file_name="RDXX9999")
+
+    assert "RDXX9999" in str(exc_info.value)
+    assert "VAL_TOT" in str(exc_info.value)
+    assert ".25  23." in str(exc_info.value)
+
+
+def test_valida_registros_alinhados_aceita_padding_de_espaco(tmp_path):
+    """REGRESSÃO -- padding de espaço é NORMAL neste dataset (Pitfall 1: `'        459.40'`,
+    `'    2'`; `_cast_morte` existe porque `MORTE` chega padded, ver aggregate.py). Não pode
+    virar falso positivo de corrupção."""
+    caminho = tmp_path / "RDXX9999.parquet"
+    _escreve_parquet(
+        caminho,
+        val_tot=["        459.40"],
+        dias_perm=["    2"],
+        ano_cmpt=["  2019"],
+        morte=[" 1"],  # MORTE também chega padded -- desvio medido documentado em aggregate.py
+    )
+
+    _valida_registros_alinhados(str(caminho), file_name="RDXX9999")  # não levanta
+
+
+def test_valida_registros_alinhados_aceita_valor_genuinamente_vazio(tmp_path):
+    """REGRESSÃO -- string vazia (após trim) tem semântica já acordada e tratada por
+    `_blank_to_null` em `aggregate.py` (FIX-AGREGACAO-VAZIO): AIH real com campo de
+    faturamento/óbito não preenchido, NUNCA corrupção. `_valida_registros_alinhados` reusa a
+    MESMA função -- não pode reclassificar isso como corrupção."""
+    caminho = tmp_path / "RDXX9999.parquet"
+    _escreve_parquet(
+        caminho,
+        val_tot=["", "120.50"],
+        dias_perm=["", "3"],
+        ano_cmpt=["2019", "2019"],
+        morte=["", "0"],
+    )
+
+    _valida_registros_alinhados(str(caminho), file_name="RDXX9999")  # não levanta
+
+
+def test_valida_registros_alinhados_rejeita_arquivo_real_go_corrompido():
+    """Prova REAL (não só sintética): `RDGO1902.parquet` real, localizado em cache varrendo os
+    156 arquivos de GO contra o mesmo cast que a agregação roda -- é o arquivo que produziu
+    `collect: GO falhou (Failed to parse string: '.25  23.' as a scalar of type double)` na
+    corrida em produção. `_valida_registros_alinhados` tem que rejeitá-lo, exatamente como a
+    agregação da UF inteira rejeitou horas depois -- só que aqui, por arquivo, ANTES da
+    agregação rodar."""
+    with pytest.raises(RegistroCorrompidoError) as exc_info:
+        _valida_registros_alinhados(str(FIXTURE_GO_CORROMPIDO_PATH), file_name="RDGO1902")
+
+    assert "RDGO1902" in str(exc_info.value)
+    assert "VAL_TOT" in str(exc_info.value)
+
+
+def test_download_one_detecta_registro_corrompido_e_limpa_dbc_e_parquet(cache_dir, monkeypatch):
+    """Integração completa (sem rede): `dbc_to_dbf`/`dbf_to_parquet` "funcionam" (não levantam
+    nada -- exatamente como aconteceu com RDPA2303/RDGO1902 em produção), mas o parquet
+    resultante tem um registro desalinhado. `download_one` tem que: (1) levantar
+    `RegistroCorrompidoError` -- nunca continuar para `mark_collected`; (2) apagar o `.dbc`; (3)
+    apagar o `parquet_dir` já convertido também -- sem isso, `dbc_to_dbf` reaproveitaria o
+    parquet corrompido na PRÓXIMA tentativa em vez de reconverter o `.dbc` novo (ver docstring do
+    módulo); (4) NUNCA marcar `baixado` no ledger."""
+    fake_singleton = _FakeFTPSingletonBytesFixos(b"conteudo-suficiente-para-nao-ser-vazio")
+
+    import pysus.data as pysus_data_mod
+
+    def fake_dbc_to_dbf(path: str) -> str:
+        return str(Path(path).with_suffix(".dbf"))
+
+    def fake_dbf_to_parquet(path: str) -> str:
+        destino = Path(path).with_suffix(".parquet")
+        _escreve_parquet(
+            destino,
+            val_tot=[".25  23."],  # o mesmo valor real medido em RDGO1902 -- verbatim
+            dias_perm=["2"],
+            ano_cmpt=["2019"],
+            morte=["0"],
+        )
+        return str(destino)
+
+    monkeypatch.setattr(pysus_data_mod, "dbc_to_dbf", fake_dbc_to_dbf)
+    monkeypatch.setattr(pysus_data_mod, "dbf_to_parquet", fake_dbf_to_parquet)
+
+    ledger = FileLedger()
+    file = _fake_file("RDGO1902")
+
+    with pytest.raises(RegistroCorrompidoError, match="RDGO1902"):
+        download_one(file, ledger, ftp_factory=fake_singleton)
+
+    dbc_path = cache_dir / "parquet" / f"{file.basename}"
+    parquet_path = cache_dir / "parquet" / "RDGO1902.parquet"
+    assert not dbc_path.exists()  # PIPE-06: nunca deixa o .dbc para trás
+    assert not parquet_path.exists()  # sem isto, a próxima tentativa reaproveitaria o corrompido
+    assert ledger.status(file.name) == "nunca_tentado"  # nunca vira baixado com dado desalinhado
+
+
+def test_download_all_isola_arquivo_corrompido_sem_derrubar_a_corrida(cache_dir, monkeypatch):
+    """PIPE-06 continua valendo para a NOVA classe de falha: um arquivo com registro desalinhado
+    (RegistroCorrompidoError) não pode derrubar a corrida nem impedir que o outro arquivo
+    pendente seja baixado -- mesma garantia que as Provas 3/4 já provavam para stall/vazio,
+    agora para corrupção de registro. É a prova de que "um arquivo corrompido falha só a si
+    mesmo" -- o mesmo mecanismo que `collect_uf` usa para baixar os 156 arquivos de uma UF
+    (`download_fn(only=sorted(uf_files))`, chamando exatamente este `download_all`), então uma UF
+    inteira nunca mais precisa morrer na agregação por causa de UM arquivo entre 156."""
+    monkeypatch.setattr(
+        enumerate_mod, "expected_file_names", lambda: frozenset({"RDGO1902", "RDMA2110"})
+    )
+    monkeypatch.setattr(
+        enumerate_mod, "fetch_actual_file_names", lambda: frozenset({"RDGO1902", "RDMA2110"})
+    )
+    monkeypatch.setattr(enumerate_mod, "assert_no_missing", lambda expected, actual: None)
+    monkeypatch.setattr(
+        download,
+        "_fetch_actual_files",
+        lambda: {"RDGO1902": _fake_file("RDGO1902"), "RDMA2110": _fake_file("RDMA2110")},
+    )
+    monkeypatch.setattr(download, "REQUEST_DELAY_SEC", 0)
+
+    def fake_download_one(file, ledger, *, ftp_factory=None):
+        if file.name == "RDGO1902":
+            raise RegistroCorrompidoError(
+                "RDGO1902: coluna VAL_TOT tem valor que não converte para o tipo que a "
+                "agregação exige -- Failed to parse string: '.25  23.' as a scalar of type double"
+            )
+        ledger.mark_collected(file.name, row_count=100, sha256="b" * 64, parquet_dir="/x")
+
+    monkeypatch.setattr(download, "download_one", fake_download_one)
+
+    resultado = download_all()
+
+    assert resultado.status("RDGO1902") == STATUS_FALHOU
+    assert "VAL_TOT" in resultado.entry("RDGO1902")["reason"]
+    assert resultado.status("RDMA2110") == STATUS_BAIXADO  # o outro arquivo nunca foi afetado
 
     summary = resultado.summary()
     assert summary["falhou"] == 1
