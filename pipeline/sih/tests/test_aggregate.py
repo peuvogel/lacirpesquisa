@@ -6,6 +6,7 @@ DATA-02, DATA-03. Roda sobre `tests/fixtures/rdac_2019.parquet` (ano inteiro AC/
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -24,6 +25,12 @@ from sih_pipeline.matcher import build_index, load_cid_map
 from sih_pipeline.paths import repo_root
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "rdac_2019.parquet"
+# DF real, competência 2017-08 (RDDF1708.parquet, projetado a NEEDED_COLUMNS), 2.292 registros
+# -- reproduz ao vivo o crash "Failed to parse string: '' as a scalar of type double" relatado
+# na recoleta nacional (09-04-FIX-AGREGACAO-VAZIO). Contém 46 registros com TODOS os campos
+# vazios (IDENT='', ANO_CMPT='' -- lixo/registro corrompido do DBC) e continua abaixo do limite
+# de descarte T-09-30 (0,0436% medido) -- ver SUMMARY desta correção para a medição completa.
+FIXTURE_DF_VAZIO_PATH = Path(__file__).parent / "fixtures" / "rddf_1708_vazio.parquet"
 
 
 def _schema_v3() -> dict:
@@ -441,6 +448,170 @@ def test_proc_rea_nao_isenta_descarte_cid(index, tmp_path):
 
     with pytest.raises(ValueError):
         aggregate_parquet_dir(caminho, index)
+
+
+# --- Correção 09-04-FIX-AGREGACAO-VAZIO: VAL_TOT/DIAS_PERM/MORTE/ANO_CMPT vazios -------------
+#
+# Regressão medida na recoleta nacional (DF e RR falharam com "Failed to parse string: '' as a
+# scalar of type double" -- `~/.lacir/sih-cache/agregados/collect_state.json`). Verificado
+# contra dado real (não assumido): a mesma versão de `aggregate_parquet_dir` de ANTES do eixo de
+# procedimento (9f8545c) já quebrava sobre o mesmo arquivo real (`RDDF1708.parquet`) -- não é
+# regressão do eixo PROC_REA, é um cast eager (`pc.cast(..., "float64"/"int64")` sobre a coluna
+# inteira, ANTES do filtro por registro) que nunca tratou string vazia. Ver docstring do módulo
+# (`aggregate.py`, seção "Correção de valor numérico vazio") para a medição completa e a decisão
+# de semântica por medida.
+
+
+def test_val_tot_vazio_real_df_nao_quebra_a_agregacao_da_uf():
+    # Prova de ponta a ponta sobre dado REAL (não sintético) -- reproduz o crash relatado antes
+    # da correção (RED) e prova que ele desaparece depois (GREEN), sem trocar o gate de descarte
+    # por um coerce cego: os 46 registros com todos os campos vazios (IDENT='') continuam sendo
+    # excluídos pelo filtro de IDENT, nunca contados nem como internação nem como descarte.
+    cid_map = apply_corrections(load_cid_map(), load_corrections())
+    index = build_index(cid_map)
+    rows = aggregate_parquet_dir(FIXTURE_DF_VAZIO_PATH, index)
+    assert rows, "aggregate_parquet_dir nao produziu nenhuma linha para RDDF1708.parquet"
+
+
+def _tabela_valor_vazio(*, val_tot, dias_perm, morte, diag_princ=None, ident=None, ano_cmpt=None):
+    n = len(val_tot)
+    diag_princ = diag_princ or ["A00"] * n
+    ident = ident or ["1"] * n
+    ano_cmpt = ano_cmpt or ["2019"] * n
+    return pa.table(
+        {
+            "DIAG_PRINC": diag_princ,
+            "MUNIC_MOV": ["120040"] * n,
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": morte,
+            "VAL_TOT": val_tot,
+            "DIAS_PERM": dias_perm,
+            "ANO_CMPT": ano_cmpt,
+            "IDENT": ident,
+            "PROC_REA": ["0000000000"] * n,
+        }
+    )
+
+
+def test_val_tot_vazio_conta_internacao_mas_nao_soma_valor_desconhecido(index, tmp_path):
+    # AIH real (IDENT='1', ANO_CMPT na janela) pode ter VAL_TOT vazio -- medido ao vivo em
+    # RR/RDRR1811.parquet, RR/RDRR1907.parquet, RR/RDRR2208.parquet (a internação existiu, só o
+    # campo de faturamento não foi preenchido). AUSÊNCIA NÃO É ZERO -- mas uma SOMA corrente não
+    # tem representação de "parcialmente desconhecido": a linha soma só a contribuição CONHECIDA
+    # (50,00 do 1º registro + 0,0 do 2º), a internação ainda CONTA (internacoes=2), e
+    # valor_total fica SUBESTIMADO (nunca inflado com um zero fabricado que pareça "sabido").
+    table = _tabela_valor_vazio(
+        val_tot=["  50.00", ""],
+        dias_perm=["  1", "  1"],
+        morte=["0", "0"],
+    )
+    caminho = tmp_path / "val_tot_vazio.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    linha = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert linha.internacoes == 2
+    assert linha.valor_total == pytest.approx(50.0)
+
+
+def test_dias_perm_vazio_conta_internacao_mas_nao_soma_dias_desconhecidos(index, tmp_path):
+    # Mesma semântica de VAL_TOT: DIAS_PERM vazio contribui 0 para a soma corrente, a internação
+    # continua contando.
+    table = _tabela_valor_vazio(
+        val_tot=["  50.00", "  50.00"],
+        dias_perm=["  3", ""],
+        morte=["0", "0"],
+    )
+    caminho = tmp_path / "dias_perm_vazio.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    linha = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert linha.internacoes == 2
+    assert linha.dias_permanencia == 3
+
+
+def test_morte_vazio_conta_internacao_mas_nao_conta_como_obito(index, tmp_path):
+    # MORTE vazio NUNCA é tratado como óbito -- inventar uma morte sem nenhuma evidência no
+    # dado-fonte inflaria taxa_mortalidade sem base real, o erro mais grave possível para uma
+    # medida pública de saúde. A internação continua contando (o AIH existiu, IDENT='1').
+    table = _tabela_valor_vazio(
+        val_tot=["  50.00", "  50.00"],
+        dias_perm=["  1", "  1"],
+        morte=["1", ""],
+    )
+    caminho = tmp_path / "morte_vazio.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    linha = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert linha.internacoes == 2
+    assert linha.obitos == 1  # só o registro com MORTE='1' conta -- o vazio não vira óbito
+    assert linha.taxa_mortalidade == pytest.approx(0.5)
+
+
+def test_ano_cmpt_vazio_e_excluido_sem_quebrar(index, tmp_path):
+    # ANO_CMPT vazio (a mesma classe de registro corrompido medida em DF/RDDF1708.parquet: 46
+    # linhas com TODOS os campos vazios, IDENT='' junto) precisa cair no mesmo caminho de "fora
+    # da janela" que já existe para ANO_CMPT numérico fora de anoMin/anoMax -- nunca quebrar o
+    # cast eager que roda ANTES do filtro por registro.
+    table = _tabela_valor_vazio(
+        val_tot=["  50.00", "  50.00"],
+        dias_perm=["  1", "  1"],
+        morte=["0", "0"],
+        ano_cmpt=["2019", ""],
+    )
+    caminho = tmp_path / "ano_cmpt_vazio.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    linha = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert linha.internacoes == 1  # só o registro com ANO_CMPT preenchido e válido conta
+
+
+def test_valor_nao_vazio_e_nao_numerico_continua_estourando(index, tmp_path):
+    # A correção só troca STRING VAZIA por null -- NUNCA um coerce cego (pedido explícito da
+    # correção). Um VAL_TOT não vazio mas genuinamente não numérico (corrupção real de dado,
+    # nunca medida em IDENT='1' de DF/RR -- ver SUMMARY) continua estourando ArrowInvalid, exatamente
+    # como antes desta correção.
+    table = _tabela_valor_vazio(
+        val_tot=["  50.00", "lixo-nao-numerico"],
+        dias_perm=["  1", "  1"],
+        morte=["0", "0"],
+    )
+    caminho = tmp_path / "val_tot_corrompido.parquet"
+    pq.write_table(table, caminho)
+
+    with pytest.raises(pa.lib.ArrowInvalid):
+        aggregate_parquet_dir(caminho, index)
+
+
+def test_cid_output_identico_byte_a_byte_apos_correcao_de_vazio(fixture_rows):
+    # rdac_2019.parquet não tem NENHUM campo vazio em VAL_TOT/DIAS_PERM/MORTE/ANO_CMPT (medido:
+    # 0/44.589 em cada uma das 4 colunas) -- a correção desta plan (tratar vazio como ausência,
+    # não zero) NUNCA deveria tocar esta fixture. Hash SHA-256 de todas as linhas (canonicalizadas
+    # e ordenadas) trava byte a byte que a saída do caminho CID (o mesmo que produziu
+    # sih_metric_uf = 207.131 linhas / 330 agravos em produção) continua idêntica antes e depois
+    # desta correção -- medido diretamente sobre o código ANTES da correção, não assumido.
+    linhas_canonicas = sorted(
+        (
+            r.disease_id,
+            r.grao,
+            r.local,
+            r.territorio_codigo,
+            r.ano,
+            r.internacoes,
+            r.obitos,
+            round(r.valor_total, 6),
+            r.dias_permanencia,
+            None if r.taxa_mortalidade is None else round(r.taxa_mortalidade, 10),
+        )
+        for r in fixture_rows
+    )
+    payload = json.dumps(linhas_canonicas, sort_keys=False).encode("utf-8")
+    digest = hashlib.sha256(payload).hexdigest()
+    assert len(fixture_rows) == 5_551  # medido ANTES da correção -- ver SUMMARY
+    assert digest == "25c2f4e2b65bcd6c3bbb6cb8de59e0bdedc959cc16109d67ef002a920554a104"
 
 
 def test_amputacao_mmii_presente_apos_reconstrucao_do_procedimento(fixture_rows):

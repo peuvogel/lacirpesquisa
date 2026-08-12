@@ -37,6 +37,56 @@ dígitos, campo oficial e ESTÁVEL do SIH-RD), um SEGUNDO eixo de classificaçã
 eixo CID e testado em paralelo a ele para CADA registro (um mesmo registro pode contribuir para
 as duas classificações ao mesmo tempo — nenhuma delas isenta ou substitui a outra). Ver
 `_PROC_REA_AMPUTACAO_MMII` abaixo para a medição completa que estabeleceu o código certo.
+
+Correção de valor numérico vazio (09-04-FIX-AGREGACAO-VAZIO, 2026-08-12, brief avulso do
+coordenador, sem PLAN.md formal). A recoleta nacional falhou em DF e RR com `Failed to parse
+string: '' as a scalar of type double` (`~/.lacir/sih-cache/agregados/collect_state.json`,
+campo `reason`). O brief levantou como hipótese que fosse regressão do eixo de procedimento
+acima (`9f8545c`) — **verificado, não confirmado**: rodei a versão de `aggregate_parquet_dir`
+de ANTES de `9f8545c` contra o mesmo arquivo real (`RDDF1708.parquet`, competência 2017-08) e
+ela quebra IDÊNTICO. A causa real é preexistente e ortogonal ao eixo de procedimento: os quatro
+casts eager abaixo (`VAL_TOT`→float64, `DIAS_PERM`/`ANO_CMPT`→int64, `MORTE` via `_cast_morte`)
+sempre rodaram sobre a COLUNA INTEIRA, ANTES de qualquer filtro por registro (`IDENT`, janela de
+ano) — nunca tinham sido medidos contra um arquivo real que contivesse string vazia nesses
+campos especificamente, só padding de espaço (Pitfall 1 acima).
+
+Medido ao vivo contra as 27 UFs em cache (`~/.lacir/sih-cache/parquet/`), duas classes bem
+distintas de registro produzem string vazia nesses quatro campos, cada uma com uma origem e um
+tratamento diferente:
+
+1. **Registro corrompido do DBC** (medido em `DF/RDDF1708.parquet`: 46 de 2.292 registros).
+   `IDENT`, `ANO_CMPT`, `DIAG_PRINC`, `MUNIC_RES` **e** os quatro campos numéricos vêm TODOS
+   vazios juntos — não é uma AIH real com um campo faltando, é uma linha inteira sem dado
+   utilizável (bytes desalinhados na decodificação do `.dbc`, mesma classe de achado do
+   `09-04-FIX-DOWNLOAD-VAZIO`, mas na CONVERSÃO, não no download). Como `IDENT` também vem
+   vazio (`!= '1'`), estes registros já eram excluídos pelo filtro de `IDENT` existente — o
+   problema NUNCA foi a classificação deles, foi o cast eager travar antes do laço conseguir
+   filtrá-los.
+2. **AIH real com campo de faturamento/óbito não preenchido** (medido em `RR/RDRR1811.parquet`,
+   `RR/RDRR1907.parquet`, `RR/RDRR2208.parquet`, `DF/RDDF1708.parquet`: no total, 2 registros de
+   RR com `VAL_TOT` vazio, e 2 (DF) + 5 (RR) com `DIAS_PERM`/`MORTE` vazios — sempre o par
+   junto, nunca um sem o outro). `IDENT='1'`, `ANO_CMPT` dentro da janela D-11 — é uma internação
+   genuína, só o campo billing específico não foi preenchido nesta competência.
+
+A correção (`_blank_to_null`, abaixo) troca SÓ a string exatamente vazia (após
+`utf8_trim_whitespace`) por `null` explícito antes do `pc.cast` — nunca um coerce cego: qualquer
+outro valor não numérico continua propagando sem alteração e ainda estourando `ArrowInvalid` no
+cast seguinte (medido: nenhum registro `IDENT='1'` de DF/RR tem valor não vazio e não numérico
+nestes quatro campos — se algum dia existir, a correção NÃO o esconde). Para a classe 1
+(registro corrompido), o `null` em `ANO_CMPT` cai no mesmo `continue` que já existia para "fora
+da janela D-11" — o registro nunca chega ao filtro de `IDENT` nem à classificação, exatamente
+como antes desta correção teria acontecido SE o cast não tivesse quebrado primeiro. Para a
+classe 2 (AIH real), a semântica de cada medida é decidida e documentada onde as contribuições
+são somadas no laço principal, abaixo — resumo: `internacoes` sempre conta (o AIH existiu),
+`valor_total`/`dias_permanencia` somam só a contribuição CONHECIDA (ausência não é zero, mas uma
+soma corrente não tem representação de "parcialmente desconhecido" — o agregado SUBESTIMA nesses
+poucos registros, nunca superestima), e `MORTE` vazio NUNCA conta como óbito (inventar uma morte
+sem evidência no dado-fonte inflaria `taxa_mortalidade` sem base real).
+
+Preservação do eixo CID: `rdac_2019.parquet` (a fixture congelada usada pelo gate SC-7 e pela
+maioria dos testes deste módulo) não tem NENHUM campo vazio nestes quatro campos (medido:
+0/44.589 em cada um) — esta correção nunca altera o valor computado sobre essa fixture, prova
+em `test_cid_output_identico_byte_a_byte_apos_correcao_de_vazio` (hash SHA-256 de toda a saída).
 """
 
 from __future__ import annotations
@@ -197,12 +247,26 @@ def _taxa_mortalidade(*, obitos: int, internacoes: int) -> float | None:
     return obitos / internacoes
 
 
+def _blank_to_null(col: pa.Array | pa.ChunkedArray) -> pa.Array | pa.ChunkedArray:
+    """Troca string vazia (após `utf8_trim_whitespace`) por `null` explícito — NUNCA um coerce
+    cego (ver docstring do módulo, seção "Correção de valor numérico vazio"): só o caso
+    EXATAMENTE vazio vira `null`; qualquer outro valor não numérico continua propagado sem
+    alteração e ainda estoura em `ArrowInvalid` no `pc.cast` seguinte (RESEARCH Pitfall 1
+    continua valendo — corrupção real de dado tem que falhar alto, nunca virar `null`
+    silencioso). `null` pré-existente é preservado (nunca virava string vazia para começar)."""
+    trimmed = pc.utf8_trim_whitespace(col)
+    vazio = pc.equal(trimmed, "")
+    return pc.if_else(vazio, pa.scalar(None, type=trimmed.type), trimmed)
+
+
 def _cast_morte(morte_col: pa.Array | pa.ChunkedArray) -> pa.Array | pa.ChunkedArray:
     """Normaliza `MORTE` para `int64`, verificando o tipo real em vez de assumir (ver docstring
     do módulo — desvio medido do RESEARCH). Levanta `TypeError` para qualquer tipo que não seja
-    string nem inteiro, para que uma mudança futura de schema do `pysus` falhe alto."""
+    string nem inteiro, para que uma mudança futura de schema do `pysus` falhe alto. `MORTE`
+    vazio (após trim) vira `null` via `_blank_to_null` antes do cast — tratado como "não é óbito"
+    no laço principal, nunca inferido como morte sem evidência no dado-fonte."""
     if pa.types.is_string(morte_col.type) or pa.types.is_large_string(morte_col.type):
-        return pc.cast(pc.utf8_trim_whitespace(morte_col), "int64")
+        return pc.cast(_blank_to_null(morte_col), "int64")
     if pa.types.is_integer(morte_col.type):
         return pc.cast(morte_col, "int64")
     raise TypeError(
@@ -241,10 +305,13 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     dataset = ds.dataset(str(path), format="parquet")
     table = dataset.to_table(columns=NEEDED_COLUMNS)
 
-    val_tot = pc.cast(pc.utf8_trim_whitespace(table["VAL_TOT"]), "float64").to_pylist()
-    dias_perm = pc.cast(pc.utf8_trim_whitespace(table["DIAS_PERM"]), "int64").to_pylist()
+    # `_blank_to_null` (ver docstring do módulo) troca só string vazia por `null` -- qualquer
+    # outro valor não numérico continua estourando `ArrowInvalid` aqui, igual a antes desta
+    # correção.
+    val_tot = pc.cast(_blank_to_null(table["VAL_TOT"]), "float64").to_pylist()
+    dias_perm = pc.cast(_blank_to_null(table["DIAS_PERM"]), "int64").to_pylist()
     morte = _cast_morte(table["MORTE"]).to_pylist()
-    ano_cmpt = pc.cast(pc.utf8_trim_whitespace(table["ANO_CMPT"]), "int64").to_pylist()
+    ano_cmpt = pc.cast(_blank_to_null(table["ANO_CMPT"]), "int64").to_pylist()
     ident = pc.utf8_trim_whitespace(table["IDENT"]).to_pylist()
     proc_rea = pc.utf8_trim_whitespace(table["PROC_REA"]).to_pylist()
     diag_princ = table["DIAG_PRINC"].to_pylist()
@@ -293,9 +360,22 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
         mov_uf = uf_de_municipio(mov6)
         res_uf = uf_de_municipio(res6)
 
+        # `VAL_TOT`/`DIAS_PERM`/`MORTE` vazios (após `_blank_to_null`/`_cast_morte`) chegam como
+        # `None` aqui -- AIH real (`IDENT='1'`, `ANO_CMPT` na janela), só o campo de
+        # faturamento/óbito não foi preenchido nesta competência (achado desta correção, ver
+        # docstring do módulo). AUSÊNCIA NÃO É ZERO, mas `valor_total`/`dias_permanencia` são
+        # SOMAS correntes sem representação de "parcialmente desconhecido": a internação sempre
+        # CONTA (`internacoes` não muda), e a contribuição desconhecida vira 0 na soma -- o
+        # agregado SUBESTIMA o total real nesses poucos registros, nunca o contrário. `MORTE`
+        # vazio NUNCA é tratado como óbito -- inventar uma morte sem nenhuma evidência no
+        # dado-fonte inflaria `taxa_mortalidade` sem base real, o erro mais grave possível para
+        # uma medida pública de saúde.
         val = val_tot[i]
         dias = dias_perm[i]
         obito = morte[i]
+        val_contribuicao = val if val is not None else 0.0
+        dias_contribuicao = dias if dias is not None else 0
+        obito_contribuicao = obito if obito is not None else 0
 
         for disease_id in disease_ids_casados:
             for grao, local, territorio in (
@@ -310,9 +390,9 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
                     {"internacoes": 0, "obitos": 0, "valor_total": 0.0, "dias_permanencia": 0},
                 )
                 entrada["internacoes"] += 1
-                entrada["obitos"] += obito
-                entrada["valor_total"] += val
-                entrada["dias_permanencia"] += dias
+                entrada["obitos"] += obito_contribuicao
+                entrada["valor_total"] += val_contribuicao
+                entrada["dias_permanencia"] += dias_contribuicao
 
     if total > 0:
         taxa_descarte = descartes / total
