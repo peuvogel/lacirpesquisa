@@ -80,6 +80,9 @@ def test_collect_uf_agrega_persiste_e_recicla_o_bruto(cache_dir, index, monkeypa
     file_ledger = FileLedger.load()
     assert file_ledger.status("RDAC1901") == STATUS_BAIXADO
 
+    # arquivo genuinamente presente em disco -- a self-cura não tinha nada para curar.
+    assert collect_ledger.self_heal_count("AC") == 0
+
 
 # ---------------------------------------------------------------------------
 # Prova 2 -- retomada: não rebaixa/re-baixa UF já agregada, não pula UF baixada-mas-não-agregada.
@@ -219,7 +222,55 @@ def test_collect_all_isola_falha_de_uma_uf_e_processa_a_proxima(cache_dir, index
     assert resultado.status("DF") == collect.ESTADO_AGREGADO_RECICLADO
 
 
-def test_collect_all_isola_divergencia_ledger_disco_na_agregacao(cache_dir, index, monkeypatch):
+# ---------------------------------------------------------------------------
+# Self-cura do ledger (09-04-AUTOCURA-LEDGER) -- ver docstring do módulo, "Self-cura do
+# ledger". O incidente real: um arquivo 'baixado' no FileLedger cujo parquet sumiu do disco
+# (interrupção entre "arquivo baixado" e "UF marcada agregado_reciclado", nunca a reciclagem de
+# fim de UF, que só roda depois de _persist_rows confirmado) nunca voltava a pending() (excluído
+# por já estar 'baixado') e nunca conseguia agregar (parquet ausente) -- UF travada para SEMPRE.
+# Medido em produção em RO/PB/PI/RN, reparado à mão duas vezes (276 entradas apagadas).
+# ---------------------------------------------------------------------------
+
+
+def test_collect_uf_incompleta_self_cura_fantasma_e_conclui(cache_dir, index, monkeypatch):
+    """UF INCOMPLETA (nunca_iniciado) com um arquivo 'baixado' no ledger cujo parquet sumiu do
+    disco -- a self-cura reseta a entrada e o download normal a re-busca; a UF conclui em vez de
+    travar para sempre. Round-trip real em disco via `cache_dir` (FileLedger de verdade, não um
+    dublê em memória) -- carrega antes, roda, recarrega depois do disco."""
+    monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
+
+    caminho_fantasma = cache_dir / "parquet" / "RDAC1901-fantasma.parquet"
+    file_ledger = FileLedger.load()
+    file_ledger.mark_collected(
+        "RDAC1901", row_count=1, sha256="a" * 64, parquet_dir=str(caminho_fantasma)
+    )
+    file_ledger.save()
+    assert not caminho_fantasma.exists()  # a divergência é real, não um artefato do teste
+
+    chamadas: list[list[str]] = []
+
+    def download_fn_redownload(*, only):
+        chamadas.append(sorted(only))
+        _stage_downloaded_file(cache_dir, "RDAC1901")
+
+    collect_ledger = collect.CollectLedger()
+    collect.collect_uf(
+        "AC", collect_ledger=collect_ledger, index=index, download_fn=download_fn_redownload
+    )
+
+    assert chamadas == [["RDAC1901"]]  # self-cura tornou o arquivo elegível a novo download
+    assert collect_ledger.status("AC") == collect.ESTADO_AGREGADO_RECICLADO
+    assert collect_ledger.self_heal_count("AC") == 1
+
+    # o FileLedger real, recarregado do disco, reflete o re-download -- não o caminho fantasma.
+    file_ledger_final = FileLedger.load()
+    assert file_ledger_final.status("RDAC1901") == STATUS_BAIXADO
+    assert file_ledger_final.entry("RDAC1901")["parquet_dir"] != str(caminho_fantasma)
+
+
+def test_collect_all_self_cura_uma_uf_e_isola_da_proxima(cache_dir, index, monkeypatch):
+    """Mesmo cenário acima, mas via `collect_all` (a corrida real) com uma segunda UF saudável
+    ao lado -- prova que a self-cura de AC não vaza para DF."""
     monkeypatch.setattr(
         enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901", "RDDF1901"})
     )
@@ -229,17 +280,202 @@ def test_collect_all_isola_divergencia_ledger_disco_na_agregacao(cache_dir, inde
         "RDAC1901",
         row_count=1,
         sha256="a" * 64,
-        parquet_dir=str(cache_dir / "parquet" / "RDAC1901-inexistente.parquet"),
+        parquet_dir=str(cache_dir / "parquet" / "RDAC1901-fantasma.parquet"),
     )
     file_ledger.save()
     _stage_downloaded_file(cache_dir, "RDDF1901")
 
-    resultado = collect.collect_all(
-        order=("AC", "DF"), download_fn=_download_fn_proibido, index=index
+    def download_fn(*, only):
+        if "RDAC1901" in only:
+            _stage_downloaded_file(cache_dir, "RDAC1901")
+
+    resultado = collect.collect_all(order=("AC", "DF"), download_fn=download_fn, index=index)
+
+    assert resultado.status("AC") == collect.ESTADO_AGREGADO_RECICLADO
+    assert resultado.self_heal_count("AC") == 1
+    assert resultado.status("DF") == collect.ESTADO_AGREGADO_RECICLADO
+    assert resultado.self_heal_count("DF") == 0
+
+
+def test_collect_uf_completa_com_fantasma_fica_intocada(cache_dir, index, monkeypatch):
+    """A REGRESSÃO que mais importa: uma UF já `agregado_reciclado` tem, por design, todo
+    arquivo 'baixado' sem parquet em disco (reciclado de propósito depois de agregar -- ver
+    docstring do módulo). A self-cura tem que reconhecer isso como o estado esperado e NÃO
+    tocar -- a primeira tentativa de reparo manual que motivou esta correção errou exatamente
+    aqui (apagou entradas de UF completa e forçou re-download em massa sem necessidade)."""
+    monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
+
+    caminho_fantasma = cache_dir / "parquet" / "RDAC1901-fantasma.parquet"
+    file_ledger = FileLedger.load()
+    file_ledger.mark_collected(
+        "RDAC1901", row_count=1, sha256="a" * 64, parquet_dir=str(caminho_fantasma)
+    )
+    file_ledger.save()
+    entrada_antes = FileLedger.load().entry("RDAC1901")
+
+    collect_ledger = collect.CollectLedger()
+    collect_ledger.mark_agregado_reciclado(
+        "AC", linhas=10, bytes_persistidos=100, bytes_reciclados=1000
+    )
+    collect_ledger.save()
+
+    curados = collect._self_heal_ghost_entries(
+        "AC", frozenset({"RDAC1901"}), file_ledger, collect_ledger=collect_ledger
     )
 
+    assert curados == 0
+    assert collect_ledger.self_heal_count("AC") == 0
+
+    # o FileLedger em disco não mudou NADA -- nem status, nem parquet_dir, nem updated_at.
+    entrada_depois = FileLedger.load().entry("RDAC1901")
+    assert entrada_depois == entrada_antes
+
+    # e o caminho completo via collect_all nem chega a chamar collect_uf/self-cura para ela --
+    # é pulada de saída (retomada), download_fn nunca é chamado.
+    resultado = collect.collect_all(
+        order=("AC",), download_fn=_download_fn_proibido, index=index
+    )
+    assert resultado.status("AC") == collect.ESTADO_AGREGADO_RECICLADO
+    assert resultado.self_heal_count("AC") == 0
+
+
+def test_collect_uf_completa_chamada_direto_ainda_recusa_agregar_com_fantasma(
+    cache_dir, index, monkeypatch
+):
+    """Defesa em profundidade: mesmo que `collect_uf` seja chamada diretamente para uma UF já
+    `agregado_reciclado` (fora do laço normal de `collect_all`, que pula essas UFs de saída) --
+    a self-cura corretamente não toca nada (ghost esperado, prova acima), e a checagem de
+    segurança ORIGINAL de `_aggregate_uf` (nunca removida por esta correção) ainda recusa agregar
+    em cima do parquet ausente. A safety property nunca fica só nas mãos da self-cura."""
+    monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
+
+    file_ledger = FileLedger.load()
+    file_ledger.mark_collected(
+        "RDAC1901",
+        row_count=1,
+        sha256="a" * 64,
+        parquet_dir=str(cache_dir / "parquet" / "RDAC1901-fantasma.parquet"),
+    )
+    file_ledger.save()
+
+    collect_ledger = collect.CollectLedger()
+    collect_ledger.mark_agregado_reciclado(
+        "AC", linhas=10, bytes_persistidos=100, bytes_reciclados=1000
+    )
+    collect_ledger.save()
+
+    with pytest.raises(RuntimeError, match="ledger e disco divergem"):
+        collect.collect_uf(
+            "AC", collect_ledger=collect_ledger, index=index, download_fn=_download_fn_proibido
+        )
+
+
+def test_collect_uf_self_cura_nao_contorna_seguranca_se_redownload_nao_restaura(
+    cache_dir, index, monkeypatch
+):
+    """A self-cura só ABRE a porta para um novo download -- nunca finge que o arquivo está
+    presente. Se o redownload não conseguir repor o parquet (ex.: FTP fora do ar de novo), a UF
+    ainda falha de forma limpa (o mesmo RuntimeError de arquivo pendente que já existia), e a
+    agregação NUNCA roda sobre um arquivo ausente -- a safety property original continua intacta
+    mesmo depois da self-cura ter disparado."""
+    monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
+
+    file_ledger = FileLedger.load()
+    file_ledger.mark_collected(
+        "RDAC1901",
+        row_count=1,
+        sha256="a" * 64,
+        parquet_dir=str(cache_dir / "parquet" / "RDAC1901-fantasma.parquet"),
+    )
+    file_ledger.save()
+
+    def download_fn_nao_restaura(*, only):
+        pass  # simula um redownload que não conseguiu repor o arquivo (ex.: FTP fora do ar)
+
+    collect_ledger = collect.CollectLedger()
+    with pytest.raises(RuntimeError, match=r"arquivo\(s\) pendente"):
+        collect.collect_uf(
+            "AC",
+            collect_ledger=collect_ledger,
+            index=index,
+            download_fn=download_fn_nao_restaura,
+        )
+
+    # a self-cura já tinha rodado (arquivo virou elegível a download de novo) mas a agregação
+    # nunca foi tentada -- nenhum parquet agregado foi escrito.
+    assert collect_ledger.self_heal_count("AC") == 1
+    assert not (cache_dir / "agregados" / "AC.parquet").exists()
+
+
+def test_self_heal_estoura_apos_limite_de_tentativas(cache_dir, index, monkeypatch):
+    """Self-cura repetida na MESMA UF sinaliza algo além de uma interrupção pontual (disco
+    apagando parquet fora do FileLedger, corrida concorrente, etc.) -- na (N+1)-ésima vez a
+    guarda estoura em vez de tentar de novo para sempre (`_MAX_SELF_HEALS_PER_UF`)."""
+    monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
+
+    file_ledger = FileLedger.load()
+    file_ledger.mark_collected(
+        "RDAC1901",
+        row_count=1,
+        sha256="a" * 64,
+        parquet_dir=str(cache_dir / "parquet" / "RDAC1901-fantasma.parquet"),
+    )
+    file_ledger.save()
+
+    collect_ledger = collect.CollectLedger()
+    for _ in range(collect._MAX_SELF_HEALS_PER_UF):
+        collect_ledger.record_self_heal("AC", curados=1)
+    collect_ledger.save()
+
+    with pytest.raises(RuntimeError, match="self-curou"):
+        collect._self_heal_ghost_entries(
+            "AC", frozenset({"RDAC1901"}), file_ledger, collect_ledger=collect_ledger
+        )
+
+    # a guarda recusou tocar de novo -- a entrada continua exatamente como estava, não mascarada.
+    assert FileLedger.load().status("RDAC1901") == STATUS_BAIXADO
+
+
+def test_collect_all_isola_estouro_de_guarda_de_self_cura_e_processa_a_proxima(
+    cache_dir, index, monkeypatch
+):
+    """O estouro da guarda (teste acima) passando por `collect_all` -- isola a UF (mesma
+    disciplina PIPE-06 já provada para falha de download/agregação) em vez de derrubar a
+    corrida inteira; a UF seguinte processa normalmente."""
+    monkeypatch.setattr(
+        enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901", "RDDF1901"})
+    )
+
+    file_ledger = FileLedger.load()
+    file_ledger.mark_collected(
+        "RDAC1901",
+        row_count=1,
+        sha256="a" * 64,
+        parquet_dir=str(cache_dir / "parquet" / "RDAC1901-fantasma.parquet"),
+    )
+    file_ledger.save()
+    _stage_downloaded_file(cache_dir, "RDDF1901")
+
+    collect_ledger = collect.CollectLedger()
+    for _ in range(collect._MAX_SELF_HEALS_PER_UF):
+        collect_ledger.record_self_heal("AC", curados=1)
+    collect_ledger.save()
+
+    def download_fn(*, only):
+        if "RDDF1901" in only:
+            _stage_downloaded_file(cache_dir, "RDDF1901")
+            return
+        raise AssertionError(f"download_fn não deveria ser chamada para AC -- only={only}")
+
+    resultado = collect.collect_all(order=("AC", "DF"), download_fn=download_fn, index=index)
+
+    # AC estourou a guarda de self-cura de forma isolada e resumível -- não derrubou a corrida.
     assert resultado.status("AC") == collect.ESTADO_FALHOU
-    assert "ledger e disco divergem" in resultado.entry("AC")["reason"]
+    assert "self-curou" in resultado.entry("AC")["reason"]
+    # a guarda RECUSOU tentar de novo -- o contador não passou do limite já atingido.
+    assert resultado.self_heal_count("AC") == collect._MAX_SELF_HEALS_PER_UF
+
+    # DF, a UF seguinte, processou normalmente apesar do estouro de guarda de AC.
     assert resultado.status("DF") == collect.ESTADO_AGREGADO_RECICLADO
 
 

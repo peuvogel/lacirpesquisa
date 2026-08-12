@@ -60,8 +60,30 @@ da reciclagem: é o que impede `download_all` de rebaixar/re-baixar um arquivo c
 apagado de propósito (o `pending()` do 09-04 continua funcionando sem mudança nenhuma). Mas
 `baixado` sozinho não distingue "presente em disco, aguardando agregação" de "agregado,
 persistido e reciclado" — as duas situações têm exatamente o mesmo status no `FileLedger`. Por
-isso este módulo NUNCA edita `ledger.py`: introduz uma camada de estado nova e ortogonal,
-`CollectLedger` (por UF, não por arquivo), que é quem sabe a diferença que falta.
+isso este módulo introduz uma camada de estado nova e ortogonal, `CollectLedger` (por UF, não
+por arquivo), que é quem sabe a diferença que falta.
+
+**Self-cura do ledger (2026-08-12, 09-04-AUTOCURA-LEDGER).** O parágrafo acima descreve o caso
+normal. Existe um terceiro caso, patológico: um arquivo `baixado` cujo parquet FOI apagado --
+não pela reciclagem de fim de UF (que só roda depois de `_persist_rows` confirmado, ver
+`_reclaim_raw_parquet`), mas por uma interrupção no meio (kill, crash, disco cheio) entre "arquivo
+baixado" e "UF marcada `agregado_reciclado`". Antes desta correção, `_aggregate_uf` recusava
+corretamente agregar (a divergência é real e agregar em cima dela silenciaria uma subcontagem),
+mas isso travava a UF PARA SEMPRE: o arquivo nunca voltava a `pending()` (excluído por já estar
+`baixado`) e nunca conseguia agregar (parquet ausente) -- medido em produção em RO/PB/PI/RN,
+reparado à mão duas vezes (276 entradas). `_self_heal_ghost_entries` fecha esse buraco: ANTES de
+decidir o que baixar, para uma UF que ainda não é `agregado_reciclado`, confere cada entrada
+`baixado` contra o disco real; a que estiver ausente é resetada (`FileLedger.reset_missing`,
+método mínimo novo em `ledger.py` -- ver docstring do método para por que ele precisa existir lá
+e não aqui) para que o download normal a re-busque. **Ghost é esperado e intocado para uma UF
+`agregado_reciclado`** -- reciclar o bruto depois de agregar É o design (parágrafo acima), nunca
+dano; a primeira tentativa de reparo manual que motivou esta correção errou exatamente nisso
+(apagou entradas de UF já completa e forçou re-download sem necessidade). A safety property
+original (nunca agregar com arquivo faltante) continua intacta -- `_aggregate_uf` não muda uma
+linha; a self-cura só faz a UF voltar a ter uma chance de encher a lacuna, nunca contorna a
+checagem. Um contador por UF em `CollectLedger` (`self_heals`, `_MAX_SELF_HEALS_PER_UF=3`)
+impede um loop de self-cura escondendo um problema real (disco apagando parquet por fora do
+FileLedger repetidamente, por exemplo) -- na 4ª vez a UF estoura em vez de tentar de novo.
 """
 
 from __future__ import annotations
@@ -143,6 +165,13 @@ ESTADO_FALHOU = "falhou"
 _COLLECT_STATE_RELATIVE_PATH = "agregados/collect_state.json"
 _COLLECT_SCHEMA_VERSION = 1
 
+# Quantas vezes uma MESMA UF pode ser self-curada (ver `_self_heal_ghost_entries`) antes de a
+# corrida desistir dela e estourar em vez de tentar de novo -- self-cura repetida na mesma UF
+# indica algo além de uma interrupção pontual (disco apagando parquet por fora do `FileLedger`,
+# processo concorrente, etc.), e um limite finito garante que isso SURJA em vez de virar um loop
+# silencioso (ver docstring do módulo, "Self-cura do ledger").
+_MAX_SELF_HEALS_PER_UF = 3
+
 _AGREGADOS_COLUMNS: tuple[str, ...] = (
     "disease_id", "grao", "local", "territorio_codigo", "ano",
     "internacoes", "obitos", "valor_total", "dias_permanencia", "taxa_mortalidade",
@@ -194,11 +223,23 @@ class CollectLedger:
         return dict(self._ufs.get(uf, {}))
 
     def mark_baixado_pendente_agregacao(self, uf: str, *, arquivos: int) -> None:
-        self._ufs[uf] = {
-            "status": ESTADO_BAIXADO_PENDENTE_AGREGACAO,
-            "arquivos": arquivos,
-            "updated_at": _now_iso(),
-        }
+        """Marca `uf` como `baixado_pendente_agregacao`.
+
+        Faz `setdefault` + `update` (nunca substitui a entrada inteira) para não apagar campos
+        de auditoria que já existam nela -- em especial `self_heals`/`self_heals_ultimo_curados`
+        (09-04-AUTOCURA-LEDGER): `_self_heal_ghost_entries` grava o contador de self-cura ANTES
+        desta chamada, na mesma `collect_uf`; um `self._ufs[uf] = {...}` substituindo tudo aqui
+        apagaria esse contador silenciosamente a cada UF que precisasse de self-cura, quebrando
+        a guarda de repetição (`_MAX_SELF_HEALS_PER_UF`) sem nenhum sintoma visível.
+        """
+        entry = self._ufs.setdefault(uf, {})
+        entry.update(
+            {
+                "status": ESTADO_BAIXADO_PENDENTE_AGREGACAO,
+                "arquivos": arquivos,
+                "updated_at": _now_iso(),
+            }
+        )
 
     def mark_agregado_reciclado(
         self, uf: str, *, linhas: int, bytes_persistidos: int, bytes_reciclados: int
@@ -224,6 +265,23 @@ class CollectLedger:
         entry = self._ufs.setdefault(uf, {})
         entry.update({"status": ESTADO_FALHOU, "reason": reason, "updated_at": _now_iso()})
 
+    def self_heal_count(self, uf: str) -> int:
+        """Quantas vezes `uf` já precisou de self-cura (`_self_heal_ghost_entries`) em corridas
+        passadas -- persistido junto do resto da entrada, sobrevive a reinício. Base para
+        `_MAX_SELF_HEALS_PER_UF`."""
+        return self._ufs.get(uf, {}).get("self_heals", 0)
+
+    def record_self_heal(self, uf: str, *, curados: int) -> None:
+        """Incrementa o contador de self-cura de `uf` em 1 (uma chamada = uma corrida em que a
+        self-cura disparou, não uma por entrada curada) e guarda `curados` (quantas entradas
+        `baixado`-sem-parquet foram resetadas nesta chamada) para auditoria. Nunca chamada para
+        uma UF `agregado_reciclado` -- quem decide isso é `_self_heal_ghost_entries`, esta
+        função só registra o fato."""
+        entry = self._ufs.setdefault(uf, {})
+        entry["self_heals"] = entry.get("self_heals", 0) + 1
+        entry["self_heals_ultimo_curados"] = curados
+        entry["self_heals_updated_at"] = _now_iso()
+
     def summary(self) -> dict[str, Any]:
         contagens: dict[str, int] = {
             ESTADO_BAIXADO_PENDENTE_AGREGACAO: 0,
@@ -233,6 +291,7 @@ class CollectLedger:
         linhas_total = 0
         bytes_persistidos_total = 0
         bytes_reciclados_total = 0
+        self_heals_total = 0
         for entry in self._ufs.values():
             status = entry.get("status", ESTADO_NUNCA_INICIADO)
             contagens[status] = contagens.get(status, 0) + 1
@@ -240,11 +299,13 @@ class CollectLedger:
                 linhas_total += entry.get("linhas", 0)
                 bytes_persistidos_total += entry.get("bytes_persistidos", 0)
                 bytes_reciclados_total += entry.get("bytes_reciclados", 0)
+            self_heals_total += entry.get("self_heals", 0)
         return {
             **contagens,
             "linhas_total": linhas_total,
             "bytes_persistidos_total": bytes_persistidos_total,
             "bytes_reciclados_total": bytes_reciclados_total,
+            "self_heals_total": self_heals_total,
         }
 
 
@@ -310,6 +371,70 @@ def _cobertura_uf(uf_files: frozenset[str], file_ledger: FileLedger) -> tuple[se
     baixados = {nome for nome in uf_files if file_ledger.status(nome) == STATUS_BAIXADO}
     faltantes = set(uf_files) - baixados
     return baixados, faltantes
+
+
+def _self_heal_ghost_entries(
+    uf: str, uf_files: frozenset[str], file_ledger: FileLedger, *, collect_ledger: CollectLedger
+) -> int:
+    """Restaura para "pendente de novo download" toda entrada `baixado` de `uf` cujo parquet
+    sumiu do disco -- SÓ quando a UF ainda não terminou (`collect_ledger.status(uf) !=
+    ESTADO_AGREGADO_RECICLADO`). Ver a seção "Self-cura do ledger" da docstring do módulo para o
+    incidente real (RO/PB/PI/RN travados para sempre) que motivou isto e para por que uma UF
+    `agregado_reciclado` com o mesmo padrão é o estado esperado e PERMANENTE, nunca dano.
+
+    Chamada ANTES de qualquer decisão de download em `collect_uf` -- não confunde download novo
+    com self-cura: quem falta de verdade (nunca baixado) segue o caminho normal, só quem está
+    `baixado` no ledger mas ausente em disco passa por aqui. Devolve quantas entradas curou;
+    zero é o caso comum e não gera nenhuma escrita.
+    """
+    if collect_ledger.status(uf) == ESTADO_AGREGADO_RECICLADO:
+        return 0
+
+    fantasmas: list[tuple[str, Path]] = []
+    for nome in sorted(uf_files):
+        if file_ledger.status(nome) != STATUS_BAIXADO:
+            continue
+        entry = file_ledger.entry(nome)
+        caminho = Path(entry["parquet_dir"])
+        if not caminho.is_absolute():
+            caminho = cache_path(str(caminho))
+        if not caminho.exists():
+            fantasmas.append((nome, caminho))
+
+    if not fantasmas:
+        return 0
+
+    if collect_ledger.self_heal_count(uf) >= _MAX_SELF_HEALS_PER_UF:
+        raise RuntimeError(
+            f"collect: {uf} precisaria de self-cura de novo ({len(fantasmas)} entrada(s) "
+            f"'baixado' sem parquet em disco: {sorted(nome for nome, _ in fantasmas)[:5]}) mas "
+            f"já se self-curou {_MAX_SELF_HEALS_PER_UF} vez(es) antes -- o problema voltou, "
+            "então algo além de uma interrupção pontual está apagando parquet fora do "
+            "FileLedger (disco cheio, corrida concorrente, processo externo). Parando para "
+            "investigação manual em vez de self-curar de novo (guarda limitada, "
+            "09-04-AUTOCURA-LEDGER)."
+        )
+
+    for nome, caminho in fantasmas:
+        file_ledger.reset_missing(
+            nome,
+            reason=(
+                f"collect: self-cura -- ledger dizia 'baixado' mas {caminho} não existe em "
+                "disco (09-04-AUTOCURA-LEDGER); resetado para permitir novo download"
+            ),
+        )
+    file_ledger.save()
+
+    collect_ledger.record_self_heal(uf, curados=len(fantasmas))
+    collect_ledger.save()
+
+    print(
+        f"collect: {uf} self-curou {len(fantasmas)} entrada(s) 'baixado' sem parquet em disco "
+        f"-- {sorted(nome for nome, _ in fantasmas)} resetada(s) para novo download "
+        f"(self-cura nº {collect_ledger.self_heal_count(uf)}/{_MAX_SELF_HEALS_PER_UF} desta UF)",
+        file=sys.stderr,
+    )
+    return len(fantasmas)
 
 
 def _aggregate_uf(uf: str, uf_files: frozenset[str], file_ledger: FileLedger, index: CidIndex) -> list[Row]:
@@ -390,13 +515,18 @@ def collect_uf(
     index: CidIndex,
     download_fn: Callable[..., FileLedger] = download_all,
 ) -> None:
-    """Processa uma UF inteira: baixa o que falta -> agrega -> persiste -> recicla o bruto.
+    """Processa uma UF inteira: self-cura (se aplicável) -> baixa o que falta -> agrega ->
+    persiste -> recicla o bruto.
 
     Idempotente por construção: se todos os arquivos da UF já estão `baixado` no `FileLedger`
     (retomada depois de uma interrupção pós-download), `download_fn` nunca é chamada -- só quem
-    tem arquivo faltante paga o custo de rede."""
+    tem arquivo faltante paga o custo de rede. `_self_heal_ghost_entries` roda ANTES da decisão
+    de download -- ver "Self-cura do ledger" na docstring do módulo: uma UF não-`agregado_
+    reciclado` com entrada `baixado`-sem-parquet volta a `faltantes` aqui em vez de travar para
+    sempre na agregação."""
     uf_files = _expected_uf_files(uf)
     file_ledger = FileLedger.load()
+    _self_heal_ghost_entries(uf, uf_files, file_ledger, collect_ledger=collect_ledger)
     _, faltantes = _cobertura_uf(uf_files, file_ledger)
 
     if faltantes:
