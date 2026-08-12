@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-10 COMPLETO (2026-08-12): substituicao real de producao (D-16) executada e provada -- sih_metric_uf 207.131 linhas, sih_collection_status 33.456 linhas, verify saiu 0, 27 particoes de municipio no Storage. Ver 09-10-SUMMARY.md. Proximo: 09-12."
-last_updated: "2026-08-12T14:39:41.763Z"
+stopped_at: "09-10-PROCEDIMENTO COMPLETO (2026-08-12): amputacao_mmii (unico agravo filterKind=procedimento, orfao apos o 09-10) recuperado via matcher de PROC_REA (SIGTAP 0408050012) em aggregate.py -- tabnetCode do catalogo provado indice posicional INSTAVEL do TabNet (deriva com o tempo, medido em 2 datas). Reconciliado contra AC real (13 anos): total +0,74%, obitos identico. Re-coleta nacional (27 UFs) EM ANDAMENTO sob acompanhamento do coordenador, nao concluida. NOVO BLOQUEIO: 09-14 nao pode rodar ate a re-coleta terminar + upload novo -- apagaria a ultima fonte de amputacao_mmii. Ver 09-10-PROCEDIMENTO-SUMMARY.md. Proximo: 09-12 (mas 09-14 fica bloqueado ate a re-coleta completar)."
+last_updated: "2026-08-12T16:45:00.000Z"
 last_activity: 2026-08-12
 progress:
   total_phases: 6
@@ -30,13 +30,24 @@ Plan: 09-10 COMPLETO (2026-08-12) -- a substituicao real de producao (D-16) exec
 `sih_metric_uf` trocou de 30.313 linhas TabNet para 207.131 linhas de microdado (330 agravos, os
 dois locais), `sih_collection_status` populado pela primeira vez (33.456 linhas), as 27 particoes
 de municipio reais enviadas ao Storage, `sih-swap-contagens.sql` saiu 0 contra producao, e a
-restricao de ordem populacao/municipio provada AO VIVO (RuntimeError real). Proximo: 09-12
-(conclusao da corrida, ledger de cobertura completo, auditoria com conferencia humana). Ver
-09-10-SUMMARY.md.
-Status: Ready to execute (09-12)
+restricao de ordem populacao/municipio provada AO VIVO (RuntimeError real). Ver 09-10-SUMMARY.md.
+
+09-10-PROCEDIMENTO COMPLETO (2026-08-12, ad-hoc sem PLAN.md formal) -- o 331o agravo
+(amputacao_mmii, orfao apos o 09-10) recuperado: aggregate.py casa por PROC_REA (SIGTAP), nunca
+pelo tabnetCode do catalogo (provado indice posicional instavel do TabNet). Reconciliado contra
+AC real (13 anos, +0,74% no total). Re-coleta nacional (27 UFs) EM ANDAMENTO sob acompanhamento
+do coordenador, NAO concluida -- amputacao_mmii continua sem dado em producao ate ela terminar +
+um upload novo. Ver 09-10-PROCEDIMENTO-SUMMARY.md.
+
+Proximo: 09-12 pode prosseguir normalmente. **09-14 BLOQUEADO** ate a re-coleta nacional terminar
+e um upload novo subir amputacao_mmii -- rodar antes apagaria a ultima fonte de dado deste
+agravo (09-14 remove sih_metric_muni, o caminho TabNet legado, por delecao).
+Status: Ready to execute (09-12) -- 09-14 bloqueado (ver acima)
 Last activity: 2026-08-12
 
 ### Bloqueios abertos
+
+- **NOVO (2026-08-12, 09-10-PROCEDIMENTO): 09-14 BLOQUEADO ate a re-coleta nacional (27 UFs) terminar E um `upload.py` novo subir `amputacao_mmii` em producao.** `amputacao_mmii` (unico agravo `filterKind: "procedimento"`) ficou orfao de `sih_metric_uf` apos a substituicao real do 09-10 (330/331 agravos com dado) -- causa raiz: o matcher CID (`match_category`) nunca cobria esse agravo, que vem de `sih/cnv/qibr.def` (procedimento), nao de `nibr.def` (CID). Corrigido em `aggregate.py`: segundo eixo de classificacao independente, casando por `PROC_REA` (codigo SIGTAP `0408050012`), nunca pelo `tabnetCode` do catalogo (`"3331"`) -- **achado central**: esse `tabnetCode` e o INDICE POSICIONAL de uma opcao no `<select name="SProcedimento">` do TabNet, e esse indice DERIVA quando o DATASUS insere um procedimento novo no meio da lista (medido: em 2026-06-17 o indice 3331 apontava para AMPUTACAO, em 2026-08-12 o MESMO indice ja apontava para outro procedimento -- TRATAMENTO DE ARTICULACAO COXO-FEMORAL --, e AMPUTACAO migrou para 3332). O identificador gravado pela Fase 8 apodrece sem ninguem editar nada; `extra-diseases.json` ganhou um aviso explicito (`avisoTabnetCodeIndicePosicionalInstavel`) para qualquer agravo futuro `filterKind:procedimento`. Reconciliado contra AC real re-baixado (13 anos): total 2013-2025 medido=816 vs oraculo TabNet=810 (+0,74%), obitos identico (94=94) -- divergencia ano-a-ano explicada pelo MESMO mecanismo `ANO_CMPT` vs `DT_INTER` ja aceito como divergencia de lote em todo o SC-7, agora confirmado de forma independente num eixo diferente (procedimento, nao CID). **PROC_REA nao sobrevive a agregacao** (so as linhas ja agregadas persistem em `cache_path("agregados/{uf}.parquet")`, o bruto de todas as 27 UFs ja tinha sido reciclado pelo 09-10) -- por isso a re-coleta nacional completa e necessaria e nao evitavel; `aggregate.py` estendido produz os dois eixos (CID+procedimento) na MESMA passada para nao pagar o custo de rede duas vezes. Estado do ledger anterior (27/27 `agregado_reciclado` da corrida que alimentou o 09-10) preservado em `~/.lacir/sih-cache/ledger-backup-pre-proc/`, nunca apagado. **Estado real (2026-08-12, momento deste registro): re-coleta EM ANDAMENTO, nao concluida** -- AC completo (277 linhas de amputacao_mmii reconciliadas), as demais 26 UFs rodando em segundo plano sob acompanhamento DIRETO do coordenador (processo destacado `nohup`, guarda de travamento `b458ce5` ativa) -- este agente NAO deve tocar `~/.lacir/sih-cache/`, `collect.py` nem `download.py` enquanto essa corrida estiver viva. `amputacao_mmii` continua SEM dado em producao ate a re-coleta terminar E uma execucao nova de `upload.py` subir o resultado (decisao/execucao do operador, fora do escopo desta correcao). **Enquanto isso nao acontecer, `09-14-PLAN.md` (que remove `sih_metric_muni` por DELECAO) nao pode rodar** -- apagaria a ultima fonte de dado de `amputacao_mmii` (o caminho TabNet legado) sem nenhum substituto no ar. Ver `09-10-PROCEDIMENTO-SUMMARY.md`.
 
 - **MA RESOLVIDO (2026-08-12):** a segunda corrida do `collect` retomou e completou MA (534.720
   linhas) -- `collect_state.json` confirma as 27/27 UFs `agregado_reciclado`, 0 `falhou`, no
@@ -180,6 +191,7 @@ Last activity: 2026-08-12
 - [Phase ?]: [09-10-upload-atomico] Restricao de ORDEM do 09-06 codificada em codigo, nao so documentada: swap() recusa estruturalmente rodar para qualquer tabela sih_population_* enquanto sih_metric_muni existir (_assert_municipio_evacuado, consulta real a information_schema.tables), provado por 2 testes contra Postgres local. --nivel de upload.py so e aceito com --dry-run: swap() faz TRUNCATE da tabela inteira (D-16, substituicao total), entao uma carga real por nivel de collection-order.json exigiria um swap incremental fora do escopo desta plan.
 - [09-04-GUARDA-TRAVAMENTO, 2026-08-11] Incidente real medido em producao: RDPR1805.dbc ficou 9h sem NENHUM byte novo, socket TCP FTP ainda ESTABLISHED, sem excecao/timeout/log -- o isolamento por arquivo (PIPE-06) nunca disparou porque, do ponto de vista do codigo, o download "ainda estava em andamento". Corrigido em download.py: download_one arma timeout de socket (STALL_TIMEOUT_SEC=120s, aplicado em ftp.sock.settimeout E ftp.timeout -- os dois pontos que o ftplib usa para controle e dados) antes de cada retrbinary -- deteccao de FALTA DE PROGRESSO (cada chunk reseta a janela de 120s), nao de tempo total, entao SP/MG/BA/RS inteiros continuam livres para demorar horas sem disparar a guarda. _com_guarda_de_trava retenta so TimeoutError (nunca outro erro) ate MAX_STALL_RETRIES=3 vezes, reconectando do zero (FTPSingleton.close()+get_instance()) a cada tentativa e logando cada uma; esgotadas as tentativas levanta DownloadStalledError, roteado pelo except Exception -> mark_failed ja existente em download_all (PIPE-06/T-09-18) -- nenhum caminho de erro novo, so alimenta o mecanismo que ja funciona (UF cai em falhou no CollectLedger, retomada automatica na proxima corrida do collect.py). 8 testes TDD em test_download.py (RED verificado ao vivo revertendo o limite de retry antes de restaurar a versao correta, 5/8 falharam como esperado): guarda detecta+retenta+esgota a trava, NAO mata transferencia lenta-mas-saudavel (regressao explicita pedida pelo brief), respeita o limite exato de tentativas, nao retenta erro que nao e trava, e download_all isola um arquivo travado sem derrubar o outro. A guarda so entra em vigor na PROXIMA execucao de pipeline:collect/pipeline:download -- a corrida em segundo plano (PID 46582, viva) ja tinha os modulos antigos carregados no momento do commit. Ver 09-04-GUARDA-TRAVAMENTO-SUMMARY.md.
 - [Phase 09-10-upload-atomico]: Substituicao real do D-16 executada: sih_metric_uf 30313->207131 linhas, sih_collection_status 0->33456, verify saiu 0 contra producao — Coleta fechou 27/27 UFs, SP medido de verdade (19,26 MB), operador autorizou
+- [09-10-PROCEDIMENTO, 2026-08-12] amputacao_mmii (unico agravo filterKind=procedimento, orfao apos o 09-10) recuperado: aggregate.py ganha eixo de classificacao independente casando por PROC_REA (SIGTAP "0408050012"), nunca pelo tabnetCode do catalogo ("3331") -- ACHADO CENTRAL: esse tabnetCode e o indice posicional de uma opcao no <select name="SProcedimento"> do TabNet (qibr.def), que DERIVA quando o DATASUS insere um procedimento novo no meio da lista (medido: indice 3331 apontava para AMPUTACAO em 2026-06-17, para outro procedimento em 2026-08-12, ~2 meses depois -- AMPUTACAO migrou para 3332). Reconciliado contra AC real re-baixado (13 anos): total +0,74% (816 medido vs 810 oraculo), obitos identico (94=94) -- divergencia ano-a-ano explicada pelo MESMO mecanismo ANO_CMPT vs DT_INTER ja aceito como divergencia de lote em todo o SC-7, confirmado de forma independente num eixo diferente. Re-coleta nacional (27 UFs) necessaria (PROC_REA nao sobrevive a agregacao, bruto ja reciclado) e EM ANDAMENTO sob acompanhamento do coordenador, nao concluida no momento deste registro -- AC completo (1/27). NOVO BLOQUEIO: 09-14 nao pode rodar ate a re-coleta terminar + upload novo, sob risco de apagar a ultima fonte de dado deste agravo. Ver 09-10-PROCEDIMENTO-SUMMARY.md.
 
 ### Pending Todos
 
@@ -197,8 +209,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-12T14:39:32.818Z
-Stopped at: 09-10 COMPLETO (2026-08-12): substituicao real de producao (D-16) executada e provada -- sih_metric_uf 207.131 linhas, sih_collection_status 33.456 linhas, verify saiu 0, 27 particoes de municipio no Storage. Ver 09-10-SUMMARY.md. Proximo: 09-12.
+Last session: 2026-08-12T16:45:00.000Z
+Stopped at: 09-10-PROCEDIMENTO COMPLETO (2026-08-12): amputacao_mmii recuperado via matcher PROC_REA (SIGTAP) em aggregate.py; tabnetCode do catalogo provado indice posicional instavel do TabNet (deriva com o tempo). Reconciliado contra AC real (+0,74% no total 2013-2025). Re-coleta nacional (27 UFs) EM ANDAMENTO sob acompanhamento do coordenador, nao concluida -- amputacao_mmii ainda sem dado em producao. NOVO BLOQUEIO: 09-14 nao pode rodar ate a re-coleta terminar + upload novo. Ver 09-10-PROCEDIMENTO-SUMMARY.md. Proximo: 09-12 (09-14 bloqueado).
 Resume file: None
 
 ## Performance Metrics
@@ -255,3 +267,4 @@ Resume file: None
 | Phase 09-pipeline-confi-vel-coleta-completa P10 | ~2h | 3 tasks | 5 files |
 | Phase 09 P04-GUARDA-TRAVAMENTO | ~35min | 1 task (TDD RED/GREEN) | 2 files |
 | Phase 09-pipeline-confi-vel-coleta-completa P10 | ~1h35min | 1 tasks | 5 files |
+| Phase 09 P10-PROCEDIMENTO | ~2h (inclui espera de rede real: TabNet ao vivo + re-download AC) | 2 commits de codigo (TDD RED/GREEN) + docs | 6 files |
