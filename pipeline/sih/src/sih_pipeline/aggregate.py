@@ -27,6 +27,16 @@ completa (deltas SP/2019 colapsam de +45%/+108%/+665% para +3,7%/+21,1% ao filtr
 A janela de anos (D-11, `schema-v3.json` `anoMin`/`anoMax`) e os valores canônicos de `grao`/
 `local`/`medidas` vêm do próprio `schema-v3.json` — nunca reescritos como literal solto aqui, a
 mesma disciplina de fonte única que `codigos.py` aplica a UF/município.
+
+Recuperação de `amputacao_mmii` (09-XX-PROCEDIMENTO, 2026-08-12, brief avulso do coordenador,
+sem PLAN.md formal). `amputacao_mmii` é o único agravo de `scripts/catalog/extra-diseases.json`
+(Fase 8) com `filterKind: "procedimento"` — vem de `sih/cnv/qibr.def` (procedimentos
+hospitalares SIH), fora da Lista Morb CID-10 que `match_category`/`matcher.py` cobrem. Por isso
+nunca casa por `DIAG_PRINC`: casa por `PROC_REA` (procedimento realizado, código SIGTAP de 10
+dígitos, campo oficial e ESTÁVEL do SIH-RD), um SEGUNDO eixo de classificação, independente do
+eixo CID e testado em paralelo a ele para CADA registro (um mesmo registro pode contribuir para
+as duas classificações ao mesmo tempo — nenhuma delas isenta ou substitui a outra). Ver
+`_PROC_REA_AMPUTACAO_MMII` abaixo para a medição completa que estabeleceu o código certo.
 """
 
 from __future__ import annotations
@@ -55,6 +65,7 @@ NEEDED_COLUMNS = [
     "DIAS_PERM",
     "ANO_CMPT",
     "IDENT",
+    "PROC_REA",
 ]
 
 # IDENT='1' é a única AIH que conta como internação nova -- ver docstring do módulo.
@@ -63,6 +74,84 @@ _IDENT_AIH_NORMAL = "1"
 # Taxa de descarte (DIAG_PRINC sem categoria) acima da qual a agregação levanta -- T-09-30,
 # spike mediu 0,016% em 44.589 registros de AC/2019.
 _MAX_TAXA_DESCARTE = 0.001
+
+# --- Eixo de PROCEDIMENTO (amputacao_mmii, filterKind="procedimento") -----------------------
+#
+# `scripts/catalog/extra-diseases.json` (Fase 8) registra `amputacao_mmii` com `tabnetCode`
+# "3331" e `def: "sih/cnv/qibr.def"`. Esse `tabnetCode` NÃO é o código SIGTAP do procedimento —
+# é o ÍNDICE POSICIONAL da opção dentro do `<select name="SProcedimento" MULTIPLE>` do
+# formulário TabNet de `qibr.def` (medido ao vivo, 2026-08-12: 5.695 opções, cada uma
+# `"<índice>" -> "<código SIGTAP de 10 dígitos> <descrição>"`, ordenadas pelo próprio código
+# SIGTAP). Esse índice DERIVA quando o DATASUS insere um procedimento SIGTAP novo no meio da
+# lista — medido, não suposto:
+#
+#   - O HTML cru de um script legado
+#     (`trabalhos datasus/outputs/coleta_vascular_amputacao/raw_sih_internacoes_amputacao_mmii.html`,
+#     raspado 2026-06-17) usou `SProcedimento=3331` e o TabNet ecoou de volta "Procedimento:
+#     0408050012 AMPUTACAO / DESARTICULACAO DE MEMBROS INFERIORES" na própria resposta —
+#     correto NAQUELE dia.
+#   - Re-raspado ao vivo em 2026-08-12 (~2 meses depois): o índice 3331 passou a apontar para
+#     "0408040351 TRATAMENTO DE ARTICULACAO COXO-FEMORAL C/ IMOBILIZACAO GESSADA" (procedimento
+#     totalmente diferente), e "0408050012 AMPUTACAO / DESARTICULACAO DE MEMBROS INFERIORES"
+#     migrou para o índice 3332.
+#
+# Por isso esta agregação casa por `PROC_REA` (o código SIGTAP, campo oficial e ESTÁVEL do
+# SIH-RD), nunca por um índice posicional do TabNet re-derivado a cada corrida — mesma
+# disciplina de fonte autoritativa + medição empírica (nunca suposição) das colisões de faixa
+# CID 9/15/77 do 09-08-INVESTIGACAO, aplicada aqui a um eixo diferente do TabNet.
+#
+# Reconciliado ao vivo (2026-08-12) contra dado real de AC/2019 (12 arquivos RDAC1901..1912,
+# 44.589 registros): `PROC_REA=="0408050012" AND IDENT='1' AND ANO_CMPT=2019` mede 50
+# internações. O oráculo TabNet (`Ano_atendimento=2019`, coluna por `DT_INTER`, não `ANO_CMPT`)
+# mede 66 — a mesma ordem de grandeza do resíduo de competência de processamento já documentado
+# em todo o SC-7 (`ANO_CMPT` vs `DT_INTER`), não um erro de mapeamento: medido que 45 dos 50
+# registros de `ANO_CMPT=2019` têm `DT_INTER` em 2019 (5 são competência atrasada de admissões de
+# 2018), e que só os 2 primeiros meses de 2020 (RDAC2001+RDAC2002) já somam 20 registros
+# adicionais com `PROC_REA` casado, `IDENT='1'` e `DT_INTER=2019` — 45+20=65, a 1 unidade do
+# oráculo (66), sem nenhum ajuste de código. Ver o SUMMARY desta plan
+# (`09-XX-PROCEDIMENTO-SUMMARY.md`) para o relato completo, incluindo a reconciliação nacional.
+_PROC_REA_AMPUTACAO_MMII = "0408050012"
+
+
+def _load_procedure_disease_map() -> dict[str, str]:
+    """`PROC_REA` (código SIGTAP) -> `disease_id`, para os agravos com `filterKind:
+    "procedimento"` em `scripts/catalog/extra-diseases.json` (Fase 8) — hoje só
+    `amputacao_mmii`. O `disease_id` sempre vem do próprio catálogo (nunca um literal solto
+    aqui, mesma disciplina de `_load_disease_ids`) e é conferido contra
+    `scripts/catalog/diseases.json` — mas o CÓDIGO SIGTAP correto (a chave do dict devolvido)
+    nunca pode vir do `tabnetCode` do catálogo (índice posicional do TabNet, provado instável
+    acima); vem só de uma constante medida e documentada nesta seção. Levanta `KeyError` se o
+    catálogo algum dia registrar um agravo `filterKind: "procedimento"` sem `disease_id`
+    conhecido ou sem código SIGTAP medido — falha alta em vez de ignorar silenciosamente um
+    agravo novo (mesma disciplina de `_load_disease_ids`)."""
+    path = repo_root() / "scripts" / "catalog" / "extra-diseases.json"
+    with path.open("r", encoding="utf-8") as fh:
+        entries = json.load(fh)
+
+    known_disease_ids = set(_load_disease_ids().values())
+    # Códigos SIGTAP medidos/documentados acima -- NUNCA derivados do tabnetCode do catálogo.
+    proc_rea_by_disease_id = {"amputacao_mmii": _PROC_REA_AMPUTACAO_MMII}
+
+    out: dict[str, str] = {}
+    for entry in entries:
+        if entry.get("filterKind") != "procedimento":
+            continue
+        disease_id = entry["id"]
+        if disease_id not in known_disease_ids:
+            raise KeyError(
+                f"aggregate: extra-diseases.json tem {disease_id!r} (filterKind=procedimento) "
+                "sem disease_id correspondente em scripts/catalog/diseases.json -- taxonomia "
+                "dessincronizada."
+            )
+        proc_rea = proc_rea_by_disease_id.get(disease_id)
+        if proc_rea is None:
+            raise KeyError(
+                f"aggregate: extra-diseases.json tem {disease_id!r} (filterKind=procedimento) "
+                "sem código SIGTAP medido/documentado em _load_procedure_disease_map -- nunca "
+                "inferir do tabnetCode (índice posicional instável do TabNet, ver docstring)."
+            )
+        out[proc_rea] = disease_id
+    return out
 
 
 def _load_schema_v3() -> dict[str, Any]:
@@ -126,19 +215,28 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     """Lê `path` (diretório ou arquivo `.parquet`, real ou fixture) numa passada só e agrega
     por `(disease_id, grao, local, territorio_codigo, ano)`.
 
-    Cada registro válido (ano dentro da janela D-11 E `IDENT='1'` E `DIAG_PRINC` casado pelo
-    matcher) contribui para EXATAMENTE 4 linhas de saída: `(uf, ocorrencia)`, `(uf, residencia)`,
-    `(municipio, ocorrencia)`, `(municipio, residencia)` — `MUNIC_MOV` alimenta ocorrência,
-    `MUNIC_RES` alimenta residência (D-09), e o grão UF é derivado do grão município via
-    `uf_de_municipio`, nunca lido de uma coluna separada.
+    Cada registro válido (ano dentro da janela D-11 E `IDENT='1'`) é testado contra DOIS eixos de
+    classificação INDEPENDENTES — `DIAG_PRINC` casado pelo matcher CID (`match_category`,
+    330 agravos da Lista Morb) e `PROC_REA` casado pelo mapa de procedimento
+    (`_load_procedure_disease_map`, hoje só `amputacao_mmii`, ver docstring do módulo) — e
+    contribui para EXATAMENTE 4 linhas de saída POR `disease_id` casado (não por registro): um
+    registro que casa só CID gera 4 linhas; só procedimento, 4 linhas; os DOIS, 8 linhas (4 para
+    cada `disease_id`, nenhum eixo isenta ou substitui o outro). As 4 linhas de cada
+    `disease_id` são `(uf, ocorrencia)`, `(uf, residencia)`, `(municipio, ocorrencia)`,
+    `(municipio, residencia)` — `MUNIC_MOV` alimenta ocorrência, `MUNIC_RES` alimenta residência
+    (D-09), e o grão UF é derivado do grão município via `uf_de_municipio`, nunca lido de uma
+    coluna separada.
 
     Registros com `IDENT` diferente de `'1'` (achado 09-08-INVESTIGACAO, 2026-08-10: `'5'` é
     renovação de faturamento da MESMA internação de longa permanência, não uma nova admissão)
-    são excluídos ANTES do matcher — nunca contados como descarte, porque não é falha de
-    categorização do CID, é exclusão semântica deliberada da medida `internacoes`.
+    são excluídos ANTES de qualquer um dos dois eixos — nunca contados como descarte, porque não
+    é falha de categorização, é exclusão semântica deliberada da medida `internacoes`, aplicada
+    igualmente aos dois eixos (mesmo `continue` único no laço).
 
-    Registros cujo `DIAG_PRINC` não casa em nenhuma categoria são contados como descarte; acima
-    de `_MAX_TAXA_DESCARTE` (0,1%) a função levanta `ValueError` (T-09-30).
+    Registros cujo `DIAG_PRINC` não casa em nenhuma categoria CID são contados como descarte
+    (SÓ o eixo CID — o eixo de procedimento nunca isenta nem contribui para este contador,
+    são medidas independentes); acima de `_MAX_TAXA_DESCARTE` (0,1%) a função levanta
+    `ValueError` (T-09-30).
     """
     dataset = ds.dataset(str(path), format="parquet")
     table = dataset.to_table(columns=NEEDED_COLUMNS)
@@ -148,11 +246,13 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     morte = _cast_morte(table["MORTE"]).to_pylist()
     ano_cmpt = pc.cast(pc.utf8_trim_whitespace(table["ANO_CMPT"]), "int64").to_pylist()
     ident = pc.utf8_trim_whitespace(table["IDENT"]).to_pylist()
+    proc_rea = pc.utf8_trim_whitespace(table["PROC_REA"]).to_pylist()
     diag_princ = table["DIAG_PRINC"].to_pylist()
     munic_mov = table["MUNIC_MOV"].to_pylist()
     munic_res = table["MUNIC_RES"].to_pylist()
 
     disease_ids = _load_disease_ids()
+    procedure_map = _load_procedure_disease_map()
 
     acumulador: dict[tuple[str, str, str, str, int], dict[str, float | int]] = {}
     total = len(diag_princ)
@@ -166,18 +266,27 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
         if ident[i] != _IDENT_AIH_NORMAL:
             continue
 
+        disease_ids_casados: list[str] = []
+
         tabnet_code = match_category(diag_princ[i], index)
         if tabnet_code is None:
             descartes += 1
-            continue
+        else:
+            disease_id = disease_ids.get(tabnet_code)
+            if disease_id is None:
+                raise KeyError(
+                    f"aggregate: tabnetCode {tabnet_code!r} (devolvido pelo matcher) sem "
+                    "disease_id correspondente em scripts/catalog/diseases.json — taxonomia "
+                    "dessincronizada do mapa CID."
+                )
+            disease_ids_casados.append(disease_id)
 
-        disease_id = disease_ids.get(tabnet_code)
-        if disease_id is None:
-            raise KeyError(
-                f"aggregate: tabnetCode {tabnet_code!r} (devolvido pelo matcher) sem "
-                "disease_id correspondente em scripts/catalog/diseases.json — taxonomia "
-                "dessincronizada do mapa CID."
-            )
+        procedure_disease_id = procedure_map.get(proc_rea[i])
+        if procedure_disease_id is not None:
+            disease_ids_casados.append(procedure_disease_id)
+
+        if not disease_ids_casados:
+            continue
 
         mov6 = municipio6(munic_mov[i])
         res6 = municipio6(munic_res[i])
@@ -188,20 +297,22 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
         dias = dias_perm[i]
         obito = morte[i]
 
-        for grao, local, territorio in (
-            (GRAO_UF, LOCAL_OCORRENCIA, mov_uf),
-            (GRAO_UF, LOCAL_RESIDENCIA, res_uf),
-            (GRAO_MUNICIPIO, LOCAL_OCORRENCIA, mov6),
-            (GRAO_MUNICIPIO, LOCAL_RESIDENCIA, res6),
-        ):
-            chave = (disease_id, grao, local, territorio, ano)
-            entrada = acumulador.setdefault(
-                chave, {"internacoes": 0, "obitos": 0, "valor_total": 0.0, "dias_permanencia": 0}
-            )
-            entrada["internacoes"] += 1
-            entrada["obitos"] += obito
-            entrada["valor_total"] += val
-            entrada["dias_permanencia"] += dias
+        for disease_id in disease_ids_casados:
+            for grao, local, territorio in (
+                (GRAO_UF, LOCAL_OCORRENCIA, mov_uf),
+                (GRAO_UF, LOCAL_RESIDENCIA, res_uf),
+                (GRAO_MUNICIPIO, LOCAL_OCORRENCIA, mov6),
+                (GRAO_MUNICIPIO, LOCAL_RESIDENCIA, res6),
+            ):
+                chave = (disease_id, grao, local, territorio, ano)
+                entrada = acumulador.setdefault(
+                    chave,
+                    {"internacoes": 0, "obitos": 0, "valor_total": 0.0, "dias_permanencia": 0},
+                )
+                entrada["internacoes"] += 1
+                entrada["obitos"] += obito
+                entrada["valor_total"] += val
+                entrada["dias_permanencia"] += dias
 
     if total > 0:
         taxa_descarte = descartes / total

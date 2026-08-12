@@ -14,6 +14,14 @@ os 13 anos da janela D-11. 1,9 GB cabe com folga nos 8,4 GB livres; 10-13 GB nã
    existente — reaproveitado, nunca reimplementado (isola falha por arquivo, PIPE-06, D-12).
 2. Agrega via `aggregate.aggregate_years` existente — só os arquivos DESTA UF, nunca a pasta
    `cache_path("parquet")` inteira (que pode ter sobras de outras UFs — ver `_aggregate_uf`).
+   **09-XX-PROCEDIMENTO (2026-08-12):** `aggregate_years`/`aggregate_parquet_dir` passaram a
+   produzir, na MESMA passada, um segundo eixo de classificação (procedimento/`PROC_REA`, hoje
+   só `amputacao_mmii`) além do eixo CID/`DIAG_PRINC` já existente — este módulo não precisou de
+   NENHUMA mudança de código para carregar isso: `_aggregate_uf`/`_persist_rows` já tratavam
+   `Row`/`aggregate_years` como caixas-pretas de schema fixo, e esse schema não mudou (só o
+   conjunto de `disease_id` possíveis cresceu). O único efeito visível aqui é que uma corrida de
+   `collect_uf` NOVA (não uma já `agregado_reciclado`) passa a persistir linhas de
+   `amputacao_mmii` em `cache_path("agregados/{uf}.parquet")` automaticamente.
 3. Persiste as linhas agregadas (pequenas: agregado nacional projetado ~13M linhas, partições
    D-21 medem ~139 MB no total) como parquet durável em `cache_path("agregados/{uf}.parquet")`
    — sobrevive à reciclagem do bruto, que só acontece depois desta escrita ter sucesso e sido

@@ -263,7 +263,12 @@ def _escrever_parquet_bruto_sp_sintetico() -> None:
     (`355030`, São Paulo capital), nunca uma cópia dos bytes reais do AC sob um nome de arquivo de
     SP: sob a correção 2026-08-11, dono é decidido pelo CONTEÚDO (`MUNIC_MOV`/`MUNIC_RES`), não
     pelo nome do arquivo -- copiar bytes do AC "como se fossem" de SP contaminaria o próprio teste
-    (o "SP" resultante seria, na verdade, mais AC, duplicando o AC real por soma de chave)."""
+    (o "SP" resultante seria, na verdade, mais AC, duplicando o AC real por soma de chave).
+
+    `PROC_REA` acrescentado (09-XX-PROCEDIMENTO, correção Rule 3): `aggregate.py` passou a exigir
+    essa coluna em `NEEDED_COLUMNS` para o eixo de procedimento (amputacao_mmii) -- valor
+    "0000000000" nunca casa nenhum código SIGTAP real, sem mudança de comportamento deste
+    teste."""
     tabela = pa.table(
         {
             "DIAG_PRINC": ["O808"],
@@ -274,6 +279,7 @@ def _escrever_parquet_bruto_sp_sintetico() -> None:
             "DIAS_PERM": ["    2"],
             "ANO_CMPT": ["2019"],
             "IDENT": ["1"],
+            "PROC_REA": ["0000000000"],
         }
     )
     destino = cache_path("parquet") / "RDSP1901.parquet"

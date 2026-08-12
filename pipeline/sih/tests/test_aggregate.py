@@ -53,6 +53,7 @@ def test_needed_columns_contem_as_colunas_obrigatorias():
         "DIAS_PERM",
         "ANO_CMPT",
         "IDENT",
+        "PROC_REA",
     }
 
 
@@ -167,6 +168,7 @@ def test_registros_sem_categoria_sao_contados_e_acima_de_01_por_cento_levanta(in
             "DIAS_PERM": ["  1"] * 5,
             "ANO_CMPT": ["2019"] * 5,
             "IDENT": ["1"] * 5,
+            "PROC_REA": ["0000000000"] * 5,
         }
     )
     caminho = tmp_path / "descarte_alto.parquet"
@@ -189,6 +191,7 @@ def test_registros_sem_categoria_abaixo_do_limite_nao_levanta(index, tmp_path):
             "DIAS_PERM": ["  1"] * (n_ok + 1),
             "ANO_CMPT": ["2019"] * (n_ok + 1),
             "IDENT": ["1"] * (n_ok + 1),
+            "PROC_REA": ["0000000000"] * (n_ok + 1),
         }
     )
     caminho = tmp_path / "descarte_baixo.parquet"
@@ -211,6 +214,7 @@ def test_ano_fora_da_janela_e_excluido(index, tmp_path):
             "DIAS_PERM": ["  1", "  1"],
             "ANO_CMPT": ["2010", "2019"],
             "IDENT": ["1", "1"],
+            "PROC_REA": ["0000000000", "0000000000"],
         }
     )
     caminho = tmp_path / "janela_ano.parquet"
@@ -234,6 +238,7 @@ def test_morte_tipo_inesperado_levanta_tyoe_error(index, tmp_path):
             "DIAS_PERM": ["  1"],
             "ANO_CMPT": ["2019"],
             "IDENT": ["1"],
+            "PROC_REA": ["0000000000"],
         }
     )
     caminho = tmp_path / "morte_tipo_errado.parquet"
@@ -272,6 +277,7 @@ def test_ident_diferente_de_1_e_excluido_da_contagem(index, tmp_path):
             "DIAS_PERM": ["  1"] * 4,
             "ANO_CMPT": ["2019"] * 4,
             "IDENT": ["1", "1", "5", "9"],
+            "PROC_REA": ["0000000000"] * 4,
         }
     )
     caminho = tmp_path / "ident_longa_permanencia.parquet"
