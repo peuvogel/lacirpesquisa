@@ -1,6 +1,7 @@
 import { legendBreaks } from '@/geo/choroplethScale';
 import {
   MAP_METRIC_FILLS,
+  isPositiveFiniteMapValue,
   type MapMetricCell,
   normalizeMapMetricCell,
 } from '@/geo/mapMetricCell';
@@ -28,7 +29,11 @@ export function ChoroplethLegend({
     );
   }
 
-  const breaks = legendBreaks(metricCells.map((cell) => cell.value));
+  const breaks = legendBreaks(
+    metricCells
+      .filter((cell) => cell.displayStatus === 'value' && isPositiveFiniteMapValue(cell.value))
+      .map((cell) => cell.value),
+  );
   const hasZero = metricCells.some((cell) => cell.displayStatus === 'zero');
   const hasMissing = metricCells.some((cell) => cell.displayStatus === 'missing');
   const hasReview = metricCells.some((cell) => cell.displayStatus === 'review');

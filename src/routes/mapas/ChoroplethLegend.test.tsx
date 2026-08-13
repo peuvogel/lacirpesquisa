@@ -70,6 +70,24 @@ describe('ChoroplethLegend', () => {
     expect(screen.getByLabelText('Sem dados')).toBeInTheDocument();
     expect(screen.getByLabelText('Revisar dado')).toBeInTheDocument();
   });
+
+  it('excludes raw values carried by missing and review cells from ramp breaks', () => {
+    render(
+      <ChoroplethLegend
+        cells={[
+          { value: 10, displayStatus: 'value' },
+          { value: 1000, displayStatus: 'missing' },
+          { value: 1000, displayStatus: 'review' },
+          { value: 0, displayStatus: 'zero' },
+        ]}
+        activeVariableId="sih.embolia_e_trombose_arteriais.obitos"
+      />,
+    );
+
+    const rampSwatches = document.querySelectorAll('[data-legend-swatch]');
+    expect(rampSwatches).toHaveLength(1);
+    expect(rampSwatches[0]).toHaveAttribute('data-legend-swatch', '#209978');
+  });
 });
 
 describe('catalogAnalysisData via Mapas', () => {

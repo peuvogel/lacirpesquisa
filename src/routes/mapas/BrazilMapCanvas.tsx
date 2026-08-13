@@ -744,7 +744,9 @@ export function BrazilMapCanvas({
                     isSelected={isSelected}
                     fill={fill}
                     accentStroke={
-                      membership ? groupColor(membership.groupIndex).stroke : pendingColor.stroke
+                      membership
+                        ? groupColor(membership.groupIndex).stroke
+                        : metric?.stroke ?? pendingColor.stroke
                     }
                     hideStroke={false}
                     glowClass="stroke-white/25 [stroke-width:0.55px]"

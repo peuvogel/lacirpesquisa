@@ -276,6 +276,31 @@ describe('BrazilMapCanvas', () => {
     expect(screen.queryByRole('button', { name: 'São Paulo' })).not.toBeInTheDocument();
   });
 
+  it('uses the alert stroke for a reviewed municipality in the drill map', async () => {
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={{
+          '2927408': { value: 0, displayStatus: 'review' },
+        }}
+        activeVariableId="sih.embolia_e_trombose_arteriais.internacoes"
+        mapView={{ level: 'municipio', parentCode: 'BA', ufIbge: '29' }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-territory-id="2927408"]')).toBeTruthy();
+    });
+
+    const reviewedMunicipality = container.querySelector(
+      '[data-territory-id="2927408"]',
+    ) as SVGPathElement;
+    expect(reviewedMunicipality.style.getPropertyValue('--lacir-path-accent')).toBe('#fbbf24');
+  });
+
   it('returns to Brasil UF choropleth when mapView level is uf', () => {
     render(
       <BrazilMapCanvas
