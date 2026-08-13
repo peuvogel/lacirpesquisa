@@ -652,7 +652,15 @@ def pg_conn(pg_url: str):
 def _resetar_producao(conn: psycopg.Connection) -> None:
     with conn.cursor() as cur:
         cur.execute("drop table if exists sih_metric_uf_staging")
+        cur.execute("drop table if exists sih_collection_status_staging")
+        cur.execute("drop table if exists sih_collection_status_municipio_staging")
         cur.execute("truncate table sih_metric_uf")
+        # [Fix de isolamento de teste, 09-12-MUNICIPIO-STATUS] sih_collection_status nunca era
+        # truncada aqui -- o único teste Docker que a tocava (upsert idempotente, grão UF) não
+        # sofria com isso por ser o único; a seção de grão município abaixo adiciona mais testes
+        # Docker que escrevem essa mesma tabela, e cada um precisa partir de uma tabela vazia
+        # para afirmar contagem absoluta (não é mudança de produção -- só de fixture de teste).
+        cur.execute("truncate table sih_collection_status")
         cur.execute("delete from sih_disease")
         cur.executemany(
             "insert into sih_disease (id, label, filter_kind, tabnet_code) values (%s, %s, %s, %s)",
@@ -872,3 +880,221 @@ def test_persistir_collection_status_upsert_idempotente_pela_pk_real(
         ).fetchall()
     }
     assert versoes == {"hash-corrida-2"}, "a corrida mais recente precisa vencer no upsert"
+
+
+# ---------------------------------------------------------------------------
+# sih_collection_status do grão MUNICÍPIO (D-13/D-20) -- fechamento de lacuna decidido pelo
+# operador no checkpoint da Task 3 do 09-12 (achado da Task 2: nenhum escritor gravava Camada 2
+# para este grão -- `_persistir_collection_status`/`build_partition`/`upload_partition` seguem
+# INTOCADOS). NÃO reenvia partição nem toca o Storage -- o dado de município já está lá,
+# verificado ao vivo (09-12); esta seção só escreve a trilha de proveniência que faltava no
+# banco, reusando a MESMA leitura territorial que `partitions.py` já usa para montar as
+# partições (`construir_indice_territorial`), nunca uma segunda fonte de verdade.
+# ---------------------------------------------------------------------------
+
+
+def _linha_municipio(
+    *,
+    disease_id: str = "doencas_do_apendice",
+    territorio_codigo: str = "120040",
+    ano: int = 2019,
+    internacoes: int = 2,
+) -> Row:
+    return Row(
+        disease_id=disease_id,
+        grao=GRAO_MUNICIPIO,
+        local=LOCAL_OCORRENCIA,
+        territorio_codigo=territorio_codigo,
+        ano=ano,
+        internacoes=internacoes,
+        obitos=0,
+        valor_total=20.0,
+        dias_permanencia=2,
+        taxa_mortalidade=0.0,
+    )
+
+
+def test_linhas_grao_municipio_filtra_so_grao_municipio(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`_linhas_grao_municipio` usa a MESMA fonte territorial que `partitions.py` usa para montar
+    as partições reais (`construir_indice_territorial`), mas devolve só linhas de grão
+    município -- grão UF fica de fora."""
+    linha_uf = Row(
+        disease_id="doencas_do_apendice",
+        grao=GRAO_UF,
+        local=LOCAL_OCORRENCIA,
+        territorio_codigo="12",
+        ano=2019,
+        internacoes=1,
+        obitos=0,
+        valor_total=10.0,
+        dias_permanencia=1,
+        taxa_mortalidade=0.0,
+    )
+    linha_municipio = _linha_municipio()
+    indice_falso = {"AC": ([linha_uf, linha_municipio], "agregado")}
+    monkeypatch.setattr(upload_mod, "_carregar_index", lambda: object())
+    monkeypatch.setattr(upload_mod, "construir_indice_territorial", lambda index: indice_falso)
+
+    linhas = upload_mod._linhas_grao_municipio()
+
+    assert linhas == [linha_municipio]
+
+
+def test_build_collection_status_rows_grao_municipio_ignora_linhas_de_grao_uf() -> None:
+    """`build_collection_status_rows(grao=GRAO_MUNICIPIO, ...)` -- linhas de grão UF misturadas
+    no lote de entrada não vazam para o resultado (a mesma garantia já provada para o grão UF
+    vale para município, sem nenhuma mudança na função genérica)."""
+    linha_uf = Row(
+        disease_id="doencas_do_apendice",
+        grao=GRAO_UF,
+        local=LOCAL_OCORRENCIA,
+        territorio_codigo="12",
+        ano=2019,
+        internacoes=1,
+        obitos=0,
+        valor_total=10.0,
+        dias_permanencia=1,
+        taxa_mortalidade=0.0,
+    )
+    linha_municipio = _linha_municipio()
+
+    rows = build_collection_status_rows(
+        [linha_uf, linha_municipio],
+        grao=GRAO_MUNICIPIO,
+        ano=2019,
+        divergencias={},
+        derived_at="2026-08-13T00:00:00Z",
+        map_version="hash-teste",
+    )
+
+    assert rows
+    assert all(row["grao"] == GRAO_MUNICIPIO for row in rows)
+
+
+def test_main_municipio_dry_run_nao_conecta_nem_escreve(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "SIH_PIPELINE_DB_URL",
+        "postgresql://u:p@aws-1-us-west-2.pooler.supabase.com:5432/postgres",
+    )
+    chamado: list[int] = []
+    monkeypatch.setattr(
+        upload_mod,
+        "connect",
+        lambda: chamado.append(1)
+        or (_ for _ in ()).throw(AssertionError("--dry-run não deveria conectar")),
+    )
+    monkeypatch.setattr(upload_mod, "_linhas_grao_municipio", lambda: [_linha_municipio()])
+
+    codigo = main(["--municipio", "--dry-run"])
+
+    assert codigo == 0
+    assert chamado == []
+
+
+def test_main_municipio_nunca_toca_caminho_de_sih_metric_uf(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`--municipio` escreve SÓ a proveniência (`sih_collection_status`) -- nunca chama
+    `copy_to_staging`/`swap`/`recount_via_postgrest`/`release_cache`, que pertencem
+    exclusivamente ao caminho de `sih_metric_uf`. O dado de município já está no Storage;
+    `upload.py --municipio` não reenvia nada."""
+    monkeypatch.setenv(
+        "SIH_PIPELINE_DB_URL",
+        "postgresql://u:p@aws-1-us-west-2.pooler.supabase.com:5432/postgres",
+    )
+    chamadas_proibidas: list[str] = []
+
+    def _proibida(nome: str):
+        def _fn(*args: Any, **kwargs: Any) -> Any:
+            chamadas_proibidas.append(nome)
+            raise AssertionError(f"--municipio não deveria chamar {nome}")
+
+        return _fn
+
+    for nome in ("copy_to_staging", "swap", "recount_via_postgrest", "release_cache"):
+        monkeypatch.setattr(upload_mod, nome, _proibida(nome))
+
+    monkeypatch.setattr(upload_mod, "_linhas_grao_municipio", lambda: [_linha_municipio()])
+    monkeypatch.setattr(upload_mod, "connect", lambda: _ConnFalsa())
+    chamadas_status: list[Any] = []
+    monkeypatch.setattr(
+        upload_mod,
+        "_persistir_collection_status_municipio",
+        lambda conn, linhas, *, derived_at, map_version: chamadas_status.append(list(linhas))
+        or len(linhas),
+    )
+
+    codigo = main(["--municipio"])
+
+    assert codigo == 0
+    assert chamadas_proibidas == []
+    assert len(chamadas_status) == 1
+
+
+def test_main_municipio_sem_linha_alguma_sai_1(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "SIH_PIPELINE_DB_URL",
+        "postgresql://u:p@aws-1-us-west-2.pooler.supabase.com:5432/postgres",
+    )
+    monkeypatch.setattr(upload_mod, "_linhas_grao_municipio", lambda: [])
+
+    codigo = main(["--municipio"])
+
+    assert codigo == 1
+
+
+@requires_docker
+def test_persistir_collection_status_municipio_grava_grao_municipio_upsert_idempotente(
+    pg_conn: psycopg.Connection,
+) -> None:
+    """Contra Postgres real: `_persistir_collection_status_municipio` escreve com
+    `grao='municipio'`, `derived_at`/`cid_map_version` nunca nulos, e uma segunda chamada com o
+    MESMO lote faz upsert (PIPE-03/SC-3) -- a MESMA disciplina do grão UF, já provada, agora
+    também no caminho de município."""
+    linhas = [
+        _linha_municipio(territorio_codigo="120040", internacoes=2),
+        _linha_municipio(territorio_codigo="355030", internacoes=3),
+    ]
+
+    n1 = upload_mod._persistir_collection_status_municipio(
+        pg_conn, linhas, derived_at="2026-08-13T00:00:00Z", map_version="hash-corrida-1"
+    )
+    assert n1 > 0
+
+    graos_gravados = {
+        r[0] for r in pg_conn.execute("select distinct grao from sih_collection_status").fetchall()
+    }
+    assert graos_gravados == {GRAO_MUNICIPIO}
+
+    sem_proveniencia = pg_conn.execute(
+        "select count(*) from sih_collection_status "
+        "where status = 'coletado' and (derived_at is null or cid_map_version is null)"
+    ).fetchone()[0]
+    assert sem_proveniencia == 0
+
+    n2 = upload_mod._persistir_collection_status_municipio(
+        pg_conn, linhas, derived_at="2026-08-13T01:00:00Z", map_version="hash-corrida-2"
+    )
+    assert n2 == n1
+    contagem = pg_conn.execute("select count(*) from sih_collection_status").fetchone()[0]
+    assert contagem == n1, "upsert não pode duplicar linha na segunda corrida"
+
+
+@requires_docker
+def test_persistir_collection_status_municipio_nao_grava_ano_sem_nenhum_municipio(
+    pg_conn: psycopg.Connection,
+) -> None:
+    """D-13/D-14: uma combinação (disease_id, medida, local, ano) sem NENHUM município com dado
+    não recebe linha de proveniência nenhuma -- não é a mesma coisa que uma linha `coletado`
+    "vazia" inventada. Um ano sem nenhuma linha em `linhas` fica sem nenhuma linha em
+    `sih_collection_status` para esse ano."""
+    linhas = [_linha_municipio(ano=2019)]
+
+    upload_mod._persistir_collection_status_municipio(
+        pg_conn, linhas, derived_at="2026-08-13T00:00:00Z", map_version="hash-teste"
+    )
+
+    linhas_2020 = pg_conn.execute(
+        "select count(*) from sih_collection_status where ano = 2020"
+    ).fetchone()[0]
+    assert linhas_2020 == 0, "ano sem nenhuma linha de município não pode ganhar proveniência"

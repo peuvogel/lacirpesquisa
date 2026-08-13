@@ -52,7 +52,7 @@ from urllib.parse import urlsplit
 
 import psycopg
 
-from sih_pipeline.aggregate import GRAO_UF, Row
+from sih_pipeline.aggregate import GRAO_MUNICIPIO, GRAO_UF, Row
 from sih_pipeline.codigos import UF_POR_CODIGO
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.enumerate import expected_file_names
@@ -611,6 +611,101 @@ def _linhas_grao_uf(*, nivel: int | None) -> list[Row]:
     return linhas
 
 
+# ---------------------------------------------------------------------------
+# sih_collection_status do grão MUNICÍPIO (D-13/D-20) -- fechamento de lacuna decidido pelo
+# operador no checkpoint da Task 3 do 09-12: `_persistir_collection_status` (acima) só cobre
+# grão UF; a auditoria da Task 2 (`audit.py`) mostrou 34.424 combinações de grão `municipio` sem
+# NENHUMA linha em `sih_collection_status`, porque nenhum escritor gravava Camada 2 para esse
+# grão (o dado em si já estava completo e servido no Storage, D-20 -- só a proveniência estava
+# ausente). As duas funções abaixo são NOVAS e SEPARADAS de `_linhas_grao_uf`/
+# `_persistir_collection_status` de propósito -- por decisão explícita do operador, o caminho de
+# grão UF (rodado contra produção real duas vezes sem falha) não é tocado nem refatorado para
+# compartilhar código; a pequena duplicação de SQL de COPY+upsert é o preço aceito por zero risco
+# sobre o caminho já provado. `build_partition`/`upload_partition`/`write_partition` (o caminho
+# que sobe as partições ao Storage) também não são tocados aqui -- esta seção nunca reenvia
+# partição nenhuma, só escreve a trilha de proveniência que faltava no banco.
+# ---------------------------------------------------------------------------
+
+
+def _linhas_grao_municipio() -> list[Row]:
+    """Todas as linhas de grão município do índice territorial completo
+    (`partitions.construir_indice_territorial`) -- a MESMA fonte que `partitions.py` usa para
+    montar as 27 partições reais já no Storage (D-20/D-21), aqui só para derivar as linhas de
+    proveniência de `sih_collection_status`. Nunca gera nem reenvia partição nenhuma."""
+    index = _carregar_index()
+    indice = construir_indice_territorial(index)
+
+    linhas: list[Row] = []
+    for _uf, (linhas_uf, _origem) in indice.items():
+        for linha in linhas_uf:
+            if linha.grao != GRAO_MUNICIPIO:
+                continue
+            linhas.append(linha)
+    return linhas
+
+
+def _persistir_collection_status_municipio(
+    conn: psycopg.Connection,
+    linhas: Sequence[Row],
+    *,
+    derived_at: str,
+    map_version: str,
+) -> int:
+    """Escreve `sih_collection_status` para o grão `municipio`, para TODOS os anos presentes em
+    `linhas` -- MESMO padrão de `_persistir_collection_status` (`COPY` em lote para uma tabela de
+    staging descartável, seguido de UM `INSERT ... SELECT ... ON CONFLICT`, upsert pela PK real
+    `(disease_id, medida, grao, local, ano)`), função separada de propósito (ver comentário da
+    seção acima) -- idempotente pela mesma disciplina (PIPE-03/SC-3).
+
+    Preserva a distinção D-13/D-14 exatamente como o grão UF: `build_collection_status_rows`
+    (reaproveitada sem nenhuma mudança) só produz uma linha quando pelo menos um município tem
+    dado real para aquela combinação -- uma combinação (disease_id, medida, local, ano) sem
+    NENHUM município com dado não ganha linha nenhuma aqui (fica "faltante" na auditoria, nunca
+    uma linha `coletado` vazia inventada)."""
+    divergencias = carregar_divergencias()
+    anos = sorted({linha.ano for linha in linhas if linha.grao == GRAO_MUNICIPIO})
+    rows: list[dict[str, Any]] = []
+    for ano in anos:
+        rows.extend(
+            build_collection_status_rows(
+                linhas,
+                grao=GRAO_MUNICIPIO,
+                ano=ano,
+                divergencias=divergencias,
+                derived_at=derived_at,
+                map_version=map_version,
+            )
+        )
+
+    if not rows:
+        return 0
+
+    staging = "sih_collection_status_municipio_staging"
+    col_list = ", ".join(_COLLECTION_STATUS_COLUMNS)
+    with conn.cursor() as cur:
+        cur.execute(f"DROP TABLE IF EXISTS {staging}")
+        cur.execute(f"CREATE TABLE {staging} (LIKE sih_collection_status)")
+        with cur.copy(f"COPY {staging} ({col_list}) FROM STDIN") as copy:
+            for row in rows:
+                copy.write_row(tuple(row[coluna] for coluna in _COLLECTION_STATUS_COLUMNS))
+        cur.execute(
+            f"""
+            insert into sih_collection_status ({col_list})
+            select {col_list} from {staging}
+            on conflict (disease_id, medida, grao, local, ano) do update set
+                status = excluded.status,
+                derived_at = excluded.derived_at,
+                cid_map_version = excluded.cid_map_version,
+                row_count = excluded.row_count,
+                divergencia_pct = excluded.divergencia_pct,
+                divergencia_razao = excluded.divergencia_razao
+            """
+        )
+        cur.execute(f"DROP TABLE {staging}")
+    conn.commit()
+    return len(rows)
+
+
 def main(argv: list[str]) -> int:
     """CLI do subcomando `upload` (contrato resolvido pelo `cli.py` do 09-04, dono único).
 
@@ -628,7 +723,56 @@ def main(argv: list[str]) -> int:
         action="store_true",
         help="valida a conexão e monta as linhas, sem escrever nada (09-12 confere cada nível)",
     )
+    parser.add_argument(
+        "--municipio",
+        action="store_true",
+        help=(
+            "escreve SÓ a proveniência (Camada 2) do grão município em sih_collection_status -- "
+            "nunca reenvia partição nem toca o Storage (partitions.py continua o único "
+            "escritor); fecha o achado do checkpoint da Task 3 do 09-12 (D-13/D-20). Combinável "
+            "com --dry-run para só contar sem escrever. Ramo isolado, retorna antes de qualquer "
+            "lógica de --tabela/sih_metric_uf abaixo."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.municipio:
+        # Ramo isolado e antecipado -- nunca alcança _STAGING_COLUMNS/swap()/copy_to_staging()/
+        # recount_via_postgrest()/release_cache() abaixo, que pertencem exclusivamente ao
+        # caminho de sih_metric_uf (D-16). Ver docstring de _persistir_collection_status_municipio.
+        _validar_url_pooler(os.environ["SIH_PIPELINE_DB_URL"])
+        linhas_municipio = _linhas_grao_municipio()
+        if not linhas_municipio:
+            print(
+                "upload: --municipio -- nenhuma linha de grão município encontrada em cache "
+                "(agregados/{uf}.parquet ausentes?) -- nada a fazer",
+                file=sys.stderr,
+            )
+            return 1
+
+        if args.dry_run:
+            anos = sorted({linha.ano for linha in linhas_municipio})
+            diseases = {linha.disease_id for linha in linhas_municipio}
+            print(
+                f"upload: --municipio --dry-run -- {len(linhas_municipio)} linha(s) de grão "
+                f"município de {len(diseases)} agravo(s), anos {anos[0]}-{anos[-1]}, nada escrito"
+            )
+            return 0
+
+        conn = connect()
+        try:
+            derived_at = _now_iso()
+            map_version = cid_map_version()
+            n_status = _persistir_collection_status_municipio(
+                conn, linhas_municipio, derived_at=derived_at, map_version=map_version
+            )
+            print(
+                f"upload: --municipio -- {n_status} linha(s) de sih_collection_status (grão "
+                "município) registrada(s)"
+            )
+        finally:
+            conn.close()
+        return 0
 
     if args.tabela not in _STAGING_COLUMNS:
         print(
