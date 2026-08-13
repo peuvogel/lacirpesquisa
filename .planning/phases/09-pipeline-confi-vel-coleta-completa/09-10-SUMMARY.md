@@ -216,3 +216,189 @@ anônima, nunca impresso.
 Todos os 6 arquivos (`upload.py`, `test_upload.py`, `generateSihSwapVerify.mjs`,
 `sih-swap-contagens.sql`, `sihSwapVerify.test.ts`, este SUMMARY) existem no disco; todos os 3
 hashes de commit (`7bfb559`, `91036d5`, `26196cb`) existem em `git log --oneline --all`.
+
+---
+
+# Segunda substituição de produção — dataset completo, 331 agravos (2026-08-12/13)
+
+**Ad-hoc, sem `PLAN.md` formal — o brief operacional do coordenador é o spec.** Reaproveita
+`upload.py`/`partitions.py` do 09-10 sem nenhuma alteração (ambos já construídos, testados e
+executados uma vez com sucesso); esta segunda corrida existe porque a primeira rodou ANTES de a
+re-coleta nacional incorporar o eixo de procedimento que recupera `amputacao_mmii`
+(09-10-PROCEDIMENTO) — o 331º agravo, o único `filterKind: "procedimento"`, invisível a um
+matcher só-CID.
+
+## Por que esta segunda corrida
+
+A re-coleta nacional completa (27/27 UFs `agregado_reciclado`, 0 `falhou` — confirmado em
+`~/.lacir/sih-cache/agregados/collect_state.json` antes de tocar em qualquer coisa) rodou com o
+eixo `PROC_REA` novo (SIGTAP `0408050012`) mais os guardas de qualidade de dado construídos ao
+longo da fase (município em branco, agregação vazia, download vazio, autocura de ledger). A
+primeira substituição (207.131 linhas/330 agravos) ficou correta para o dado que existia então,
+mas nunca teve `amputacao_mmii`.
+
+## Estado ANTES (medido, não assumido — via `psql` pelo Session Pooler)
+
+| Tabela | Linhas |
+|---|---|
+| `sih_metric_uf` | 207.131 (330 agravos distintos, `amputacao_mmii` órfão) |
+| `sih_collection_status` | 33.456 |
+| `sih_disease` | 331 |
+| `sih_metric_muni` | 1.099.403 |
+| Tamanho do banco | 404 MB |
+
+## Execução (ordem seguida, medida em cada etapa)
+
+1. **Sanidade prévia**: nenhum processo `collect`/`download` vivo (`ps aux`), suíte Python
+   completa verde (259 testes), `--dry-run` de `upload.py` mediu 207.664 linha(s) de 331
+   agravo(s) sem escrever nada.
+2. **Partições de município regeneradas e reenviadas ao Storage** (D-20, preparação para o
+   09-14) — `partitions --todas --upload` rodado detached via `nohup` (27 UFs, ~3min30s de
+   parede, `23:49:33` a `23:52:47`): as 27 partições reais no bucket `sih-municipio`,
+   **130,05 MB total** (era 130,31 MB), **SP (maior) em 19,36 MB** (era 19,26 MB — cresceu com a
+   amputação incluída), **2,6× sob o teto de 50 MB/objeto**. Nenhuma dependência de ordem com o
+   swap de `sih_metric_uf` (tabelas diferentes, destinos diferentes — Storage vs Postgres); feito
+   antes por ser a parte reversível/aditiva.
+3. **A substituição real do D-16, `upload.py --tabela sih_metric_uf`**, rodada detached via
+   `nohup` (a sessão que a lançou fechou no meio do polling — ver "Interrupção de sessão"
+   abaixo). Log do processo detached (sobreviveu à sessão, `nohup`+`disown`):
+   `START 2026-08-13T02:53:58Z` → `207664 linha(s) copiada(s), 207664 relida(s) via PostgREST` →
+   `EXITCODE=0` → `END 2026-08-13T02:57:27Z` — **3min29s de parede**, idêntico à ordem de
+   grandeza da primeira corrida (o mesmo padrão `copy_to_staging → swap → persist_collection_status
+   → recount_via_postgrest → release_cache`, sem nenhuma mudança de código).
+
+## Interrupção de sessão (registrado honestamente, não escondido)
+
+A sessão que lançou o `upload.py` detached fechou NO MEIO do polling — o coordenador verificou
+diretamente contra produção depois (`sih_metric_uf`=207.664/331 agravos, `amputacao_mmii`=702
+linhas, sem tabela de staging órfã) e confirmou que a parte irreversível já tinha completado com
+sucesso antes do fechamento. Esta sessão de continuação **reverificou tudo de forma
+independente** (nunca assumindo o relato do coordenador sozinho) antes de prosseguir para a
+escrituração — ver seção seguinte, todos os números medidos de novo, direto contra produção.
+
+## Estado DEPOIS (medido de novo, de forma independente, via `psql` pelo Session Pooler)
+
+| Tabela/prova | Antes | Depois | Delta |
+|---|---|---|---|
+| `sih_metric_uf` | 207.131 | **207.664** | +533 |
+| Agravos distintos em `sih_metric_uf` | 330 | **331** | +1 (`amputacao_mmii`) |
+| `sih_metric_uf` local=ocorrencia | 103.353 | 103.619 | +266 |
+| `sih_metric_uf` local=residencia | 103.778 | 104.045 | +267 |
+| `amputacao_mmii` em `sih_metric_uf` | 0 (órfão) | **702** | 27 UFs × 13 anos × 2 locais, completo |
+| `sih_collection_status` | 33.456 | **33.560** | +104 (exatamente `amputacao_mmii`: 2 locais × 13 anos × 4 medidas) |
+| `sih_disease` sem linha em `sih_metric_uf` (inspeção final do verify) | 1 (`amputacao_mmii`) | **0** | todos os 331 agravos com dado |
+| `sih_metric_muni` | 1.099.403 | 1.099.403 | 0 (intocada — segue sendo o 09-14 quem remove) |
+| Tamanho do banco | 404 MB | **420 MB** | +16 MB (headroom de ~80 MB antes do teto de 500 MB, e o 09-14 ainda libera 319 MB) |
+| `cid_map_version` da corrida | `5395d951...8963f` | **o mesmo hash** | `lista-morb-cid.json`/`cid-corrections.json` não mudaram — só o eixo de procedimento em `aggregate.py` mudou, fora deste hash |
+| Tabela de staging órfã (`*_staging`) | — | **nenhuma** | swap transacional completou limpo |
+| `sih-swap-contagens.sql` (regenerado, `ESPERADO_SIH_METRIC_UF=207664`) contra produção | — | **exit 0** | 5 blocos `RAISE EXCEPTION`, nenhum disparou |
+
+## `amputacao_mmii` provado end-to-end pelo caminho real do app (PostgREST anônimo, não SQL)
+
+`GET {SUPABASE_URL}/rest/v1/sih_metric_uf?disease_id=eq.amputacao_mmii&ano=eq.2019&local=eq.ocorrencia`
+com a chave `anon` (não `service_role`) devolveu **HTTP 200** com dado real: `RO`=133
+internações/17 óbitos, `AC`=50 internações/6 óbitos — o valor de AC bate exatamente com a
+reconciliação do `09-10-PROCEDIMENTO` (`PROC_REA=='0408050012' AND IDENT=='1' AND
+ANO_CMPT==2019` → 50 internações, medido contra os 12 arquivos reais re-baixados). Esta é a prova
+de que o dado chega pelo caminho que o app efetivamente usa, não só uma consulta SQL direta.
+
+## Leitura/escrita anônima reconfirmada (PostgREST + Storage)
+
+| Caminho | Esperado | Medido |
+|---|---|---|
+| `GET sih_metric_uf` (anon) | 200 | **200**, dado real |
+| `POST sih_metric_uf` (anon) | recusado | **401**, `new row violates row-level security policy` |
+| `GET storage/.../sih-municipio/v1/SP.json.gz` (anon, público) | 200 | **200**, 20.299.075 bytes (19,36 MB) |
+| `POST storage/.../sih-municipio/...` (anon) | recusado | **403**, `AccessDenied` (RLS) |
+
+## Discrepância de 3 linhas investigada e explicada (207.667 vs 207.664)
+
+O coordenador havia contado **207.667** chaves únicas `(disease_id, local, territorio_codigo,
+ano)` somando os 27 `agregados/{uf}.parquet` diretamente; a produção real ficou em **207.664** —
+3 a menos. Medido (não assumido) por que: concatenar os 27 agregados de grão UF sem passar pela
+resolução de dono territorial dá 481.135 linhas cruas, que colapsam para 207.667 chaves únicas
+por deduplicação simples. Mas 3 dessas linhas têm `territorio_codigo` (derivado de `UF_ZI`, o
+campo oficial do SIH-RD para a UF do estabelecimento, mesmo mecanismo do
+`09-04-FIX-MUNICIPIO-BRANCO`) malformado — `'02'`, `'00'`, `'  '` (dois espaços), nenhum dos 27
+códigos de UF válidos:
+
+| Arquivo de origem | Agravo | UF_ZI malformado | Ano |
+|---|---|---|---|
+| `AM.parquet` | `neoplasia_maligna_do_colon` | `'02'` | 2023 |
+| `CE.parquet` | `outras_malformacoes_do_aparelho_geniturinario` | `'00'` | 2023 |
+| `DF.parquet` | `flebite_tromboflebite_embolia_e_trombose_venosa` | `'  '` | 2022 |
+
+`partitions._uf_dona`/`construir_indice_territorial` já tratam código de território desconhecido
+como estado NORMAL (`dona is None -> continue`, comportamento documentado desde o
+`09-09-FIX-RESIDENCIA`: "nunca deveria acontecer com dado real do SIH... mas não quebra
+silenciosamente coagindo para uma UF errada") — as 3 linhas são descartadas silenciosamente, não
+uma UF errada. 207.667 − 3 = 207.664, exatamente a contagem de produção. Não é um defeito desta
+corrida nem desta plan; é a mesma classe de achado do `09-04-FIX-MUNICIPIO-BRANCO` (`MUNIC_MOV`/
+`MUNIC_RES` ilegível, 8 registros em 82 milhões), numa escala ainda menor (3 em 207.667, 0,0014%),
+e num campo diferente (`UF_ZI`, não `MUNIC_MOV`/`MUNIC_RES`). `aggregate.py`/`partitions.py`
+estão fora do `file_scope` desta corrida (dono declarado: fases anteriores) — registrado aqui
+para decisão futura, não corrigido.
+
+## Contexto de qualidade do dado (registrado de novo, não escondido — vale para as 207.664 linhas)
+
+- **SC-7 fecha com `exato=34, explicado=61, inexplicado=3`, `result.ok=False` por desenho** — os
+  3 inexplicados (`tuberculose_pulmonar`, `tuberculose_do_sistema_nervoso`,
+  `doenca_de_alzheimer` em AC/2019) continuam um resíduo pequeno de amostra sem explicação
+  inventada, não escondido atrás de um gate que force "zero inexplicado". Nada nesta corrida
+  mudou o eixo CID que o SC-7 mede.
+- **Divergência de lote (competência de processamento, `ANO_CMPT` vs `DT_INTER`)** cobre 53
+  categorias com razão escrita e medida duas vezes (AC +7,90%, SP +5,10%) — reduz mas não zera o
+  viés esperado entre a competência de processamento (TabNet) e a data de internação (microdado).
+  Este viés está presente nas 207.664 linhas que subiram; natureza da fonte, não defeito desta
+  execução.
+- **Reconciliação própria de `amputacao_mmii`** (09-10-PROCEDIMENTO, contra o oráculo TabNet
+  legado, AC completo/13 anos): **816 internações medidas vs 810 do oráculo (+0,74%)**, óbitos
+  **idênticos (94=94)** — divergência ano-a-ano explicada pelo MESMO mecanismo `ANO_CMPT`/
+  `DT_INTER` já aceito para as outras 330 categorias, confirmado de forma independente num eixo
+  de classificação totalmente diferente (procedimento SIGTAP, não CID).
+
+## Task Commits (segunda corrida)
+
+1. **fix (09-10-segunda-substituicao): `sih-swap-contagens.sql` regenerado para 207.664
+   linhas/331 agravos** — `df95381` (fix) — `generateSihSwapVerify.mjs`
+   (`ESPERADO_SIH_METRIC_UF` atualizado, `CID_MAP_VERSION_DA_CORRIDA` confirmado inalterado),
+   `sih-swap-contagens.sql` regenerado (nunca editado à mão), `sihSwapVerify.test.ts` atualizado
+   para a mesma contagem (os asserts hardcoded que travam o verify contra o valor medido).
+2. **Este SUMMARY + STATE.md + ROADMAP.md** — commit seguinte a este arquivo.
+
+_Nota: a substituição real (partições regeneradas/reenviadas + swap de `sih_metric_uf`) já tinha
+completado com sucesso ANTES do fechamento de sessão relatado acima — nenhum commit de código de
+pipeline foi necessário nesta corrida (`upload.py`/`partitions.py` reaproveitados sem nenhuma
+alteração, como o brief pediu); só a escrituração (verify regenerado + testes + docs) ficou
+pendente e foi completada nesta sessão de continuação, com todo número reconferido de forma
+independente contra produção antes de ser escrito aqui._
+
+## Next Phase Readiness (atualização)
+
+- **`amputacao_mmii` está servindo dado real de produção agora**, pelo caminho anônimo real do
+  app (PostgREST) — a lacuna registrada no `09-10-PROCEDIMENTO-SUMMARY.md` está fechada.
+- **As 27 partições de município no Storage refletem o dataset completo** (331 agravos,
+  incluindo `amputacao_mmii`) — qualquer drill de município feito pelo app a partir de agora lê
+  o dado atualizado.
+- **`09-14` segue sendo quem remove `sih_metric_muni`** — nenhuma mudança nesta corrida quanto a
+  isso; `sih_metric_muni` permanece intocada (1.099.403 linhas). O bloqueio registrado pelo
+  `09-10-PROCEDIMENTO` ("09-14 não pode rodar até `amputacao_mmii` estar em produção") está
+  **RESOLVIDO** por esta corrida — `amputacao_mmii` está em produção agora.
+- **Discrepância de 3 linhas (UF_ZI malformado)** registrada para decisão futura — mesma classe
+  do `09-04-FIX-MUNICIPIO-BRANCO`, escala menor (3 em 207.667), não bloqueante.
+
+## Self-Check (segunda corrida): PASSED
+
+- `scripts/catalog/generateSihSwapVerify.mjs`, `supabase/verify/sih-swap-contagens.sql`,
+  `src/features/catalog/sihSwapVerify.test.ts` existem no disco e o commit `df95381` existe em
+  `git log --oneline --all`.
+- `node scripts/catalog/generateSihSwapVerify.mjs` rodado duas vezes produz bytes idênticos
+  (idempotente).
+- `npx vitest run src/features/catalog/sihSwapVerify.test.ts` — 12/12 testes verdes.
+- `psql "$SIH_PIPELINE_DB_URL" -f supabase/verify/sih-swap-contagens.sql` — exit 0 contra
+  produção real.
+- `npm run gate` (suíte completa: `catalog:validate` + `pipeline:test` [796 testes Python] +
+  `vitest run` [frontend] + `tsc -b && vite build`) — verde, exit 0.
+- Todas as contagens de produção (`sih_metric_uf`, `sih_collection_status`, `sih_disease`,
+  `sih_metric_muni`, tamanho do banco, ausência de tabela `*_staging`) reconferidas
+  independentemente via `psql` pelo Session Pooler, não assumidas do relato do coordenador.
