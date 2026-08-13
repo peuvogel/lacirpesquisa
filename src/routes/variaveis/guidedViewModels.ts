@@ -71,6 +71,7 @@ export interface EligibleTestViewModel {
 export interface GuidedResearchSelection {
   goal: ResearchGoal | null;
   variableIds: string[];
+  trendTestIds: string[];
   testIds: string[];
   primaryTestId: string | null;
   roleAssignments?: Record<string, string>;

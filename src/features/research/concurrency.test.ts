@@ -121,7 +121,7 @@ describe('class-load concurrency', () => {
         ['taxa_internacao_100k'],
       ]) {
         buildGuidedSelectionModel(data, {
-          goal: 'compare', variableIds, testIds: [], primaryTestId: null, roleAssignments: {},
+          goal: 'compare', variableIds, trendTestIds: [], testIds: [], primaryTestId: null, roleAssignments: {},
         });
       }
       expect(client.totalCalls()).toBe(callsBeforeCheckboxes);

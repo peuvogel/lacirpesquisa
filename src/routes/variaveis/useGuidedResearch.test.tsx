@@ -192,6 +192,7 @@ describe('guided research orchestration', () => {
     const model = buildGuidedSelectionModel(data, {
       goal: 'compare',
       variableIds: ['taxa_mortalidade'],
+      trendTestIds: [],
       testIds: [],
       primaryTestId: null,
       roleAssignments: {},
@@ -215,6 +216,7 @@ describe('guided research orchestration', () => {
     const model = buildGuidedSelectionModel(data, {
       goal: 'compare',
       variableIds: ['taxa_mortalidade', 'media_permanencia_calculada'],
+      trendTestIds: [],
       testIds: [],
       primaryTestId: null,
       roleAssignments: {},
@@ -232,6 +234,7 @@ describe('guided research orchestration', () => {
     const model = buildGuidedSelectionModel(data, {
       goal: 'compare',
       variableIds: ['desfecho_hospitalar'],
+      trendTestIds: [],
       testIds: [],
       primaryTestId: null,
       roleAssignments: {},
@@ -247,6 +250,7 @@ describe('guided research orchestration', () => {
     const initialSelection = {
       goal: 'compare' as const,
       variableIds: [] as string[],
+      trendTestIds: [] as string[],
       testIds: [] as string[],
       primaryTestId: null,
       roleAssignments: {},
@@ -269,6 +273,7 @@ describe('guided research orchestration', () => {
     const selection = {
       goal: 'describe' as const,
       variableIds: [] as string[],
+      trendTestIds: [] as string[],
       testIds: [] as string[],
       primaryTestId: null,
       roleAssignments: {},
@@ -301,6 +306,7 @@ describe('guided research orchestration', () => {
     const selection = {
       goal: 'describe' as const,
       variableIds: [] as string[],
+      trendTestIds: [] as string[],
       testIds: [] as string[],
       primaryTestId: null,
       roleAssignments: {},

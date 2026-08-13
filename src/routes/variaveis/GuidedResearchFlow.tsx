@@ -4,6 +4,7 @@ import type { ResearchDesign, ResearchGoal } from '@/features/research/types';
 import { DataProfileSection } from './DataProfileSection';
 import { EligibleTestsSection } from './EligibleTestsSection';
 import { GuidedVariableSelector } from './GuidedVariableSelector';
+import { GroupTrendTestSection } from './GroupTrendTestSection';
 import type {
   DataProfileViewModel,
   EligibleTestViewModel,
@@ -19,6 +20,8 @@ export interface GuidedResearchFlowProps {
   variables?: GuidedVariableViewModel[];
   profilesByVariableId?: Record<string, DataProfileViewModel>;
   eligibility?: EligibleTestViewModel[];
+  praisAvailable?: boolean;
+  praisReason?: string;
   reviewsResolved?: boolean;
   onSelectionChange?: (selection: GuidedResearchSelection) => void;
   loadError?: string | null;
@@ -32,6 +35,8 @@ export function GuidedResearchFlow({
   variables,
   profilesByVariableId,
   eligibility,
+  praisAvailable = false,
+  praisReason = 'Prais–Winsten exige ao menos uma série anual regular com 8 pontos por grupo.',
   reviewsResolved = false,
   onSelectionChange,
   loadError,
@@ -40,6 +45,7 @@ export function GuidedResearchFlow({
 }: GuidedResearchFlowProps) {
   const [goal, setGoal] = useState<ResearchGoal | null>(null);
   const [variableIds, setVariableIds] = useState<string[]>([]);
+  const [trendTestIds, setTrendTestIds] = useState<string[]>([]);
   const [testIds, setTestIds] = useState<string[]>([]);
   const [primaryTestId, setPrimaryTestId] = useState<string | null>(null);
   const [roleAssignments, setRoleAssignments] = useState<Record<string, string>>({});
@@ -51,37 +57,44 @@ export function GuidedResearchFlow({
   function changeGoal(nextGoal: ResearchGoal) {
     setGoal(nextGoal);
     setVariableIds([]);
+    setTrendTestIds([]);
     setTestIds([]);
     setPrimaryTestId(null);
     setRoleAssignments({});
-    notify({ goal: nextGoal, variableIds: [], testIds: [], primaryTestId: null, roleAssignments: {} });
+    notify({ goal: nextGoal, variableIds: [], trendTestIds: [], testIds: [], primaryTestId: null, roleAssignments: {} });
   }
 
   function changeVariables(nextVariableIds: string[]) {
     setVariableIds(nextVariableIds);
+    setTrendTestIds([]);
     setTestIds([]);
     setPrimaryTestId(null);
     setRoleAssignments({});
-    notify({ goal, variableIds: nextVariableIds, testIds: [], primaryTestId: null, roleAssignments: {} });
+    notify({ goal, variableIds: nextVariableIds, trendTestIds: [], testIds: [], primaryTestId: null, roleAssignments: {} });
+  }
+
+  function changeTrendTests(nextTrendTestIds: string[]) {
+    setTrendTestIds(nextTrendTestIds);
+    notify({ goal, variableIds, trendTestIds: nextTrendTestIds, testIds, primaryTestId, roleAssignments });
   }
 
   function changeTests(nextTestIds: string[]) {
     const nextPrimary = primaryTestId && nextTestIds.includes(primaryTestId) ? primaryTestId : null;
     setTestIds(nextTestIds);
     setPrimaryTestId(nextPrimary);
-    notify({ goal, variableIds, testIds: nextTestIds, primaryTestId: nextPrimary, roleAssignments });
+    notify({ goal, variableIds, trendTestIds, testIds: nextTestIds, primaryTestId: nextPrimary, roleAssignments });
   }
 
   function changePrimary(nextPrimaryTestId: string) {
     setPrimaryTestId(nextPrimaryTestId);
-    notify({ goal, variableIds, testIds, primaryTestId: nextPrimaryTestId, roleAssignments });
+    notify({ goal, variableIds, trendTestIds, testIds, primaryTestId: nextPrimaryTestId, roleAssignments });
   }
 
   function changeRoles(nextRoles: Record<string, string>) {
     setRoleAssignments(nextRoles);
     setTestIds([]);
     setPrimaryTestId(null);
-    notify({ goal, variableIds, testIds: [], primaryTestId: null, roleAssignments: nextRoles });
+    notify({ goal, variableIds, trendTestIds, testIds: [], primaryTestId: null, roleAssignments: nextRoles });
   }
 
   const profiles = variableIds.flatMap((id) => {
@@ -139,6 +152,17 @@ export function GuidedResearchFlow({
         </aside>
       ) : null}
 
+      {goal !== 'compare' && hasAllProfiles && reviewsResolved ? (
+        <FlowStep>
+          <GroupTrendTestSection
+            available={praisAvailable}
+            reason={praisReason}
+            selected={trendTestIds.includes('prais-winsten')}
+            onSelectedChange={(selected) => changeTrendTests(selected ? ['prais-winsten'] : [])}
+          />
+        </FlowStep>
+      ) : null}
+
       {goal !== 'describe' && hasAllProfiles && reviewsResolved ? (
         eligibility ? (
           <FlowStep>
@@ -162,7 +186,7 @@ export function GuidedResearchFlow({
         )
       ) : null}
 
-      {resultsSlot && hasAllProfiles && (goal === 'describe' || !reviewsResolved || primaryTestId) ? (
+      {resultsSlot && hasAllProfiles && (goal === 'describe' || !reviewsResolved || primaryTestId || trendTestIds.length > 0) ? (
         <FlowStep>{resultsSlot}</FlowStep>
       ) : null}
     </div>

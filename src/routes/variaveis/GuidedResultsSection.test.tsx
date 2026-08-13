@@ -5,6 +5,7 @@ import { createRecommendedScenario, reviseScenario, treatAsMissing } from '@/fea
 import type { AnalysisCell, ResearchDesign } from '@/features/research/types';
 import { GuidedResultsSection } from './GuidedResultsSection';
 import { buildGuidedMapModel } from './GuidedResultMap';
+import type { PraisGroupTrendRun } from './praisGroupTrends';
 import type { GuidedTestRun } from './runGuidedTests';
 
 vi.mock('@/routes/estatistica/ResultsPanel', () => ({
@@ -52,6 +53,27 @@ const run: GuidedTestRun = {
       pValue: 0.08, effectDirection: 'positive', outcomeVariableId: 'taxa',
     },
   ],
+};
+
+const praisGroupRun: PraisGroupTrendRun = {
+  results: [
+    {
+      groupId: 'a', groupLabel: 'Grupo A', outcomeVariableId: 'taxa',
+      metrics: [{ label: 'Coeficiente da tendência (β)', value: '0,12' }], chart,
+      interpretation: ['Tendência estimada somente para Grupo A; este resultado não testa diferença em relação aos demais grupos.'],
+      pValue: 0.04, effectDirection: 'positive',
+    },
+    {
+      groupId: 'b', groupLabel: 'Grupo B', outcomeVariableId: 'taxa',
+      metrics: [{ label: 'Coeficiente da tendência (β)', value: '-0,08' }], chart,
+      interpretation: ['Tendência estimada somente para Grupo B; este resultado não testa diferença em relação aos demais grupos.'],
+      pValue: 0.3, effectDirection: 'negative',
+    },
+  ],
+  skippedGroups: [{
+    groupId: 'b', groupLabel: 'Grupo B', outcomeVariableId: 'custo',
+    reason: 'A série precisa ter pelo menos 8 pontos anuais regulares.',
+  }],
 };
 
 describe('GuidedResultsSection', () => {
@@ -231,6 +253,31 @@ describe('GuidedResultsSection', () => {
     expect(screen.getByRole('heading', { name: 'Desfechos não calculáveis' })).toBeInTheDocument();
     expect(screen.getByText(/Custo hospitalar.*pelo menos 3 unidades/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação/ })).toBeInTheDocument();
+  });
+
+  it('renders every descriptive group trend and skip separately from confirmatory comparisons', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const,
+    })));
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={recommended}
+      variableLabels={{ taxa: 'Taxa de internação', custo: 'Custo hospitalar' }}
+      run={{ ...run, scenarioFingerprint: recommended.fingerprint, results: [run.results[0]!] }}
+      praisGroupRun={praisGroupRun}
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByRole('heading', { name: 'Tendências Prais–Winsten por grupo' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Prais–Winsten · Grupo A · Taxa de internação' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Prais–Winsten · Grupo B · Taxa de internação' })).toBeInTheDocument();
+    expect(screen.getByText(/Grupo B · Custo hospitalar.*pelo menos 8 pontos/i)).toBeInTheDocument();
+    expect(screen.getByText(/cada modelo descreve somente o seu grupo.*não compara p-valores/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação · principal/ })).toBeInTheDocument();
   });
 
   it('explains whether common temporal support changes n, magnitude, direction or evidence', () => {

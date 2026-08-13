@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle2, FlaskConical } from 'lucide-react';
 import type { AnalysisScenario, ResearchDesign } from '@/features/research/types';
 import { ResultsPanel } from '@/routes/estatistica/ResultsPanel';
 import { GuidedResultMap } from './GuidedResultMap';
+import type { PraisGroupTrendRun } from './praisGroupTrends';
 import { ReviewAnalysisDataDialog } from './ReviewAnalysisDataDialog';
 import type { GuidedTestRun } from './runGuidedTests';
 
@@ -11,10 +12,66 @@ export interface GuidedResultsSectionProps {
   activeScenario: AnalysisScenario;
   variableLabels: Record<string, string>;
   run: GuidedTestRun | null;
+  praisGroupRun?: PraisGroupTrendRun | null;
   recommendedRun?: GuidedTestRun | null;
   runError: string | null;
   pendingReview: boolean;
   onScenarioChange: (scenario: AnalysisScenario) => void;
+}
+
+function GroupTrendResults({
+  run,
+  variableLabels,
+}: {
+  run: PraisGroupTrendRun | null | undefined;
+  variableLabels: Record<string, string>;
+}) {
+  if (!run || (run.results.length === 0 && run.skippedGroups.length === 0)) return null;
+  return (
+    <section aria-labelledby="prais-group-results-heading" className="space-y-5 rounded-2xl border border-accent/20 bg-accent/[0.035] p-4 sm:p-5">
+      <div>
+        <p className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-accent">Descrição temporal separada</p>
+        <h3 id="prais-group-results-heading" className="mt-1 font-sans text-base font-bold text-text">
+          Tendências Prais–Winsten por grupo
+        </h3>
+      </div>
+
+      {run.results.map((result) => {
+        const variableLabel = variableLabels[result.outcomeVariableId] ?? result.outcomeVariableId;
+        return (
+          <article key={`${result.groupId}:${result.outcomeVariableId}`} className="rounded-2xl border border-border bg-surface/55 p-4 sm:p-5">
+            <ResultsPanel
+              title={`Prais–Winsten · ${result.groupLabel} · ${variableLabel}`}
+              metrics={result.metrics}
+              chart={result.chart}
+              interpretation={result.interpretation}
+              exportFilename={`prais-${result.groupId}-${result.outcomeVariableId}.png`}
+              headingLevel={4}
+            />
+          </article>
+        );
+      })}
+
+      {run.skippedGroups.length > 0 ? (
+        <aside className="rounded-2xl border border-amber-400/25 bg-amber-400/5 p-4" aria-labelledby="prais-skipped-groups-heading">
+          <h4 id="prais-skipped-groups-heading" className="font-sans text-sm font-bold text-text">
+            Séries por grupo não calculáveis
+          </h4>
+          <ul className="mt-2 space-y-1 font-sans text-xs leading-relaxed text-text-muted">
+            {run.skippedGroups.map((item) => (
+              <li key={`${item.groupId}:${item.outcomeVariableId}`}>
+                {item.groupLabel} · {variableLabels[item.outcomeVariableId] ?? item.outcomeVariableId}: {item.reason}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      ) : null}
+
+      <p className="font-sans text-xs leading-relaxed text-text-muted">
+        Cada modelo descreve somente o seu grupo. Esta seção não compara p-valores nem significância entre grupos e não aplica Holm aos resultados Prais–Winsten.
+      </p>
+    </section>
+  );
 }
 
 function ResultRoleBadge({ role }: { role: 'principal' | 'sensibilidade' }) {
@@ -161,6 +218,7 @@ export function GuidedResultsSection({
   activeScenario,
   variableLabels,
   run,
+  praisGroupRun = null,
   recommendedRun = null,
   runError,
   pendingReview,
@@ -195,21 +253,24 @@ export function GuidedResultsSection({
 
   if (runError) {
     return (
-      <section role="alert" className="rounded-2xl border border-red-400/25 bg-red-400/5 p-4">
-        <h2 className="font-sans text-heading font-bold text-text">O cálculo foi bloqueado</h2>
-        <p className="mt-1 font-sans text-sm text-text-muted">{runError}</p>
-        <p className="mt-2 font-sans text-xs text-text-muted">Revise as escolhas; nenhum resultado parcial foi apresentado.</p>
-        <div className="mt-3">
-          <ReviewAnalysisDataDialog
-            design={design}
-            recommendedScenario={recommendedScenario}
-            activeScenario={activeScenario}
-            variableLabels={variableLabels}
-            createdAfterResults={activeScenario.createdAfterResults}
-            onApply={onScenarioChange}
-          />
-        </div>
-      </section>
+      <div className="space-y-5">
+        <section role="alert" className="rounded-2xl border border-red-400/25 bg-red-400/5 p-4">
+          <h2 className="font-sans text-heading font-bold text-text">O cálculo confirmatório foi bloqueado</h2>
+          <p className="mt-1 font-sans text-sm text-text-muted">{runError}</p>
+          <p className="mt-2 font-sans text-xs text-text-muted">Revise as escolhas do teste entre grupos; descrições Prais–Winsten elegíveis permanecem separadas abaixo.</p>
+          <div className="mt-3">
+            <ReviewAnalysisDataDialog
+              design={design}
+              recommendedScenario={recommendedScenario}
+              activeScenario={activeScenario}
+              variableLabels={variableLabels}
+              createdAfterResults={activeScenario.createdAfterResults}
+              onApply={onScenarioChange}
+            />
+          </div>
+        </section>
+        <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
+      </div>
     );
   }
 
@@ -229,6 +290,7 @@ export function GuidedResultsSection({
             </p>
           </div>
         </div>
+        <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
         {firstVariable ? <GuidedResultMap
           design={design}
           scenario={activeScenario}
@@ -265,6 +327,8 @@ export function GuidedResultsSection({
           </p>
         </div>
       </div>
+
+      <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
 
       {run.results.map((result) => (
         <article key={`${result.testId}:${result.outcomeVariableId}:${result.support ?? 'default'}`} className="rounded-2xl border border-border bg-surface/55 p-4 sm:p-5">

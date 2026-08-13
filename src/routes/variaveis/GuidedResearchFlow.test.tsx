@@ -255,6 +255,60 @@ describe('GuidedResearchFlow', () => {
     expect(within(paths).getByText('Comparação')).toBeInTheDocument();
   });
 
+  it('offers Prais–Winsten only on descriptive paths after profiles and reviews are ready', async () => {
+    const user = userEvent.setup();
+    const props = {
+      design: comparisonDesign,
+      summary,
+      variables,
+      profilesByVariableId: { internacoes: countProfile },
+      eligibility: eligibleTests,
+      reviewsResolved: true,
+      praisAvailable: true,
+      praisReason: 'Há pelo menos uma série anual regular com 8 pontos.',
+    };
+    const { rerender } = render(<GuidedResearchFlow {...props} />);
+
+    await user.click(screen.getByRole('radio', { name: 'Descrever' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    expect(screen.getByRole('checkbox', { name: 'Calcular Prais–Winsten por grupo' })).toBeEnabled();
+
+    rerender(<GuidedResearchFlow {...props} key="compare-only" />);
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    expect(screen.queryByRole('checkbox', { name: 'Calcular Prais–Winsten por grupo' })).not.toBeInTheDocument();
+  });
+
+  it('keeps descriptive trend choices independent from the confirmatory family', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    render(
+      <GuidedResearchFlow
+        design={comparisonDesign}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{ internacoes: countProfile }}
+        eligibility={eligibleTests}
+        reviewsResolved
+        praisAvailable
+        praisReason="Séries anuais por grupo disponíveis."
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Descrever e comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    await user.click(screen.getByRole('checkbox', { name: /Selecionar Mann–Whitney/i }));
+    await user.click(screen.getByRole('radio', { name: /Definir Mann–Whitney como principal/i }));
+    await user.click(screen.getByRole('checkbox', { name: 'Calcular Prais–Winsten por grupo' }));
+
+    expect(onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      trendTestIds: ['prais-winsten'],
+      testIds: ['mann-whitney'],
+      primaryTestId: 'mann-whitney',
+    }));
+  });
+
   it('disables the loading pulse when the user prefers reduced motion', async () => {
     const user = userEvent.setup();
     const { container } = render(

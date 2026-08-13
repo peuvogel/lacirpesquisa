@@ -9,6 +9,7 @@ import { GuidedResearchFlow } from './GuidedResearchFlow';
 import { GuidedResultsSection } from './GuidedResultsSection';
 import type { GuidedResearchSelection } from './guidedViewModels';
 import { buildHospitalOutcomeContingency } from './hospitalOutcomeContingency';
+import { runPraisForProfiles } from './praisGroupTrends';
 import { buildResearchSummary } from './researchCutSummary';
 import {
   attachCommonCoverageSensitivity,
@@ -38,6 +39,7 @@ export function GuidedAnalysisWorkspace({
   const [selection, setSelection] = useState<GuidedResearchSelection>({
     goal: null,
     variableIds: [],
+    trendTestIds: [],
     testIds: [],
     primaryTestId: null,
     roleAssignments: {},
@@ -90,6 +92,48 @@ export function GuidedAnalysisWorkspace({
   );
   const activeReviewsResolved = activeScenario !== null
     && !activeScenario.cells.some((cell) => cell.analyticStatus === 'requires_review');
+  const praisAvailability = useMemo(() => {
+    const compatibleProfiles = selectedProfiles.filter((profile) =>
+      ['count', 'rate', 'numeric'].includes(profile.variableType)
+      && profile.temporalAggregation !== 'point_only');
+    const groupsWithEnoughDeclaredYears = design.groups.filter((group) => {
+      const period = design.period.scope === 'shared'
+        ? design.period.time
+        : design.period.timesByGroupId[group.id];
+      if (!period || period.mode !== 'range') return false;
+      const start = Number(period.start.slice(0, 4));
+      const end = Number(period.end.slice(0, 4));
+      return Number.isInteger(start) && Number.isInteger(end) && end - start + 1 >= 8;
+    });
+    if (compatibleProfiles.length === 0) {
+      return {
+        available: false,
+        reason: 'Selecione ao menos uma contagem, taxa ou variável numérica agregável ao ano.',
+      };
+    }
+    if (groupsWithEnoughDeclaredYears.length === 0) {
+      return {
+        available: false,
+        reason: 'Nenhum grupo possui um intervalo declarado com pelo menos 8 anos.',
+      };
+    }
+    return {
+      available: true,
+      reason: `${compatibleProfiles.length} variável(is) serão avaliadas separadamente em ${design.groups.length} grupo(s); combinações sem 8 pontos anuais regulares permanecerão visíveis como não calculáveis.`,
+    };
+  }, [design, selectedProfiles]);
+  const praisGroupRun = useMemo(() => {
+    if (
+      !guided.data
+      || !activeReviewsResolved
+      || !selection.trendTestIds.includes('prais-winsten')
+    ) return null;
+    return runPraisForProfiles({
+      design,
+      sourceCells: guided.data.sourceCells,
+      profiles: selectedProfiles,
+    });
+  }, [activeReviewsResolved, design, guided.data, selectedProfiles, selection.trendTestIds]);
   const commonCoverage = useMemo(() => {
     if (!guided.data || !selection.primaryTestId || !isGroupComparisonTest(selection.primaryTestId)) return null;
     const outcomes = selectedProfiles.filter((profile) =>
@@ -232,6 +276,7 @@ export function GuidedAnalysisWorkspace({
       activeScenario={activeScenario}
       variableLabels={variableLabels}
       run={resultState.run}
+      praisGroupRun={praisGroupRun}
       recommendedRun={recommendedRun}
       runError={resultState.error}
       pendingReview={!activeReviewsResolved}
@@ -250,6 +295,8 @@ export function GuidedAnalysisWorkspace({
       variables={guided.variables}
       profilesByVariableId={activeProfilesByVariableId}
       eligibility={activeEligibility.length > 0 ? activeEligibility : guided.eligibility}
+      praisAvailable={praisAvailability.available}
+      praisReason={praisAvailability.reason}
       reviewsResolved={activeReviewsResolved}
       loadError={guided.error}
       recoverableMessages={guided.recoverableMessages}
