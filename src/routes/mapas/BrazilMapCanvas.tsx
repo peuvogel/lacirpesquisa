@@ -2,6 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { createChoroplethScale } from '@/geo/choroplethScale';
+import {
+  MAP_METRIC_FILLS,
+  MAP_METRIC_STROKES,
+  isPositiveFiniteMapValue,
+  mapMetricTooltip,
+  normalizeMapMetricCell,
+  type MapMetricInput,
+} from '@/geo/mapMetricCell';
 import { loadMesoTopo, loadMuniTopo } from '@/geo/loadGeoAsset';
 import { municipalityIdsForMeso } from '@/geo/mesoMembership';
 import {
@@ -36,7 +44,8 @@ import type { BrazilMockMapProps } from './BrazilMockMap';
 const UF_DESELECT_FADE_MS = 420;
 
 export interface BrazilMapCanvasProps extends BrazilMockMapProps {
-  choroplethValues: Record<string, number>;
+  /** Typed cells are preferred; raw numbers remain supported at this boundary. */
+  choroplethValues: Record<string, MapMetricInput>;
   activeVariableId: string | null;
   mapView?: MapViewState;
   onSetMapView?: (view: MapViewState) => void;
@@ -83,6 +92,34 @@ const MUNI_HOVER_STROKE = 'rgba(255,255,255,0.28)';
 const PARALLAX_MAX = 6;
 /** Stable default — inline `= []` would re-trigger municipio paint effects every render. */
 const EMPTY_MUNICIPIO_IDS: readonly string[] = [];
+
+function mapMetricPaint(
+  input: MapMetricInput,
+  scale: ReturnType<typeof createChoroplethScale> | null,
+): { fill: string; stroke?: string; description: string } {
+  const cell = normalizeMapMetricCell(input);
+  switch (cell.displayStatus) {
+    case 'zero':
+      return { fill: MAP_METRIC_FILLS.zero, description: mapMetricTooltip(cell) };
+    case 'review':
+      return {
+        fill: MAP_METRIC_FILLS.review,
+        stroke: MAP_METRIC_STROKES.review,
+        description: mapMetricTooltip(cell),
+      };
+    case 'missing':
+      return {
+        fill: MAP_METRIC_FILLS.missing,
+        stroke: MAP_METRIC_STROKES.missing,
+        description: mapMetricTooltip(cell),
+      };
+    case 'value':
+      return {
+        fill: scale && isPositiveFiniteMapValue(cell.value) ? scale(cell.value) : MAP_METRIC_FILLS.missing,
+        description: mapMetricTooltip(cell),
+      };
+  }
+}
 
 function ufIbgeForSigla(sigla: string): string | undefined {
   return UF_LIST.find((uf) => uf.sigla === sigla)?.ibgeCode;
@@ -258,8 +295,11 @@ export function BrazilMapCanvas({
   });
 
   const scale = useMemo(() => {
-    const values = Object.values(choroplethValues);
-    if (!activeVariableId || values.length === 0) {
+    const values = Object.values(choroplethValues)
+      .map(normalizeMapMetricCell)
+      .filter((cell) => cell.displayStatus === 'value')
+      .map((cell) => cell.value);
+    if (!activeVariableId) {
       return null;
     }
     return createChoroplethScale(values);
@@ -496,6 +536,14 @@ export function BrazilMapCanvas({
       >
         <defs>
           {GROUP_PALETTE_FILTERS}
+          <pattern id="lacir-map-missing-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#3f3f46" />
+            <path d="M0 0V6" stroke="#71717a" strokeWidth="2" />
+          </pattern>
+          <pattern id="lacir-map-review-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="#5c3d17" />
+            <path d="M0 0V6" stroke="#fbbf24" strokeWidth="2" />
+          </pattern>
           {BRAZIL_UF_PATHS.map(({ sigla, d }) => (
             <clipPath key={`clip-${sigla}`} id={`lacir-uf-clip-${sigla}`}>
               <path d={d} />
@@ -515,14 +563,14 @@ export function BrazilMapCanvas({
             const isFocus = focusSigla === sigla;
             const isNeighbor = isDrilled && !isFocus;
             const isHovered = !isDrilled && hoveredUF === sigla;
-            const metric = choroplethValues[sigla];
+            const metric = activeVariableId ? mapMetricPaint(choroplethValues[sigla], scale) : null;
             let fill = SURFACE_FILL;
             if (isNeighbor) {
               fill = NEIGHBOR_FILL;
             } else if (isFocus && isDrilled) {
               fill = '#151518';
-            } else if (scale && metric !== undefined) {
-              fill = scale(metric);
+            } else if (metric) {
+              fill = metric.fill;
             } else if (membership) {
               fill = groupColor(membership.groupIndex).fill;
             } else if (isUngroupedSelected) {
@@ -552,7 +600,7 @@ export function BrazilMapCanvas({
                         ? pendingColor.stroke
                         : isNeighbor
                           ? 'rgba(255,255,255,0.08)'
-                          : undefined
+                          : metric?.stroke
                 }
                 className={
                   isFocus && isDrilled
@@ -666,7 +714,9 @@ export function BrazilMapCanvas({
             <g clipPath={`url(#lacir-uf-clip-${focusSigla})`} data-layer="drill-features">
               {drillPaths.map((path) => {
                 const name = String(path.properties.nome ?? path.id);
-                const metric = choroplethValues[path.id];
+                const metric = activeVariableId
+                  ? mapMetricPaint(choroplethValues[path.id], scale)
+                  : null;
                 const membership = drillFeatureGroupMembership(
                   path.id,
                   mapView.level,
@@ -678,7 +728,7 @@ export function BrazilMapCanvas({
                     (mapView.level === 'municipio' && selectedMuniSet.has(path.id)));
                 const isHovered = hoveredUF === path.id;
                 let fill = 'rgba(255,255,255,0.04)';
-                if (scale && metric !== undefined) fill = scale(metric);
+                if (metric) fill = metric.fill;
                 else if (membership) fill = groupMuniSelectionFill(membership.groupIndex);
                 else if (isSelected) fill = muniSelectedFill;
                 else if (isHovered) fill = hoverFill;
@@ -705,6 +755,7 @@ export function BrazilMapCanvas({
                         ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
                         : undefined
                     }
+                    description={metric?.description}
                   />
                 );
               })}
@@ -731,6 +782,9 @@ export function BrazilMapCanvas({
                   accentStroke: pendingColor.stroke,
                   groupBadge: membership
                     ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
+                    : undefined,
+                  description: activeVariableId
+                    ? mapMetricPaint(choroplethValues[sigla], scale).description
                     : undefined,
                   onHover: handleHoverUF,
                   onToggle: onToggleUF,

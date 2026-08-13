@@ -36,4 +36,13 @@ describe('choroplethScale', () => {
     expect(scale(0)).toBe(TEAL_STEPS[0]);
     expect(legendBreaks([])).toEqual([]);
   });
+
+  it('uses only positive finite values for its domain and legend ramp', () => {
+    const scale = createChoroplethScale([null, 0, 5, 10, Number.NaN, Number.POSITIVE_INFINITY]);
+
+    expect(scale.domain()).toEqual([5, 10]);
+    const breaks = legendBreaks([null, 0, 5, 10, Number.NaN]);
+    expect(breaks[0]?.min).toBe(5);
+    expect(breaks.at(-1)?.max).toBe(10);
+  });
 });

@@ -1,4 +1,5 @@
 import { scaleSequential } from 'd3-scale';
+import { isPositiveFiniteMapValue } from './mapMetricCell';
 
 /** UI-SPEC teal choropleth steps — dark zinc to bright teal (never purple/rainbow). */
 export const TEAL_STEPS = ['#18181b', '#1a3d34', '#209978', '#2eb896', '#5eead4'] as const;
@@ -19,13 +20,14 @@ function stepColor(t: number): string {
  * Create a sequential choropleth color scale from numeric values.
  * Uses fixed teal steps per UI-SPEC.
  */
-export function createChoroplethScale(values: number[]) {
-  if (values.length === 0) {
+export function createChoroplethScale(values: readonly (number | null | undefined)[]) {
+  const positiveValues = values.filter(isPositiveFiniteMapValue);
+  if (positiveValues.length === 0) {
     return scaleSequential<string>().domain([0, 1]).interpolator(() => TEAL_STEPS[0]!);
   }
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = Math.min(...positiveValues);
+  const max = Math.max(...positiveValues);
 
   if (min === max) {
     return scaleSequential<string>().domain([min, max]).interpolator(() => TEAL_STEPS[2]!);
@@ -45,11 +47,15 @@ function ptBucketLabel(index: number, bucketCount: number): string {
 }
 
 /** Compute legend break buckets for display. */
-export function legendBreaks(values: number[], bucketCount = TEAL_STEPS.length): LegendBreak[] {
-  if (values.length === 0) return [];
+export function legendBreaks(
+  values: readonly (number | null | undefined)[],
+  bucketCount = TEAL_STEPS.length,
+): LegendBreak[] {
+  const positiveValues = values.filter(isPositiveFiniteMapValue);
+  if (positiveValues.length === 0) return [];
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = Math.min(...positiveValues);
+  const max = Math.max(...positiveValues);
 
   if (min === max) {
     return [{ min, max, color: TEAL_STEPS[2]!, label: String(min) }];

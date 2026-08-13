@@ -17,6 +17,8 @@ export interface MapGeoPathProps {
   accentStroke?: string;
   glowClass?: string;
   groupBadge?: string;
+  /** Accessible explanation of the metric state under the pointer/focus. */
+  description?: string;
   onHover: (territoryId: string | null) => void;
   onToggle: (territoryId: string) => void;
   onDrill?: (territoryId: string) => void;
@@ -38,6 +40,7 @@ export function MapGeoPath({
   accentStroke = '#209978',
   glowClass,
   groupBadge,
+  description,
   onHover,
   onToggle,
   onDrill,
@@ -58,6 +61,7 @@ export function MapGeoPath({
       role="button"
       tabIndex={0}
       aria-label={name}
+      aria-description={description}
       aria-pressed={isSelected}
       aria-grabbed={canShapeDrag ? isDragging : undefined}
       onMouseEnter={() => onHover(territoryId)}
@@ -92,7 +96,9 @@ export function MapGeoPath({
         'focus-visible:[stroke-width:2px] focus-visible:stroke-[var(--lacir-path-accent)]',
       )}
     >
-      {groupBadge ? <title>{groupBadge}</title> : null}
+      {groupBadge || description ? (
+        <title>{[groupBadge, description].filter(Boolean).join(' — ')}</title>
+      ) : null}
     </path>
   );
 }

@@ -132,6 +132,44 @@ describe('BrazilMapCanvas', () => {
     expect(spPaint?.getAttribute('fill')).not.toBe(acPaint?.getAttribute('fill'));
   });
 
+  it('keeps zero, missing, and review visually distinct without placing zero in the scale', () => {
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={{
+          AC: { value: 0, displayStatus: 'zero' },
+          AL: { value: null, displayStatus: 'missing' },
+          AP: { value: 0, displayStatus: 'review' },
+          AM: { value: 5, displayStatus: 'value' },
+          BA: { value: 10, displayStatus: 'value' },
+          CE: { value: Number.NaN, displayStatus: 'value' },
+        }}
+        activeVariableId="sih.embolia_e_trombose_arteriais.internacoes"
+      />,
+    );
+
+    const zeroFill = container.querySelector('[data-uf="AC"][data-layer="paint"]')?.getAttribute('fill');
+    const missingFill = container.querySelector('[data-uf="AL"][data-layer="paint"]')?.getAttribute('fill');
+    const reviewFill = container.querySelector('[data-uf="AP"][data-layer="paint"]')?.getAttribute('fill');
+    const invalidFill = container.querySelector('[data-uf="CE"][data-layer="paint"]')?.getAttribute('fill');
+    const positiveFill = container.querySelector('[data-uf="AM"][data-layer="paint"]')?.getAttribute('fill');
+
+    expect(zeroFill).toBeTruthy();
+    expect(missingFill).toBeTruthy();
+    expect(reviewFill).toBeTruthy();
+    expect(zeroFill).not.toBe(missingFill);
+    expect(reviewFill).not.toBe(missingFill);
+    expect(positiveFill).not.toBe(zeroFill);
+    expect(invalidFill).toBe(missingFill);
+    expect(screen.getByRole('button', { name: getUfName('AP') })).toHaveAttribute(
+      'aria-description',
+      'Valor bruto: 0; aguarda revisão analítica.',
+    );
+  });
+
   it('gives every UF an aria-label matching its state name', () => {
     render(
       <BrazilMapCanvas
