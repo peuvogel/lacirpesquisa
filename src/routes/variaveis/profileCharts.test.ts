@@ -35,20 +35,61 @@ describe('profileCharts', () => {
     expect(chart.data.datasets[0]?.data).toEqual([3, 5]);
   });
 
-  it('draws observed points and the observed-equals-expected reference in the Q–Q chart', () => {
-    const chart = buildQqChart(distribution, 'Taxa de mortalidade');
+  it('fits the Q–Q reference line to the observed location and scale', () => {
+    const chart = buildQqChart({
+      title: 'Q–Q',
+      description: 'Distribuição normal transformada.',
+      qqPoints: [
+        { theoretical: -1, observed: 8 },
+        { theoretical: 0, observed: 10 },
+        { theoretical: 1, observed: 12 },
+      ],
+    }, 'Taxa de mortalidade');
 
     expect(chart.type).toBe('scatter');
     expect(chart.ariaLabel).toBe('Gráfico quantil-quantil de Taxa de mortalidade');
     expect(chart.data.datasets).toHaveLength(2);
     expect(chart.data.datasets[0]).toMatchObject({
       label: 'Observado',
-      data: [{ x: -1, y: 5.1 }, { x: 1, y: 6.9 }],
+      data: [{ x: -1, y: 8 }, { x: 0, y: 10 }, { x: 1, y: 12 }],
     });
     expect(chart.data.datasets[1]).toMatchObject({
       label: 'Referência normal',
-      data: [{ x: -1, y: -1 }, { x: 1, y: 1 }],
+      data: [{ x: -1, y: 8 }, { x: 1, y: 12 }],
       borderDash: [6, 4],
+    });
+  });
+
+  it('omits the Q–Q reference line when theoretical variance is degenerate', () => {
+    const chart = buildQqChart({
+      title: 'Q–Q',
+      description: 'Quantis degenerados.',
+      qqPoints: [
+        { theoretical: 0, observed: 8 },
+        { theoretical: 0, observed: 12 },
+      ],
+    }, 'Taxa de mortalidade');
+
+    expect(chart.data.datasets[1]).toMatchObject({
+      label: 'Referência normal',
+      data: [],
+    });
+  });
+
+  it('omits the Q–Q reference line when observed values are constant', () => {
+    const chart = buildQqChart({
+      title: 'Q–Q',
+      description: 'Valores constantes.',
+      qqPoints: [
+        { theoretical: -1, observed: 10 },
+        { theoretical: 0, observed: 10 },
+        { theoretical: 1, observed: 10 },
+      ],
+    }, 'Taxa de mortalidade');
+
+    expect(chart.data.datasets[1]).toMatchObject({
+      label: 'Referência normal',
+      data: [],
     });
   });
 

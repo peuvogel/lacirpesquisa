@@ -19,6 +19,32 @@ function binLabel(lower: number, upper: number): string {
   return `${rangeNumber.format(lower)}–${rangeNumber.format(upper)}`;
 }
 
+function qqReferenceLine(points: NonNullable<DistributionViewModel['qqPoints']>): Array<{ x: number; y: number }> {
+  const finitePoints = points.filter((point) => Number.isFinite(point.theoretical) && Number.isFinite(point.observed));
+  if (finitePoints.length < 2) return [];
+
+  const meanX = finitePoints.reduce((sum, point) => sum + point.theoretical, 0) / finitePoints.length;
+  const meanY = finitePoints.reduce((sum, point) => sum + point.observed, 0) / finitePoints.length;
+  const sumXX = finitePoints.reduce((sum, point) => sum + (point.theoretical - meanX) ** 2, 0);
+  const sumYY = finitePoints.reduce((sum, point) => sum + (point.observed - meanY) ** 2, 0);
+  if (!Number.isFinite(sumXX) || !Number.isFinite(sumYY) || sumXX <= Number.EPSILON || sumYY <= Number.EPSILON) return [];
+
+  const sumXY = finitePoints.reduce(
+    (sum, point) => sum + (point.theoretical - meanX) * (point.observed - meanY),
+    0,
+  );
+  const slope = sumXY / sumXX;
+  const intercept = meanY - slope * meanX;
+  const minimum = Math.min(...finitePoints.map((point) => point.theoretical));
+  const maximum = Math.max(...finitePoints.map((point) => point.theoretical));
+  const line = [
+    { x: minimum, y: intercept + slope * minimum },
+    { x: maximum, y: intercept + slope * maximum },
+  ];
+
+  return line.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y)) ? line : [];
+}
+
 export function buildHistogramChart(distribution: DistributionViewModel, label: string): GuidedProfileChart {
   const bins = distribution.histogram ?? [];
   const labels = bins.map((bin) => binLabel(bin.lower, bin.upper));
@@ -54,9 +80,6 @@ export function buildHistogramChart(distribution: DistributionViewModel, label: 
 
 export function buildQqChart(distribution: DistributionViewModel, label: string): GuidedProfileChart {
   const points = distribution.qqPoints ?? [];
-  const referenceValues = points.map((point) => point.theoretical);
-  const minimum = Math.min(...referenceValues);
-  const maximum = Math.max(...referenceValues);
 
   return {
     type: 'scatter',
@@ -73,7 +96,7 @@ export function buildQqChart(distribution: DistributionViewModel, label: string)
         },
         {
           label: 'Referência normal',
-          data: [{ x: minimum, y: minimum }, { x: maximum, y: maximum }],
+          data: qqReferenceLine(points),
           borderColor: COLORS.muted,
           borderWidth: 1.5,
           borderDash: [6, 4],
