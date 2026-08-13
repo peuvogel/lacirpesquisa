@@ -8,6 +8,9 @@ export interface EligibleTestsSectionProps {
   primaryTestId: string | null;
   onSelectedTestIdsChange: (ids: string[]) => void;
   onPrimaryTestIdChange: (id: string) => void;
+  roleOptions?: Array<{ id: string; label: string }>;
+  roleAssignments?: Record<string, string>;
+  onRoleAssignmentsChange?: (roles: Record<string, string>) => void;
 }
 
 const STATUS_GROUPS: Array<{
@@ -25,6 +28,9 @@ export function EligibleTestsSection({
   primaryTestId,
   onSelectedTestIdsChange,
   onPrimaryTestIdChange,
+  roleOptions = [],
+  roleAssignments = {},
+  onRoleAssignmentsChange,
 }: EligibleTestsSectionProps) {
   function toggleTest(id: string) {
     onSelectedTestIdsChange(
@@ -47,6 +53,38 @@ export function EligibleTestsSection({
           Você pode marcar mais de um. Defina um principal; os demais serão análises de sensibilidade.
         </p>
       </div>
+
+      {roleOptions.length > 1 && onRoleAssignmentsChange ? (
+        <div className="grid gap-3 rounded-2xl border border-border bg-elevated/40 p-4 sm:grid-cols-2">
+          <label className="font-sans text-xs font-semibold text-text">
+            Variável de desfecho
+            <select
+              aria-label="Variável de desfecho"
+              value={roleAssignments.outcome ?? ''}
+              onChange={(event) => onRoleAssignmentsChange({ ...roleAssignments, outcome: event.target.value })}
+              className="mt-1.5 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-normal"
+            >
+              <option value="">Escolha…</option>
+              {roleOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+            </select>
+          </label>
+          <label className="font-sans text-xs font-semibold text-text">
+            Variável preditora
+            <select
+              aria-label="Variável preditora"
+              value={roleAssignments.predictor ?? ''}
+              onChange={(event) => onRoleAssignmentsChange({ ...roleAssignments, predictor: event.target.value })}
+              className="mt-1.5 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm font-normal"
+            >
+              <option value="">Escolha…</option>
+              {roleOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+            </select>
+          </label>
+          <p className="sm:col-span-2 font-sans text-xs text-text-muted">
+            Os papéis só afetam testes direcionais, como correlação e regressão. O sistema continua bloqueando combinações sem base estatística.
+          </p>
+        </div>
+      ) : null}
 
       <div className="space-y-5">
         {STATUS_GROUPS.map((group) => {

@@ -17,10 +17,11 @@ import { fingerprintResearchDesign } from '@/features/research/researchDesign';
 import type { ResearchDesign, ResearchPeriod } from '@/features/research/types';
 import { useSession } from '@/shared/session/SessionProvider';
 import { GuidedResearchFlow } from './GuidedResearchFlow';
-import type { ResearchCutSummaryViewModel } from './guidedViewModels';
+import type { GuidedResearchSelection, ResearchCutSummaryViewModel } from './guidedViewModels';
 import { VariableDetailPanel } from './VariableDetailPanel';
 import { VariableFilters } from './VariableFilters';
 import { VariableList } from './VariableList';
+import { useGuidedResearch } from './useGuidedResearch';
 
 const INITIAL_FILTERS: CatalogFilters = {
   query: '',
@@ -243,6 +244,27 @@ function DirectCatalogPage() {
 
 function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
   const reduceMotion = useReducedMotion();
+  const { setGuidedAnalysis } = useSession();
+  const [selection, setSelection] = useState<GuidedResearchSelection>({
+    goal: null,
+    variableIds: [],
+    testIds: [],
+    primaryTestId: null,
+    roleAssignments: {},
+  });
+  const guided = useGuidedResearch(design, selection);
+
+  useEffect(() => {
+    if (guided.status !== 'ready' || !guided.scenario) return;
+    setGuidedAnalysis({
+      design,
+      selectedVariableIds: selection.variableIds,
+      scenario: guided.scenario,
+      eligibility: guided.decisions,
+      resultsFingerprint: null,
+    });
+  }, [design, guided.decisions, guided.scenario, guided.status, selection.variableIds, setGuidedAnalysis]);
+
   return (
     <motion.div
       className="lacir-page-enter mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8"
@@ -254,6 +276,13 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
         key={fingerprintResearchDesign(design)}
         design={design}
         summary={buildResearchSummary(design)}
+        variables={guided.variables}
+        profilesByVariableId={guided.profilesByVariableId}
+        eligibility={guided.eligibility}
+        reviewsResolved={guided.reviewsResolved}
+        loadError={guided.error}
+        recoverableMessages={guided.recoverableMessages}
+        onSelectionChange={setSelection}
       />
     </motion.div>
   );

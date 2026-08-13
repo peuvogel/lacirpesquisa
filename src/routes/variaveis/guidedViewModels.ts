@@ -42,6 +42,9 @@ export interface ProfileFactViewModel {
 export interface DistributionViewModel {
   title: string;
   description: string;
+  histogram?: Array<{ lower: number; upper: number; count: number }>;
+  qqPoints?: Array<{ theoretical: number; observed: number }>;
+  categories?: Array<{ label: string; count: number }>;
   slot?: React.ReactNode;
 }
 
@@ -70,4 +73,5 @@ export interface GuidedResearchSelection {
   variableIds: string[];
   testIds: string[];
   primaryTestId: string | null;
+  roleAssignments?: Record<string, string>;
 }

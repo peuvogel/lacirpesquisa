@@ -1,6 +1,7 @@
 import { BarChart3, CheckCircle2, CircleAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DataProfileViewModel } from './guidedViewModels';
+import { ProfileDistributionVisual } from './ProfileDistributionVisual';
 
 export interface DataProfileSectionProps {
   profiles: DataProfileViewModel[];
@@ -49,7 +50,9 @@ export function DataProfileSection({ profiles, reviewsResolved }: DataProfileSec
                 <p className="mt-2 font-sans text-xs leading-relaxed text-text-muted">
                   {profile.distribution.description}
                 </p>
-                {profile.distribution.slot ? <div className="mt-3">{profile.distribution.slot}</div> : null}
+                <div className="mt-3">
+                  {profile.distribution.slot ?? <ProfileDistributionVisual distribution={profile.distribution} />}
+                </div>
               </div>
             </div>
           </article>

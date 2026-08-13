@@ -21,6 +21,8 @@ export interface GuidedResearchFlowProps {
   eligibility?: EligibleTestViewModel[];
   reviewsResolved?: boolean;
   onSelectionChange?: (selection: GuidedResearchSelection) => void;
+  loadError?: string | null;
+  recoverableMessages?: string[];
 }
 
 export function GuidedResearchFlow({
@@ -31,11 +33,14 @@ export function GuidedResearchFlow({
   eligibility,
   reviewsResolved = false,
   onSelectionChange,
+  loadError,
+  recoverableMessages = [],
 }: GuidedResearchFlowProps) {
   const [goal, setGoal] = useState<ResearchGoal | null>(null);
   const [variableIds, setVariableIds] = useState<string[]>([]);
   const [testIds, setTestIds] = useState<string[]>([]);
   const [primaryTestId, setPrimaryTestId] = useState<string | null>(null);
+  const [roleAssignments, setRoleAssignments] = useState<Record<string, string>>({});
 
   function notify(next: GuidedResearchSelection) {
     onSelectionChange?.(next);
@@ -46,26 +51,35 @@ export function GuidedResearchFlow({
     setVariableIds([]);
     setTestIds([]);
     setPrimaryTestId(null);
-    notify({ goal: nextGoal, variableIds: [], testIds: [], primaryTestId: null });
+    setRoleAssignments({});
+    notify({ goal: nextGoal, variableIds: [], testIds: [], primaryTestId: null, roleAssignments: {} });
   }
 
   function changeVariables(nextVariableIds: string[]) {
     setVariableIds(nextVariableIds);
     setTestIds([]);
     setPrimaryTestId(null);
-    notify({ goal, variableIds: nextVariableIds, testIds: [], primaryTestId: null });
+    setRoleAssignments({});
+    notify({ goal, variableIds: nextVariableIds, testIds: [], primaryTestId: null, roleAssignments: {} });
   }
 
   function changeTests(nextTestIds: string[]) {
     const nextPrimary = primaryTestId && nextTestIds.includes(primaryTestId) ? primaryTestId : null;
     setTestIds(nextTestIds);
     setPrimaryTestId(nextPrimary);
-    notify({ goal, variableIds, testIds: nextTestIds, primaryTestId: nextPrimary });
+    notify({ goal, variableIds, testIds: nextTestIds, primaryTestId: nextPrimary, roleAssignments });
   }
 
   function changePrimary(nextPrimaryTestId: string) {
     setPrimaryTestId(nextPrimaryTestId);
-    notify({ goal, variableIds, testIds, primaryTestId: nextPrimaryTestId });
+    notify({ goal, variableIds, testIds, primaryTestId: nextPrimaryTestId, roleAssignments });
+  }
+
+  function changeRoles(nextRoles: Record<string, string>) {
+    setRoleAssignments(nextRoles);
+    setTestIds([]);
+    setPrimaryTestId(null);
+    notify({ goal, variableIds, testIds: [], primaryTestId: null, roleAssignments: nextRoles });
   }
 
   const profiles = variableIds.flatMap((id) => {
@@ -99,7 +113,9 @@ export function GuidedResearchFlow({
       <FlowStep><ResearchGoalSection value={goal} onChange={changeGoal} /></FlowStep>
 
       {goal ? (
-        variables ? (
+        loadError ? (
+          <ErrorStep message={loadError} />
+        ) : variables ? (
           <FlowStep><GuidedVariableSelector variables={variables} selectedVariableIds={variableIds} onSelectionChange={changeVariables} /></FlowStep>
         ) : (
           <LoadingStep />
@@ -115,7 +131,13 @@ export function GuidedResearchFlow({
         />
       ) : null}
 
-      {hasAllProfiles && reviewsResolved ? (
+      {recoverableMessages.length > 0 ? (
+        <aside className="rounded-2xl border border-amber-400/25 bg-amber-400/5 px-4 py-3 font-sans text-sm text-text" role="status">
+          {recoverableMessages.join(' ')} As células afetadas permanecem como sem dados.
+        </aside>
+      ) : null}
+
+      {goal !== 'describe' && hasAllProfiles && reviewsResolved ? (
         eligibility ? (
           <FlowStep>
             <EligibleTestsSection
@@ -124,6 +146,9 @@ export function GuidedResearchFlow({
               primaryTestId={primaryTestId}
               onSelectedTestIdsChange={changeTests}
               onPrimaryTestIdChange={changePrimary}
+              roleOptions={variables?.filter((variable) => variableIds.includes(variable.id)).map((variable) => ({ id: variable.id, label: variable.label }))}
+              roleAssignments={roleAssignments}
+              onRoleAssignmentsChange={changeRoles}
             />
           </FlowStep>
         ) : (
@@ -134,6 +159,16 @@ export function GuidedResearchFlow({
         )
       ) : null}
     </div>
+  );
+}
+
+function ErrorStep({ message }: { message: string }) {
+  return (
+    <section role="alert" className="rounded-3xl border border-red-400/25 bg-red-400/5 p-5 sm:p-6">
+      <h2 className="font-sans text-heading font-bold text-text">2. Dados indisponíveis</h2>
+      <p className="mt-1 font-sans text-sm text-text-muted">{message}</p>
+      <p className="mt-2 font-sans text-xs text-text-muted">Nenhuma variável foi presumida e nenhum teste foi liberado.</p>
+    </section>
   );
 }
 

@@ -205,7 +205,7 @@ describe('VariaveisPage', () => {
 
   });
 
-  it('uses the guided shell for a research design without exposing invented availability', async () => {
+  it('uses the guided shell and fails closed when Supabase is unavailable in tests', async () => {
     const user = userEvent.setup();
     renderPage('/variaveis', guidedDesign);
 
@@ -216,7 +216,8 @@ describe('VariaveisPage', () => {
     expect(screen.queryByRole('listbox', { name: 'Variáveis do catálogo' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('radio', { name: 'Descrever' }));
-    expect(screen.getByRole('heading', { name: '2. Preparando variáveis disponíveis…' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '2. Dados indisponíveis' })).toBeInTheDocument();
+    expect(screen.getByText(/Nenhuma variável foi presumida/i)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 

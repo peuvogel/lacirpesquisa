@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { ResearchDesign } from '@/features/research/types';
 import { DataProfileSection } from './DataProfileSection';
 import { GuidedResearchFlow } from './GuidedResearchFlow';
@@ -246,6 +246,37 @@ describe('GuidedResearchFlow', () => {
     expect(screen.getByRole('heading', { name: '4. Preparando testes permitidos…' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '4. Testes permitidos' })).not.toBeInTheDocument();
   });
+
+  it('asks for explicit outcome and predictor roles when multiple variables are selected', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    render(
+      <GuidedResearchFlow
+        design={design}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{
+          internacoes: countProfile,
+          taxa_mortalidade: { ...countProfile, variableId: 'taxa_mortalidade', label: 'Taxa de mortalidade', kind: 'rate' },
+        }}
+        eligibility={eligibleTests}
+        reviewsResolved
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    await user.click(screen.getByRole('checkbox', { name: /Taxa de mortalidade, Taxa/i }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Variável de desfecho' }), 'taxa_mortalidade');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Variável preditora' }), 'internacoes');
+
+    expect(onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      roleAssignments: { outcome: 'taxa_mortalidade', predictor: 'internacoes' },
+      testIds: [],
+      primaryTestId: null,
+    }));
+  });
 });
 
 describe('GuidedVariableSelector', () => {
@@ -318,5 +349,28 @@ describe('DataProfileSection', () => {
     expect(screen.getByText('88 (91,7%)')).toBeInTheDocument();
     expect(screen.getAllByText('Esperado')[0]).toBeInTheDocument();
     expect(screen.getByText('Barras de frequência')).toBeInTheDocument();
+  });
+
+  it('renders supplied histogram and Q–Q values as accessible charts', () => {
+    render(<DataProfileSection profiles={[{
+      ...countProfile,
+      kind: 'numeric',
+      diagnosticLabel: 'Aproximadamente normal',
+      distribution: {
+        title: 'Histograma e Q–Q',
+        description: 'Valores observados.',
+        histogram: [
+          { lower: 0, upper: 1, count: 2 },
+          { lower: 1, upper: 2, count: 4 },
+        ],
+        qqPoints: [
+          { theoretical: -1, observed: 0.5 },
+          { theoretical: 1, observed: 1.5 },
+        ],
+      },
+    }]} reviewsResolved />);
+
+    expect(screen.getByRole('img', { name: 'Histograma da distribuição' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Gráfico quantil-quantil' })).toBeInTheDocument();
   });
 });
