@@ -114,4 +114,19 @@ describe('ResultsPanel', () => {
     expect(screen.getByText('Valor <b>bold</b> permanece literal.')).toBeInTheDocument();
     expect(document.querySelector('b')).not.toBeInTheDocument();
   });
+
+  it('renders pertinent post-hoc charts alongside the primary chart', () => {
+    render(
+      <ResultsPanel
+        title="ANOVA"
+        metrics={[{ label: 'Efeito', value: '0,30' }]}
+        chart={sampleChart}
+        additionalCharts={[{ ...sampleChart, type: 'scatter', ariaLabel: 'Heatmap pós-hoc' }]}
+        interpretation={['Texto.']}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'Médias por grupo' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Heatmap pós-hoc' })).toBeInTheDocument();
+  });
 });

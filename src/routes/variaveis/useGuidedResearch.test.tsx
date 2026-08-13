@@ -89,6 +89,48 @@ describe('guided research orchestration', () => {
     expect(valorTotal?.availabilityReason).toMatch(/Nenhum valor utilizável/i);
   });
 
+  it('keeps IBGE territory ids out of years and caps large availability explanations', () => {
+    const rangeDesign: ResearchDesign = {
+      ...design,
+      groups: [{
+        id: 'nordeste',
+        name: 'Nordeste',
+        territories: [
+          { id: '21', label: 'Maranhão' },
+          { id: '22', label: 'Piauí' },
+          { id: '23', label: 'Ceará' },
+          { id: '24', label: 'Rio Grande do Norte' },
+        ],
+      }],
+      period: { scope: 'shared', time: { mode: 'range', start: '2013', end: '2025' } },
+    };
+    const cells = rangeDesign.groups[0]!.territories.flatMap((territory) =>
+      Array.from({ length: 13 }, (_, index) => ({
+        diseaseId: 'doenca_teste',
+        territoryId: territory.id,
+        groupId: 'nordeste',
+        periodKey: String(2013 + index),
+        variableId: 'valor_total',
+        rawValue: null,
+        sourceStatus: 'not_applicable' as const,
+      })),
+    );
+
+    const data = buildGuidedResearchData(rangeDesign, {
+      fingerprint: 'snapshot:large-absence',
+      errors: [],
+      cells,
+    });
+    const reason = data.variables.find((variable) => variable.id === 'valor_total')?.availabilityReason ?? '';
+
+    expect(reason).toContain('Maranhão');
+    expect(reason).not.toContain('20Maranhão');
+    expect(reason.match(/Maranhão/g)).toHaveLength(1);
+    expect(reason).toMatch(/Piauí e mais 2 territórios/i);
+    expect(reason).toContain('de 2013 a 2025');
+    expect(reason.length).toBeLessThan(280);
+  });
+
   it('builds observed profiles and fail-closed test decisions for selected variables', () => {
     const data = buildGuidedResearchData(design, snapshot());
     const model = buildGuidedSelectionModel(data, {
@@ -109,6 +151,21 @@ describe('guided research orchestration', () => {
     });
     expect(model.eligibility.find((item) => item.id === 'logistica')).toMatchObject({
       status: 'ineligible',
+    });
+  });
+
+  it('derives a valid death/non-death table before releasing chi-square', () => {
+    const data = buildGuidedResearchData(design, snapshot());
+    const model = buildGuidedSelectionModel(data, {
+      goal: 'compare',
+      variableIds: ['desfecho_hospitalar'],
+      testIds: [],
+      primaryTestId: null,
+      roleAssignments: {},
+    });
+
+    expect(model.eligibility.find((item) => item.id === 'qui-quadrado')).toMatchObject({
+      status: 'eligible',
     });
   });
 

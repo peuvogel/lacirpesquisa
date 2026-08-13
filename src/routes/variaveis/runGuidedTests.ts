@@ -1,0 +1,473 @@
+import { buildAnovaChartPresets } from '@/features/tests/anova-tukey/anovaCharts';
+import {
+  buildMetrics as buildAnovaMetrics,
+  runAnalysis as runAnova,
+  toEngineOutput as toAnovaOutput,
+  validateDataset as validateAnova,
+  type AnovaBuiltDataset,
+} from '@/features/tests/anova-tukey/anovaEngine';
+import { buildAnovaInterpretation } from '@/features/tests/anova-tukey/anovaInterpretation';
+import { binomialNegativaChartPresets } from '@/features/tests/binomial-negativa/binomialNegativaCharts';
+import {
+  buildDatasetFromConfirmed as buildNegativeBinomialDataset,
+  buildMetrics as buildNegativeBinomialMetrics,
+  runAnalysis as runNegativeBinomial,
+  toEngineOutput as toNegativeBinomialOutput,
+  validateDataset as validateNegativeBinomial,
+} from '@/features/tests/binomial-negativa/binomialNegativaEngine';
+import { buildBinomialNegativaInterpretation } from '@/features/tests/binomial-negativa/binomialNegativaInterpretation';
+import { buildCorrelacaoChartPresets } from '@/features/tests/correlacao/correlacaoCharts';
+import {
+  buildMetrics as buildCorrelationMetrics,
+  toEngineOutput as toCorrelationOutput,
+  type CorrelacaoBuiltDataset,
+} from '@/features/tests/correlacao/correlacaoEngine';
+import { buildCorrelacaoInterpretation } from '@/features/tests/correlacao/correlacaoInterpretation';
+import { buildKruskalChartPresets } from '@/features/tests/kruskal-dunn/kruskalCharts';
+import {
+  buildMetrics as buildKruskalMetrics,
+  runAnalysis as runKruskal,
+  toEngineOutput as toKruskalOutput,
+  validateDataset as validateKruskal,
+  type KruskalBuiltDataset,
+} from '@/features/tests/kruskal-dunn/kruskalEngine';
+import { buildKruskalInterpretation } from '@/features/tests/kruskal-dunn/kruskalInterpretation';
+import { mannWhitneyChartPresets } from '@/features/tests/mann-whitney/mannWhitneyCharts';
+import {
+  buildMetrics as buildMannWhitneyMetrics,
+  runAnalysis as runMannWhitney,
+  toEngineOutput as toMannWhitneyOutput,
+  validateDataset as validateMannWhitney,
+  type MannWhitneyBuiltDataset,
+} from '@/features/tests/mann-whitney/mannWhitneyEngine';
+import { buildMannWhitneyInterpretation } from '@/features/tests/mann-whitney/mannWhitneyInterpretation';
+import { poissonChartPresets } from '@/features/tests/poisson/poissonCharts';
+import {
+  buildDatasetFromConfirmed as buildPoissonDataset,
+  buildMetrics as buildPoissonMetrics,
+  runAnalysis as runPoisson,
+  toEngineOutput as toPoissonOutput,
+  validateDataset as validatePoisson,
+} from '@/features/tests/poisson/poissonEngine';
+import { buildPoissonInterpretation } from '@/features/tests/poisson/poissonInterpretation';
+import { buildQuiQuadradoChartPresets } from '@/features/tests/qui-quadrado/quiQuadradoCharts';
+import {
+  buildMetrics as buildQuiQuadradoMetrics,
+  runAnalysis as runQuiQuadrado,
+  toEngineOutput as toQuiQuadradoOutput,
+  validateDataset as validateQuiQuadrado,
+  type QuiQuadradoBuiltDataset,
+} from '@/features/tests/qui-quadrado/quiQuadradoEngine';
+import { buildQuiQuadradoInterpretation } from '@/features/tests/qui-quadrado/quiQuadradoInterpretation';
+import { praisTrendPresets } from '@/features/tests/prais-winsten/praisCharts';
+import {
+  buildDatasetFromConfirmed as buildPraisDataset,
+  buildMetrics as buildPraisMetrics,
+  runAnalysis as runPrais,
+  validateSeries as validatePrais,
+} from '@/features/tests/prais-winsten/praisEngine';
+import { buildPraisInterpretation } from '@/features/tests/prais-winsten/praisInterpretation';
+import { TEST_REGISTRY } from '@/features/tests/registry';
+import { buildTStudentChartPresets } from '@/features/tests/t-student/tStudentCharts';
+import {
+  buildMetrics as buildTStudentMetrics,
+  runAnalysis as runTStudent,
+  toEngineOutput as toTStudentOutput,
+  validateSampleSize as validateTStudent,
+  type TStudentBuiltDataset,
+} from '@/features/tests/t-student/tStudentEngine';
+import { buildTStudentInterpretation } from '@/features/tests/t-student/tStudentInterpretation';
+import { completePairs, profileVariable } from '@/features/research/profiling';
+import type {
+  AnalysisCell,
+  AnalysisScenario,
+  EligibilityDecision,
+  ResearchDesign,
+  VariableProfile,
+} from '@/features/research/types';
+import type { ResultMetric, ResultsPanelProps } from '@/routes/estatistica/ResultsPanel';
+import type { HospitalOutcomeContingency } from './hospitalOutcomeContingency';
+
+export interface GuidedResultCoverage {
+  expected: number;
+  used: number;
+  missing: number;
+}
+
+export interface GuidedTestResult {
+  testId: string;
+  title: string;
+  role: 'principal' | 'sensibilidade';
+  metrics: ResultMetric[];
+  chart: ResultsPanelProps['chart'];
+  additionalCharts?: ResultsPanelProps['chart'][];
+  interpretation: string[];
+  coverage: GuidedResultCoverage;
+  pValue: number | null;
+  effectDirection: 'positive' | 'negative' | 'null';
+  outcomeVariableId: string;
+}
+
+export interface GuidedTestRun {
+  fingerprint: string;
+  scenarioFingerprint: string;
+  results: GuidedTestResult[];
+}
+
+export interface RunGuidedTestsInput {
+  design: ResearchDesign;
+  scenario: AnalysisScenario;
+  profiles: readonly VariableProfile[];
+  eligibility: readonly EligibilityDecision[];
+  selectedTestIds: readonly string[];
+  primaryTestId: string;
+  roleAssignments: Record<string, string>;
+  contingency?: HospitalOutcomeContingency;
+  alpha?: number;
+}
+
+type UsableCell = AnalysisCell & { rawValue: number };
+
+function isUsable(cell: AnalysisCell): cell is UsableCell {
+  return cell.analyticStatus === 'include'
+    && (cell.sourceStatus === 'observed' || cell.sourceStatus === 'collection_zero')
+    && typeof cell.rawValue === 'number'
+    && Number.isFinite(cell.rawValue);
+}
+
+function labelForTest(testId: string): string {
+  return TEST_REGISTRY.find((entry) => entry.id === testId)?.title ?? testId;
+}
+
+function outcomeProfile(input: RunGuidedTestsInput): VariableProfile {
+  const explicit = input.roleAssignments.outcome;
+  const profile = explicit
+    ? input.profiles.find((item) => item.variableId === explicit)
+    : input.profiles.filter((item) => item.variableType !== 'categorical')[0];
+  if (!profile) throw new Error('Defina uma variável de desfecho antes de executar a análise.');
+  return profile;
+}
+
+function groupNameById(design: ResearchDesign): Map<string, string> {
+  return new Map(design.groups.map((group) => [group.id, group.name]));
+}
+
+function groupVectors(input: RunGuidedTestsInput, variableId: string): Array<[string, number[]]> {
+  const names = groupNameById(input.design);
+  const groups = new Map<string, number[]>();
+  for (const cell of input.scenario.cells) {
+    if (cell.variableId !== variableId || !isUsable(cell)) continue;
+    const label = names.get(cell.groupId) ?? cell.groupId;
+    groups.set(label, [...(groups.get(label) ?? []), cell.rawValue]);
+  }
+  return [...groups];
+}
+
+function expectedScopes(input: RunGuidedTestsInput, variableIds: readonly string[]): number {
+  const ids = new Set(variableIds);
+  return new Set(input.scenario.cells
+    .filter((cell) => ids.has(cell.variableId))
+    .map((cell) => JSON.stringify([cell.groupId, cell.territoryId, cell.periodKey])))
+    .size;
+}
+
+function coverage(expected: number, used: number): GuidedResultCoverage {
+  return { expected, used, missing: Math.max(0, expected - used) };
+}
+
+function direction(value: number): GuidedTestResult['effectDirection'] {
+  if (!Number.isFinite(value) || Math.abs(value) < 1e-12) return 'null';
+  return value > 0 ? 'positive' : 'negative';
+}
+
+function orderedMetrics(metrics: ResultMetric[]): ResultMetric[] {
+  const evidence = /(?:evidência|p-valor)/i;
+  const effect = /(?:efeito|diferença|intervalo|variação|mudança|coeficiente\s*\(|r de pearson|ρ de spearman)/i;
+  return [
+    ...metrics.filter((metric) => effect.test(metric.label) && !evidence.test(metric.label)),
+    ...metrics.filter((metric) => !effect.test(metric.label) && !evidence.test(metric.label)),
+    ...metrics.filter((metric) => evidence.test(metric.label)),
+  ];
+}
+
+function withSafetyConclusion(
+  paragraphs: string[],
+  resultCoverage: GuidedResultCoverage,
+  design: ResearchDesign,
+): string[] {
+  const missingText = resultCoverage.missing > 0
+    ? `${resultCoverage.missing} unidade(s) esperada(s) ficaram fora por ausência ou decisão analítica.`
+    : 'Todas as unidades esperadas com valor utilizável entraram no cálculo.';
+  const ecological = ['uf', 'municipio', 'mesorregiao', 'macro_saude'].includes(design.geography)
+    ? 'Os dados são agregados por território: a associação ou diferença observada não demonstra causalidade nem deve ser transferida automaticamente para indivíduos.'
+    : 'A associação ou diferença observada não demonstra causalidade nem, sozinha, importância prática.';
+  return [
+    ...paragraphs,
+    `Cobertura analítica: ${resultCoverage.used} de ${resultCoverage.expected} unidade(s). ${missingText}`,
+    ecological,
+  ];
+}
+
+function validateEngine(errors: readonly string[], testId: string): void {
+  if (errors.length > 0) {
+    throw new Error(`${labelForTest(testId)} não pôde ser executado com segurança: ${errors.join(' ')}`);
+  }
+}
+
+function resultBase(
+  input: RunGuidedTestsInput,
+  testId: string,
+  outcomeVariableId: string,
+  metrics: ResultMetric[],
+  chart: ResultsPanelProps['chart'],
+  interpretation: string[],
+  resultCoverage: GuidedResultCoverage,
+  pValue: number | null,
+  effectDirection: GuidedTestResult['effectDirection'],
+): GuidedTestResult {
+  return {
+    testId,
+    title: labelForTest(testId),
+    role: testId === input.primaryTestId ? 'principal' : 'sensibilidade',
+    metrics: orderedMetrics(metrics),
+    chart,
+    interpretation: withSafetyConclusion(interpretation, resultCoverage, input.design),
+    coverage: resultCoverage,
+    pValue,
+    effectDirection,
+    outcomeVariableId,
+  };
+}
+
+function runGroupTest(input: RunGuidedTestsInput, testId: string, alpha: number): GuidedTestResult {
+  const outcome = outcomeProfile(input);
+  const entries = groupVectors(input, outcome.variableId);
+  const expected = expectedScopes(input, [outcome.variableId]);
+  const used = entries.reduce((sum, [, values]) => sum + values.length, 0);
+  const resultCoverage = coverage(expected, used);
+
+  if (testId === 't-student') {
+    const dataset: TStudentBuiltDataset = {
+      g1: entries[0]?.[1] ?? [],
+      g2: entries[1]?.[1] ?? [],
+      labels: [entries[0]?.[0] ?? 'Grupo A', entries[1]?.[0] ?? 'Grupo B'],
+      mode: 'independent',
+    };
+    validateEngine(validateTStudent('independent', dataset), testId);
+    const result = runTStudent('independent', dataset);
+    const output = toTStudentOutput(dataset, result);
+    return resultBase(input, testId, outcome.variableId, buildTStudentMetrics(result, dataset.labels),
+      buildTStudentChartPresets()[0]!.buildChart(output),
+      buildTStudentInterpretation(result, alpha, dataset.labels), resultCoverage, result.p, direction(result.diff));
+  }
+
+  if (testId === 'mann-whitney') {
+    const dataset: MannWhitneyBuiltDataset = {
+      groupA: entries[0]?.[1] ?? [], groupB: entries[1]?.[1] ?? [],
+      labels: [entries[0]?.[0] ?? 'Grupo A', entries[1]?.[0] ?? 'Grupo B'],
+      headers: { outcome: outcome.label, group: 'grupo territorial' },
+      groupOrder: entries.map(([label]) => label),
+    };
+    validateEngine(validateMannWhitney(dataset), testId);
+    const result = runMannWhitney(dataset);
+    const output = toMannWhitneyOutput(dataset, result);
+    return resultBase(input, testId, outcome.variableId, buildMannWhitneyMetrics(result, dataset.labels),
+      mannWhitneyChartPresets[0]!.buildChart(output),
+      buildMannWhitneyInterpretation(result, alpha, dataset.labels), resultCoverage, result.pValue,
+      direction(result.rankBiserial));
+  }
+
+  const groups = Object.fromEntries(entries);
+  if (testId === 'anova-tukey') {
+    const dataset: AnovaBuiltDataset = {
+      groups, groupOrder: entries.map(([label]) => label), headers: { outcome: outcome.label, group: 'grupo territorial' },
+    };
+    validateEngine(validateAnova(dataset), testId);
+    const result = runAnova(dataset);
+    const output = toAnovaOutput(dataset, result);
+    const presets = buildAnovaChartPresets(dataset.groupOrder.length);
+    return { ...resultBase(input, testId, outcome.variableId, buildAnovaMetrics(result, dataset),
+      presets[0]!.buildChart(output),
+      buildAnovaInterpretation(result, alpha, dataset.headers, dataset.groupOrder.length),
+      resultCoverage, result.p, 'null'),
+      additionalCharts: presets.slice(1).map((preset) => preset.buildChart(output)),
+    };
+  }
+
+  const dataset: KruskalBuiltDataset = {
+    groups, groupOrder: entries.map(([label]) => label), headers: { outcome: outcome.label, group: 'grupo territorial' },
+  };
+  validateEngine(validateKruskal(dataset), testId);
+  const result = runKruskal(dataset);
+  const output = toKruskalOutput(dataset, result);
+  const presets = buildKruskalChartPresets(dataset.groupOrder.length);
+  return { ...resultBase(input, testId, outcome.variableId, buildKruskalMetrics(result, dataset),
+    presets[0]!.buildChart(output),
+    buildKruskalInterpretation(result, alpha, dataset.headers, dataset.groupOrder.length),
+    resultCoverage, result.p, 'null'),
+    additionalCharts: presets.slice(1).map((preset) => preset.buildChart(output)),
+  };
+}
+
+function runCorrelationTest(input: RunGuidedTestsInput, alpha: number): GuidedTestResult {
+  const xId = input.roleAssignments.predictor;
+  const yId = input.roleAssignments.outcome;
+  const xProfile = input.profiles.find((profile) => profile.variableId === xId);
+  const yProfile = input.profiles.find((profile) => profile.variableId === yId);
+  if (!xId || !yId || !xProfile || !yProfile) throw new Error('Confirme preditor e desfecho para a correlação.');
+  const complete = completePairs(input.scenario.cells, xId, yId);
+  const method: CorrelacaoBuiltDataset['method'] = [xProfile, yProfile].some((profile) => profile.variableType === 'ordinal')
+    || [xProfile, yProfile].some((profile) => Object.values(profileVariable(input.scenario.cells, profile).byGroup)
+      .some((group) => group.normality.classification === 'non_normal'))
+    ? 'spearman'
+    : 'pearson';
+  const dataset: CorrelacaoBuiltDataset = {
+    x: complete.pairs.map((pair) => pair.x),
+    y: complete.pairs.map((pair) => pair.y),
+    labels: complete.pairs.map((pair) => `${pair.territoryId} · ${pair.periodKey}`),
+    headers: [xProfile.label, yProfile.label],
+    method,
+  };
+  const output = toCorrelationOutput(dataset, method);
+  const resultCoverage = coverage(expectedScopes(input, [xId, yId]), complete.n);
+  return resultBase(input, 'correlacao', yId, buildCorrelationMetrics(output.result, method, dataset.headers),
+    buildCorrelacaoChartPresets(method)[0]!.buildChart(output),
+    buildCorrelacaoInterpretation(output, alpha), resultCoverage, output.result.p, direction(output.result.coef));
+}
+
+function runPraisTest(input: RunGuidedTestsInput, alpha: number): GuidedTestResult {
+  const outcome = outcomeProfile(input);
+  const cells = input.scenario.cells.filter((cell): cell is UsableCell => cell.variableId === outcome.variableId && isUsable(cell));
+  const territory = input.design.groups.flatMap((group) => group.territories).find((item) => item.id === cells[0]?.territoryId);
+  const dataset = buildPraisDataset({
+    headers: ['território', 'tempo', outcome.label],
+    rows: cells.map((cell) => [territory?.label ?? cell.territoryId, cell.periodKey, String(cell.rawValue)]),
+    recognizedColumns: { id: 0, tempo: 1, variavel_y: 2 },
+  });
+  validateEngine(validatePrais(dataset), 'prais-winsten');
+  const output = runPrais(dataset);
+  const resultCoverage = coverage(expectedScopes(input, [outcome.variableId]), dataset.validCount);
+  const effect = output.model.scale === 'log' ? output.model.apc : output.model.absoluteChange;
+  return resultBase(input, 'prais-winsten', outcome.variableId, buildPraisMetrics(output.model, dataset),
+    praisTrendPresets[0]!.buildChart(output), buildPraisInterpretation(output, alpha),
+    resultCoverage, output.model.p, direction(effect));
+}
+
+function modelRows(input: RunGuidedTestsInput): {
+  rows: string[][];
+  expected: number;
+  outcome: VariableProfile;
+  predictor: VariableProfile;
+} {
+  const outcome = outcomeProfile(input);
+  const predictorId = input.roleAssignments.predictor;
+  const predictor = input.profiles.find((profile) => profile.variableId === predictorId);
+  const exposureId = input.roleAssignments.exposure ?? outcome.exposureVariableId ?? 'populacao';
+  if (!predictor || !predictorId) throw new Error('Defina o preditor do modelo de contagem.');
+  const byScope = new Map<string, Partial<Record<'outcome' | 'predictor' | 'exposure', number>>>();
+  for (const cell of input.scenario.cells) {
+    if (!isUsable(cell)) continue;
+    const role = cell.variableId === outcome.variableId
+      ? 'outcome'
+      : cell.variableId === predictorId
+        ? 'predictor'
+        : cell.variableId === exposureId
+          ? 'exposure'
+          : null;
+    if (!role) continue;
+    const key = JSON.stringify([cell.groupId, cell.territoryId, cell.periodKey]);
+    byScope.set(key, { ...(byScope.get(key) ?? {}), [role]: cell.rawValue });
+  }
+  const rows = [...byScope.values()].flatMap((row) =>
+    typeof row.outcome === 'number' && typeof row.predictor === 'number' && typeof row.exposure === 'number'
+      ? [[String(row.outcome), String(row.predictor), String(row.exposure)]]
+      : []);
+  return { rows, expected: expectedScopes(input, [outcome.variableId]), outcome, predictor };
+}
+
+function runCountModel(input: RunGuidedTestsInput, testId: 'poisson' | 'binomial-negativa', alpha: number): GuidedTestResult {
+  const built = modelRows(input);
+  const headers = [built.outcome.label, built.predictor.label, 'População-exposição'];
+  const recognizedColumns = { contagem: 0, preditor: 1, offset_exposure: 2 };
+  const resultCoverage = coverage(built.expected, built.rows.length);
+  if (testId === 'poisson') {
+    const dataset = buildPoissonDataset({ headers, rows: built.rows, recognizedColumns, requireExposure: true });
+    validateEngine(validatePoisson(dataset), testId);
+    const result = runPoisson(dataset);
+    const output = toPoissonOutput(dataset, result);
+    const slope = result.coefficients.find((item) => item.term !== '(Intercept)');
+    return resultBase(input, testId, built.outcome.variableId, buildPoissonMetrics(result, dataset),
+      poissonChartPresets[0]!.buildChart(output), buildPoissonInterpretation(output, alpha),
+      resultCoverage, slope?.p ?? null, direction(slope?.beta ?? 0));
+  }
+  const dataset = buildNegativeBinomialDataset({ headers, rows: built.rows, recognizedColumns, requireExposure: true });
+  validateEngine(validateNegativeBinomial(dataset), testId);
+  const result = runNegativeBinomial(dataset);
+  const output = toNegativeBinomialOutput(dataset, result);
+  const slope = result.coefficients.find((item) => item.term !== '(Intercept)');
+  return resultBase(input, testId, built.outcome.variableId, buildNegativeBinomialMetrics(result, dataset),
+    binomialNegativaChartPresets[0]!.buildChart(output), buildBinomialNegativaInterpretation(output, alpha),
+    resultCoverage, slope?.p ?? null, direction(slope?.beta ?? 0));
+}
+
+function runChiSquareTest(input: RunGuidedTestsInput, alpha: number): GuidedTestResult {
+  const contingency = input.contingency;
+  if (!contingency) throw new Error('A tabela observada de óbito e não óbito não está disponível.');
+  const dataset: QuiQuadradoBuiltDataset = {
+    table: contingency.table.map((row) => [...row]),
+    rowLabels: [...contingency.rowLabels],
+    colLabels: [...contingency.colLabels],
+    columnHeaders: [...contingency.columnHeaders],
+    totalN: contingency.table.flat().reduce((sum, value) => sum + value, 0),
+  };
+  validateEngine(validateQuiQuadrado(dataset), 'qui-quadrado');
+  const result = runQuiQuadrado(dataset);
+  const output = toQuiQuadradoOutput(dataset, result);
+  const resultCoverage = coverage(contingency.expectedUnits, contingency.usedUnits);
+  return resultBase(
+    input,
+    'qui-quadrado',
+    'desfecho_hospitalar',
+    buildQuiQuadradoMetrics(result, dataset),
+    buildQuiQuadradoChartPresets()[0]!.buildChart(output),
+    buildQuiQuadradoInterpretation(output, alpha),
+    resultCoverage,
+    result.p,
+    direction(result.cramersV),
+  );
+}
+
+function runOne(input: RunGuidedTestsInput, testId: string, alpha: number): GuidedTestResult {
+  if (['t-student', 'mann-whitney', 'anova-tukey', 'kruskal-dunn'].includes(testId)) {
+    return runGroupTest(input, testId, alpha);
+  }
+  if (testId === 'correlacao') return runCorrelationTest(input, alpha);
+  if (testId === 'prais-winsten') return runPraisTest(input, alpha);
+  if (testId === 'qui-quadrado') return runChiSquareTest(input, alpha);
+  if (testId === 'poisson' || testId === 'binomial-negativa') return runCountModel(input, testId, alpha);
+  throw new Error(`${labelForTest(testId)} ainda não possui um adaptador seguro para dados territoriais agregados.`);
+}
+
+export function runGuidedTests(input: RunGuidedTestsInput): GuidedTestRun {
+  if (!input.selectedTestIds.includes(input.primaryTestId)) {
+    throw new Error('O teste principal precisa estar entre os testes selecionados.');
+  }
+  const allowed = new Map(input.eligibility.map((item) => [item.testId, item]));
+  for (const testId of input.selectedTestIds) {
+    const eligibility = allowed.get(testId);
+    if (!eligibility || eligibility.status === 'ineligible') {
+      throw new Error(`${labelForTest(testId)} não foi liberado para este cenário.`);
+    }
+  }
+  const ordered = [
+    input.primaryTestId,
+    ...input.selectedTestIds.filter((testId) => testId !== input.primaryTestId),
+  ];
+  const alpha = input.alpha ?? 0.05;
+  const results = ordered.map((testId) => runOne(input, testId, alpha));
+  return {
+    fingerprint: `guided-results:${input.scenario.fingerprint}:${ordered.join(',')}:${JSON.stringify(input.roleAssignments)}`,
+    scenarioFingerprint: input.scenario.fingerprint,
+    results,
+  };
+}

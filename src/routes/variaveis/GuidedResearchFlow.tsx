@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { MapPinned } from 'lucide-react';
 import type { ResearchDesign, ResearchGoal } from '@/features/research/types';
 import { DataProfileSection } from './DataProfileSection';
@@ -23,6 +23,7 @@ export interface GuidedResearchFlowProps {
   onSelectionChange?: (selection: GuidedResearchSelection) => void;
   loadError?: string | null;
   recoverableMessages?: string[];
+  resultsSlot?: ReactNode;
 }
 
 export function GuidedResearchFlow({
@@ -35,6 +36,7 @@ export function GuidedResearchFlow({
   onSelectionChange,
   loadError,
   recoverableMessages = [],
+  resultsSlot,
 }: GuidedResearchFlowProps) {
   const [goal, setGoal] = useState<ResearchGoal | null>(null);
   const [variableIds, setVariableIds] = useState<string[]>([]);
@@ -157,6 +159,10 @@ export function GuidedResearchFlow({
             body="As decisões de elegibilidade aparecerão depois da avaliação real dos dados."
           />
         )
+      ) : null}
+
+      {resultsSlot && hasAllProfiles && (goal === 'describe' || !reviewsResolved || primaryTestId) ? (
+        <FlowStep>{resultsSlot}</FlowStep>
       ) : null}
     </div>
   );

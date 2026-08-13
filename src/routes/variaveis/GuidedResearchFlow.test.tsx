@@ -214,6 +214,7 @@ describe('GuidedResearchFlow', () => {
         profilesByVariableId={{ internacoes: countProfile }}
         eligibility={eligibleTests}
         reviewsResolved={false}
+        resultsSlot={<section><h2>Revise os dados da análise</h2></section>}
       />,
     );
 
@@ -221,7 +222,68 @@ describe('GuidedResearchFlow', () => {
     await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
 
     expect(screen.getByText('Revise as pendências antes de escolher testes.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Revise os dados da análise' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '4. Testes permitidos' })).not.toBeInTheDocument();
+  });
+
+  it('reveals an injected inline result only after a principal test is chosen', async () => {
+    const user = userEvent.setup();
+    render(
+      <GuidedResearchFlow
+        design={design}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{ internacoes: countProfile }}
+        eligibility={eligibleTests}
+        reviewsResolved
+        resultsSlot={<section><h2>5. Resultados no recorte</h2></section>}
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    expect(screen.queryByRole('heading', { name: '5. Resultados no recorte' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /Selecionar Mann–Whitney/i }));
+    await user.click(screen.getByRole('radio', { name: /Definir Mann–Whitney como principal/i }));
+    expect(screen.getByRole('heading', { name: '5. Resultados no recorte' })).toBeInTheDocument();
+  });
+
+  it('lets the user remove a selected test that becomes ineligible after data review', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <GuidedResearchFlow
+        design={design}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{ internacoes: countProfile }}
+        eligibility={eligibleTests}
+        reviewsResolved
+        resultsSlot={<section><h2>5. Resultados no recorte</h2></section>}
+      />,
+    );
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    await user.click(screen.getByRole('checkbox', { name: /Selecionar Mann–Whitney/i }));
+    await user.click(screen.getByRole('radio', { name: /Definir Mann–Whitney como principal/i }));
+
+    rerender(
+      <GuidedResearchFlow
+        design={design}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{ internacoes: countProfile }}
+        eligibility={eligibleTests.map((test) => test.id === 'mann-whitney'
+          ? { ...test, status: 'ineligible', statusLabel: 'Não permitido', reason: 'A revisão reduziu a amostra.' }
+          : test)}
+        reviewsResolved
+        resultsSlot={<section><h2>5. Resultados no recorte</h2></section>}
+      />,
+    );
+
+    const selected = screen.getByRole('checkbox', { name: /Selecionar Mann–Whitney/i });
+    expect(selected).toBeEnabled();
+    await user.click(selected);
+    expect(screen.queryByRole('heading', { name: '5. Resultados no recorte' })).not.toBeInTheDocument();
   });
 
   it('shows honest loading states while profile and eligibility view-models are pending', async () => {

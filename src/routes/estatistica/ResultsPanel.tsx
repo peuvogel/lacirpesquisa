@@ -11,18 +11,22 @@ export interface ResultMetric {
   hint?: string;
 }
 
+export interface ResultChart {
+  type: ChartCanvasType;
+  data: ChartData;
+  options?: ChartOptions;
+  ariaLabel: string;
+}
+
 export interface ResultsPanelProps {
   title: string;
   metrics: ResultMetric[];
-  chart: {
-    type: ChartCanvasType;
-    data: ChartData;
-    options?: ChartOptions;
-    ariaLabel: string;
-  };
+  chart: ResultChart;
+  additionalCharts?: ResultChart[];
   interpretation: string[];
   exportFilename?: string;
   actions?: ReactNode;
+  headingLevel?: 2 | 3 | 4;
 }
 
 /**
@@ -34,9 +38,11 @@ export function ResultsPanel({
   title,
   metrics,
   chart,
+  additionalCharts = [],
   interpretation,
   exportFilename = 'grafico-lacirstat.png',
   actions,
+  headingLevel = 2,
 }: ResultsPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const exportChart = useChartExport(canvasRef);
@@ -47,7 +53,13 @@ export function ResultsPanel({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      {headingLevel === 4 ? (
+        <h4 className="text-lg font-bold text-foreground">{title}</h4>
+      ) : headingLevel === 3 ? (
+        <h3 className="text-lg font-bold text-foreground">{title}</h3>
+      ) : (
+        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((metric) => (
@@ -59,14 +71,26 @@ export function ResultsPanel({
         ))}
       </div>
 
-      <ChartCanvas
-        type={chart.type}
-        data={chart.data}
-        options={chart.options}
-        ariaLabel={chart.ariaLabel}
-        onCanvasReady={handleCanvasReady}
-        className="lacir-chart-card"
-      />
+      <div className={additionalCharts.length > 0 ? 'grid gap-4 md:grid-cols-2' : undefined}>
+        <ChartCanvas
+          type={chart.type}
+          data={chart.data}
+          options={chart.options}
+          ariaLabel={chart.ariaLabel}
+          onCanvasReady={handleCanvasReady}
+          className="lacir-chart-card"
+        />
+        {additionalCharts.map((additional) => (
+          <ChartCanvas
+            key={additional.ariaLabel}
+            type={additional.type}
+            data={additional.data}
+            options={additional.options}
+            ariaLabel={additional.ariaLabel}
+            className="lacir-chart-card"
+          />
+        ))}
+      </div>
 
       <InterpretationText paragraphs={interpretation} />
 

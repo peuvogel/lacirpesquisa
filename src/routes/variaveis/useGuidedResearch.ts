@@ -27,6 +27,10 @@ import type {
   GuidedResearchSelection,
   GuidedVariableViewModel,
 } from './guidedViewModels';
+import {
+  buildHospitalOutcomeContingency,
+  type HospitalOutcomeContingency,
+} from './hospitalOutcomeContingency';
 
 const POPULATION_PROFILE: VariableProfile = {
   variableId: 'populacao',
@@ -53,6 +57,15 @@ const STATUS_PRIORITY: SourceCellStatus[] = [
   'collection_zero',
 ];
 
+const AVAILABILITY_STATUS_LABELS: Record<SourceCellStatus, string> = {
+  observed: 'valor inválido',
+  collection_zero: 'zero inválido',
+  missing: 'dados ausentes',
+  suppressed: 'dado suprimido',
+  not_applicable: 'não aplicável',
+  not_queried: 'não consultado',
+};
+
 type ResearchLoader = typeof loadResearchCells;
 
 export interface GuidedResearchData {
@@ -72,6 +85,7 @@ export interface GuidedSelectionModel {
   scenario: AnalysisScenario;
   reviewsResolved: boolean;
   effectiveRoles: Record<string, string>;
+  contingency: HospitalOutcomeContingency | null;
 }
 
 export interface UseGuidedResearchResult {
@@ -85,6 +99,8 @@ export interface UseGuidedResearchResult {
   reviewsResolved: boolean;
   effectiveRoles: Record<string, string>;
   recoverableMessages: string[];
+  data?: GuidedResearchData;
+  contingency?: HospitalOutcomeContingency | null;
 }
 
 function finiteSource(cell: ResearchSourceCell): cell is ResearchSourceCell & { rawValue: number } {
@@ -369,12 +385,41 @@ function availabilityReason(
   summary: AvailabilitySummary,
   territoryLabels: ReadonlyMap<string, string>,
 ): string | undefined {
-  if (!summary.reason) return undefined;
-  let reason = summary.reason;
-  for (const [id, label] of [...territoryLabels].sort((left, right) => right[0].length - left[0].length)) {
-    reason = reason.replaceAll(id, label);
+  if (summary.state === 'complete') return undefined;
+  const headline = summary.state === 'none'
+    ? 'Nenhum valor utilizável no recorte.'
+    : `Cobertura parcial: ${summary.unavailableCount} de ${summary.expectedCount} combinações território–período sem dado.`;
+  if (summary.issues.length > 3) {
+    const territoryIds = [...new Set(summary.issues.map((issue) => issue.territoryId))].sort();
+    const namedTerritories = territoryIds.slice(0, 2)
+      .map((id) => territoryLabels.get(id) ?? id);
+    const territoryRemainder = territoryIds.length - namedTerritories.length;
+    const territoryText = `${namedTerritories.join(', ')}${territoryRemainder > 0
+      ? ` e mais ${territoryRemainder} ${territoryRemainder === 1 ? 'território' : 'territórios'}`
+      : ''}`;
+    const periods = [...new Set(summary.issues.map((issue) => issue.periodKey))].sort();
+    const periodText = periods.length === 1
+      ? `em ${periods[0]}`
+      : `de ${periods[0]} a ${periods.at(-1)}`;
+    const statuses = [...new Set(summary.issues.map((issue) => issue.sourceStatus))];
+    const cause = statuses.length === 1
+      ? AVAILABILITY_STATUS_LABELS[statuses[0]!]
+      : 'indisponível';
+    return `${headline} ${cause[0]!.toUpperCase()}${cause.slice(1)} em ${territoryText}, ${periodText}.`;
   }
-  return reason;
+  const examples = [...summary.issues]
+    .sort((left, right) =>
+      STATUS_PRIORITY.indexOf(left.sourceStatus) - STATUS_PRIORITY.indexOf(right.sourceStatus)
+      || left.territoryId.localeCompare(right.territoryId)
+      || left.periodKey.localeCompare(right.periodKey))
+    .slice(0, 3)
+    .map((issue) => {
+      const territory = territoryLabels.get(issue.territoryId) ?? issue.territoryId;
+      return `${territory} em ${issue.periodKey} (${AVAILABILITY_STATUS_LABELS[issue.sourceStatus]})`;
+    });
+  if (examples.length === 0) return headline;
+  const remaining = summary.issues.length - examples.length;
+  return `${headline} Exemplos: ${examples.join('; ')}${remaining > 0 ? `; e mais ${remaining}.` : '.'}`;
 }
 
 function toVariableViewModel(
@@ -447,19 +492,19 @@ function normalityLabel(result: VariableProfileResult, profile: VariableProfile)
   return 'Dados insuficientes para avaliar';
 }
 
-function categoricalCounts(data: GuidedResearchData): Array<{ label: string; count: number }> {
-  const included = data.sourceCells.filter((cell) => cell.analyticStatus === 'include');
-  const admissions = included.filter((cell) => cell.variableId === 'internacoes')
-    .reduce((sum, cell) => sum + (cell.rawValue ?? 0), 0);
-  const deaths = included.filter((cell) => cell.variableId === 'obitos')
-    .reduce((sum, cell) => sum + (cell.rawValue ?? 0), 0);
-  return [
-    { label: 'Não óbito', count: Math.max(0, admissions - deaths) },
-    { label: 'Óbito', count: Math.max(0, deaths) },
-  ];
+function categoricalCounts(
+  data: GuidedResearchData,
+  scenario: AnalysisScenario,
+): Array<{ label: string; count: number }> {
+  const contingency = buildHospitalOutcomeContingency(data.design, data.analyticCells, scenario);
+  if (!contingency) return [];
+  return contingency.colLabels.map((label, column) => ({
+    label,
+    count: contingency.table.reduce((sum, row) => sum + (row[column] ?? 0), 0),
+  }));
 }
 
-function profileViewModel(
+export function buildProfileViewModel(
   data: GuidedResearchData,
   scenario: AnalysisScenario,
   profile: VariableProfile,
@@ -467,7 +512,7 @@ function profileViewModel(
   const result = profileVariable(scenario.cells, profile);
   const summary = result.overall;
   const availability = data.availabilityByVariableId[profile.variableId]!;
-  const categories = profile.variableType === 'categorical' ? categoricalCounts(data) : undefined;
+  const categories = profile.variableType === 'categorical' ? categoricalCounts(data, scenario) : undefined;
   const facts = profile.variableType === 'count'
     ? [
         { label: 'Mediana', value: formatted(summary.median, profile.unit) },
@@ -511,7 +556,7 @@ function testLabel(id: string): string {
   return TEST_REGISTRY.find((entry) => entry.id === id)?.title ?? id;
 }
 
-function eligibilityViewModel(decisions: ReturnType<typeof evaluateTests>): EligibleTestViewModel[] {
+export function toEligibilityViewModels(decisions: ReturnType<typeof evaluateTests>): EligibleTestViewModel[] {
   return decisions.map((item) => ({
     id: item.testId,
     label: testLabel(item.testId),
@@ -543,25 +588,28 @@ export function buildGuidedSelectionModel(
   }
   const outcome = selectedProfiles.find((profile) => profile.variableId === effectiveRoles.outcome);
   if (outcome?.variableType === 'count' && !effectiveRoles.exposure) effectiveRoles.exposure = 'populacao';
+  const contingency = buildHospitalOutcomeContingency(data.design, data.analyticCells, scenario);
   const decisions = selectedProfiles.length > 0 && selection.goal !== 'describe'
     ? evaluateTests({
         design: data.design,
         scenario,
         profiles: selectedProfiles,
         roleAssignments: effectiveRoles,
+        ...(contingency ? { contingencyTable: contingency.table } : {}),
       })
     : [];
   const profilesByVariableId = Object.fromEntries(selectedProfiles.map((profile) => [
     profile.variableId,
-    profileViewModel(data, scenario, profile),
+    buildProfileViewModel(data, scenario, profile),
   ]));
   return {
     profilesByVariableId,
-    eligibility: eligibilityViewModel(decisions),
+    eligibility: toEligibilityViewModels(decisions),
     decisions,
     scenario,
     reviewsResolved: !scenario.cells.some((cell) => cell.analyticStatus === 'requires_review'),
     effectiveRoles,
+    contingency,
   };
 }
 
@@ -629,5 +677,7 @@ export function useGuidedResearch(
     reviewsResolved: model.reviewsResolved,
     effectiveRoles: model.effectiveRoles,
     recoverableMessages: data.recoverableMessages,
+    data,
+    contingency: model.contingency,
   };
 }

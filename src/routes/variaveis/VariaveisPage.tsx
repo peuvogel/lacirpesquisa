@@ -14,14 +14,19 @@ import { loadCatalog, type LoadedCatalog } from '@/features/catalog/loadCatalog'
 import { DISEASES } from '@/features/catalog/taxonomy';
 import type { CatalogEntry } from '@/features/catalog/types';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
-import type { ResearchDesign, ResearchPeriod } from '@/features/research/types';
+import { evaluateTests } from '@/features/research/eligibility';
+import type { AnalysisScenario, ResearchDesign, ResearchPeriod } from '@/features/research/types';
+import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import { useSession } from '@/shared/session/SessionProvider';
 import { GuidedResearchFlow } from './GuidedResearchFlow';
+import { GuidedResultsSection } from './GuidedResultsSection';
 import type { GuidedResearchSelection, ResearchCutSummaryViewModel } from './guidedViewModels';
+import { buildHospitalOutcomeContingency } from './hospitalOutcomeContingency';
+import { runGuidedTests, type GuidedTestRun } from './runGuidedTests';
 import { VariableDetailPanel } from './VariableDetailPanel';
 import { VariableFilters } from './VariableFilters';
 import { VariableList } from './VariableList';
-import { useGuidedResearch } from './useGuidedResearch';
+import { buildProfileViewModel, toEligibilityViewModels, useGuidedResearch } from './useGuidedResearch';
 
 const INITIAL_FILTERS: CatalogFilters = {
   query: '',
@@ -252,18 +257,160 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
     primaryTestId: null,
     roleAssignments: {},
   });
+  const [revision, setRevision] = useState<{
+    recommendedFingerprint: string;
+    scenario: AnalysisScenario;
+  } | null>(null);
   const guided = useGuidedResearch(design, selection);
 
+  const recommendedScenario = guided.scenario;
+  const activeScenario = revision && recommendedScenario
+    && revision.recommendedFingerprint === recommendedScenario.fingerprint
+    ? revision.scenario
+    : recommendedScenario;
+  const selectedProfiles = useMemo(
+    () => selection.variableIds.flatMap((id) => {
+      const profile = VARIABLE_PROFILES.find((item) => item.variableId === id);
+      return profile ? [profile] : [];
+    }),
+    [selection.variableIds],
+  );
+  const activeContingency = useMemo(
+    () => activeScenario && guided.data
+      ? buildHospitalOutcomeContingency(design, guided.data.analyticCells, activeScenario)
+      : null,
+    [activeScenario, design, guided.data],
+  );
+  const activeDecisions = useMemo(
+    () => activeScenario && selectedProfiles.length > 0 && selection.goal !== 'describe'
+      ? evaluateTests({
+          design,
+          scenario: activeScenario,
+          profiles: selectedProfiles,
+          roleAssignments: guided.effectiveRoles,
+          ...(activeContingency ? { contingencyTable: activeContingency.table } : {}),
+        })
+      : [],
+    [activeContingency, activeScenario, design, guided.effectiveRoles, selectedProfiles, selection.goal],
+  );
+  const activeEligibility = useMemo(() => toEligibilityViewModels(activeDecisions), [activeDecisions]);
+  const activeProfilesByVariableId = useMemo(
+    () => activeScenario && guided.data
+      ? Object.fromEntries(selectedProfiles.map((profile) => [
+          profile.variableId,
+          buildProfileViewModel(guided.data!, activeScenario, profile),
+        ]))
+      : guided.profilesByVariableId,
+    [activeScenario, guided.data, guided.profilesByVariableId, selectedProfiles],
+  );
+  const activeReviewsResolved = activeScenario !== null
+    && !activeScenario.cells.some((cell) => cell.analyticStatus === 'requires_review');
+  const resultState = useMemo<{ run: GuidedTestRun | null; error: string | null }>(() => {
+    if (
+      !activeScenario
+      || selection.goal === 'describe'
+      || !selection.primaryTestId
+      || selection.testIds.length === 0
+      || !activeReviewsResolved
+    ) return { run: null, error: null };
+    try {
+      return {
+        run: runGuidedTests({
+          design,
+          scenario: activeScenario,
+          profiles: selectedProfiles,
+          eligibility: activeDecisions,
+          selectedTestIds: selection.testIds,
+          primaryTestId: selection.primaryTestId,
+          roleAssignments: guided.effectiveRoles,
+          ...(activeContingency ? { contingency: activeContingency } : {}),
+        }),
+        error: null,
+      };
+    } catch (error) {
+      return { run: null, error: error instanceof Error ? error.message : 'Não foi possível calcular os testes.' };
+    }
+  }, [
+    activeDecisions,
+    activeContingency,
+    activeReviewsResolved,
+    activeScenario,
+    design,
+    guided.effectiveRoles,
+    selectedProfiles,
+    selection.goal,
+    selection.primaryTestId,
+    selection.testIds,
+  ]);
+  const variableLabels = useMemo(
+    () => Object.fromEntries((guided.variables ?? [])
+      .filter((variable) => selection.variableIds.includes(variable.id))
+      .map((variable) => [variable.id, variable.label])),
+    [guided.variables, selection.variableIds],
+  );
+  const recommendedRun = useMemo(() => {
+    if (
+      !recommendedScenario
+      || recommendedScenario === activeScenario
+      || recommendedScenario.cells.some((cell) => cell.analyticStatus === 'requires_review')
+      || selection.goal === 'describe'
+      || !selection.primaryTestId
+      || selection.testIds.length === 0
+    ) return null;
+    try {
+      return runGuidedTests({
+        design,
+        scenario: recommendedScenario,
+        profiles: selectedProfiles,
+        eligibility: guided.decisions,
+        selectedTestIds: selection.testIds,
+        primaryTestId: selection.primaryTestId,
+        roleAssignments: guided.effectiveRoles,
+        ...(guided.contingency ? { contingency: guided.contingency } : {}),
+      });
+    } catch {
+      return null;
+    }
+  }, [
+    activeScenario,
+    design,
+    guided.decisions,
+    guided.contingency,
+    guided.effectiveRoles,
+    recommendedScenario,
+    selectedProfiles,
+    selection.goal,
+    selection.primaryTestId,
+    selection.testIds,
+  ]);
+
   useEffect(() => {
-    if (guided.status !== 'ready' || !guided.scenario) return;
+    if (guided.status !== 'ready' || !activeScenario) return;
     setGuidedAnalysis({
       design,
       selectedVariableIds: selection.variableIds,
-      scenario: guided.scenario,
-      eligibility: guided.decisions,
-      resultsFingerprint: null,
+      scenario: activeScenario,
+      eligibility: activeDecisions,
+      resultsFingerprint: resultState.run?.fingerprint ?? null,
     });
-  }, [design, guided.decisions, guided.scenario, guided.status, selection.variableIds, setGuidedAnalysis]);
+  }, [activeDecisions, activeScenario, design, guided.status, resultState.run?.fingerprint, selection.variableIds, setGuidedAnalysis]);
+
+  const resultsSlot = recommendedScenario && activeScenario && selection.variableIds.length > 0 ? (
+    <GuidedResultsSection
+      design={design}
+      recommendedScenario={recommendedScenario}
+      activeScenario={activeScenario}
+      variableLabels={variableLabels}
+      run={resultState.run}
+      recommendedRun={recommendedRun}
+      runError={resultState.error}
+      pendingReview={!activeReviewsResolved}
+      onScenarioChange={(scenario) => setRevision({
+        recommendedFingerprint: recommendedScenario.fingerprint,
+        scenario,
+      })}
+    />
+  ) : null;
 
   return (
     <motion.div
@@ -277,12 +424,13 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
         design={design}
         summary={buildResearchSummary(design)}
         variables={guided.variables}
-        profilesByVariableId={guided.profilesByVariableId}
-        eligibility={guided.eligibility}
-        reviewsResolved={guided.reviewsResolved}
+        profilesByVariableId={activeProfilesByVariableId}
+        eligibility={activeEligibility.length > 0 ? activeEligibility : guided.eligibility}
+        reviewsResolved={activeReviewsResolved}
         loadError={guided.error}
         recoverableMessages={guided.recoverableMessages}
         onSelectionChange={setSelection}
+        resultsSlot={resultsSlot}
       />
     </motion.div>
   );

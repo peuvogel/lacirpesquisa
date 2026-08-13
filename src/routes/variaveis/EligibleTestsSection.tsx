@@ -126,7 +126,7 @@ function TestDecisionCard({
   onToggle: () => void;
   onPrimary: () => void;
 }) {
-  const disabled = test.status === 'ineligible';
+  const disabled = test.status === 'ineligible' && !selected;
   return (
     <article
       className={cn(
