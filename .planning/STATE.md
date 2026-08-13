@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-10-SEGUNDA-SUBSTITUICAO COMPLETO (2026-08-13): segunda substituicao atomica de producao (D-16) executada com o dataset completo de 331 agravos -- sih_metric_uf 207.131->207.664 linhas, 330->331 agravos, amputacao_mmii presente pela primeira vez (702 linhas, completo). upload.py/partitions.py reaproveitados sem alteracao; 27 particoes de municipio regeneradas e reenviadas ao Storage (130,05 MB, SP=19,36 MB); amputacao_mmii provada end-to-end via PostgREST anonimo; sih-swap-contagens.sql regenerado (ESPERADO_SIH_METRIC_UF=207664) saiu 0 contra producao. 09-14 desbloqueado. Ver 09-10-SUMMARY.md."
-last_updated: "2026-08-13T02:58:00.000Z"
+stopped_at: "09-12 COMPLETO (2026-08-13): coleta/substituicao de producao ja concluidas por planos anteriores VERIFICADAS e AUDITADAS, nao repetidas. Fechou lacuna real de ledger de arquivo (12 arquivos RDAC2501..2512/Acre-2025). Entregou audit.py (PIPE-05, TDD) com a regra pura do D-14. Checkpoint humano da Task 3 aprovado com 3 decisoes do operador: cobertura aprovada; 8 categorias de causa externa (V01-Y98) zeradas desde 2016 por mudanca de codificacao da fonte (confirmado contra o TabNet ao vivo) registradas e aceitas; lacuna de Camada 2 do grao municipio em sih_collection_status FECHADA (file_scope ampliado exclusivamente para upload.py --municipio, TDD, 33.560->67.120 linhas, faltantes do grao municipio 34.424->864). npm run gate verde em cada um dos 5 commits. Ver 09-12-SUMMARY.md."
+last_updated: "2026-08-13T09:06:51.081Z"
 last_activity: 2026-08-13
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 2
   total_plans: 31
-  completed_plans: 37
-  percent: 50
+  completed_plans: 28
+  percent: 33
 ---
 
 # Project State
@@ -56,10 +56,21 @@ SP=19,36 MB), `sih-swap-contagens.sql` regenerado (`ESPERADO_SIH_METRIC_UF=20766
 (nao so SQL). `upload.py`/`partitions.py` reaproveitados sem nenhuma alteracao. Ver
 09-10-SUMMARY.md §"Segunda substituição de produção — dataset completo, 331 agravos".
 
-Proximo: 09-12 e 09-14 podem prosseguir normalmente -- **09-14 NAO ESTA MAIS BLOQUEADO**
-(amputacao_mmii esta em producao agora, entao remover sih_metric_muni nao apaga mais a ultima
-fonte de dado deste agravo).
-Status: Ready to execute (09-12 ou 09-14, ambos desbloqueados)
+09-12 COMPLETO (2026-08-13) -- coleta e substituicao de producao VERIFICADAS e AUDITADAS, nao
+repetidas. Task 1: 27/27 UFs, 331 agravos, 4 medidas, 2 graos, 2 locais, 2013-2025, ledger de
+arquivo 4212/4212 (fechou lacuna real de 12 arquivos RDAC2501..2512/Acre-2025 ausentes do ledger
+apesar do dado ja estar em producao). Task 2: `audit.py` (PIPE-05, TDD, 15 testes) com a regra
+pura do D-14 (`classificar_ausencia`) e deteccao de ano incompleto (D-13). Task 3 (checkpoint
+humano): aprovada com 3 decisoes -- cobertura aprovada; 8 categorias de causa externa (V01-Y98)
+zeradas desde 2016 por mudanca de codificacao da fonte (confirmado contra o TabNet ao vivo)
+registradas e aceitas, com item de acompanhamento explicito para a Fase 10/UI; lacuna de Camada 2
+do grao municipio FECHADA (`file_scope` ampliado exclusivamente para `upload.py --municipio`,
+TDD, `sih_collection_status` 33.560->67.120 linhas, `faltantes` do grao municipio 34.424->864).
+`npm run gate` verde em cada um dos 5 commits. Ver 09-12-SUMMARY.md.
+
+Proximo: 09-13 e 09-14 seguem pendentes -- nenhum bloqueio novo desta plan. 09-14 continua
+desbloqueado desde o 09-10-SEGUNDA-SUBSTITUICAO (amputacao_mmii em producao).
+Status: Ready to execute (09-13 ou 09-14)
 Last activity: 2026-08-13
 
 ### Bloqueios abertos
@@ -217,6 +228,7 @@ Last activity: 2026-08-13
 - [Phase ?]: Correção 09-04-FIX-AGREGACAO-VAZIO: string vazia em VAL_TOT/DIAS_PERM/MORTE/ANO_CMPT vira null explicito (_blank_to_null) antes do cast, nunca coerce cego -- VAL_TOT/DIAS_PERM vazio soma 0 (contribuicao desconhecida, internacao sempre conta), MORTE vazio nunca conta como obito — Verificado contra dado real (DF/RR) que a hipotese do brief (regressao do eixo de procedimento 9f8545c) nao se confirma -- o bug e um cast eager preexistente sobre a coluna inteira, antes do filtro por registro. Eixo CID preservado byte a byte, gate SC-7 intocado.
 - [Phase 09-04-fix-municipio-branco]: [09-04-FIX-MUNICIPIO-BRANCO, 2026-08-12] MUNIC_MOV/MUNIC_RES em branco ou malformado nao derruba mais a agregacao da UF inteira -- crash real medido em PR (municipio6: comprimento invalido: ''), previsto no SUMMARY do 09-04-FIX-AGREGACAO-VAZIO e agora corrigido. Medido nacionalmente (82.091.610 registros que alcancam o ponto do laco em 11 UFs): so 8 tem municipio ilegivel (0,00001%), dado real esparso -- raw scan sem filtros mostra clusters de ate 90% de arquivo/mes, mas sao registros ja corrompidos em IDENT/DIAG_PRINC/CNES junto, ja excluidos pelo filtro de IDENT antes de chegar em municipio6(). Semantica por grao, medida e nao suposta: municipio nunca recuperavel (exclusao, nao ha como inferir qual seria o certo); UF de ocorrencia (MUNIC_MOV) resgatada via UF_ZI (campo oficial do SIH-RD para UF do estabelecimento, medido identico a MUNIC_MOV[:2] em amostra valida, valido nos 8 registros reais afetados); UF de residencia (MUNIC_RES) sem fallback (SIH-RD nao publica campo equivalente para UF do paciente -- usar UF_ZI ali confundiria hospital com residencia). Descarte contado e taxa-guardado (_MAX_TAXA_DESCARTE_MUNICIPIO=0,01%, mesma disciplina de _MAX_TAXA_DESCARTE/T-09-30), nunca catch-and-ignore. codigos.municipio6() endurecida (Rule 1) para tambem rejeitar codigo nao numerico do comprimento certo -- bug latente descoberto na medicao ('01510.' passava sem levantar, corrompendo sih_metric_muni.municipio_codigo em silencio). UF_ZI tratada como coluna OPCIONAL (checagem de schema) para nao quebrar test_partitions.py (fora do file_scope). SC-7 e o eixo CID (hash SHA-256 sobre rdac_2019.parquet) permanecem byte-identicos. npm run gate verde. Ver 09-04-FIX-MUNICIPIO-BRANCO-SUMMARY.md.
 - [Phase 09-10-segunda-substituicao, 2026-08-13] Segunda substituicao atomica de producao (D-16) executada com o dataset COMPLETO de 331 agravos: re-coleta nacional terminou (27/27 UFs `agregado_reciclado`, 0 `falhou`, eixo `PROC_REA` do 09-10-PROCEDIMENTO incluido) e `upload.py`/`partitions.py` foram REEXECUTADOS sem nenhuma alteracao de codigo (ja construidos/testados pelo 09-10). `sih_metric_uf` 207.131->207.664 linhas, 330->331 agravos, `amputacao_mmii` presente pela primeira vez (702 linhas = 27 UFs x 13 anos x 2 locais, completo, sem lacuna). As 27 particoes de municipio foram REGENERADAS a partir dos agregados novos e reenviadas ao Storage (130,05 MB total, SP=19,36 MB, sob o teto de 50 MB/objeto). `cid_map_version` permanece o MESMO hash da primeira corrida (taxonomia CID nao mudou -- so o eixo de procedimento em `aggregate.py` mudou, e esse eixo nao entra neste hash). `amputacao_mmii` provada end-to-end pelo caminho anonimo real do app (PostgREST `GET` com chave `anon`, nao SQL direto): AC/2019/ocorrencia=50 internacoes/6 obitos, batendo exato com a reconciliacao do 09-10-PROCEDIMENTO. Leitura/escrita anonima reconfirmada (PostgREST 200 leitura/401 escrita RLS; Storage 200 leitura/403 escrita RLS). `sih-swap-contagens.sql` regenerado (`ESPERADO_SIH_METRIC_UF=207664`, commit `df95381`) saiu 0 contra producao (5 RAISE EXCEPTION, nenhum disparou, 0 agravos orfaos). Discrepancia de 3 linhas entre 207.667 (chaves unicas nos 27 `agregados/{uf}.parquet`, contagem naive) e 207.664 (producao real) investigada e explicada: 3 linhas de grao UF com `UF_ZI` malformado (`'02'` em AM/2023, `'00'` em CE/2023, `'  '` em DF/2022) descartadas silenciosamente por `partitions._uf_dona`/`construir_indice_territorial` (comportamento ja existente desde o 09-09-FIX-RESIDENCIA para territorio desconhecido -- nao um defeito novo desta corrida, mesma classe do 09-04-FIX-MUNICIPIO-BRANCO em escala ainda menor). A sessao que lancou o swap detached (`nohup`) fechou NO MEIO do polling, mas a parte irreversivel ja tinha completado com sucesso antes disso -- reconferido de forma INDEPENDENTE (nunca assumido) contra producao antes de qualquer escrituracao. `sih_metric_muni` permanece intocada (1.099.403 linhas) -- segue sendo o 09-14 quem remove. **Bloqueio do 09-10-PROCEDIMENTO (09-14 bloqueado) fica RESOLVIDO**: `amputacao_mmii` esta em producao agora, entao o 09-14 pode rodar sem apagar a ultima fonte de dado deste agravo. `npm run gate` verde (108 arquivos de teste frontend, 796 testes; 259 testes Python; build). Ver `09-10-SUMMARY.md` §"Segunda substituição de produção — dataset completo, 331 agravos".
+- [Phase 09-12, 2026-08-13] Plano 09-12 (auditoria de cobertura, PIPE-05) completo. Task 1 verificou o estado ja concluido da corrida (nao repetida): 27/27 UFs, 331 agravos, 4 medidas, 2 graos, 2 locais, 2013-2025, ledger de arquivo 4212/4212 (fechou lacuna real de 12 arquivos RDAC2501..2512/Acre-2025 ausentes do ledger apesar do dado ja estar em producao -- investigado, fechado com `pipeline:download --only`, nao uma recoleta). Task 2 entregou `audit.py` (TDD, 7 comportamentos, 15 testes) com `classificar_ausencia` (regra pura do D-14) e `anos_incompletos_no_ledger` (D-13). Task 3 (checkpoint humano) aprovada com 3 decisoes do operador: (1) cobertura aprovada como esta; (2) 8 categorias de causa externa (V01-Y98) zeradas de 2016 em diante por mudanca de pratica de codificacao da fonte (DIAG_PRINC->DIAGSEC1), confirmado contra o TabNet ao vivo -- registrado e aceito, nao corrigido, risco didatico documentado com item de acompanhamento explicito para a Fase 10/UI; (3) lacuna de Camada 2 do grao municipio em `sih_collection_status` (achado real: nenhum escritor gravava esse grao) FECHADA por decisao do operador -- `file_scope` ampliado exclusivamente para `upload.py --municipio` (TDD, funcao nova e separada, caminho de grao UF ja provado 2x em producao intocado), `sih_collection_status` 33.560->67.120 linhas, `audit.py` reauditado mostra `faltantes` do grao municipio caindo de 34.424 para 864 (mesmos 108 pares agravo-ano zero-nacionais ja explicados para o grao UF). Verificacao empirica null-vs-zero contra o TabNet ao vivo (dois casos concretos) confirma a premissa herdada do pipeline aposentado, nao a assume. `npm run gate` verde em cada um dos 5 commits desta sessao. Ver `09-12-SUMMARY.md`.
 
 ### Pending Todos
 
@@ -234,8 +246,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-13T02:58:00.000Z
-Stopped at: 09-10-SEGUNDA-SUBSTITUICAO COMPLETO (2026-08-13): a re-coleta nacional (27/27 UFs `agregado_reciclado`, 0 `falhou`, eixo PROC_REA do 09-10-PROCEDIMENTO incluido) terminou e a segunda substituicao atomica de producao rodou -- `sih_metric_uf` 207.131->207.664 linhas, 330->331 agravos, `amputacao_mmii` presente pela primeira vez (702 linhas, completo). `upload.py`/`partitions.py` reaproveitados sem nenhuma alteracao (o brief so pediu para reexecutar). As 27 particoes de municipio regeneradas e reenviadas ao Storage (130,05 MB, SP=19,36 MB, sob o teto de 50 MB/objeto). `amputacao_mmii` provada end-to-end pelo caminho anonimo real do app (PostgREST GET com chave anon, nao SQL direto). Leitura/escrita anonima reconfirmada (PostgREST 200/401, Storage 200/403). `sih-swap-contagens.sql` regenerado (`ESPERADO_SIH_METRIC_UF=207664`, `CID_MAP_VERSION_DA_CORRIDA` confirmado inalterado -- taxonomia CID nao mudou) e saiu 0 contra producao (commit `df95381`). Discrepancia de 3 linhas entre 207.667 (chaves unicas nos agregados brutos) e 207.664 (producao) investigada e explicada: 3 linhas com `UF_ZI` malformado descartadas pela mesma logica ja existente de territorio desconhecido (nao um defeito novo). A sessao que lancou o swap fechou no meio do polling, mas a parte irreversivel ja tinha completado -- reconferido de forma independente antes de qualquer escrituracao. `npm run gate` verde. **09-14 desbloqueado.** Ver 09-10-SUMMARY.md §"Segunda substituição de produção — dataset completo, 331 agravos".
+Last session: 2026-08-13T09:02:17.000Z
+Stopped at: 09-12 COMPLETO (2026-08-13): coleta/substituicao de producao ja concluidas por planos anteriores VERIFICADAS e AUDITADAS (nao repetidas). Task 1 fechou uma lacuna real de ledger de arquivo (12 arquivos RDAC2501..2512/Acre-2025 ausentes apesar do dado ja estar em producao) reexecutando `pipeline:download --only`. Task 2 entregou `audit.py` (PIPE-05, TDD) com a regra pura do D-14. Task 3 (checkpoint humano) aprovada com 3 decisoes do operador: cobertura aprovada; 8 categorias de causa externa (V01-Y98) zeradas desde 2016 por mudanca de codificacao da fonte (confirmado contra o TabNet ao vivo) registradas e aceitas, com item de acompanhamento para a Fase 10/UI; lacuna de Camada 2 do grao municipio FECHADA (`file_scope` ampliado exclusivamente para `upload.py --municipio`, TDD, `sih_collection_status` 33.560->67.120 linhas, `faltantes` do grao municipio 34.424->864, medido antes/depois). `npm run gate` verde em cada um dos 5 commits desta sessao. Ver 09-12-SUMMARY.md.
 Resume file: None
 
 ## Performance Metrics
@@ -295,3 +307,4 @@ Resume file: None
 | Phase 09 P10-PROCEDIMENTO | ~2h (inclui espera de rede real: TabNet ao vivo + re-download AC) | 2 commits de codigo (TDD RED/GREEN) + docs | 6 files |
 | Phase 09 P04-fix-download-vazio | ~2h | 1 tasks | 2 files |
 | Phase 09 P10-SEGUNDA-SUBSTITUICAO | particoes ~3min30s + swap 3min29s (medido, log com timestamp) + escrituracao pos-interrupcao de sessao | 0 tasks de codigo (upload.py/partitions.py reaproveitados sem alteracao) + 1 commit de verify regenerado | 3 files |
+| Phase 09-pipeline-confi-vel-coleta-completa P12 | ~5h30min (inclui construcao real do indice territorial local sobre ~12,3M linhas de grao municipio, 3x nesta sessao, e paginacao PostgREST real) | 3 tasks (checkpoint humano aprovado com 3 decisoes, gerando trabalho TDD adicional) | 5 files |
