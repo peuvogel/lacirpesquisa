@@ -44,7 +44,12 @@ from typing import Any
 from sih_pipeline.enumerate import UFS
 from sih_pipeline.ledger import STATUS_BAIXADO, FileLedger
 from sih_pipeline.paths import repo_root
-from sih_pipeline.upload import _PAGE_SIZE, _fetch, _parse_content_range_total
+from sih_pipeline.upload import (
+    _PAGE_SIZE,
+    _fetch,
+    _linhas_grao_municipio,
+    _parse_content_range_total,
+)
 
 _SCHEMA = json.loads((repo_root() / "scripts" / "catalog" / "schema-v3.json").read_text("utf-8"))
 MEDIDAS: tuple[str, ...] = tuple(_SCHEMA["medidas"])
@@ -339,6 +344,27 @@ def _metric_keys_grao_uf(linhas_metric_uf: Sequence[Mapping[str, Any]]) -> froze
     )
 
 
+def _metric_keys_grao_municipio(linhas_municipio: Iterable[Any]) -> frozenset[CoverageKey]:
+    """Do índice territorial local (`upload._linhas_grao_municipio`, a MESMA fonte que
+    `partitions.py` usa para montar as 27 partições reais já no Storage, D-20/D-21) para o
+    conjunto de chaves (disease_id, medida, grao='municipio', local, ano) com AO MENOS UM
+    município reportando.
+
+    Limitação estrutural registrada, não escondida: não existe forma barata de reler o conteúdo
+    do Storage em lote via SQL/PostgREST (D-20 tirou o grão município do Postgres exatamente
+    para não pagar esse custo) -- esta função usa o agregado LOCAL que alimentou tanto as
+    partições quanto as novas linhas de `sih_collection_status` como proxy da fonte servida, a
+    mesma fonte que a Task 1 do 09-12 já verificou byte a byte contra o Storage real (27/27
+    partições, `GET` anônimo 200). Cada linha de `Row` de grão município carrega as 4 medidas
+    juntas (mesma leitura de `_metric_keys_grao_uf`)."""
+    combos = {(linha.disease_id, linha.local, linha.ano) for linha in linhas_municipio}
+    return frozenset(
+        (disease_id, medida, "municipio", local, ano)
+        for disease_id, local, ano in combos
+        for medida in MEDIDAS
+    )
+
+
 # ---------------------------------------------------------------------------
 # CLI -- contrato único que cli.py (09-04, dono único) resolve para o subcomando `audit`.
 # ---------------------------------------------------------------------------
@@ -347,15 +373,15 @@ def _metric_keys_grao_uf(linhas_metric_uf: Sequence[Mapping[str, Any]]) -> froze
 def main(argv: list[str]) -> int:
     """PIPE-05: um comando, uma resposta medida sobre se a coleta capturou o que afirma ter
     capturado -- compara o ledger de arquivo (Camada 1, local), o ledger de cobertura (Camada 2,
-    `sih_collection_status`) e a fonte servida (`sih_metric_uf`, via PostgREST paginado).
+    `sih_collection_status`) e a fonte servida (`sih_metric_uf` via PostgREST paginado para o
+    grão UF; o índice territorial local, mesma fonte das partições reais, para o grão município).
 
-    Achado real, registrado aqui e em `pipeline/sih/reports/cobertura-final.md`, não escondido:
-    hoje só o grão `uf` tem escritor de Camada 2 (`upload.py::_persistir_collection_status`) -- o
-    grão `municipio` (D-20, dado servido do Storage, não do Postgres) não tem nenhum escritor
-    equivalente ainda. Toda combinação desse grão cai em `faltantes` aqui, por construção
-    (nenhuma tentativa foi sequer registrada em `sih_collection_status`), nunca classificada como
-    zero verdadeiro por engano -- `main()` imprime essa quebra por grão explicitamente para que o
-    operador nunca confunda "sem escritor" com "zero verdadeiro"."""
+    Achado do 09-12/Task 2, fechado pelo 09-12/checkpoint Task 3 (decisão do operador, ver
+    `cobertura-final.md`): o grão `municipio` não tinha NENHUM escritor de Camada 2 até
+    `upload.py --municipio` (novo, mesma sessão) existir -- as linhas de `sih_collection_status`
+    para esse grão agora existem, e `metric_keys` para município é resolvido aqui pela mesma
+    fonte local que gerou tanto as partições quanto essas linhas novas (ver
+    `_metric_keys_grao_municipio`)."""
     parser = argparse.ArgumentParser(prog="sih_pipeline.audit")
     parser.parse_args(argv)
 
@@ -366,7 +392,9 @@ def main(argv: list[str]) -> int:
         "sih_collection_status", select="disease_id,medida,grao,local,ano,status"
     )
     linhas_metric_uf = _fetch_all_paginated("sih_metric_uf", select="disease_id,local,ano")
-    metric_keys = _metric_keys_grao_uf(linhas_metric_uf)
+    metric_keys_uf = _metric_keys_grao_uf(linhas_metric_uf)
+    metric_keys_municipio = _metric_keys_grao_municipio(_linhas_grao_municipio())
+    metric_keys = metric_keys_uf | metric_keys_municipio
 
     file_ledger = FileLedger.load()
     incompletos = anos_incompletos_no_ledger(file_ledger)

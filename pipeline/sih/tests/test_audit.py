@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 import sih_pipeline.audit as audit_mod
+from sih_pipeline.aggregate import Row
 from sih_pipeline.audit import (
     STATUS_COLETADO,
     STATUS_FALHOU,
@@ -286,3 +287,53 @@ def test_classificar_ausencia_e_a_regra_do_d14() -> None:
     assert classificar_ausencia(STATUS_COLETADO) == "zero_verdadeiro"
     assert classificar_ausencia(STATUS_FALHOU) == "ausente"
     assert classificar_ausencia(STATUS_NUNCA_TENTADO) == "ausente"
+
+
+# ---------------------------------------------------------------------------
+# _metric_keys_grao_municipio -- fechamento da lacuna do checkpoint da Task 3 (09-12): agora que
+# `upload.py --municipio` escreve Camada 2 para este grão, a auditoria precisa de uma fonte
+# independente de "tem métrica" para não classificar TODA combinação de município como zero
+# verdadeiro por omissão (ver docstring da função em audit.py).
+# ---------------------------------------------------------------------------
+
+
+def test_metric_keys_grao_municipio_com_ao_menos_um_municipio() -> None:
+    linha = Row(
+        disease_id="doenca_a",
+        grao="municipio",
+        local="ocorrencia",
+        territorio_codigo="120040",
+        ano=2019,
+        internacoes=1,
+        obitos=0,
+        valor_total=10.0,
+        dias_permanencia=1,
+        taxa_mortalidade=0.0,
+    )
+
+    chaves = audit_mod._metric_keys_grao_municipio([linha])
+
+    assert ("doenca_a", "internacoes", "municipio", "ocorrencia", 2019) in chaves
+    assert ("doenca_a", "obitos", "municipio", "ocorrencia", 2019) in chaves
+    assert ("doenca_a", "valor_total", "municipio", "ocorrencia", 2019) in chaves
+    assert ("doenca_a", "dias_permanencia", "municipio", "ocorrencia", 2019) in chaves
+
+
+def test_metric_keys_grao_municipio_vazio_sem_linha_alguma() -> None:
+    assert audit_mod._metric_keys_grao_municipio([]) == frozenset()
+
+
+def test_grao_municipio_com_status_e_sem_metrica_vira_zero_verdadeiro_nao_faltante() -> None:
+    """Reproduz o cenário que motivou o fechamento da lacuna: uma vez que
+    `sih_collection_status` tem uma linha `coletado` para o grão município, uma combinação sem
+    NENHUM município reportando (zero nacional real, não lacuna de escritor) precisa cair em
+    `zero_verdadeiro`, nunca em `faltantes` -- a mesma regra do D-14 que já vale para o grão UF."""
+    cartesiano = _cartesiano_pequeno(disease_ids=["doenca_a"], graos=["municipio"])
+    status_rows = [_status_row(disease_id="doenca_a", grao="municipio", status=STATUS_COLETADO)]
+    metric_keys: frozenset = frozenset()  # nenhum município reportou
+
+    report = audit_coverage(cartesiano=cartesiano, status_rows=status_rows, metric_keys=metric_keys)
+
+    chave = ("doenca_a", "internacoes", "municipio", "ocorrencia", 2019)
+    assert chave in report.zero_verdadeiro
+    assert report.faltantes == ()
