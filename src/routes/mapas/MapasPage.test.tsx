@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import {
   getCatalogLabel,
@@ -44,10 +44,10 @@ describe('MapasPage group workspace', () => {
     expect(screen.getByTestId('review-blocked-hint')).toHaveTextContent(
       'Complete grupos, doença e período',
     );
-    expect(screen.getByRole('button', { name: 'Continuar para Variáveis' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Começar análise' })).toBeDisabled();
   });
 
-  it('hands a completed map cut to variables without a dataset or test id', async () => {
+  it('keeps the completed cut on Mapas and reveals the guided analysis below', async () => {
     const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
     let pathname = '/mapas';
     renderMapasPage(
@@ -66,23 +66,35 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Continuar para Variáveis' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Começar análise' })).toBeEnabled();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar para Variáveis' }));
-    fireEvent.click(
-      within(await screen.findByTestId('review-analysis-dialog')).getByRole('button', {
-        name: 'Continuar para Variáveis',
-      }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
 
-    await waitFor(() => {
-      expect(pathname).toBe('/variaveis');
-    });
+    expect(pathname).toBe('/mapas');
+    expect(await screen.findByRole('region', { name: 'Análise do recorte' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '1. Qual é o objetivo?' })).toBeInTheDocument();
+    expect(screen.queryByTestId('review-analysis-dialog')).not.toBeInTheDocument();
     expect(sessionRef.current?.researchDesign?.groups[0]?.territories).toEqual([
       { id: '29', label: 'Bahia' },
     ]);
     expect(sessionRef.current?.researchDesign?.diseaseIds).toEqual(['embolia_e_trombose_arteriais']);
     expect(sessionRef.current?.dataset).toBeNull();
+  });
+
+  it('invalidates an unlocked analysis when the semantic cut changes', async () => {
+    renderMapasPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
+
+    await screen.findByRole('region', { name: 'Análise do recorte' });
+    fireEvent.click(screen.getByRole('button', { name: /Valem para todos os grupos/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Infarto cerebral/i }));
+
+    expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
   });
 
   it('renders group strip, region checkboxes and breadcrumb (no empty CTA strip)', () => {

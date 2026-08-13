@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 
 export interface MapPrimaryActionBarProps {
   canReview: boolean;
+  analysisUnlocked?: boolean;
   onReview: () => void;
   onPasteTerritories: () => void;
   onClearMap: () => void;
@@ -23,6 +24,7 @@ export interface MapPrimaryActionBarProps {
 
 export function MapPrimaryActionBar({
   canReview,
+  analysisUnlocked = false,
   onReview,
   onPasteTerritories,
   onClearMap,
@@ -51,7 +53,7 @@ export function MapPrimaryActionBar({
         onClick={onReview}
         data-testid="review-analyze-button"
       >
-        Continuar para Variáveis
+        {analysisUnlocked ? 'Recomeçar análise' : 'Começar análise'}
       </Button>
 
       <div className="flex flex-wrap gap-2">

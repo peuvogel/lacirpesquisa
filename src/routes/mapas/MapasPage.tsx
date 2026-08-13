@@ -31,7 +31,10 @@ import {
 } from '@/geo/territoryCatalog';
 import type { TerritoryRef } from '@/geo/types';
 import { parseCatalogId } from '@/features/catalog/taxonomy';
+import { fingerprintResearchDesign } from '@/features/research/researchDesign';
+import type { ResearchDesign } from '@/features/research/types';
 import { useSession } from '@/shared/session/SessionProvider';
+import { GuidedAnalysisWorkspace } from '@/routes/variaveis/GuidedAnalysisWorkspace';
 import { AddGroupDropPill } from './AddGroupDropPill';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
@@ -55,12 +58,10 @@ import { municipalityIdsForMeso } from '@/geo/mesoMembership';
 import { municipioTerritory, suggestGroupName } from '@/geo/municipioNames';
 import { PresetTerritoryCarousel } from './PresetTerritoryCarousel';
 import { UF_LIST } from './ufCodes';
-import { ReviewAnalysisDialog } from './ReviewAnalysisDialog';
 import { UfShapeDragOverlay } from './UfShapeDragOverlay';
 import {
   createInitialMapAnalysisState,
   createResearchDesignFromMapState,
-  deriveSelectionSummary,
   MAX_GROUPS,
   resolveCatalogHandoffIds,
   useMapAnalysis,
@@ -137,7 +138,13 @@ function collectGroupMunicipioMembership(
 export function MapasPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setMapAnalysis, mapAnalysis } = useSession();
+  const {
+    setDataset,
+    setGuidedAnalysis,
+    setMapAnalysis,
+    setResearchDesign,
+    mapAnalysis,
+  } = useSession();
   const { state, dispatch, derived } = useMapAnalysis(mapAnalysis ?? undefined);
   const isTablet = useIsTabletViewport();
   const reduceMotion = useReducedMotion();
@@ -149,7 +156,7 @@ export function MapasPage() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [contextPanelMode, setContextPanelMode] = useState<ContextPanelMode>('explore');
   const [clearAllOpen, setClearAllOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const [confirmedDesign, setConfirmedDesign] = useState<ResearchDesign | null>(null);
   const [groupSheetOpen, setGroupSheetOpen] = useState(false);
   /** Exclusive accordion: at most one large panel; null = all collapsed. */
   const [openResearchSection, setOpenResearchSection] = useState<'disease' | 'period' | null>(
@@ -166,6 +173,7 @@ export function MapasPage() {
   const [mapSelectNudge, setMapSelectNudge] = useState(false);
   const rightDragRef = useRef(false);
   const mapSelectNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const analysisRef = useRef<HTMLElement>(null);
 
   const activeGroup = useMemo(
     () => state.groups.find((group) => group.id === state.activeGroupId) ?? null,
@@ -184,16 +192,20 @@ export function MapasPage() {
     [selectedUFs, state.groups],
   );
 
-  const summary = useMemo(
-    () => deriveSelectionSummary(state, ungroupedTerritories),
-    [state, ungroupedTerritories],
-  );
-
   const researchDesignResult = useMemo(
     () => (derived.canReview ? createResearchDesignFromMapState(state) : null),
     [derived.canReview, state],
   );
   const researchDesign = researchDesignResult?.ok ? researchDesignResult.value : null;
+  const currentDesignFingerprint = researchDesign ? fingerprintResearchDesign(researchDesign) : null;
+  const confirmedFingerprint = confirmedDesign ? fingerprintResearchDesign(confirmedDesign) : null;
+
+  useEffect(() => {
+    if (confirmedFingerprint && confirmedFingerprint !== currentDesignFingerprint) {
+      setConfirmedDesign(null);
+      setGuidedAnalysis(null);
+    }
+  }, [confirmedFingerprint, currentDesignFingerprint, setGuidedAnalysis]);
 
   const groupMembership = useMemo(() => collectGroupMembership(state.groups), [state.groups]);
   const groupMunicipioMembership = useMemo(
@@ -517,17 +529,29 @@ export function MapasPage() {
     setContextPanelMode('explore');
     setClearAllOpen(false);
     setGroupSheetOpen(false);
-    setReviewOpen(false);
-  }, [dispatch]);
+    setConfirmedDesign(null);
+    setGuidedAnalysis(null);
+  }, [dispatch, setGuidedAnalysis]);
 
   const openPasteMode = useCallback(() => {
     setContextPanelMode('paste');
     if (isTablet) setGroupSheetOpen(true);
   }, [isTablet]);
 
-  const handleReview = useCallback(() => {
-    if (derived.canReview) setReviewOpen(true);
-  }, [derived.canReview]);
+  const startAnalysis = useCallback(() => {
+    if (!researchDesign) return;
+    setDataset(null);
+    setResearchDesign(researchDesign);
+    setConfirmedDesign(researchDesign);
+    requestAnimationFrame(() => {
+      const section = analysisRef.current;
+      if (typeof section?.scrollIntoView !== 'function') return;
+      section.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+  }, [reduceMotion, researchDesign, setDataset, setResearchDesign]);
 
   const createGroupFromSelection = useCallback(() => {
     if (state.groups.length >= MAX_GROUPS) return;
@@ -747,7 +771,8 @@ export function MapasPage() {
   const actionBar = (
     <MapPrimaryActionBar
       canReview={researchDesign !== null}
-      onReview={handleReview}
+      analysisUnlocked={confirmedDesign !== null}
+      onReview={startAnalysis}
       onPasteTerritories={openPasteMode}
       onClearMap={() => setClearAllOpen(true)}
       clearConfirmOpen={clearAllOpen}
@@ -961,13 +986,15 @@ export function MapasPage() {
         accentStroke={groupColor(state.groups.length).stroke}
       />
 
-      {researchDesign ? (
-        <ReviewAnalysisDialog
-          open={reviewOpen}
-          onOpenChange={setReviewOpen}
-          summary={summary}
-          researchDesign={researchDesign}
-        />
+      {confirmedDesign ? (
+        <section
+          ref={analysisRef}
+          id="analise-do-recorte"
+          aria-label="Análise do recorte"
+          className="mt-10 scroll-mt-6"
+        >
+          <GuidedAnalysisWorkspace design={confirmedDesign} embedded />
+        </section>
       ) : null}
     </motion.div>
   );
