@@ -2,13 +2,10 @@ import { isTestAvailable } from '@/features/tests/registry';
 import type { TabularInputOptions } from '@/shared/data-input/types';
 import type { ResearchSuggestion } from './suggestResearchForSelection';
 
-/** Mapas → Estatística: first available suggestion, else t-student. */
-export function resolveHandoffTestId(suggestions: ResearchSuggestion[]): string {
+/** Mapas → Estatística: preserve an evaluated suggestion; never invent a fallback. */
+export function resolveHandoffTestId(suggestions: ResearchSuggestion[]): string | null {
   const primarySuggested = suggestions.find((suggestion) => isTestAvailable(suggestion.testId));
-  if (primarySuggested) {
-    return primarySuggested.testId;
-  }
-  return isTestAvailable('t-student') ? 't-student' : (suggestions[0]?.testId ?? 't-student');
+  return primarySuggested?.testId ?? null;
 }
 
 /** Broad DATASUS-shaped aliases so junk paste errors while typical TABNET tables still load. */
@@ -42,7 +39,7 @@ export const MAPAS_TABULAR_OPTIONS: TabularInputOptions = {
 };
 
 /** Rejects unknown or unavailable test ids before navigation (T-04-07-01). */
-export function guardHandoffTestId(testId: string, suggestions: ResearchSuggestion[]): string {
+export function guardHandoffTestId(testId: string, suggestions: ResearchSuggestion[]): string | null {
   if (isTestAvailable(testId)) return testId;
   return resolveHandoffTestId(suggestions);
 }

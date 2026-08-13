@@ -240,7 +240,7 @@ describe('VariaveisPage', () => {
 
     const location = screen.getByTestId('location-probe').textContent ?? '';
     expect(location.startsWith('/|')).toBe(true);
-    expect(location).toContain('poisson');
+    expect(location).toBe('/||');
 
     const dataset = screen.getByTestId('dataset-probe').textContent ?? '';
     expect(dataset).toMatch(/Catálogo LACIR/);

@@ -24,7 +24,6 @@ import {
   suggestResearchFromFlatSelection,
   type ResearchSuggestion,
 } from './suggestResearchForSelection';
-import { SuggestedTestCard } from './SuggestedTestCard';
 
 export { resolveHandoffTestId, MAPAS_TABULAR_OPTIONS } from './mapHandoffShared';
 export type { ResearchSuggestion } from './suggestResearchForSelection';
@@ -70,8 +69,10 @@ export function IniciarPesquisaModal({
       sourceLabel,
       confirmedAt: Date.now(),
     });
+    const evaluatedTestId = resolveHandoffTestId(suggestions);
     onOpenChange(false);
-    navigate('/', { state: { activeTestId: resolveHandoffTestId(suggestions) } });
+    if (evaluatedTestId) navigate('/', { state: { activeTestId: evaluatedTestId } });
+    else navigate('/');
   }
 
   return (
@@ -98,13 +99,15 @@ export function IniciarPesquisaModal({
             Análises possíveis
           </h2>
           <div className="flex flex-col gap-2">
-            {suggestions.map((suggestion) => (
-              <SuggestedTestCard
-                key={suggestion.testId}
-                testId={suggestion.testId}
-                rationale={suggestion.rationale}
-              />
-            ))}
+            {suggestions.length > 0 ? suggestions.map((suggestion) => (
+              <p key={suggestion.testId} className="text-sm text-text-muted">
+                {suggestion.rationale}
+              </p>
+            )) : (
+              <p className="text-sm text-text-muted">
+                Os testes serão avaliados depois de conhecer os valores, a distribuição e a independência dos dados.
+              </p>
+            )}
           </div>
         </section>
 

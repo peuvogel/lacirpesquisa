@@ -69,15 +69,15 @@ describe('resolveHandoffTestId', () => {
     ).toBe('correlacao');
   });
 
-  it('falls back to t-student when the primary suggestion is unavailable', () => {
+  it('returns null instead of inventing a fallback when no suggestion is available', () => {
     const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 't-student');
 
     expect(
       resolveHandoffTestId([
         { testId: 'anova-tukey', rationale: 'anova' },
-        { testId: 't-student', rationale: 't' },
       ]),
-    ).toBe('t-student');
+    ).toBeNull();
+    expect(resolveHandoffTestId([])).toBeNull();
 
     spy.mockRestore();
   });
@@ -93,14 +93,13 @@ describe('IniciarPesquisaModal', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders the deprecated notice, suggested analyses, and collection links with noopener', () => {
+  it('renders the deprecated notice, fail-closed analysis copy, and collection links with noopener', () => {
     renderModal();
 
     expect(screen.getByText(/Este fluxo legado será removido/i)).toBeInTheDocument();
     expect(screen.queryByText('Teste demo')).not.toBeInTheDocument();
-    expect(screen.getByText('t de Student')).toBeInTheDocument();
-    expect(screen.getAllByText('Disponível').length).toBeGreaterThanOrEqual(1);
-    expect(screen.queryByText('Em breve')).not.toBeInTheDocument();
+    expect(screen.getByText(/Os testes serão avaliados depois de conhecer os valores/i)).toBeInTheDocument();
+    expect(screen.queryByText('t de Student')).not.toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: /TABNET: SIH\/SUS/i });
     expect(link).toHaveAttribute('target', '_blank');
@@ -120,7 +119,7 @@ describe('IniciarPesquisaModal', () => {
     });
   });
 
-  it('publishes parsed data and navigates with t-student handoff for two UFs', async () => {
+  it('publishes parsed data without preselecting a test from UF labels', async () => {
     const user = userEvent.setup();
     let latestDataset: SessionDataset | null = null;
 
@@ -137,11 +136,11 @@ describe('IniciarPesquisaModal', () => {
     expect(latestDataset!.headers).toEqual(['Município', 'Taxa por 100k', 'Situação']);
     expect(latestDataset!.rows).toHaveLength(2);
     expect(latestDataset!.sourceLabel).toBe('Mapas: SP, BA');
-    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
+    expect(navigateMock).toHaveBeenCalledWith('/');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('navigates with correlacao handoff when one UF and two variables are selected', async () => {
+  it('does not infer correlation from one UF and two variable labels', async () => {
     const user = userEvent.setup();
     renderModal({
       selectedUFs: ['SP'],
@@ -150,10 +149,10 @@ describe('IniciarPesquisaModal', () => {
 
     await continueWithValidPaste(user);
 
-    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'correlacao' } });
+    expect(navigateMock).toHaveBeenCalledWith('/');
   });
 
-  it('navigates with anova-tukey handoff when three UFs suggest ANOVA', async () => {
+  it('does not infer ANOVA from three UF labels', async () => {
     const user = userEvent.setup();
     renderModal({
       selectedUFs: ['SP', 'BA', 'RJ'],
@@ -162,10 +161,10 @@ describe('IniciarPesquisaModal', () => {
 
     await continueWithValidPaste(user);
 
-    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 'anova-tukey' } });
+    expect(navigateMock).toHaveBeenCalledWith('/');
   });
 
-  it('falls back to t-student when anova is unavailable', async () => {
+  it('does not fall back to t-student when no eligible test was evaluated', async () => {
     const user = userEvent.setup();
     vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 't-student');
 
@@ -176,7 +175,7 @@ describe('IniciarPesquisaModal', () => {
 
     await continueWithValidPaste(user);
 
-    expect(navigateMock).toHaveBeenCalledWith('/', { state: { activeTestId: 't-student' } });
+    expect(navigateMock).toHaveBeenCalledWith('/');
   });
 
   it('shows the same friendly Portuguese error as Estatística for junk paste', async () => {

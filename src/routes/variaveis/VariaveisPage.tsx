@@ -11,7 +11,6 @@ import {
 } from '@/features/catalog/buildSessionDataset';
 import { ALIASES, withDiseaseAliases } from '@/features/catalog/diseaseAliases';
 import { loadCatalog, type LoadedCatalog } from '@/features/catalog/loadCatalog';
-import { resolveHint } from '@/features/catalog/suggestTestForVariable';
 import { DISEASES } from '@/features/catalog/taxonomy';
 import type { CatalogEntry } from '@/features/catalog/types';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
@@ -146,12 +145,7 @@ function DirectCatalogPage() {
       assertCompatibleSelection(loadSelection, packs);
       const dataset = buildSessionDataset(loadSelection, packs);
       setDataset(dataset);
-      const hint = resolveHint(loadSelection[0]!);
-      navigate('/', {
-        state: {
-          activeTestId: hint.testId,
-        },
-      });
+      navigate('/');
     } catch (err: unknown) {
       setHandoffError(
         err instanceof Error ? err.message : 'Não foi possível carregar a seleção.',
