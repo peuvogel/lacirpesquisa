@@ -48,7 +48,10 @@ describe('assembleHandoffTable', () => {
       }),
     ]);
     const value = Number(result.rows[0]?.[2]);
-    expect(value).toBe(5660);
+    // 09-13/D-19: o pack vem de sih_metric_uf (microdado reconciliado) desde a fase 9, não mais
+    // do corpus TabNet legado -- 5709 é o valor medido pós-substituição (D-16), não 5660 (o
+    // valor TabNet-era que este teste travava antes da troca de fonte).
+    expect(value).toBe(5709);
     expect(value).not.toBe(898000);
   });
 

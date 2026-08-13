@@ -10,7 +10,6 @@ import {
 } from '../../../scripts/catalog/generateRenameMigration.mjs';
 
 const RENAME_MAP_PATH = resolve(process.cwd(), 'scripts/catalog/rename-map.json');
-const METRICLESS_PATH = resolve(process.cwd(), 'scripts/catalog/metricless-diseases.json');
 const UP_PATH = resolve(
   process.cwd(),
   `supabase/migrations/${MIGRATION_TIMESTAMP}_rename_disease_ids.sql`,
@@ -29,8 +28,21 @@ function loadRenameMap(): { renames: Rename[]; added: Added[] } {
   return { renames: map.renames, added: map.added };
 }
 
+/**
+ * `scripts/catalog/metricless-diseases.json` no momento em que a migração Fase 8
+ * (`{MIGRATION_TIMESTAMP}_rename_disease_ids.sql` + rollback/verify, já aplicada em produção,
+ * 08-10) foi gerada e commitada — o único membro era o código 330. A 09-13/D-19 esvazia o
+ * arquivo *vivo* (código 330 passou a ter coleta), mas os três arquivos SQL aqui comparados são
+ * fato histórico imutável, a mesma disciplina de `rename-map.json`/`SCOPE_EXCLUDE_RELATIVE_PATHS`
+ * (08-06 SUMMARY): reler o arquivo vivo faria esta suíte reivindicar que uma migração já aplicada
+ * mudaria de conteúdo, o que nunca é verdade para SQL já rodado contra produção. Congelado aqui,
+ * não lido do disco.
+ */
 function loadMetricless(): Record<string, string> {
-  return JSON.parse(readFileSync(METRICLESS_PATH, 'utf8'));
+  return {
+    todas_as_outras_causas_externas:
+      "Código TabNet 330 entra na taxonomia canônica por decisão D-25 sem nenhuma coleta associada — nenhuma linha em sih_metric_uf/sih_metric_muni referencia este id. A cobertura de coleta deste agravo é decisão da Fase 9. Este registro é a exceção deliberada admitida pelo invariante de completude: o conjunto de agravos órfãos de métrica não pode crescer além do que estiver aqui registrado (delta de crescimento, D-25 corrigido por medição — 237 dos 330 agravos hoje já não têm linha em sih_metric_uf, não é 'exatamente um').",
+  };
 }
 
 function loadData() {

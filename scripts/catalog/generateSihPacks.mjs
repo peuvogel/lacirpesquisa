@@ -41,6 +41,20 @@ const UF_ORDER = [
   ['42', 'SC'], ['43', 'RS'], ['50', 'MS'], ['51', 'MT'], ['52', 'GO'], ['53', 'DF'],
 ];
 
+/** Nome IBGE por sigla de UF — estático, oficial, sem ambiguidade (mesmo nível de "dado
+ * literal" que `enumerate.py::UFS`). `sih_metric_uf.uf_nome` está NULL em produção para toda
+ * linha (achado desta task, gap pré-existente de `upload.py`, fora do `file_scope` desta plan
+ * corrigir na origem) — sem esta tabela local, os 10 packs perderiam o nome por extenso que os
+ * arquivos legados já commitados carregavam, puramente por um gap upstream não relacionado ao
+ * dado em si. */
+const UF_NOME = {
+  RO: 'Rondônia', AC: 'Acre', AM: 'Amazonas', RR: 'Roraima', PA: 'Pará', AP: 'Amapá', TO: 'Tocantins',
+  MA: 'Maranhão', PI: 'Piauí', CE: 'Ceará', RN: 'Rio Grande do Norte', PB: 'Paraíba', PE: 'Pernambuco',
+  AL: 'Alagoas', SE: 'Sergipe', BA: 'Bahia', MG: 'Minas Gerais', ES: 'Espírito Santo', RJ: 'Rio de Janeiro',
+  SP: 'São Paulo', PR: 'Paraná', SC: 'Santa Catarina', RS: 'Rio Grande do Sul', MS: 'Mato Grosso do Sul',
+  MT: 'Mato Grosso', GO: 'Goiás', DF: 'Distrito Federal',
+};
+
 /** Os 10 packs que `catalogAnalysisData.ts` importa hoje — id derivado do diretório atual,
  * conferido contra os imports (não inventado). */
 export const PACK_IDS = [
@@ -247,7 +261,7 @@ function resolveMedida(statusByDiseaseMedidaAno, diseaseId, medida, ano, valorMe
  * @param {string} packId
  * @param {string} diseaseId
  * @param {{
- *   metricRowsByUfAno: Map<string, { internacoes:number, obitos:number, valor_total:number, dias_permanencia:number, taxa_mortalidade:number }>,
+ *   metricRowsByUfAno: Map<string, { internacoes:number, obitos:number, valor_total:number, dias_permanencia:number }>,
  *   statusByDiseaseMedidaAno: Map<string, string>,
  *   frozenByUfAno?: Map<string, { medicos_vasculares_sus:number|null, populacao:number|null, medicos_vasculares_por_100k:number|null }>,
  *   derivedAt: string,
@@ -281,7 +295,7 @@ export function buildPack(packId, diseaseId, ctx) {
       const row = {
         uf_codigo: ufCodigo,
         uf,
-        uf_nome: medido?.uf_nome ?? null,
+        uf_nome: UF_NOME[uf] ?? null,
         ano,
       };
 
@@ -353,7 +367,13 @@ async function fetchPackContext(diseaseIds, fetchImpl = fetch) {
     'sih_metric_uf',
     {
       select: 'disease_id,uf_codigo,uf,uf_nome,ano,internacoes,obitos,valor_total,dias_permanencia,taxa_mortalidade',
-      filters: { disease_id: `in.(${idList})`, local: 'eq.ocorrencia' },
+      // order= é obrigatório para paginação estável -- ver nota "Achado real" no cabeçalho: sem
+      // ordenação explícita, o Postgres/PostgREST não garante o mesmo corte de página entre duas
+      // requisições Range da MESMA leitura, e uma linha pode sumir de uma página e reaparecer
+      // duplicada em outra com o total anunciado permanecendo idêntico (Pitfall 13 na forma mais
+      // traiçoeira: a checagem de content-range sozinha não pega isso). As colunas de order= são
+      // exatamente a chave primária com `local` fixado pelo filtro -- ordem total, sem empate.
+      filters: { disease_id: `in.(${idList})`, local: 'eq.ocorrencia', order: 'disease_id.asc,uf_codigo.asc,ano.asc' },
     },
     fetchImpl,
   );
@@ -363,14 +383,20 @@ async function fetchPackContext(diseaseIds, fetchImpl = fetch) {
     'sih_collection_status',
     {
       select: 'disease_id,medida,ano,status,derived_at,cid_map_version',
-      filters: { disease_id: `in.(${idList})`, grao: 'eq.uf', local: 'eq.ocorrencia' },
+      filters: { disease_id: `in.(${idList})`, grao: 'eq.uf', local: 'eq.ocorrencia', order: 'disease_id.asc,medida.asc,ano.asc' },
     },
     fetchImpl,
   );
 
   const metricRowsByUfAno = new Map();
   for (const r of metricRows) {
-    metricRowsByUfAno.set(`${r.disease_id}|${r.uf_codigo}|${r.ano}`, r);
+    const key = `${r.disease_id}|${r.uf_codigo}|${r.ano}`;
+    if (metricRowsByUfAno.has(key)) {
+      throw new Error(
+        `generateSihPacks: chave duplicada ${key} em sih_metric_uf -- paginação instável detectada (ver nota "Achado real" no cabeçalho deste arquivo). Abortando em vez de servir dado corrompido.`,
+      );
+    }
+    metricRowsByUfAno.set(key, r);
   }
 
   const statusByDiseaseMedidaAno = new Map();

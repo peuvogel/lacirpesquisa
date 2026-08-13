@@ -39,7 +39,10 @@ describe('catalogAnalysisData', () => {
     expect(Object.keys(getMetricByUf('mock.taxa_mortalidade'))).toHaveLength(0);
   });
 
-  it('getMetricByUfAndYear(embolia internações, 2019) for SP matches pack CSV (not mock weights)', () => {
+  it('getMetricByUfAndYear(embolia internações, 2019) for SP matches pack (not mock weights)', () => {
+    // 09-13/D-19: o pack é regerado a partir de sih_metric_uf (microdado SIH-RD reconciliado),
+    // não mais do corpus TabNet legado -- 5709 é o valor medido pós-substituição (D-16), não
+    // 5660 (o valor TabNet-era que este teste travava antes da fase 9 trocar a fonte).
     const expected = packSpValue(
       'sih.embolia_e_trombose_arteriais_uf',
       2019,
@@ -47,7 +50,7 @@ describe('catalogAnalysisData', () => {
     );
     const byUf = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2019);
     expect(byUf.SP).toBe(expected);
-    expect(byUf.SP).toBe(5660);
+    expect(byUf.SP).toBe(5709);
     // Old didactic UF_WEIGHT formula for mock.internacoes SP ≈ 898000
     expect(byUf.SP).not.toBe(898000);
   });
@@ -56,7 +59,7 @@ describe('catalogAnalysisData', () => {
     const viaAlias = getMetricByUfAndYear('mock.internacoes', 2019);
     const viaCatalog = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2019);
     expect(viaAlias.SP).toBe(viaCatalog.SP);
-    expect(viaAlias.SP).toBe(5660);
+    expect(viaAlias.SP).toBe(5709);
   });
 
   it('getCatalogTimeSeriesYears for rate/density vars excludes nullYears (e.g. 2023)', () => {
