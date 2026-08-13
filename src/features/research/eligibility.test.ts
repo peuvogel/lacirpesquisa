@@ -45,12 +45,9 @@ function decision(input: Parameters<typeof evaluateTests>[0], testId: string) {
 }
 
 describe('evaluateTests', () => {
-  it('returns a fail-closed decision for every registered test plus Mann–Whitney', () => {
+  it('returns one fail-closed decision for every registered test', () => {
     const result = evaluateTests({ design, scenario: createRecommendedScenario([]), profiles: [] });
-    expect(result.map((item) => item.testId)).toEqual([
-      ...TEST_REGISTRY.map((entry) => entry.id),
-      'mann-whitney',
-    ]);
+    expect(result.map((item) => item.testId)).toEqual(TEST_REGISTRY.map((entry) => entry.id));
     expect(result.every((item) => item.status === 'ineligible')).toBe(true);
   });
 

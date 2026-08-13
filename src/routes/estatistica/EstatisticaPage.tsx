@@ -5,6 +5,7 @@ import { BinomialNegativaTest } from '@/features/tests/binomial-negativa/Binomia
 import { CorrelacaoTest } from '@/features/tests/correlacao/CorrelacaoTest';
 import { KruskalDunnTest } from '@/features/tests/kruskal-dunn/KruskalDunnTest';
 import { LogisticaTest } from '@/features/tests/logistica/LogisticaTest';
+import { MannWhitneyTest } from '@/features/tests/mann-whitney/MannWhitneyTest';
 import { PoissonTest } from '@/features/tests/poisson/PoissonTest';
 import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTest';
 import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
@@ -24,7 +25,7 @@ export interface EstatisticaHandoffState {
 interface RenderActiveTestProps {
   /**
    * `TestId`, não `string`: junto com o `default` exaustivo abaixo, isso faz
-   * o TypeScript recusar a compilação assim que um décimo id entrar em
+   * o TypeScript recusar a compilação assim que um novo id entrar em
    * `TEST_REGISTRY` sem um `case` correspondente aqui — a mesma garantia que
    * `TEST_ICONS` já tem em SidebarTestLink.tsx. Com `string`, o id novo
    * caía no `default` e o módulo simplesmente não renderizava, sem erro.
@@ -42,6 +43,8 @@ function renderActiveTest({
   switch (activeTestId) {
     case 't-student':
       return <TStudentTest key={activeTestId} />;
+    case 'mann-whitney':
+      return <MannWhitneyTest key={activeTestId} />;
     case 'correlacao':
       return <CorrelacaoTest key={activeTestId} />;
     case 'prais-winsten':

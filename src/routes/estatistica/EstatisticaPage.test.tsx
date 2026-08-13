@@ -178,6 +178,7 @@ describe('EstatisticaPage', () => {
     ['poisson', /Regressão de Poisson/i],
     ['binomial-negativa', /Regressão Binomial Negativa/i],
     ['logistica', /Regressão Logística/i],
+    ['mann-whitney', /Mann–Whitney/i],
   ] as const)('mounts %s from sidebar without null render', async (testId, namePattern) => {
     const user = userEvent.setup();
     renderPage();

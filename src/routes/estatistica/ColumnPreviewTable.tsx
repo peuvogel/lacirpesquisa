@@ -34,6 +34,8 @@ export interface ColumnPreviewTableProps {
   maxPreviewRows?: number;
   /** Allow editing cells / headers by clicking (single-scroll Estatística). */
   editable?: boolean;
+  /** Additional study-design gate owned by the calling test module. */
+  confirmDisabled?: boolean;
 }
 
 function normalizeNumericToken(raw: string): string {
@@ -78,6 +80,7 @@ export function ColumnPreviewTable({
   onConfirm,
   maxPreviewRows = 8,
   editable = true,
+  confirmDisabled = false,
 }: ColumnPreviewTableProps) {
   const [headers, setHeaders] = useState(initialHeaders);
   const [bodyRows, setBodyRows] = useState(initialRows);
@@ -215,7 +218,7 @@ export function ColumnPreviewTable({
         Mostrando {previewRows.length} de {bodyRows.length} linhas
         {editable ? ' · clique para editar células ou nomes de coluna' : ''}
       </p>
-      <Button type="button" disabled={!isValid} onClick={handleConfirm}>
+      <Button type="button" disabled={!isValid || confirmDisabled} onClick={handleConfirm}>
         Analisar dados
       </Button>
     </div>

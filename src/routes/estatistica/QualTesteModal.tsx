@@ -57,7 +57,13 @@ const DESIGN_OPTIONS: Record<OutcomeType, Array<{ id: StudyDesign; label: string
 
 function resolveRecommendation(outcome: OutcomeType, design: StudyDesign): Recommendation {
   if (outcome === 'numerico') {
-    if (design === 'dois-grupos-independentes') return { primaryId: 't-student' };
+    if (design === 'dois-grupos-independentes') {
+      return {
+        primaryId: 't-student',
+        alternativeId: 'mann-whitney',
+        note: 'Confirme distribuição e independência: Mann–Whitney é a alternativa por postos.',
+      };
+    }
     if (design === 'dois-momentos-mesmo-grupo') {
       return {
         primaryId: 't-student',

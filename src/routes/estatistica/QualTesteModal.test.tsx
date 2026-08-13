@@ -40,6 +40,7 @@ describe('QualTesteModal', () => {
     const recommendationSection = recommendationHeading.parentElement;
     expect(recommendationSection).not.toBeNull();
     expect(recommendationSection).toHaveTextContent('t de Student');
+    expect(recommendationSection).toHaveTextContent('Mann–Whitney');
     expect(recommendationSection).toHaveTextContent('Disponível');
 
     const recommendationButton = recommendationSection!.querySelector('button');

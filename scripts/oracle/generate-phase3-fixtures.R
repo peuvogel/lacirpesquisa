@@ -109,6 +109,42 @@ write_json(file.path(out_dir, "kruskal-dunn-exemplo.golden.json"), list(
   )
 ))
 
+# --- Mann-Whitney / Wilcoxon rank sum ---
+mann_cases <- list(
+  exact_small = list(x = c(1, 3, 5), y = c(2, 4, 6), exact = TRUE),
+  ties_asymptotic = list(x = c(1, 2, 2, 3, 5), y = c(2, 3, 4, 4, 6), exact = FALSE),
+  shifted_exact = list(x = c(1, 2, 3, 4, 5), y = c(6, 7, 8, 9, 10), exact = TRUE)
+)
+mann_output <- lapply(mann_cases, function(case) {
+  fit <- wilcox.test(
+    case$x,
+    case$y,
+    paired = FALSE,
+    exact = case$exact,
+    correct = TRUE,
+    alternative = "two.sided"
+  )
+  u1 <- unname(fit$statistic)
+  total_pairs <- length(case$x) * length(case$y)
+  list(
+    input = list(groupA = case$x, groupB = case$y),
+    requestedExact = case$exact,
+    expected = list(
+      u1 = u1,
+      u2 = total_pairs - u1,
+      u = min(u1, total_pairs - u1),
+      p = unname(fit$p.value),
+      probabilityOfSuperiority = u1 / total_pairs,
+      rankBiserial = 2 * u1 / total_pairs - 1
+    )
+  )
+})
+write_json(file.path(out_dir, "mann-whitney-exemplo.golden.json"), list(
+  source = "R stats::wilcox.test, paired=FALSE, alternative=two.sided",
+  displayPrecision = list(p = "fmtP", effect = 3),
+  cases = mann_output
+))
+
 # --- Poisson GLM ---
 poisson_y <- c(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
 poisson_x <- c(1, 1, 1.2, 1.2, 1.5, 1.5, 2, 2, 2.5, 2.5, 3, 3)

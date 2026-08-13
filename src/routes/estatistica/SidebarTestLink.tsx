@@ -16,6 +16,7 @@ import { getTestBadgeLabel } from '@/features/tests/registry';
 
 const TEST_ICONS: Record<TestId, LucideIcon> = {
   't-student': GitCompareArrows,
+  'mann-whitney': GitCompareArrows,
   correlacao: ChartScatter,
   'prais-winsten': TrendingUp,
   'qui-quadrado': Grid3x3,
@@ -27,7 +28,7 @@ const TEST_ICONS: Record<TestId, LucideIcon> = {
 };
 
 /**
- * TEST_ICONS is exhaustive over TestId — forgetting a key when a 10th test
+ * TEST_ICONS is exhaustive over TestId — forgetting a key when a new test
  * is registered is a compile error (TS2741, QA-04/D-14). entry.id here is a
  * plain `string` (TestRegistryEntry stays generic on purpose, see below), so
  * the lookup goes through a cast — that cast is the exact point where the

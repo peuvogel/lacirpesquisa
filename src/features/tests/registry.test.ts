@@ -21,9 +21,9 @@ describe('TEST_REGISTRY', () => {
     }
   });
 
-  it('marks nine roadmap tests available', () => {
+  it('marks ten roadmap tests available, including Mann–Whitney', () => {
     const available = TEST_REGISTRY.filter((entry) => entry.status === 'available');
-    expect(available).toHaveLength(9);
+    expect(available).toHaveLength(10);
     expect(available.map((entry) => entry.id).sort()).toEqual(
       [
         'anova-tukey',
@@ -31,6 +31,7 @@ describe('TEST_REGISTRY', () => {
         'correlacao',
         'kruskal-dunn',
         'logistica',
+        'mann-whitney',
         'poisson',
         'prais-winsten',
         'qui-quadrado',
@@ -51,7 +52,7 @@ describe('TEST_REGISTRY', () => {
 
   it('does not include the removed demo entry', () => {
     expect(getTestById('demo')).toBeUndefined();
-    expect(TEST_REGISTRY).toHaveLength(9);
+    expect(TEST_REGISTRY).toHaveLength(10);
   });
 });
 
@@ -76,6 +77,7 @@ describe('isTestAvailable', () => {
     expect(isTestAvailable('poisson')).toBe(true);
     expect(isTestAvailable('binomial-negativa')).toBe(true);
     expect(isTestAvailable('logistica')).toBe(true);
+    expect(isTestAvailable('mann-whitney')).toBe(true);
   });
 
   it('is false for demo and unknown ids', () => {

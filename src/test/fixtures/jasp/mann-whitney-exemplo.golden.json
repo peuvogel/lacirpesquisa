@@ -1,0 +1,54 @@
+{
+  "source": "R stats::wilcox.test, paired=FALSE, alternative=two.sided",
+  "displayPrecision": {
+    "p": "fmtP",
+    "effect": 3
+  },
+  "cases": {
+    "exact_small": {
+      "input": {
+        "groupA": [1, 3, 5],
+        "groupB": [2, 4, 6]
+      },
+      "requestedExact": true,
+      "expected": {
+        "u1": 3,
+        "u2": 6,
+        "u": 3,
+        "p": 0.69999999999999996,
+        "probabilityOfSuperiority": 0.33333333333333331,
+        "rankBiserial": -0.33333333333333337
+      }
+    },
+    "ties_asymptotic": {
+      "input": {
+        "groupA": [1, 2, 2, 3, 5],
+        "groupB": [2, 3, 4, 4, 6]
+      },
+      "requestedExact": false,
+      "expected": {
+        "u1": 6.5,
+        "u2": 18.5,
+        "u": 6.5,
+        "p": 0.24184430404946314,
+        "probabilityOfSuperiority": 0.26000000000000001,
+        "rankBiserial": -0.47999999999999998
+      }
+    },
+    "shifted_exact": {
+      "input": {
+        "groupA": [1, 2, 3, 4, 5],
+        "groupB": [6, 7, 8, 9, 10]
+      },
+      "requestedExact": true,
+      "expected": {
+        "u1": 0,
+        "u2": 25,
+        "u": 0,
+        "p": 0.0079365079365079361,
+        "probabilityOfSuperiority": 0,
+        "rankBiserial": -1
+      }
+    }
+  }
+}

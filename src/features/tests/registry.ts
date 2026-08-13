@@ -35,6 +35,14 @@ export const TEST_REGISTRY = [
     phase: 2,
   },
   {
+    id: 'mann-whitney',
+    title: 'Mann–Whitney',
+    subtitle: 'Compare a ordenação e a distribuição dos valores entre dois grupos independentes.',
+    group: 'Comparações',
+    status: 'available',
+    phase: 3,
+  },
+  {
     id: 'correlacao',
     title: 'Correlação de Pearson / Spearman',
     subtitle: 'Veja de forma simples se duas coisas estão relacionadas e se caminham juntas.',
@@ -101,7 +109,7 @@ export const TEST_REGISTRY = [
 ] as const satisfies readonly TestRegistryEntry[];
 
 /**
- * Union of the 9 registry ids, derived from TEST_REGISTRY itself (D-11) —
+ * Union of every registry id, derived from TEST_REGISTRY itself (D-11) —
  * an id can never drift from the array it comes from.
  */
 export type TestId = (typeof TEST_REGISTRY)[number]['id'];
