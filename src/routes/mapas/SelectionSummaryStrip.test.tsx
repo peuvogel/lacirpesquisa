@@ -74,7 +74,7 @@ describe('SelectionSummaryStrip', () => {
     expect(summary.sentence).toContain('BA, PE');
     expect(summary.sentence).toContain('2 grupos');
     expect(summary.sentence).toContain('2018–2022');
-    expect(summary.sentence).toContain('Internações por embolia e trombose arteriais');
+    expect(summary.sentence).toContain('Embolia e trombose arteriais');
   });
 
   it('has aria-live polite on container when shown', () => {

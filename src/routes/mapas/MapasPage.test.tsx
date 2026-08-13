@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import {
   getCatalogLabel,
   getMetricByUf,
 } from '@/features/catalog/catalogAnalysisData';
-import { SessionProvider } from '@/shared/session/SessionProvider';
+import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import { getUfName } from './ufCodes';
 import { MapasPage } from './MapasPage';
 
@@ -13,10 +13,24 @@ const DEBOUNCE_MS = 300;
 
 function renderMapasPage(
   initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/mapas'],
+  onSession: (session: ReturnType<typeof useSession>) => void = () => {},
+  onPathname: (pathname: string) => void = () => {},
 ) {
+  function SessionObserver() {
+    onSession(useSession());
+    return null;
+  }
+
+  function LocationObserver() {
+    onPathname(useLocation().pathname);
+    return null;
+  }
+
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <SessionProvider>
+        <SessionObserver />
+        <LocationObserver />
         <MapasPage />
       </SessionProvider>
     </MemoryRouter>,
@@ -24,6 +38,53 @@ function renderMapasPage(
 }
 
 describe('MapasPage group workspace', () => {
+  it('guides the user to complete groups, disease and period before continuing to variables', () => {
+    renderMapasPage();
+
+    expect(screen.getByTestId('review-blocked-hint')).toHaveTextContent(
+      'Complete grupos, doença e período',
+    );
+    expect(screen.getByRole('button', { name: 'Continuar para Variáveis' })).toBeDisabled();
+  });
+
+  it('hands a completed map cut to variables without a dataset or test id', async () => {
+    const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
+    let pathname = '/mapas';
+    renderMapasPage(
+      ['/mapas'],
+      (session) => {
+        sessionRef.current = session;
+      },
+      (nextPathname) => {
+        pathname = nextPathname;
+      },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Continuar para Variáveis' })).toBeEnabled();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar para Variáveis' }));
+    fireEvent.click(
+      within(await screen.findByTestId('review-analysis-dialog')).getByRole('button', {
+        name: 'Continuar para Variáveis',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(pathname).toBe('/variaveis');
+    });
+    expect(sessionRef.current?.researchDesign?.groups[0]?.territories).toEqual([
+      { id: '29', label: 'Bahia' },
+    ]);
+    expect(sessionRef.current?.researchDesign?.diseaseIds).toEqual(['embolia_e_trombose_arteriais']);
+    expect(sessionRef.current?.dataset).toBeNull();
+  });
+
   it('renders group strip, region checkboxes and breadcrumb (no empty CTA strip)', () => {
     renderMapasPage();
 
@@ -124,10 +185,6 @@ describe('MapasPage catalogVariableIds handoff (D-15)', () => {
         },
       },
     ]);
-
-    await waitFor(() => {
-      expect(screen.getByLabelText('Configuração de Catálogo')).toBeInTheDocument();
-    });
 
     // Measure × disease: checkbox is the disease name, not the old flat label.
     await waitFor(() => {

@@ -3,13 +3,14 @@ import type { GeoLevel, MapViewState, TerritoryRef } from '@/geo/types';
 import { suggestGroupName } from '@/geo/municipioNames';
 import { resolvePresetTerritories, type RegionPresetId } from '@/geo/territoryCatalog';
 import {
-  getCatalogLabel,
   getCatalogTimeSeriesYears,
   getCatalogVariableById,
   getDefaultYearForVariable,
 } from '@/features/catalog/catalogAnalysisData';
 import { MAX_LOADABLE_SELECTION } from '@/features/catalog/buildSessionDataset';
-import { MEASURES, catalogIdFor, parseCatalogId } from '@/features/catalog/taxonomy';
+import { DISEASES, MEASURES, catalogIdFor, parseCatalogId } from '@/features/catalog/taxonomy';
+import { adaptGroup, adaptPeriods } from '@/features/research/researchDesign';
+import type { ResearchDesign, ResearchGeography } from '@/features/research/types';
 
 export type MapProvenance = 'catalog' | 'paste' | 'hybrid';
 
@@ -264,7 +265,7 @@ function isTimeValid(time: GroupTimeConfig | null | undefined): boolean {
 }
 
 function isGroupComplete(group: MapAnalysisGroup): boolean {
-  return group.territoryIds.length > 0 && isTimeValid(group.time) && group.variableIds.length > 0;
+  return group.territoryIds.length > 0 && isTimeValid(group.time);
 }
 
 function mergeTerritories(existing: TerritoryRef[], incoming: TerritoryRef[]): TerritoryRef[] {
@@ -574,15 +575,15 @@ function collectGroupTerritoryLabels(state: MapAnalysisState): string[] {
   return labels;
 }
 
-function collectVariableLabels(state: MapAnalysisState): string[] {
+function collectDiseaseLabels(state: MapAnalysisState): string[] {
   const seen = new Set<string>();
   const labels: string[] = [];
   for (const group of state.groups) {
     for (const id of group.variableIds) {
-      const label = getCatalogLabel(id);
-      if (!seen.has(label)) {
-        seen.add(label);
-        labels.push(label);
+      const diseaseId = parseCatalogId(id)?.diseaseId;
+      if (diseaseId && !seen.has(diseaseId)) {
+        seen.add(diseaseId);
+        labels.push(DISEASES.find((disease) => disease.id === diseaseId)?.label ?? diseaseId);
       }
     }
   }
@@ -608,14 +609,15 @@ export function deriveSelectionSummary(
   const allTerritoryLabels = [...new Set([...territoryLabels, ...ungroupedLabels])];
   const groupCount = state.groups.length;
   const timeSummaries = collectTimeSummaries(state);
-  const variableLabels = collectVariableLabels(state);
+  const diseaseLabels = collectDiseaseLabels(state);
 
   const hasGroups = groupCount > 0;
   const hasUngrouped = ungroupedTerritories.length > 0;
   const hasCompleteShape =
     hasGroups &&
     territoryLabels.length > 0 &&
-    state.groups.every((g) => g.territoryIds.length > 0 && isTimeValid(g.time) && g.variableIds.length > 0);
+    state.groups.every(isGroupComplete) &&
+    diseaseLabels.length > 0;
 
   // Empty / ungrouped-only: no instructional strip (selection lives on the map + groups).
   if (!hasGroups) {
@@ -631,14 +633,14 @@ export function deriveSelectionSummary(
       territoryLabels.join(', '),
       groupCount === 1 ? '1 grupo' : `${groupCount} grupos`,
       timeSummaries.join(', '),
-      variableLabels.join(', '),
+      diseaseLabels.join(', '),
     ].filter(Boolean);
     const sentence = segments.join(' · ');
     const chips: SummaryChip[] = [
       { label: territoryLabels.join(', '), kind: 'territory' },
       { label: groupCount === 1 ? '1 grupo' : `${groupCount} grupos`, kind: 'group' },
       ...timeSummaries.map((label) => ({ label, kind: 'time' as const })),
-      ...variableLabels.map((label) => ({ label, kind: 'variable' as const })),
+      ...diseaseLabels.map((label) => ({ label, kind: 'variable' as const })),
     ];
     return { mode: 'complete', headline: sentence, sentence, chips };
   }
@@ -651,7 +653,7 @@ export function deriveSelectionSummary(
   return {
     mode: 'partial',
     headline: partialHeadline,
-    hint: 'Complete período e variáveis em todos os grupos.',
+    hint: 'Complete grupos, doença e período.',
     chips: [
       ...allTerritoryLabels.map((label) => ({ label, kind: 'territory' as const })),
       { label: groupCount === 1 ? '1 grupo' : `${groupCount} grupos`, kind: 'group' },
@@ -680,11 +682,55 @@ function collectAllTerritoryIds(state: MapAnalysisState): TerritoryRef[] {
 
 export function deriveMapAnalysis(state: MapAnalysisState) {
   const canReview =
-    state.groups.length > 0 && state.groups.every(isGroupComplete);
+    state.groups.length > 0 &&
+    state.groups.every(isGroupComplete) &&
+    collectDiseaseLabels(state).length > 0;
   return {
     summaryChips: buildSummaryChips(state),
     canReview,
     allTerritoryIds: collectAllTerritoryIds(state),
+  };
+}
+
+function geographyForMapLevel(level: GeoLevel): ResearchGeography {
+  switch (level) {
+    case 'uf':
+      return 'uf';
+    case 'municipio':
+      return 'municipio';
+    case 'meso':
+      return 'mesorregiao';
+    case 'health-macro':
+      return 'macro_saude';
+  }
+}
+
+/**
+ * Transitional boundary for the legacy Mapas state. Disease ids remain shared
+ * in legacy catalog selections; measures intentionally do not cross this boundary.
+ */
+export function createResearchDesignFromMapState(state: MapAnalysisState): ResearchDesign {
+  const diseaseIds = [
+    ...new Set(
+      state.groups.flatMap((group) =>
+        group.variableIds
+          .map((variableId) => parseCatalogId(variableId)?.diseaseId)
+          .filter((diseaseId): diseaseId is string => Boolean(diseaseId)),
+      ),
+    ),
+  ];
+  const period = adaptPeriods(state.periodScope, state.sharedTime, state.groups);
+
+  if (!period) {
+    throw new Error('Não é possível criar um desenho de pesquisa sem período válido.');
+  }
+
+  return {
+    groups: state.groups.map(adaptGroup),
+    geography: geographyForMapLevel(state.mapView.level),
+    locationBasis: 'ocorrencia',
+    diseaseIds,
+    period,
   };
 }
 

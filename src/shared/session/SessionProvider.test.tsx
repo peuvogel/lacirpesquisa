@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createInitialMapAnalysisState } from '@/routes/mapas/mapAnalysisState';
+import type { GuidedAnalysisState, ResearchDesign } from '@/features/research/types';
 import { SessionProvider, useSession, type SessionDataset } from './SessionProvider';
 
 function renderSession() {
@@ -14,6 +15,22 @@ const sampleDataset: SessionDataset = {
   rows: [['BA', '10']],
   sourceLabel: 'colado',
   confirmedAt: Date.now(),
+};
+
+const sampleDesign: ResearchDesign = {
+  groups: [{ id: 'g1', name: 'Grupo 1', territories: [{ id: '29', label: 'Bahia' }] }],
+  geography: 'uf',
+  locationBasis: 'ocorrencia',
+  diseaseIds: ['embolia_e_trombose_arteriais'],
+  period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+};
+
+const guidedResults: GuidedAnalysisState = {
+  design: sampleDesign,
+  selectedVariableIds: ['internacoes'],
+  scenario: null,
+  eligibility: [],
+  resultsFingerprint: 'research-design:before-change',
 };
 
 describe('SessionProvider / useSession', () => {
@@ -62,6 +79,8 @@ describe('SessionProvider / useSession', () => {
       result.current.setDatasusSession({ confirmedSources: [] });
       result.current.setMapSelection({ ufs: ['BA'], variables: ['obitos'] });
       result.current.setMapAnalysis(createInitialMapAnalysisState());
+      result.current.setResearchDesign(sampleDesign);
+      result.current.setGuidedAnalysis(guidedResults);
     });
     expect(result.current.hasData).toBe(true);
 
@@ -73,6 +92,8 @@ describe('SessionProvider / useSession', () => {
     expect(result.current.datasusSession).toBeNull();
     expect(result.current.mapSelection).toBeNull();
     expect(result.current.mapAnalysis).toBeNull();
+    expect(result.current.researchDesign).toBeNull();
+    expect(result.current.guidedAnalysis).toBeNull();
     expect(result.current.hasData).toBe(false);
   });
 
@@ -84,6 +105,27 @@ describe('SessionProvider / useSession', () => {
     });
     expect(result.current.mapAnalysis).toEqual(analysis);
     expect(result.current.hasData).toBe(false);
+  });
+
+  it('discards guided results when the research design fingerprint changes', () => {
+    const { result } = renderSession();
+    act(() => {
+      result.current.setResearchDesign(sampleDesign);
+      result.current.setGuidedAnalysis(guidedResults);
+    });
+
+    act(() => {
+      result.current.setResearchDesign({
+        ...sampleDesign,
+        period: { scope: 'shared', time: { mode: 'point', point: '2021' } },
+      });
+    });
+
+    expect(result.current.researchDesign?.period).toEqual({
+      scope: 'shared',
+      time: { mode: 'point', point: '2021' },
+    });
+    expect(result.current.guidedAnalysis).toBeNull();
   });
 
   it('throws a descriptive error when used outside a provider', () => {

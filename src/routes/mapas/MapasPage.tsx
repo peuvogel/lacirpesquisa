@@ -36,7 +36,6 @@ import { AddGroupDropPill } from './AddGroupDropPill';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
 import { buildUngroupedTerritories } from './GroupBar';
-import { GroupConfigPanel } from './GroupConfigPanel';
 import { groupColor } from './groupPalette';
 import { SharedDiseasePanel } from './SharedDiseasePanel';
 import { SharedPeriodPanel } from './SharedPeriodPanel';
@@ -60,16 +59,12 @@ import { ReviewAnalysisDialog } from './ReviewAnalysisDialog';
 import { UfShapeDragOverlay } from './UfShapeDragOverlay';
 import {
   createInitialMapAnalysisState,
+  createResearchDesignFromMapState,
   deriveSelectionSummary,
   MAX_GROUPS,
   resolveCatalogHandoffIds,
   useMapAnalysis,
 } from './mapAnalysisState';
-import {
-  getCatalogLabel,
-  getMetricByUf,
-  getMetricByUfAndYear,
-} from '@/features/catalog/catalogAnalysisData';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
 
 function siglasToTerritories(siglas: string[]): TerritoryRef[] {
@@ -139,12 +134,6 @@ function collectGroupMunicipioMembership(
   return membership;
 }
 
-function yearFromPeriod(period: string | undefined): number | null {
-  if (!period?.trim()) return null;
-  const y = parseInt(period.trim().slice(0, 4), 10);
-  return Number.isFinite(y) ? y : null;
-}
-
 export function MapasPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -163,11 +152,11 @@ export function MapasPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [groupSheetOpen, setGroupSheetOpen] = useState(false);
   /** Exclusive accordion: at most one large panel; null = all collapsed. */
-  const [openResearchSection, setOpenResearchSection] = useState<
-    'disease' | 'period' | 'group' | null
-  >('disease');
+  const [openResearchSection, setOpenResearchSection] = useState<'disease' | 'period' | null>(
+    'disease',
+  );
 
-  const openResearch = (section: 'disease' | 'period' | 'group') => (open: boolean) => {
+  const openResearch = (section: 'disease' | 'period') => (open: boolean) => {
     setOpenResearchSection(open ? section : null);
   };
 
@@ -182,26 +171,6 @@ export function MapasPage() {
     () => state.groups.find((group) => group.id === state.activeGroupId) ?? null,
     [state.activeGroupId, state.groups],
   );
-
-  // Only paint choropleth when the user actually chose a variable — never default embolia.
-  const activeVariableId = useMemo(() => {
-    if (activeGroup?.variableIds[0]) return activeGroup.variableIds[0];
-    const firstWithVars = state.groups.find((group) => group.variableIds.length > 0);
-    return firstWithVars?.variableIds[0] ?? null;
-  }, [activeGroup, state.groups]);
-
-  const choroplethValues = useMemo(() => {
-    if (!activeVariableId) return {};
-    const period =
-      activeGroup?.time.mode === 'point'
-        ? activeGroup.time.point
-        : activeGroup?.time.end ?? activeGroup?.time.point;
-    const year = yearFromPeriod(period);
-    if (year !== null) {
-      return getMetricByUfAndYear(activeVariableId, year);
-    }
-    return getMetricByUf(activeVariableId);
-  }, [activeGroup?.time, activeVariableId]);
 
   const [dragSiglas, setDragSiglas] = useState<string[]>([]);
   const [dragProximity, setDragProximity] = useState(0);
@@ -218,6 +187,11 @@ export function MapasPage() {
   const summary = useMemo(
     () => deriveSelectionSummary(state, ungroupedTerritories),
     [state, ungroupedTerritories],
+  );
+
+  const researchDesign = useMemo(
+    () => (derived.canReview ? createResearchDesignFromMapState(state) : null),
+    [derived.canReview, state],
   );
 
   const groupMembership = useMemo(() => collectGroupMembership(state.groups), [state.groups]);
@@ -704,7 +678,7 @@ export function MapasPage() {
     <div className="flex h-full min-h-0 items-center justify-center rounded-2xl border border-white/10 bg-surface/60 p-6 backdrop-blur-md">
       <EmptyState
         heading="Explore o mapa do Brasil"
-        body="Selecione estados ou municípios e clique em Adicionar grupo. Doença e período ficam nos painéis de cima (compartilhados); variáveis, no grupo."
+        body="Selecione estados ou municípios e clique em Adicionar grupo. Doença e período ficam nos painéis de cima; as variáveis serão escolhidas na próxima etapa."
       />
     </div>
   );
@@ -743,18 +717,16 @@ export function MapasPage() {
     const sharedPanels = renderSharedResearchPanels();
 
     if (contextPanelMode === 'group' && activeGroup) {
-      const groupIndex = state.groups.findIndex((g) => g.id === activeGroup.id);
       return (
         <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
           {sharedPanels}
-          <GroupConfigPanel
-            group={activeGroup}
-            dispatch={dispatch}
-            groupIndex={groupIndex >= 0 ? groupIndex : 0}
-            periodScope={state.periodScope}
-            open={openResearchSection === 'group'}
-            onOpenChange={openResearch('group')}
-          />
+          <div className="rounded-2xl border border-border bg-elevated/40 p-5">
+            <p className="font-sans text-sm font-bold text-text">{activeGroup.name}</p>
+            <p className="mt-1 font-sans text-sm leading-relaxed text-text-muted">
+              Territórios definidos para este grupo. Continue com doença e período; as variáveis
+              serão escolhidas depois do recorte.
+            </p>
+          </div>
         </div>
       );
     }
@@ -792,7 +764,7 @@ export function MapasPage() {
     >
       <h1 className="font-sans text-display font-bold tracking-tight text-text">Mapas</h1>
       <p className="mt-1 max-w-2xl font-sans text-sm text-text-muted">
-        Selecione territórios, forme grupos e combine com variáveis do catálogo — tudo no site, sem
+        Selecione territórios, forme grupos e defina doenças e período — tudo no site, sem
         TABNET na aula.
       </p>
 
@@ -854,8 +826,8 @@ export function MapasPage() {
                   groupMunicipioMembership={groupMunicipioMembership}
                   onHoverUF={handleHoverUF}
                   onToggleUF={handleToggleUF}
-                  choroplethValues={choroplethValues}
-                  activeVariableId={activeVariableId}
+                  choroplethValues={{}}
+                  activeVariableId={null}
                   mapView={state.mapView}
                   onSetMapView={handleSetMapView}
                   enableShapeDrag
@@ -910,9 +882,8 @@ export function MapasPage() {
           </DndContext>
 
           <ChoroplethLegend
-            values={Object.values(choroplethValues)}
-            activeVariableId={activeVariableId}
-            variableLabel={activeVariableId ? getCatalogLabel(activeVariableId) : undefined}
+            values={[]}
+            activeVariableId={null}
           />
           {!hasInteracted ? <MapLegendHint /> : null}
           {hasUngroupedSelection ? (
@@ -947,7 +918,7 @@ export function MapasPage() {
                     {activeGroup ? activeGroup.name : 'Configurar grupo'}
                   </SheetTitle>
                   <SheetDescription>
-                    Doença e período compartilhados no topo; variáveis no grupo ativo.
+                    Doença e período compartilhados no topo; as variáveis vêm na próxima etapa.
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex min-h-[70vh] flex-col gap-2 px-4 pb-6">
@@ -963,20 +934,14 @@ export function MapasPage() {
                     <>
                       {renderSharedResearchPanels()}
                       {activeGroup ? (
-                        <GroupConfigPanel
-                          group={activeGroup}
-                          dispatch={dispatch}
-                          groupIndex={Math.max(
-                            0,
-                            state.groups.findIndex((g) => g.id === activeGroup.id),
-                          )}
-                          periodScope={state.periodScope}
-                          open={openResearchSection === 'group'}
-                          onOpenChange={openResearch('group')}
-                        />
-                      ) : (
-                        renderExplorePanel()
-                      )}
+                        <div className="rounded-2xl border border-border bg-elevated/40 p-5">
+                          <p className="font-sans text-sm font-bold text-text">{activeGroup.name}</p>
+                          <p className="mt-1 font-sans text-sm leading-relaxed text-text-muted">
+                            Territórios definidos para este grupo. Continue com doença e período;
+                            as variáveis serão escolhidas depois do recorte.
+                          </p>
+                        </div>
+                      ) : renderExplorePanel()}
                     </>
                   )}
                 </div>
@@ -995,13 +960,14 @@ export function MapasPage() {
         accentStroke={groupColor(state.groups.length).stroke}
       />
 
-      <ReviewAnalysisDialog
-        open={reviewOpen}
-        onOpenChange={setReviewOpen}
-        groups={state.groups}
-        summary={summary}
-        provenance={state.provenance}
-      />
+      {researchDesign ? (
+        <ReviewAnalysisDialog
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          summary={summary}
+          researchDesign={researchDesign}
+        />
+      ) : null}
     </motion.div>
   );
 }

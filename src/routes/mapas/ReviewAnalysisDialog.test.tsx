@@ -1,14 +1,11 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import * as registry from '@/features/tests/registry';
-import { SessionProvider, useSession, type SessionDataset } from '@/shared/session/SessionProvider';
-import type { MapAnalysisGroup } from './mapAnalysisState';
-import { createInitialMapAnalysisState, deriveSelectionSummary } from './mapAnalysisState';
-import { ReviewAnalysisDialog, resolveHandoffTestId } from './ReviewAnalysisDialog';
-import { guardHandoffTestId } from './mapHandoffShared';
-import { TestPickerSelect } from './TestPickerSelect';
+import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
+import type { ResearchDesign } from '@/features/research/types';
+import { ReviewAnalysisDialog } from './ReviewAnalysisDialog';
+import type { SelectionSummary } from './mapAnalysisState';
 
 const navigateMock = vi.fn();
 
@@ -34,54 +31,41 @@ const spTerritory = {
   name: 'São Paulo',
 };
 
-function twoGroupFixture(): MapAnalysisGroup[] {
-  return [
-    {
-      id: 'g1',
-      name: 'Grupo A',
-      territoryIds: [baTerritory],
-      time: { mode: 'point', point: '2020' },
-      variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
-    },
-    {
-      id: 'g2',
-      name: 'Grupo B',
-      territoryIds: [spTerritory],
-      time: { mode: 'point', point: '2021' },
-      variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
-    },
-  ];
-}
+const design: ResearchDesign = {
+  groups: [
+    { id: 'g1', name: 'Grupo A', territories: [{ id: baTerritory.ibgeCode, label: baTerritory.name }] },
+    { id: 'g2', name: 'Grupo B', territories: [{ id: spTerritory.ibgeCode, label: spTerritory.name }] },
+  ],
+  geography: 'uf',
+  locationBasis: 'ocorrencia',
+  diseaseIds: ['embolia_e_trombose_arteriais'],
+  period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+};
 
-function SessionObserver({ onDataset }: { onDataset: (dataset: ReturnType<typeof useSession>['dataset']) => void }) {
-  const { dataset } = useSession();
-  onDataset(dataset);
+const summary: SelectionSummary = {
+  mode: 'complete',
+  headline: 'Bahia, São Paulo · 2 grupos · 2020 · Embolia e trombose arteriais',
+  sentence: 'Bahia, São Paulo · 2 grupos · 2020 · Embolia e trombose arteriais',
+  chips: [],
+};
+
+function SessionObserver({ onSession }: { onSession: (session: ReturnType<typeof useSession>) => void }) {
+  onSession(useSession());
   return null;
 }
 
-function renderDialog(
-  groups: MapAnalysisGroup[] = twoGroupFixture(),
-  onDataset: (dataset: ReturnType<typeof useSession>['dataset']) => void = () => {},
-) {
+function renderDialog(onSession: (session: ReturnType<typeof useSession>) => void = () => {}) {
   const onOpenChange = vi.fn();
-  const summary = deriveSelectionSummary({
-    ...createInitialMapAnalysisState(),
-    groups,
-    activeGroupId: 'g1',
-    mapView: { level: 'uf' },
-    provenance: 'catalog',
-  });
 
   render(
     <MemoryRouter>
       <SessionProvider>
-        <SessionObserver onDataset={onDataset} />
+        <SessionObserver onSession={onSession} />
         <ReviewAnalysisDialog
           open
           onOpenChange={onOpenChange}
-          groups={groups}
           summary={summary}
-          provenance="catalog"
+          researchDesign={design}
         />
       </SessionProvider>
     </MemoryRouter>,
@@ -90,108 +74,38 @@ function renderDialog(
   return { onOpenChange };
 }
 
-describe('resolveHandoffTestId', () => {
-  it('prefers the first available suggestion', () => {
-    expect(
-      resolveHandoffTestId([
-        { testId: 'correlacao', rationale: 'corr' },
-        { testId: 't-student', rationale: 't' },
-      ]),
-    ).toBe('correlacao');
-  });
-
-  it('falls back to t-student when the primary suggestion is unavailable', () => {
-    const spy = vi.spyOn(registry, 'isTestAvailable').mockImplementation((id) => id === 't-student');
-
-    expect(
-      resolveHandoffTestId([
-        { testId: 'anova-tukey', rationale: 'anova' },
-        { testId: 't-student', rationale: 't' },
-      ]),
-    ).toBe('t-student');
-
-    spy.mockRestore();
-  });
-});
-
 describe('ReviewAnalysisDialog', () => {
   beforeEach(() => {
     navigateMock.mockReset();
-    vi.restoreAllMocks();
     Element.prototype.scrollIntoView = vi.fn();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('renders UI-SPEC copy and suggested test section', () => {
+  it('renders a concise research cut review without a suggested test picker', () => {
     renderDialog();
 
-    expect(screen.getByText('Revisar antes de analisar')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Confira territórios, grupos, período e variáveis/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Seu recorte está pronto')).toBeInTheDocument();
+    expect(screen.getByText(/Na próxima etapa, você escolhe as variáveis/i)).toBeInTheDocument();
     expect(screen.getByText('Sua seleção')).toBeInTheDocument();
-    expect(screen.getByText('Teste sugerido')).toBeInTheDocument();
-    expect(screen.getByText('Usar outro teste')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ir para Estatística' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ver fontes oficiais' })).toBeInTheDocument();
+    expect(screen.queryByText('Teste sugerido')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuar para Variáveis' })).toBeInTheDocument();
   });
 
-  it('publishes assembled dataset and navigates with activeTestId + recognizedColumns', async () => {
+  it('persists only the research design and navigates to variables', async () => {
     const user = userEvent.setup();
-    let latestDataset: SessionDataset | null = null;
+    const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
 
-    const { onOpenChange } = renderDialog(twoGroupFixture(), (dataset) => {
-      latestDataset = dataset;
+    const { onOpenChange } = renderDialog((session) => {
+      sessionRef.current = session;
     });
 
-    await user.click(screen.getByRole('button', { name: 'Ir para Estatística' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar para Variáveis' }));
 
     await waitFor(() => {
-      expect(latestDataset).not.toBeNull();
+      expect(sessionRef.current?.researchDesign).toEqual(design);
     });
-
-    expect(latestDataset!.headers[0]).toBe('Território');
-    expect(latestDataset!.rows.length).toBeGreaterThanOrEqual(2);
-    expect(latestDataset!.sourceLabel).toMatch(/Mapas:/);
-
-    expect(navigateMock).toHaveBeenCalledWith(
-      '/',
-      expect.objectContaining({
-        state: expect.objectContaining({
-          activeTestId: 't-student',
-          recognizedColumns: expect.any(Object),
-        }),
-      }),
-    );
+    expect(sessionRef.current?.dataset).toBeNull();
+    expect(navigateMock).toHaveBeenCalledWith('/variaveis');
     expect(onOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  it('guardHandoffTestId respects user override when test is available', () => {
-    expect(
-      guardHandoffTestId('correlacao', [{ testId: 't-student', rationale: 't' }]),
-    ).toBe('correlacao');
-  });
-
-  it('TestPickerSelect renders available registry tests', () => {
-    const onChange = vi.fn();
-    render(
-      <TestPickerSelect value="t-student" onValueChange={onChange} />,
-    );
-    expect(screen.getByRole('combobox', { name: 'Usar outro teste' })).toBeInTheDocument();
-  });
-
-  it('collection links use noopener', async () => {
-    const user = userEvent.setup();
-    renderDialog();
-
-    await user.click(screen.getByRole('button', { name: 'Ver fontes oficiais' }));
-
-    const link = screen.getByRole('link', { name: /TABNET: SIH\/SUS/i });
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('closes on Escape', async () => {
@@ -203,27 +117,5 @@ describe('ReviewAnalysisDialog', () => {
     await waitFor(() => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
-  });
-});
-
-describe('ReviewAnalysisDialog handoff state', () => {
-  it('includes recognizedColumns with territorio and medida keys', async () => {
-    const user = userEvent.setup();
-    renderDialog();
-
-    await user.click(screen.getByRole('button', { name: 'Ir para Estatística' }));
-
-    expect(navigateMock).toHaveBeenCalledWith(
-      '/',
-      expect.objectContaining({
-        state: expect.objectContaining({
-          activeTestId: 't-student',
-          recognizedColumns: expect.objectContaining({
-            territorio: expect.any(Number),
-            medida: expect.any(Number),
-          }),
-        }),
-      }),
-    );
   });
 });

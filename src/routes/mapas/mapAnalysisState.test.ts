@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyCatalogVariableIds,
   clampYear,
+  createResearchDesignFromMapState,
   createInitialMapAnalysisState,
   deriveFlatMapSelection,
   deriveMapAnalysis,
@@ -29,7 +30,7 @@ function completeGroup(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGr
     name: 'Grupo 1',
     territoryIds: [sampleTerritory],
     time: { mode: 'point', point: '2020' },
-    variableIds: ['obitos'],
+    variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
     ...overrides,
   };
 }
@@ -280,6 +281,48 @@ describe('mapAnalysisReducer', () => {
 });
 
 describe('deriveMapAnalysis', () => {
+  it('creates a research design with unique diseases, independent from selected measures', () => {
+    const state: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      mapView: { level: 'uf' },
+      groups: [
+        completeGroup({
+          variableIds: [
+            'sih.embolia_e_trombose_arteriais.internacoes',
+            'sih.embolia_e_trombose_arteriais.obitos',
+          ],
+        }),
+        completeGroup({
+          id: 'g2',
+          name: 'Grupo 2',
+          territoryIds: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
+          variableIds: ['sih.amputacao_mmii.obitos'],
+        }),
+      ],
+      periodScope: 'shared',
+      sharedTime: { mode: 'range', start: '2020-01', end: '2021-12' },
+    };
+
+    expect(createResearchDesignFromMapState(state)).toEqual({
+      groups: [
+        {
+          id: 'g1',
+          name: 'Grupo 1',
+          territories: [{ id: '29', label: 'Bahia' }],
+        },
+        {
+          id: 'g2',
+          name: 'Grupo 2',
+          territories: [{ id: '35', label: 'São Paulo' }],
+        },
+      ],
+      geography: 'uf',
+      locationBasis: 'ocorrencia',
+      diseaseIds: ['embolia_e_trombose_arteriais', 'amputacao_mmii'],
+      period: { scope: 'shared', time: { mode: 'range', start: '2020-01', end: '2021-12' } },
+    });
+  });
+
   it('canReview false with empty groups', () => {
     expect(deriveMapAnalysis(createInitialMapAnalysisState()).canReview).toBe(false);
   });
@@ -298,6 +341,22 @@ describe('deriveMapAnalysis', () => {
       ],
     };
     expect(deriveMapAnalysis(state).canReview).toBe(false);
+  });
+
+  it('requires a shared disease, not a separately selected measure in every group', () => {
+    const withoutDisease: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      groups: [completeGroup({ variableIds: ['mock.internacoes'] })],
+    };
+    const withDisease: MapAnalysisState = {
+      ...withoutDisease,
+      groups: [
+        completeGroup({ variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'] }),
+      ],
+    };
+
+    expect(deriveMapAnalysis(withoutDisease).canReview).toBe(false);
+    expect(deriveMapAnalysis(withDisease).canReview).toBe(true);
   });
 
   it('canReview true with complete group', () => {
@@ -323,7 +382,7 @@ describe('deriveMapAnalysis', () => {
     state = mapAnalysisReducer(state, {
       type: 'TOGGLE_GROUP_VARIABLE',
       groupId,
-      variableId: 'mock.internacoes',
+      variableId: 'sih.embolia_e_trombose_arteriais.internacoes',
     });
 
     const summary = deriveSelectionSummary(state);
@@ -394,6 +453,6 @@ describe('deriveFlatMapSelection', () => {
     };
     const flat = deriveFlatMapSelection(state);
     expect(flat?.ufs).toContain('BA');
-    expect(flat?.variables).toContain('obitos');
+    expect(flat?.variables).toContain('sih.embolia_e_trombose_arteriais.internacoes');
   });
 });

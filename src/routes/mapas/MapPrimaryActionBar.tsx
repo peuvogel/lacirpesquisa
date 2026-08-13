@@ -40,7 +40,7 @@ export function MapPrimaryActionBar({
           data-testid="review-blocked-hint"
         >
           <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
-          Complete período e variáveis em todos os grupos antes de revisar.
+          Complete grupos, doença e período antes de continuar.
         </p>
       ) : null}
 
@@ -51,7 +51,7 @@ export function MapPrimaryActionBar({
         onClick={onReview}
         data-testid="review-analyze-button"
       >
-        Revisar e analisar
+        Continuar para Variáveis
       </Button>
 
       <div className="flex flex-wrap gap-2">
