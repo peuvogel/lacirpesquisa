@@ -46,6 +46,18 @@ function cell(variableId: string, periodKey: string, rawValue: number | null): A
   };
 }
 
+function missingCell(variableId: string, periodKey: string): AnalysisCell {
+  return {
+    ...cell(variableId, periodKey, null),
+    sourceStatus: 'missing',
+    analyticStatus: 'exclude_missing',
+  };
+}
+
+function forTerritory(cellValue: AnalysisCell, territoryId: string): AnalysisCell {
+  return { ...cellValue, territoryId };
+}
+
 function countCells(values: number[]): AnalysisCell[] {
   return values.map((value, index) => cell('internacoes', String(2020 + index), value));
 }
@@ -108,6 +120,47 @@ describe('aggregatePeriod', () => {
       value: null,
       status: 'not_applicable',
       reason: { code: 'multiple_periods_for_point_only' },
+    });
+  });
+
+  it('does not substitute the sole observed year when another selected year is missing', () => {
+    const result = aggregatePeriod(
+      [cell('desfecho_hospitalar', '2020', 1), missingCell('desfecho_hospitalar', '2021')],
+      pointProfile,
+    );
+
+    expect(result).toMatchObject({
+      value: null,
+      status: 'not_applicable',
+      reason: { code: 'multiple_periods_for_point_only', periodKeys: ['2020', '2021'] },
+    });
+  });
+
+  it.each([
+    ['sum', countProfile, [cell('internacoes', '2020', 10), cell('internacoes', '2021', 20)]],
+    [
+      'recomputed rate',
+      rateProfile,
+      rateCells({ events: [5, 10], population: [100, 300] }),
+    ],
+    [
+      'weighted mean',
+      meanProfile,
+      [
+        cell('media', '2020', 2),
+        cell('internacoes', '2020', 100),
+        cell('media', '2021', 4),
+        cell('internacoes', '2021', 300),
+      ],
+    ],
+    ['point only', pointProfile, [cell('desfecho_hospitalar', '2020', 1)]],
+  ] as const)('refuses to aggregate %s cells from distinct territories', (_kind, profile, cells) => {
+    const mixedTerritories = cells.flatMap((cellValue) => [cellValue, forTerritory(cellValue, '33')]);
+
+    expect(aggregatePeriod(mixedTerritories, profile)).toMatchObject({
+      value: null,
+      status: 'not_applicable',
+      reason: { code: 'multiple_analytic_units' },
     });
   });
 });

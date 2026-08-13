@@ -117,7 +117,8 @@ export type AggregationReasonCode =
   | 'missing_component'
   | 'mismatched_components'
   | 'invalid_denominator'
-  | 'multiple_periods_for_point_only';
+  | 'multiple_periods_for_point_only'
+  | 'multiple_analytic_units';
 
 export interface AggregationReason {
   code: AggregationReasonCode;

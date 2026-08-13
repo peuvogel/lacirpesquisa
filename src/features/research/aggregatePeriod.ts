@@ -20,6 +20,10 @@ function keyFor(cell: AnalysisCell): string {
   return `${cell.groupId}\u0000${cell.territoryId}\u0000${cell.periodKey}`;
 }
 
+function analyticUnitKeyFor(cell: AnalysisCell): string {
+  return `${cell.groupId}\u0000${cell.territoryId}`;
+}
+
 function missingResult(
   reason: AggregationReason,
   includedCellCount = 0,
@@ -151,6 +155,11 @@ export function aggregatePeriod(
   cells: AnalysisCell[],
   profile: VariableProfile,
 ): PeriodAggregationResult {
+  const analyticUnits = new Set(cells.map(analyticUnitKeyFor));
+  if (analyticUnits.size > 1) {
+    return missingResult({ code: 'multiple_analytic_units' });
+  }
+
   if (profile.temporalAggregation === 'sum') {
     const values = usableCellsFor(cells, profile.variableId);
     if (values.length === 0) return missingResult({ code: 'no_usable_values' });
@@ -169,14 +178,15 @@ export function aggregatePeriod(
     return aggregateWeightedMean(cells, profile);
   }
 
-  const values = usableCellsFor(cells, profile.variableId);
-  if (values.length === 0) return missingResult({ code: 'no_usable_values' });
-  if (values.length !== 1) {
-    return missingResult(
-      { code: 'multiple_periods_for_point_only', periodKeys: values.map((cell) => cell.periodKey).sort() },
-      values.length,
-    );
+  const profileCells = cells.filter((cell) => cell.variableId === profile.variableId);
+  const periodKeys = [...new Set(profileCells.map((cell) => cell.periodKey))].sort();
+  if (periodKeys.length > 1) {
+    return missingResult({ code: 'multiple_periods_for_point_only', periodKeys });
   }
+
+  const values = usableCellsFor(profileCells, profile.variableId);
+  if (values.length === 0) return missingResult({ code: 'no_usable_values' });
+  if (values.length !== 1) return missingResult({ code: 'no_usable_values' }, values.length);
   return {
     value: values[0]!.rawValue,
     status: values[0]!.sourceStatus,
