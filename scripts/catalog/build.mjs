@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 /**
- * catalog:build — normalize coleta CSVs → public/data/catalog/*
- * Offline only: reads allowlisted local corpus files (no TABNET/IBGE network).
+ * catalog:build — normaliza os 10 packs (já gerados por `generateSihPacks.mjs`, D-19) em
+ * `public/data/catalog/{manifest,variables}.json`. Offline: só lê arquivos locais já escritos
+ * (packs/*.json, columnMap.json, reference-seed.json) — nunca toca rede nem o corpus legado de
+ * 654 CSVs, aposentado por esta fase (09-13). `build.mjs` não escreve mais `packs/*.json`: quem
+ * gera o conteúdo dos packs é só `generateSihPacks.mjs`, para não haver dois escritores do mesmo
+ * arquivo com formatações potencialmente diferentes.
  */
 
 import fs from 'node:fs';
@@ -10,14 +14,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  CATALOG_OUT_DIR,
-  CORPUS_DIR,
-  PACK_SOURCES,
-  ROOT,
-  corpusPath,
-} from './paths.mjs';
-import { readCsvUtf8Sig } from './parseCsv.mjs';
+import { CATALOG_OUT_DIR } from './paths.mjs';
+import { PACK_IDS } from './generateSihPacks.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CATALOG_VERSION = '1.0.0';
@@ -25,21 +23,32 @@ const PERIOD = '2013–2025';
 const GRAIN = 'uf_ano';
 const KEYS = ['uf_codigo', 'uf', 'ano'];
 
-/** Columns carried in packs for join but not emitted as separate catalog entries when shared. */
-const SHARED_METRIC_KEYS = [
-  'medicos_vasculares_sus',
-  'populacao',
-  'medicos_vasculares_por_100k',
-];
+/** URLs oficiais do TabNet/CNES/SIDRA por `sourceKey` de `columnMap.json` — substitui os antigos
+ * `metadata.json` por doença do corpus de 654 CSVs (D-19 aposenta esse corpus como entrada de
+ * build). Mesmos endpoints que aqueles arquivos apontavam, centralizados aqui em vez de
+ * duplicados em 654 arquivos. */
+const SOURCE_URLS = {
+  sih: 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/qibr.def',
+  sih_morbidade_local_internacao: 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nibr.def',
+  cnes: 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/prid02br.def',
+  sidra_6579: 'https://sidra.ibge.gov.br/tabela/6579',
+};
 
-const TEXT_SKIP = new Set([
-  'lista_morb_cid10',
-  'metodo_sih',
-  'populacao_fonte',
-  'cnes_competencia',
-  'procedimento_sih',
-  'uf_nome',
-]);
+/** Os 2 packs legados carregam colunas de junção CNES/população congeladas (D-19/09-13 —
+ * `generateSihPacks.mjs` documenta o porquê); a nota de metodologia continua honesta sobre isso. */
+const LEGACY_PACK_IDS = new Set(['sih.embolia_e_trombose_arteriais_uf', 'sih.amputacao_mmii_uf']);
+
+const GENERIC_METHODOLOGY_NOTE =
+  'Agregado do microdado SIH-RD (pysus, RD{UF}{AAMM}.dbc, filtrado por IDENT=1) pelo pipeline da ' +
+  'Fase 9, reconciliado contra o TabNet (SC-7) e substituído atomicamente ao dado TabNet legado ' +
+  '(D-16). Grão UF, local de ocorrência. Ausência de linha para um território com coleta ' +
+  'concluída é zero verdadeiro medido, nunca uma falha de coleta silenciosa (D-14).';
+
+const LEGACY_METHODOLOGY_NOTE =
+  `${GENERIC_METHODOLOGY_NOTE} Colunas de médicos vasculares SUS (CNES) e população residente ` +
+  '(SIDRA) são congeladas da coleta da Fase 5 — fonte alheia ao pipeline SIH-RD desta fase, não ' +
+  'recoletada aqui. População 2023 sem denominador oficial nesta regra: taxas/densidades ficam ' +
+  'null (UI: n/d).';
 
 function loadJson(absPath) {
   return JSON.parse(fs.readFileSync(absPath, 'utf8'));
@@ -71,55 +80,19 @@ function columnYears(rows, columnKey) {
   };
 }
 
-function resolveOfficialUrl(metadata, sourceKey, fallback) {
-  const sources = metadata.sources || {};
-  if (sourceKey && sources[sourceKey]) return sources[sourceKey];
-  if (sourceKey === 'sidra_6579' && sources.sidra_6579) return sources.sidra_6579;
-  return fallback || Object.values(sources)[0] || 'https://datasus.saude.gov.br/';
+function resolveOfficialUrl(sourceKey) {
+  return SOURCE_URLS[sourceKey] ?? 'https://datasus.saude.gov.br/';
 }
 
-function methodologyFromMetadata(metadata, extra = '') {
-  const notes = Array.isArray(metadata.notes) ? metadata.notes : [];
-  const base = notes.join(' ');
-  const gap =
-    ' População 2023 sem denominador oficial nesta regra: taxas/densidades ficam null (UI: n/d).';
-  const needsGap = /2023/.test(base) ? '' : gap;
-  return (base + needsGap + (extra ? ` ${extra}` : '')).trim();
-}
-
-function buildPack(packId, metricKeys, rows) {
-  const packRows = rows.map((row) => {
-    /** @type {Record<string, string|number|null>} */
-    const out = {
-      uf_codigo: row.uf_codigo == null ? null : String(row.uf_codigo),
-      uf: row.uf == null ? null : String(row.uf),
-      uf_nome: row.uf_nome == null ? null : String(row.uf_nome),
-      ano: row.ano,
-    };
-    for (const key of metricKeys) {
-      out[key] = row[key] === undefined ? null : row[key];
-    }
-    return out;
-  });
-  return {
-    packId,
-    grain: GRAIN,
-    keys: KEYS,
-    metricKeys,
-    rows: packRows,
-  };
-}
-
-function buildLoadableEntries(columnMap, packId, metadata, rows) {
+function buildLoadableEntries(columnMap, packId, rows) {
   const packColumns = columnMap[packId] || {};
+  const methodologyNotes = LEGACY_PACK_IDS.has(packId)
+    ? LEGACY_METHODOLOGY_NOTE
+    : GENERIC_METHODOLOGY_NOTE;
   const entries = [];
   for (const [columnKey, seed] of Object.entries(packColumns)) {
     const { yearsAvailable, nullYears } = columnYears(rows, columnKey);
-    const officialUrl = resolveOfficialUrl(
-      metadata,
-      seed.sourceKey,
-      seed.officialUrl,
-    );
+    const officialUrl = resolveOfficialUrl(seed.sourceKey);
     /** @type {Record<string, unknown>} */
     const entry = {
       id: seed.id,
@@ -131,7 +104,7 @@ function buildLoadableEntries(columnMap, packId, metadata, rows) {
       tableOrIndicator: seed.tableOrIndicator,
       period: PERIOD,
       officialUrl,
-      methodologyNotes: methodologyFromMetadata(metadata),
+      methodologyNotes,
       loadable: true,
       packId,
       columnKey,
@@ -148,38 +121,14 @@ function buildLoadableEntries(columnMap, packId, metadata, rows) {
   return entries;
 }
 
-function metricKeysForPack(columnMap, packId, csvHeaders, includeShared) {
-  const mapped = Object.keys(columnMap[packId] || {});
-  const keys = [];
-  if (includeShared) {
-    for (const k of SHARED_METRIC_KEYS) {
-      if (csvHeaders.includes(k)) keys.push(k);
-    }
-  }
-  for (const k of mapped) {
-    if (!keys.includes(k) && csvHeaders.includes(k) && !TEXT_SKIP.has(k)) {
-      keys.push(k);
-    }
-  }
-  // Also include shared on amputação for join convenience even if not in columnMap
-  if (includeShared === false) {
-    for (const k of SHARED_METRIC_KEYS) {
-      if (csvHeaders.includes(k) && !keys.includes(k)) keys.push(k);
-    }
-  }
-  return keys;
-}
-
 async function atomicWriteCatalog(files) {
   const tmpRoot = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'lacir-catalog-'));
   try {
-    await fsPromises.mkdir(path.join(tmpRoot, 'packs'), { recursive: true });
     for (const [rel, content] of Object.entries(files)) {
       const dest = path.join(tmpRoot, rel);
       await fsPromises.mkdir(path.dirname(dest), { recursive: true });
       await fsPromises.writeFile(dest, content, 'utf8');
     }
-    await fsPromises.mkdir(path.join(CATALOG_OUT_DIR, 'packs'), { recursive: true });
     for (const rel of Object.keys(files)) {
       const from = path.join(tmpRoot, rel);
       const to = path.join(CATALOG_OUT_DIR, rel);
@@ -201,35 +150,31 @@ async function main() {
     throw new Error('reference-seed.json must be an array');
   }
 
-  const packFiles = {};
   const manifestPacks = [];
   /** @type {Record<string, unknown>[]} */
   const variables = [];
   const seenIds = new Set();
+  const derivedAts = new Set();
 
-  // 1) Embolia first (primary for shared CNES/pop catalog ids)
-  {
-    const packId = 'sih.embolia_e_trombose_arteriais_uf';
-    const src = PACK_SOURCES[packId];
-    const csvPath = corpusPath(src.csv);
-    const metaPath = corpusPath(src.metadata);
-    const metadata = loadJson(metaPath);
-    const { headers, rows } = readCsvUtf8Sig(csvPath);
-    if (rows.length !== 351) {
-      throw new Error(`${packId}: expected 351 rows, got ${rows.length}`);
+  for (const packId of PACK_IDS) {
+    const packPath = path.join(CATALOG_OUT_DIR, 'packs', `${packId}.json`);
+    if (!fs.existsSync(packPath)) {
+      throw new Error(
+        `catalog:build: pack ausente "${packId}" — rode "npm run catalog:sih-packs" antes de "catalog:build" (D-19).`,
+      );
     }
-    const metricKeys = metricKeysForPack(columnMap, packId, headers, true);
-    packFiles[packId] = buildPack(packId, metricKeys, rows);
-    const years = yearsFromRows(rows);
+    const pack = loadJson(packPath);
+    if (typeof pack.derivedAt === 'string' && pack.derivedAt) derivedAts.add(pack.derivedAt);
+    const years = yearsFromRows(pack.rows);
     manifestPacks.push({
       packId,
       grain: GRAIN,
-      sourceDir: path.relative(ROOT, path.join(CORPUS_DIR, src.sourceDir)),
-      rowCount: rows.length,
+      sourceDir: 'supabase:sih_metric_uf (PostgREST, D-19)',
+      rowCount: pack.rows.length,
       years,
       keys: KEYS,
     });
-    for (const entry of buildLoadableEntries(columnMap, packId, metadata, rows)) {
+    for (const entry of buildLoadableEntries(columnMap, packId, pack.rows)) {
       if (seenIds.has(entry.id)) {
         throw new Error(`Duplicate catalog id: ${entry.id}`);
       }
@@ -238,84 +183,6 @@ async function main() {
     }
   }
 
-  // 2) Amputação — loadables only for amputação-specific columns; shared stay on embolia
-  {
-    const packId = 'sih.amputacao_mmii_uf';
-    const src = PACK_SOURCES[packId];
-    const csvPath = corpusPath(src.csv);
-    const metaPath = corpusPath(src.metadata);
-    const metadata = loadJson(metaPath);
-    const { headers, rows } = readCsvUtf8Sig(csvPath);
-    if (rows.length !== 351) {
-      throw new Error(`${packId}: expected 351 rows, got ${rows.length}`);
-    }
-    const metricKeys = metricKeysForPack(columnMap, packId, headers, false);
-    packFiles[packId] = buildPack(packId, metricKeys, rows);
-    const years = yearsFromRows(rows);
-    manifestPacks.push({
-      packId,
-      grain: GRAIN,
-      sourceDir: path.relative(ROOT, path.join(CORPUS_DIR, src.sourceDir)),
-      rowCount: rows.length,
-      years,
-      keys: KEYS,
-    });
-    for (const entry of buildLoadableEntries(columnMap, packId, metadata, rows)) {
-      if (seenIds.has(entry.id)) {
-        throw new Error(`Duplicate catalog id: ${entry.id}`);
-      }
-      seenIds.add(entry.id);
-      variables.push(entry);
-    }
-  }
-
-  // 3) Multi-disease packs (optional — skip when scrape CSV not ready yet)
-  const multiPackIds = Object.keys(PACK_SOURCES).filter(
-    (id) => id !== 'sih.embolia_e_trombose_arteriais_uf' && id !== 'sih.amputacao_mmii_uf',
-  );
-  for (const packId of multiPackIds) {
-    const src = PACK_SOURCES[packId];
-    if (!src) continue;
-    let csvPath;
-    let metaPath;
-    try {
-      csvPath = corpusPath(src.csv);
-      metaPath = corpusPath(src.metadata);
-    } catch {
-      console.warn(`catalog:build skip ${packId}: path not allowlisted`);
-      continue;
-    }
-    if (!fs.existsSync(csvPath) || !fs.existsSync(metaPath)) {
-      console.warn(`catalog:build skip ${packId}: scrape CSV/metadata missing`);
-      continue;
-    }
-    const metadata = loadJson(metaPath);
-    const { headers, rows } = readCsvUtf8Sig(csvPath);
-    if (rows.length === 0) {
-      console.warn(`catalog:build skip ${packId}: empty CSV`);
-      continue;
-    }
-    const metricKeys = metricKeysForPack(columnMap, packId, headers, false);
-    packFiles[packId] = buildPack(packId, metricKeys, rows);
-    const years = yearsFromRows(rows);
-    manifestPacks.push({
-      packId,
-      grain: GRAIN,
-      sourceDir: path.relative(ROOT, path.join(CORPUS_DIR, src.sourceDir)),
-      rowCount: rows.length,
-      years,
-      keys: KEYS,
-    });
-    for (const entry of buildLoadableEntries(columnMap, packId, metadata, rows)) {
-      if (seenIds.has(entry.id)) {
-        throw new Error(`Duplicate catalog id: ${entry.id}`);
-      }
-      seenIds.add(entry.id);
-      variables.push(entry);
-    }
-  }
-
-  // 4) Reference seed
   for (const entry of referenceSeed) {
     if (!entry || typeof entry.id !== 'string') {
       throw new Error('reference-seed entry missing id');
@@ -330,7 +197,19 @@ async function main() {
     variables.push(entry);
   }
 
-  const generatedAt = new Date().toISOString();
+  // generatedAt vem da proveniência dos próprios packs (derivedAt, DATA-04), nunca de
+  // `Date.now()` — um `new Date().toISOString()` aqui tornaria `catalog:build` não-idempotente
+  // (rodar duas vezes sobre os MESMOS packs teria que produzir o MESMO manifest.json byte a
+  // byte; achado desta task, corrigido antes do commit — Rule 1). Todo pack vem da MESMA corrida
+  // de `generateSihPacks.mjs`, então um único `derivedAt` é esperado; mais de um indicaria packs
+  // gerados em corridas diferentes, o que já seria uma inconsistência de proveniência real.
+  if (derivedAts.size > 1) {
+    throw new Error(
+      `catalog:build: packs com derivedAt divergente (${[...derivedAts].join(', ')}) — gere todos os 10 na mesma corrida de generateSihPacks.mjs antes de rodar catalog:build.`,
+    );
+  }
+  const generatedAt = derivedAts.size === 1 ? [...derivedAts][0] : new Date(0).toISOString();
+
   const manifest = {
     version: CATALOG_VERSION,
     generatedAt,
@@ -342,14 +221,11 @@ async function main() {
     'manifest.json': `${JSON.stringify(manifest, null, 2)}\n`,
     'variables.json': `${JSON.stringify(variables, null, 2)}\n`,
   };
-  for (const [packId, pack] of Object.entries(packFiles)) {
-    files[`packs/${packId}.json`] = `${JSON.stringify(pack, null, 2)}\n`;
-  }
 
   await atomicWriteCatalog(files);
 
   console.log(
-    `catalog:build ok — entries=${variables.length} packs=${manifestPacks.length} out=${path.relative(ROOT, CATALOG_OUT_DIR)}`,
+    `catalog:build ok — entries=${variables.length} packs=${manifestPacks.length} out=${path.relative(process.cwd(), CATALOG_OUT_DIR)}`,
   );
   for (const p of manifestPacks) {
     console.log(`  ${p.packId}: rows=${p.rowCount} years=${p.years[0]}–${p.years[p.years.length - 1]}`);

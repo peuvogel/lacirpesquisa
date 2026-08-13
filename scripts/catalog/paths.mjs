@@ -1,14 +1,14 @@
 /**
  * Resolve repo-relative paths into the tracked trabalhos datasus corpus.
- * Allowlist: coleta outputs + catalogos (for seed curation reads only).
- *
- * Multi-disease packs are generated from diseases.json so mass scrape stays in sync.
+ * Allowlist: catalogos (for seed curation reads only) — D-19/09-13 aposentou os diretórios de
+ * coleta SIH sob `outputs/` (o corpus multi-doença de 654 CSVs, 424 deles com 0 bytes, e os 2
+ * diretórios legados de embolia/amputação) como entrada de build: os 10 packs vivos agora vêm
+ * de `generateSihPacks.mjs` (fonte servida, PostgREST), não mais deste corpus.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertNotTombstone, CYCLE_CANONICAL_IDS } from './tombstones.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '../..');
@@ -16,9 +16,6 @@ export const CORPUS_DIR = path.join(ROOT, 'trabalhos datasus');
 
 /** Relative segments under CORPUS_DIR that may be read by the pipeline. */
 const ALLOWED_PREFIXES = [
-  path.normalize('outputs/coleta_embolia_trombose_uf'),
-  path.normalize('outputs/coleta_vascular_amputacao'),
-  path.normalize('outputs/coleta_sih_multi'),
   path.normalize('build/catalogos'),
 ];
 
@@ -42,7 +39,7 @@ export function corpusPath(relativePath) {
   );
   if (!allowed) {
     throw new Error(
-      `corpusPath: path outside allowlist (coleta_embolia_trombose_uf | coleta_vascular_amputacao | coleta_sih_multi | catalogos): ${relativePath}`,
+      `corpusPath: path outside allowlist (catalogos): ${relativePath}`,
     );
   }
   const resolved = path.resolve(CORPUS_DIR, normalized);
@@ -54,49 +51,6 @@ export function corpusPath(relativePath) {
 
 export function corpusExists(relativePath) {
   return fs.existsSync(corpusPath(relativePath));
-}
-
-function multiPackSource(diseaseId) {
-  return {
-    sourceDir: `outputs/coleta_sih_multi/${diseaseId}`,
-    csv: `outputs/coleta_sih_multi/${diseaseId}/base_${diseaseId}_uf_2013_2025.csv`,
-    metadata: `outputs/coleta_sih_multi/${diseaseId}/metadata.json`,
-    muniCsv: `outputs/coleta_sih_multi/${diseaseId}/base_${diseaseId}_muni_2013_2025.csv`,
-  };
-}
-
-const LEGACY_PACKS = {
-  'sih.embolia_e_trombose_arteriais_uf': {
-    sourceDir: 'outputs/coleta_embolia_trombose_uf',
-    csv: 'outputs/coleta_embolia_trombose_uf/base_embolia_trombose_arteriais_uf_2013_2025.csv',
-    metadata: 'outputs/coleta_embolia_trombose_uf/metadata.json',
-  },
-  'sih.amputacao_mmii_uf': {
-    sourceDir: 'outputs/coleta_vascular_amputacao',
-    csv: 'outputs/coleta_vascular_amputacao/base_analise_vascular_amputacao_2013_2025.csv',
-    metadata: 'outputs/coleta_vascular_amputacao/metadata.json',
-  },
-};
-
-const diseases = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'diseases.json'), 'utf8'),
-);
-
-/** @type {Record<string, { sourceDir: string, csv: string, metadata: string, muniCsv?: string }>} */
-export const PACK_SOURCES = { ...LEGACY_PACKS };
-
-for (const disease of diseases) {
-  if (disease.id === 'embolia_e_trombose_arteriais' || disease.id === 'amputacao_mmii') continue;
-  // D-06/D-23 build-time entry point: a tombstone id read from diseases.json here would
-  // silently build a corpus path for the wrong agravo (the same defect class the rename
-  // fixed). Skip the two verified-cycle ids (CYCLE_CANONICAL_IDS) — in the trusted
-  // canonical diseases.json they are legitimate modern ids (hemorroidas=187,
-  // embolia_pulmonar=173), not leftovers; asserting on them would always throw.
-  if (!CYCLE_CANONICAL_IDS.has(disease.id)) {
-    assertNotTombstone(disease.id, 'paths.mjs PACK_SOURCES');
-  }
-  const packId = `sih.${disease.id}_uf`;
-  PACK_SOURCES[packId] = multiPackSource(disease.id);
 }
 
 export const CATALOG_OUT_DIR = path.join(ROOT, 'public/data/catalog');

@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-26T02:12:19.720Z",
+  "generatedAt": "2026-08-13T02:55:41+00:00",
   "catalogEntryCount": 71,
   "packs": [
     {
       "packId": "sih.embolia_e_trombose_arteriais_uf",
       "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_embolia_trombose_uf",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
       "rowCount": 351,
       "years": [
         2013,
@@ -32,85 +32,7 @@
     {
       "packId": "sih.amputacao_mmii_uf",
       "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_vascular_amputacao",
-      "rowCount": 351,
-      "years": [
-        2013,
-        2014,
-        2015,
-        2016,
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025
-      ],
-      "keys": [
-        "uf_codigo",
-        "uf",
-        "ano"
-      ]
-    },
-    {
-      "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
-      "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/avc",
-      "rowCount": 351,
-      "years": [
-        2013,
-        2014,
-        2015,
-        2016,
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025
-      ],
-      "keys": [
-        "uf_codigo",
-        "uf",
-        "ano"
-      ]
-    },
-    {
-      "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
-      "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/ait",
-      "rowCount": 351,
-      "years": [
-        2013,
-        2014,
-        2015,
-        2016,
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025
-      ],
-      "keys": [
-        "uf_codigo",
-        "uf",
-        "ano"
-      ]
-    },
-    {
-      "packId": "sih.infarto_cerebral_uf",
-      "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/doencas_arterias",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
       "rowCount": 351,
       "years": [
         2013,
@@ -136,60 +58,8 @@
     {
       "packId": "sih.acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem_uf",
       "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/aneurisma_aorta",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
       "rowCount": 351,
-      "years": [
-        2013,
-        2014,
-        2015,
-        2016,
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025
-      ],
-      "keys": [
-        "uf_codigo",
-        "uf",
-        "ano"
-      ]
-    },
-    {
-      "packId": "sih.outras_doencas_vasculares_perifericas_uf",
-      "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/embolia_pulmonar",
-      "rowCount": 337,
-      "years": [
-        2013,
-        2014,
-        2015,
-        2016,
-        2017,
-        2018,
-        2019,
-        2020,
-        2021,
-        2022,
-        2023,
-        2024,
-        2025
-      ],
-      "keys": [
-        "uf_codigo",
-        "uf",
-        "ano"
-      ]
-    },
-    {
-      "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
-      "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/flebites_tromboflebites",
-      "rowCount": 350,
       "years": [
         2013,
         2014,
@@ -214,7 +84,33 @@
     {
       "packId": "sih.flebite_tromboflebite_embolia_e_trombose_venosa_uf",
       "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/varizes_mmii",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.infarto_cerebral_uf",
+      "grain": "uf_ano",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
       "rowCount": 351,
       "years": [
         2013,
@@ -240,7 +136,111 @@
     {
       "packId": "sih.laringite_e_traqueite_agudas_uf",
       "grain": "uf_ano",
-      "sourceDir": "trabalhos datasus/outputs/coleta_sih_multi/outras_doencas_vasculares",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.otite_media_e_outr_transt_ouvido_medio_apof_mast_uf",
+      "grain": "uf_ano",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.outras_doencas_das_arterias_arteriolas_e_capilares_uf",
+      "grain": "uf_ano",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.outras_doencas_do_olho_e_anexos_uf",
+      "grain": "uf_ano",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
+      "rowCount": 351,
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023,
+        2024,
+        2025
+      ],
+      "keys": [
+        "uf_codigo",
+        "uf",
+        "ano"
+      ]
+    },
+    {
+      "packId": "sih.outras_doencas_vasculares_perifericas_uf",
+      "grain": "uf_ano",
+      "sourceDir": "supabase:sih_metric_uf (PostgREST, D-19)",
       "rowCount": 351,
       "years": [
         2013,
