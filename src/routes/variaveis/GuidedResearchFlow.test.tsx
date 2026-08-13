@@ -12,6 +12,42 @@ import type {
   ResearchCutSummaryViewModel,
 } from './guidedViewModels';
 
+const { ChartMock } = vi.hoisted(() => {
+  const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock(
+    _canvas: unknown,
+    config: unknown,
+  ) {
+    return {
+      config,
+      data: (config as { data: unknown }).data,
+      destroy: vi.fn(),
+      update: vi.fn(),
+    };
+  });
+  const ChartMock = ChartConstructorSpy as unknown as typeof ChartConstructorSpy & {
+    new (...args: unknown[]): unknown;
+    register: ReturnType<typeof vi.fn>;
+  };
+  ChartMock.register = vi.fn();
+  return { ChartMock };
+});
+
+vi.mock('chart.js', () => ({
+  Chart: ChartMock,
+  BarController: {},
+  LineController: {},
+  ScatterController: {},
+  LinearScale: {},
+  CategoryScale: {},
+  PointElement: {},
+  LineElement: {},
+  BarElement: {},
+  Legend: {},
+  Title: {},
+  Tooltip: {},
+  Filler: {},
+}));
+
 const design: ResearchDesign = {
   groups: [
     {
@@ -496,7 +532,7 @@ describe('DataProfileSection', () => {
       },
     }]} reviewsResolved />);
 
-    expect(screen.getByRole('img', { name: 'Histograma da distribuição' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Gráfico quantil-quantil' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Histograma de Internações' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Gráfico quantil-quantil de Internações' })).toBeInTheDocument();
   });
 });

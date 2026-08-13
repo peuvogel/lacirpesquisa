@@ -51,7 +51,7 @@ export function DataProfileSection({ profiles, reviewsResolved }: DataProfileSec
                   {profile.distribution.description}
                 </p>
                 <div className="mt-3">
-                  {profile.distribution.slot ?? <ProfileDistributionVisual distribution={profile.distribution} />}
+                  {profile.distribution.slot ?? <ProfileDistributionVisual distribution={profile.distribution} label={profile.label} />}
                 </div>
               </div>
             </div>
