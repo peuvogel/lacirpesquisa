@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TEST_REGISTRY } from '@/features/tests/registry';
 import { createRecommendedScenario } from './scenarios';
-import { evaluateTests } from './eligibility';
+import { evaluateTests, evaluateTestsForSelection } from './eligibility';
 import type { AnalysisCell, ResearchDesign, VariableProfile } from './types';
 
 const design: ResearchDesign = {
@@ -45,6 +45,45 @@ function decision(input: Parameters<typeof evaluateTests>[0], testId: string) {
 }
 
 describe('evaluateTests', () => {
+  it('evaluates every selected numeric outcome separately for territorial group comparisons', () => {
+    const xCells = [
+      cell('a', 'BA', 1), cell('a', 'SE', 2), cell('a', 'AL', 3),
+      cell('b', 'SP', 8), cell('b', 'RJ', 13), cell('b', 'MG', 18),
+    ];
+    const scenario = createRecommendedScenario([
+      ...xCells,
+      ...xCells.map((entry) => ({ ...entry, variableId: 'y', rawValue: (entry.rawValue ?? 0) + 2 })),
+    ]);
+
+    const result = evaluateTestsForSelection({ design, scenario, profiles: [numeric, numericY] });
+    const mannWhitney = result.find((item) => item.testId === 'mann-whitney')!;
+
+    expect(mannWhitney.status).not.toBe('ineligible');
+    expect(mannWhitney.reasons).toContainEqual(expect.objectContaining({
+      code: 'multiple_outcomes_separate',
+      message: expect.stringMatching(/2 variáveis.*separadamente.*Holm/i),
+    }));
+    expect(result.find((item) => item.testId === 'correlacao')).toMatchObject({ status: 'ineligible' });
+  });
+
+  it('keeps compatible outcomes calculable when another selected outcome is incompatible', () => {
+    const xCells = [
+      cell('a', 'BA', 1), cell('a', 'SE', 2), cell('a', 'AL', 3),
+      cell('b', 'SP', 8), cell('b', 'RJ', 13), cell('b', 'MG', 18),
+    ];
+    const scenario = createRecommendedScenario([
+      ...xCells,
+      ...xCells.slice(0, 4).map((entry) => ({ ...entry, variableId: 'y' })),
+    ]);
+
+    const mannWhitney = evaluateTestsForSelection({ design, scenario, profiles: [numeric, numericY] })
+      .find((item) => item.testId === 'mann-whitney')!;
+
+    expect(mannWhitney).toMatchObject({ status: 'eligible_with_caveat' });
+    expect(mannWhitney.reasons.some((item) => /Segundo indicador/.test(item.message))).toBe(true);
+    expect(mannWhitney.reasons.some((item) => /continua separadamente/i.test(item.message))).toBe(true);
+  });
+
   it('returns one fail-closed decision for every registered test', () => {
     const result = evaluateTests({ design, scenario: createRecommendedScenario([]), profiles: [] });
     expect(result.map((item) => item.testId)).toEqual(TEST_REGISTRY.map((entry) => entry.id));
@@ -111,6 +150,24 @@ describe('evaluateTests', () => {
     expect(decision(input, 'anova-tukey').status).not.toBe('ineligible');
     expect(decision(input, 'kruskal-dunn').status).not.toBe('ineligible');
     expect(decision(input, 't-student').status).toBe('ineligible');
+  });
+
+  it('never silently drops a selected group with no usable outcome data', () => {
+    const threeGroupDesign: ResearchDesign = {
+      ...design,
+      groups: [
+        ...design.groups,
+        { id: 'c', name: 'C', territories: ['PE', 'PB', 'CE'].map((id) => ({ id, label: id })) },
+      ],
+    };
+    const scenario = createRecommendedScenario([
+      cell('a', 'BA', 1), cell('a', 'SE', 2), cell('a', 'AL', 3),
+      cell('b', 'SP', 8), cell('b', 'RJ', 13), cell('b', 'MG', 18),
+    ]);
+    const input = { design: threeGroupDesign, scenario, profiles: [numeric] };
+
+    expect(decision(input, 't-student')).toMatchObject({ status: 'ineligible' });
+    expect(decision(input, 'anova-tukey')).toMatchObject({ status: 'ineligible' });
   });
 
   it('blocks classical ANOVA when group variances are grossly incompatible', () => {

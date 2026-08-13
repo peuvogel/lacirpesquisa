@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { aggregatePeriod } from '@/features/research/aggregatePeriod';
 import { summarizeAvailability, type AvailabilitySummary } from '@/features/research/availability';
-import { evaluateTests } from '@/features/research/eligibility';
+import {
+  selectCommonCoverage,
+  type CommonCoverageDiagnostic,
+  type CommonCoverageState,
+} from '@/features/research/commonCoverage';
+import { evaluateTestsForSelection } from '@/features/research/eligibility';
 import { profileVariable, type VariableProfileResult } from '@/features/research/profiling';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
 import { createRecommendedScenario } from '@/features/research/scenarios';
@@ -78,10 +83,17 @@ export interface GuidedResearchData {
   recoverableMessages: string[];
 }
 
+export interface CommonCoverageScenarioBuild {
+  state: CommonCoverageState;
+  scenario: AnalysisScenario | null;
+  diagnostics: CommonCoverageDiagnostic[];
+  explanation: string;
+}
+
 export interface GuidedSelectionModel {
   profilesByVariableId: Record<string, DataProfileViewModel>;
   eligibility: EligibleTestViewModel[];
-  decisions: ReturnType<typeof evaluateTests>;
+  decisions: ReturnType<typeof evaluateTestsForSelection>;
   scenario: AnalysisScenario;
   reviewsResolved: boolean;
   effectiveRoles: Record<string, string>;
@@ -95,7 +107,7 @@ export interface UseGuidedResearchResult {
   profilesByVariableId?: Record<string, DataProfileViewModel>;
   eligibility?: EligibleTestViewModel[];
   scenario: AnalysisScenario | null;
-  decisions: ReturnType<typeof evaluateTests>;
+  decisions: ReturnType<typeof evaluateTestsForSelection>;
   reviewsResolved: boolean;
   effectiveRoles: Record<string, string>;
   recoverableMessages: string[];
@@ -474,6 +486,106 @@ export function buildGuidedResearchData(
   };
 }
 
+/** Re-aggregates each outcome only across periods complete in every expected territory. */
+export function buildCommonCoverageScenario(
+  data: GuidedResearchData,
+  profiles: readonly VariableProfile[],
+  reviewedScenario?: AnalysisScenario | null,
+): CommonCoverageScenarioBuild {
+  const selectedProfiles = profiles.filter((profile) => profile.variableType !== 'categorical');
+  const decisionsByScope = new Map<string, AnalysisScenario['decisions'][number]>();
+  for (const item of reviewedScenario?.decisions ?? []) {
+    try {
+      const [groupId, territoryId, , variableId] = JSON.parse(item.cellKey) as [string, string, string, string];
+      decisionsByScope.set(JSON.stringify([groupId, territoryId, variableId]), item);
+    } catch {
+      // Invalid external decision keys are ignored; they never create analytic data.
+    }
+  }
+  const coverageCells = data.annualCells.map((cell) => {
+    const explicit = decisionsByScope.get(JSON.stringify([cell.groupId, cell.territoryId, cell.variableId]));
+    if (!explicit) return cell;
+    if (explicit.analyticStatus === 'include' && (cell.rawValue === null || !Number.isFinite(cell.rawValue))) {
+      return cell;
+    }
+    return { ...cell, analyticStatus: explicit.analyticStatus, reasonCode: explicit.reasonCode };
+  });
+  const selected = selectCommonCoverage({
+    design: data.design,
+    cells: coverageCells,
+    variableIds: selectedProfiles.map((profile) => profile.variableId),
+  });
+  const labels = new Map(selectedProfiles.map((profile) => [profile.variableId, profile.label]));
+  const supportedDiagnostics = selected.diagnostics.filter((item) => item.commonPeriodKeys.length > 0);
+  const unsupportedDiagnostics = selected.diagnostics.filter((item) => item.commonPeriodKeys.length === 0);
+  const needsSensitivity = unsupportedDiagnostics.length > 0
+    || supportedDiagnostics.some((item) => item.state === 'restricted');
+  if (supportedDiagnostics.length === 0 || !needsSensitivity) {
+    return {
+      state: supportedDiagnostics.length === 0 ? 'no_common_support' : 'no_restriction',
+      scenario: null,
+      diagnostics: selected.diagnostics,
+      explanation: supportedDiagnostics.length === 0
+        ? `Não existe suporte temporal comum completo para ${unsupportedDiagnostics
+            .map((item) => labels.get(item.variableId) ?? item.variableId)
+            .join(', ')}. Nenhum valor foi imputado.`
+        : 'A cobertura comum coincide com o recorte principal; nenhuma análise adicional é necessária.',
+    };
+  }
+
+  const diagnostics = new Map(selected.diagnostics.map((item) => [item.variableId, item]));
+  const derived = selectedProfiles.flatMap((profile) => {
+    const diagnostic = diagnostics.get(profile.variableId);
+    if (!diagnostic || diagnostic.commonPeriodKeys.length === 0) return [];
+    const commonPeriods = new Set(diagnostic.commonPeriodKeys);
+    const source = data.sourceCells.filter((cell) => commonPeriods.has(cell.periodKey));
+    const cells = data.design.groups.flatMap((group) => group.territories.map((territory) => {
+      const unitSource = source.filter((cell) =>
+        cell.groupId === group.id && cell.territoryId === territory.id);
+      if (unitSource.length === 0) {
+        return {
+          groupId: group.id,
+          territoryId: territory.id,
+          periodKey: diagnostic.commonPeriodKeys[0]!,
+          variableId: profile.variableId,
+          rawValue: null,
+          sourceStatus: 'missing' as const,
+          analyticStatus: 'exclude_missing' as const,
+          reasonCode: 'common_support_source_missing',
+        };
+      }
+      return {
+        ...deriveCell(unitSource, profile),
+        periodKey: diagnostic.commonPeriodKeys[0]!,
+      };
+    }));
+    return withZeroPolicy(cells, source, profile, data.design.geography).map((cell) => {
+      const explicit = decisionsByScope.get(JSON.stringify([cell.groupId, cell.territoryId, cell.variableId]));
+      if (!explicit) return cell;
+      if (explicit.analyticStatus === 'include' && (cell.rawValue === null || !Number.isFinite(cell.rawValue))) {
+        return cell;
+      }
+      return {
+        ...cell,
+        analyticStatus: explicit.analyticStatus,
+        reasonCode: explicit.reasonCode,
+      };
+    });
+  });
+  const details = supportedDiagnostics
+    .map((item) => `${labels.get(item.variableId) ?? item.variableId}: ${item.commonPeriodKeys.join(', ')}`)
+    .join('; ');
+  const unsupported = unsupportedDiagnostics.length > 0
+    ? ` Sem suporte comum calculável para ${unsupportedDiagnostics.map((item) => labels.get(item.variableId) ?? item.variableId).join(', ')}; esses desfechos permanecem visíveis, mas fora do cálculo.`
+    : '';
+  return {
+    state: 'restricted',
+    scenario: createRecommendedScenario(derived),
+    diagnostics: selected.diagnostics,
+    explanation: `Sensibilidade no suporte temporal comum — ${details}.${unsupported} Períodos sem cobertura completa foram excluídos, sem imputação; o mecanismo da ausência não foi presumido.`,
+  };
+}
+
 const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 
 function formatted(value: number | null, unit?: string): string {
@@ -556,7 +668,7 @@ function testLabel(id: string): string {
   return TEST_REGISTRY.find((entry) => entry.id === id)?.title ?? id;
 }
 
-export function toEligibilityViewModels(decisions: ReturnType<typeof evaluateTests>): EligibleTestViewModel[] {
+export function toEligibilityViewModels(decisions: ReturnType<typeof evaluateTestsForSelection>): EligibleTestViewModel[] {
   return decisions.map((item) => ({
     id: item.testId,
     label: testLabel(item.testId),
@@ -590,7 +702,7 @@ export function buildGuidedSelectionModel(
   if (outcome?.variableType === 'count' && !effectiveRoles.exposure) effectiveRoles.exposure = 'populacao';
   const contingency = buildHospitalOutcomeContingency(data.design, data.analyticCells, scenario);
   const decisions = selectedProfiles.length > 0 && selection.goal !== 'describe'
-    ? evaluateTests({
+    ? evaluateTestsForSelection({
         design: data.design,
         scenario,
         profiles: selectedProfiles,

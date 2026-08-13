@@ -88,8 +88,8 @@ describe('GuidedResultsSection', () => {
     />);
 
     expect(screen.getByRole('heading', { name: '5. Resultados no recorte' })).toBeInTheDocument();
-    const principal = screen.getByRole('heading', { name: 'Mann–Whitney · principal' });
-    const sensitivity = screen.getByRole('heading', { name: 't de Student · sensibilidade' });
+    const principal = screen.getByRole('heading', { name: 'Mann–Whitney · Taxa de internação · principal' });
+    const sensitivity = screen.getByRole('heading', { name: 't de Student · Taxa de internação · sensibilidade' });
     expect(principal.compareDocumentPosition(sensitivity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Mapa coroplético do resultado' })).toBeInTheDocument();
     expect(screen.getByText(/não demonstra causalidade/i)).toBeInTheDocument();
@@ -136,8 +136,137 @@ describe('GuidedResultsSection', () => {
       onScenarioChange={() => undefined}
     />);
     expect(screen.getByText(/análise exploratória/i)).toBeInTheDocument();
-    expect(screen.getByText(/mudou de 2 para 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/n 2 → 1/i)).toBeInTheDocument();
     expect(screen.getByText(/0,40.*0,20/i)).toBeInTheDocument();
+  });
+
+  it('compares every primary outcome after a post-result revision', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const,
+    })));
+    const revised = reviseScenario(
+      recommended,
+      [treatAsMissing(JSON.stringify(['a', '29', '2025', 'taxa']))],
+      { createdAfterResults: true },
+    );
+    const second = {
+      ...run.results[0]!, outcomeVariableId: 'custo',
+      metrics: [{ label: 'r de Pearson', value: '0,80' }], pValue: 0.01, coverage: { expected: 3, used: 3, missing: 0 },
+    };
+    const revisedSecond = {
+      ...second,
+      metrics: [{ label: 'r de Pearson', value: '-0,20' }], pValue: 0.4,
+      effectDirection: 'negative' as const, coverage: { expected: 3, used: 2, missing: 1 },
+    };
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={revised}
+      variableLabels={{ taxa: 'Taxa de internação', custo: 'Custo hospitalar' }}
+      recommendedRun={{ ...run, scenarioFingerprint: recommended.fingerprint, results: [run.results[0]!, second] }}
+      run={{ ...run, scenarioFingerprint: revised.fingerprint, results: [run.results[0]!, revisedSecond] }}
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByText(/Taxa de internação: n 2 → 2.*0,40 → 0,40/i)).toBeInTheDocument();
+    expect(screen.getByText(/Custo hospitalar: n 3 → 2.*0,80 → -0,20.*direção mudou.*limiar de 5% mudou/i)).toBeInTheDocument();
+  });
+
+  it('keeps every confirmatory outcome visible instead of highlighting only one', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const,
+    })));
+    const secondOutcome = {
+      ...run.results[0]!,
+      outcomeVariableId: 'custo',
+      metrics: [{ label: 'Efeito', value: '12,0' }],
+      pValue: 0.2,
+      adjustedPValue: 0.2,
+      rawPValue: 0.1,
+    };
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={recommended}
+      variableLabels={{ taxa: 'Taxa de internação', custo: 'Custo hospitalar' }}
+      run={{ ...run, scenarioFingerprint: recommended.fingerprint, results: [run.results[0]!, secondOutcome] }}
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação · principal/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Mann–Whitney · Custo hospitalar · principal/ })).toBeInTheDocument();
+    expect(screen.getByText(/preservando todos os 2 desfechos sem seleção por favorabilidade/i)).toBeInTheDocument();
+  });
+
+  it('keeps an incompatible outcome visible as not calculable without hiding valid results', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const,
+    })));
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={recommended}
+      variableLabels={{ taxa: 'Taxa de internação', custo: 'Custo hospitalar' }}
+      run={{
+        ...run,
+        scenarioFingerprint: recommended.fingerprint,
+        results: [run.results[0]!],
+        skippedOutcomes: [{
+          testId: 'mann-whitney', outcomeVariableId: 'custo', role: 'principal',
+          reason: 'Cada grupo precisa de pelo menos 3 unidades.', support: 'largest_valid',
+        }],
+      }}
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByRole('heading', { name: 'Desfechos não calculáveis' })).toBeInTheDocument();
+    expect(screen.getByText(/Custo hospitalar.*pelo menos 3 unidades/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação/ })).toBeInTheDocument();
+  });
+
+  it('explains whether common temporal support changes n, magnitude, direction or evidence', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const,
+    })));
+    const main = { ...run.results[0]!, support: 'largest_valid' as const };
+    const common = {
+      ...main,
+      role: 'sensibilidade' as const,
+      support: 'common_coverage' as const,
+      metrics: [{ label: 'Efeito', value: '0,20' }],
+      coverage: { expected: 3, used: 1, missing: 2 },
+      pValue: 0.2,
+    };
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={recommended}
+      variableLabels={{ taxa: 'Taxa de internação' }}
+      run={{
+        ...run,
+        scenarioFingerprint: recommended.fingerprint,
+        results: [main, common],
+        coverageSensitivity: { state: 'calculated', explanation: 'Somente 2024 teve cobertura completa.' },
+      }}
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByRole('heading', { name: 'Sensibilidade da cobertura' })).toBeInTheDocument();
+    expect(screen.getByText(/somente 2024/i)).toBeInTheDocument();
+    expect(screen.getByText(/n 2 → 1.*efeito 0,40 → 0,20.*direção preservada.*limiar de 5% alterada/i)).toBeInTheDocument();
+    expect(screen.getByText('Suporte temporal comum')).toBeInTheDocument();
   });
 });
 

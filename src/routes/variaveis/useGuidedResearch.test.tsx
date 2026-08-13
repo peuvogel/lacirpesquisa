@@ -2,7 +2,10 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ResearchDataSnapshot } from '@/features/research/supabaseResearchRepository';
 import type { ResearchDesign } from '@/features/research/types';
+import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
+import { createRecommendedScenario, reviseScenario, treatAsMissing } from '@/features/research/scenarios';
 import {
+  buildCommonCoverageScenario,
   buildGuidedResearchData,
   buildGuidedSelectionModel,
   useGuidedResearch,
@@ -78,6 +81,59 @@ function snapshot(missingTerritory?: string): ResearchDataSnapshot {
 }
 
 describe('guided research orchestration', () => {
+  it('rebuilds range aggregates on the complete temporal support without imputing missing years', () => {
+    const rangeDesign: ResearchDesign = {
+      ...design,
+      period: { scope: 'shared', time: { mode: 'range', start: '2023', end: '2025' } },
+    };
+    const territories = rangeDesign.groups.flatMap((group) =>
+      group.territories.map((territory) => ({ ...territory, groupId: group.id })));
+    const cells = territories.flatMap((territory, territoryIndex) =>
+      ['2023', '2024', '2025'].flatMap((periodKey) => {
+        const missing = (periodKey === '2023' && territory.id === '29')
+          || (periodKey === '2025' && territory.id === '35');
+        return [
+          {
+            diseaseId: 'doenca_teste', territoryId: territory.id, groupId: territory.groupId,
+            periodKey, variableId: 'internacoes', rawValue: missing ? null : 100 + territoryIndex * 10,
+            sourceStatus: missing ? 'missing' as const : 'observed' as const,
+          },
+          {
+            diseaseId: 'doenca_teste', territoryId: territory.id, groupId: territory.groupId,
+            periodKey, variableId: 'obitos', rawValue: missing ? null : 5 + territoryIndex,
+            sourceStatus: missing ? 'missing' as const : 'observed' as const,
+          },
+        ];
+      }));
+    const data = buildGuidedResearchData(rangeDesign, { fingerprint: 'range', errors: [], cells });
+    const profile = VARIABLE_PROFILES.find((item) => item.variableId === 'taxa_mortalidade')!;
+
+    const common = buildCommonCoverageScenario(data, [profile]);
+
+    expect(common.state).toBe('restricted');
+    expect(common.scenario?.cells).toHaveLength(6);
+    expect(new Set(common.scenario?.cells.map((item) => item.periodKey))).toEqual(new Set(['2024']));
+    expect(common.scenario?.cells.every((item) => item.rawValue !== null)).toBe(true);
+    expect(common.explanation).toMatch(/suporte temporal comum.*2024.*sem imputação/i);
+
+    const unavailableProfile = VARIABLE_PROFILES.find((item) => item.variableId === 'valor_total')!;
+    const partialFamily = buildCommonCoverageScenario(data, [profile, unavailableProfile]);
+    expect(partialFamily.state).toBe('restricted');
+    expect(new Set(partialFamily.scenario?.cells.map((item) => item.variableId)))
+      .toEqual(new Set(['taxa_mortalidade']));
+    expect(partialFamily.explanation).toMatch(/Valor total.*permanecem visíveis.*fora do cálculo/i);
+
+    const main = createRecommendedScenario(data.analyticCells.filter((item) => item.variableId === 'taxa_mortalidade'));
+    const reviewed = reviseScenario(
+      main,
+      [treatAsMissing(JSON.stringify(['a', '29', '2023', 'taxa_mortalidade']))],
+      { createdAfterResults: true },
+    );
+    const reviewedCommon = buildCommonCoverageScenario(data, [profile], reviewed);
+    expect(reviewedCommon).toMatchObject({ state: 'no_common_support', scenario: null });
+    expect(reviewedCommon.explanation).toMatch(/nenhum valor foi imputado/i);
+  });
+
   it('derives concise complete/partial/none availability from the real snapshot', () => {
     const data = buildGuidedResearchData(design, snapshot('28'));
     const internacoes = data.variables.find((variable) => variable.id === 'internacoes');
@@ -151,6 +207,23 @@ describe('guided research orchestration', () => {
     });
     expect(model.eligibility.find((item) => item.id === 'logistica')).toMatchObject({
       status: 'ineligible',
+    });
+  });
+
+  it('keeps a group comparison available for multiple outcomes and discloses Holm', () => {
+    const data = buildGuidedResearchData(design, snapshot());
+    const model = buildGuidedSelectionModel(data, {
+      goal: 'compare',
+      variableIds: ['taxa_mortalidade', 'media_permanencia_calculada'],
+      testIds: [],
+      primaryTestId: null,
+      roleAssignments: {},
+    });
+
+    expect(model.effectiveRoles.outcome).toBeUndefined();
+    expect(model.eligibility.find((item) => item.id === 'mann-whitney')).toMatchObject({
+      status: expect.not.stringMatching(/^ineligible$/),
+      reason: expect.stringMatching(/2 variáveis.*Holm/i),
     });
   });
 

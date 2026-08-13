@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateTests } from '@/features/research/eligibility';
+import { evaluateTests, evaluateTestsForSelection } from '@/features/research/eligibility';
 import { createRecommendedScenario } from '@/features/research/scenarios';
 import type {
   AnalysisCell,
   ResearchDesign,
   VariableProfile,
 } from '@/features/research/types';
-import { runGuidedTests } from './runGuidedTests';
+import {
+  adjustPValuesHolm,
+  attachCommonCoverageSensitivity,
+  kruskalEpsilonSquared,
+  runGuidedTests,
+} from './runGuidedTests';
 
 const design: ResearchDesign = {
   groups: [
@@ -64,6 +69,117 @@ function rateCells(): AnalysisCell[] {
 }
 
 describe('runGuidedTests', () => {
+  it('adjusts a confirmatory family with the step-down Holm procedure', () => {
+    expect(adjustPValuesHolm([0.01, 0.04, 0.03])).toEqual([0.03, 0.06, 0.06]);
+    expect(adjustPValuesHolm([0.8])).toEqual([0.8]);
+  });
+
+  it('computes a bounded omnibus effect magnitude for Kruskal–Wallis', () => {
+    expect(kruskalEpsilonSquared(10, 3, 12)).toBeCloseTo(8 / 9, 10);
+    expect(kruskalEpsilonSquared(1, 3, 12)).toBe(0);
+    expect(kruskalEpsilonSquared(2, 3, 3)).toBeNull();
+  });
+
+  it('keeps common-coverage results explicitly separated from the main analysis', () => {
+    const scenario = createRecommendedScenario(rateCells());
+    const eligibility = evaluateTests({
+      design,
+      scenario,
+      profiles: [rateProfile],
+      roleAssignments: { outcome: 'taxa' },
+    });
+    const main = runGuidedTests({
+      design, scenario, profiles: [rateProfile], eligibility,
+      selectedTestIds: ['mann-whitney'], primaryTestId: 'mann-whitney', roleAssignments: { outcome: 'taxa' },
+    });
+
+    const merged = attachCommonCoverageSensitivity(main, main, 'Somente 2024 teve cobertura completa.');
+
+    expect(merged.results).toHaveLength(2);
+    expect(merged.results[0]).toMatchObject({ role: 'principal', support: 'largest_valid' });
+    expect(merged.results[1]).toMatchObject({ role: 'sensibilidade', support: 'common_coverage' });
+    expect(merged.results[1]?.interpretation[0]).toMatch(/2024/);
+    expect(merged.coverageSensitivity).toMatchObject({ state: 'calculated' });
+  });
+
+  it('runs group inference separately for every selected outcome and reports Holm-adjusted evidence', () => {
+    const secondProfile: VariableProfile = {
+      variableId: 'custo',
+      label: 'Custo hospitalar',
+      variableType: 'numeric',
+      unit: 'R$',
+      temporalAggregation: 'sum',
+    };
+    const cells = rateCells();
+    const scenario = createRecommendedScenario([
+      ...cells,
+      ...cells.map((cell, index) => ({ ...cell, variableId: 'custo', rawValue: 100 + index * 25 })),
+    ]);
+    const profiles = [rateProfile, secondProfile];
+    const eligibility = evaluateTestsForSelection({ design, scenario, profiles });
+
+    const run = runGuidedTests({
+      design,
+      scenario,
+      profiles,
+      eligibility,
+      selectedTestIds: ['mann-whitney'],
+      primaryTestId: 'mann-whitney',
+      roleAssignments: {},
+    });
+
+    expect(run.results.map((result) => result.outcomeVariableId)).toEqual(['taxa', 'custo']);
+    expect(run.results.every((result) => result.role === 'principal')).toBe(true);
+    expect(run.results.every((result) => result.rawPValue !== null)).toBe(true);
+    expect(run.results.every((result) => result.adjustedPValue !== null)).toBe(true);
+    expect(run.results.every((result) => result.pValue === result.adjustedPValue)).toBe(true);
+    expect(run.results.every((result) => result.metrics.some((metric) => /Holm/i.test(metric.label)))).toBe(true);
+    expect(run.results.every((result) => result.interpretation.some((paragraph) => /família confirmatória/i.test(paragraph)))).toBe(true);
+    expect(run.results.every((result) => /Holm/i.test(result.interpretation.at(-1) ?? ''))).toBe(true);
+  });
+
+  it('runs compatible outcomes and keeps incompatible ones visible but outside Holm', () => {
+    const secondProfile: VariableProfile = {
+      variableId: 'custo', label: 'Custo hospitalar', variableType: 'numeric', temporalAggregation: 'sum',
+    };
+    const cells = rateCells();
+    const scenario = createRecommendedScenario([
+      ...cells,
+      ...cells.slice(0, 4).map((cell, index) => ({ ...cell, variableId: 'custo', rawValue: 100 + index })),
+    ]);
+    const profiles = [rateProfile, secondProfile];
+    const eligibility = evaluateTestsForSelection({ design, scenario, profiles });
+
+    const run = runGuidedTests({
+      design, scenario, profiles, eligibility,
+      selectedTestIds: ['mann-whitney'], primaryTestId: 'mann-whitney', roleAssignments: {},
+    });
+
+    expect(run.results.map((result) => result.outcomeVariableId)).toEqual(['taxa']);
+    expect(run.results[0]?.adjustedPValue).toBeNull();
+    expect(run.skippedOutcomes).toContainEqual(expect.objectContaining({
+      testId: 'mann-whitney', outcomeVariableId: 'custo', reason: expect.stringMatching(/pelo menos 3/i),
+    }));
+  });
+
+  it('keeps group ids distinct and follows design order when names are duplicated', () => {
+    const sameNames: ResearchDesign = {
+      ...design,
+      groups: design.groups.map((group) => ({ ...group, name: 'Mesmo nome' })),
+    };
+    const scenario = createRecommendedScenario(rateCells().reverse());
+    const eligibility = evaluateTestsForSelection({ design: sameNames, scenario, profiles: [rateProfile] });
+
+    const run = runGuidedTests({
+      design: sameNames, scenario, profiles: [rateProfile], eligibility,
+      selectedTestIds: ['mann-whitney'], primaryTestId: 'mann-whitney', roleAssignments: {},
+    });
+
+    expect(JSON.stringify(run.results[0]?.chart.data)).toContain('Mesmo nome (nordeste)');
+    expect(JSON.stringify(run.results[0]?.chart.data)).toContain('Mesmo nome (sudeste)');
+    expect(run.results[0]?.effectDirection).toBe('negative');
+  });
+
   it('runs only an eligible engine and puts effect/interval before statistical evidence', () => {
     const scenario = createRecommendedScenario(rateCells());
     const eligibility = evaluateTests({

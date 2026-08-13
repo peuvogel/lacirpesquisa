@@ -78,6 +78,7 @@ import {
 } from '@/features/tests/t-student/tStudentEngine';
 import { buildTStudentInterpretation } from '@/features/tests/t-student/tStudentInterpretation';
 import { completePairs, profileVariable } from '@/features/research/profiling';
+import { evaluateTests } from '@/features/research/eligibility';
 import type {
   AnalysisCell,
   AnalysisScenario,
@@ -104,14 +105,30 @@ export interface GuidedTestResult {
   interpretation: string[];
   coverage: GuidedResultCoverage;
   pValue: number | null;
+  rawPValue?: number | null;
+  adjustedPValue?: number | null;
   effectDirection: 'positive' | 'negative' | 'null';
   outcomeVariableId: string;
+  support?: 'largest_valid' | 'common_coverage';
+}
+
+export interface GuidedSkippedOutcome {
+  testId: string;
+  outcomeVariableId: string;
+  role: 'principal' | 'sensibilidade';
+  reason: string;
+  support?: 'largest_valid' | 'common_coverage';
 }
 
 export interface GuidedTestRun {
   fingerprint: string;
   scenarioFingerprint: string;
   results: GuidedTestResult[];
+  skippedOutcomes?: GuidedSkippedOutcome[];
+  coverageSensitivity?: {
+    state: 'calculated' | 'not_calculable';
+    explanation: string;
+  };
 }
 
 export interface RunGuidedTestsInput {
@@ -148,19 +165,54 @@ function outcomeProfile(input: RunGuidedTestsInput): VariableProfile {
   return profile;
 }
 
-function groupNameById(design: ResearchDesign): Map<string, string> {
-  return new Map(design.groups.map((group) => [group.id, group.name]));
+const GROUP_TEST_TYPES: Record<string, readonly VariableProfile['variableType'][]> = {
+  't-student': ['numeric', 'rate'],
+  'mann-whitney': ['numeric', 'rate', 'ordinal'],
+  'anova-tukey': ['numeric', 'rate'],
+  'kruskal-dunn': ['numeric', 'rate', 'ordinal'],
+};
+
+export function isGroupComparisonTest(testId: string): boolean {
+  return Object.hasOwn(GROUP_TEST_TYPES, testId);
 }
 
-function groupVectors(input: RunGuidedTestsInput, variableId: string): Array<[string, number[]]> {
-  const names = groupNameById(input.design);
+export function isGroupOutcomeTypeForTest(
+  testId: string,
+  variableType: VariableProfile['variableType'],
+): boolean {
+  return GROUP_TEST_TYPES[testId]?.includes(variableType) ?? false;
+}
+
+function groupOutcomeProfiles(input: RunGuidedTestsInput, testId: string): VariableProfile[] {
+  const accepted = GROUP_TEST_TYPES[testId] ?? [];
+  const profiles = input.profiles.filter((profile) => accepted.includes(profile.variableType));
+  if (profiles.length === 0) throw new Error('Selecione ao menos uma variável compatível com a comparação de grupos.');
+  return profiles;
+}
+
+interface GroupVector {
+  id: string;
+  label: string;
+  values: number[];
+}
+
+function groupVectors(input: RunGuidedTestsInput, variableId: string): GroupVector[] {
   const groups = new Map<string, number[]>();
   for (const cell of input.scenario.cells) {
     if (cell.variableId !== variableId || !isUsable(cell)) continue;
-    const label = names.get(cell.groupId) ?? cell.groupId;
-    groups.set(label, [...(groups.get(label) ?? []), cell.rawValue]);
+    groups.set(cell.groupId, [...(groups.get(cell.groupId) ?? []), cell.rawValue]);
   }
-  return [...groups];
+  const nameCounts = new Map<string, number>();
+  for (const group of input.design.groups) nameCounts.set(group.name, (nameCounts.get(group.name) ?? 0) + 1);
+  return input.design.groups.flatMap((group) => {
+    const values = groups.get(group.id);
+    if (!values) return [];
+    return [{
+      id: group.id,
+      label: (nameCounts.get(group.name) ?? 0) > 1 ? `${group.name} (${group.id})` : group.name,
+      values,
+    }];
+  });
 }
 
 function expectedScopes(input: RunGuidedTestsInput, variableIds: readonly string[]): number {
@@ -180,8 +232,14 @@ function direction(value: number): GuidedTestResult['effectDirection'] {
   return value > 0 ? 'positive' : 'negative';
 }
 
+export function kruskalEpsilonSquared(h: number, groupCount: number, n: number): number | null {
+  const denominator = n - groupCount;
+  if (!Number.isFinite(h) || groupCount < 2 || denominator <= 0) return null;
+  return Math.max(0, Math.min(1, (h - groupCount + 1) / denominator));
+}
+
 function orderedMetrics(metrics: ResultMetric[]): ResultMetric[] {
-  const evidence = /(?:evidência|p-valor)/i;
+  const evidence = /(?:evidência|p-valor|^p\s)/i;
   const effect = /(?:efeito|diferença|intervalo|variação|mudança|coeficiente\s*\(|r de pearson|ρ de spearman)/i;
   return [
     ...metrics.filter((metric) => effect.test(metric.label) && !evidence.test(metric.label)),
@@ -234,23 +292,63 @@ function resultBase(
     interpretation: withSafetyConclusion(interpretation, resultCoverage, input.design),
     coverage: resultCoverage,
     pValue,
+    rawPValue: pValue,
+    adjustedPValue: null,
     effectDirection,
     outcomeVariableId,
+    support: 'largest_valid',
   };
 }
 
-function runGroupTest(input: RunGuidedTestsInput, testId: string, alpha: number): GuidedTestResult {
-  const outcome = outcomeProfile(input);
+export function attachCommonCoverageSensitivity(
+  main: GuidedTestRun,
+  common: GuidedTestRun | null,
+  explanation: string,
+): GuidedTestRun {
+  if (!common) {
+    return {
+      ...main,
+      coverageSensitivity: { state: 'not_calculable', explanation },
+    };
+  }
+  const sensitivityResults = common.results.map((result): GuidedTestResult => ({
+    ...result,
+    role: 'sensibilidade',
+    support: 'common_coverage',
+    interpretation: [explanation, ...result.interpretation],
+  }));
+  return {
+    ...main,
+    fingerprint: `${main.fingerprint}:common:${common.scenarioFingerprint}`,
+    results: [...main.results, ...sensitivityResults],
+    skippedOutcomes: [
+      ...(main.skippedOutcomes ?? []),
+      ...(common.skippedOutcomes ?? []).map((item): GuidedSkippedOutcome => ({
+        ...item,
+        role: 'sensibilidade',
+        support: 'common_coverage',
+      })),
+    ],
+    coverageSensitivity: { state: 'calculated', explanation },
+  };
+}
+
+function runGroupTest(
+  input: RunGuidedTestsInput,
+  testId: string,
+  alpha: number,
+  outcome: VariableProfile,
+): GuidedTestResult {
   const entries = groupVectors(input, outcome.variableId);
   const expected = expectedScopes(input, [outcome.variableId]);
-  const used = entries.reduce((sum, [, values]) => sum + values.length, 0);
+  const used = entries.reduce((sum, entry) => sum + entry.values.length, 0);
   const resultCoverage = coverage(expected, used);
 
   if (testId === 't-student') {
     const dataset: TStudentBuiltDataset = {
-      g1: entries[0]?.[1] ?? [],
-      g2: entries[1]?.[1] ?? [],
-      labels: [entries[0]?.[0] ?? 'Grupo A', entries[1]?.[0] ?? 'Grupo B'],
+      g1: entries[0]?.values ?? [],
+      g2: entries[1]?.values ?? [],
+      labels: [entries[0]?.label ?? 'Grupo A', entries[1]?.label ?? 'Grupo B'],
       mode: 'independent',
     };
     validateEngine(validateTStudent('independent', dataset), testId);
@@ -263,10 +361,10 @@ function runGroupTest(input: RunGuidedTestsInput, testId: string, alpha: number)
 
   if (testId === 'mann-whitney') {
     const dataset: MannWhitneyBuiltDataset = {
-      groupA: entries[0]?.[1] ?? [], groupB: entries[1]?.[1] ?? [],
-      labels: [entries[0]?.[0] ?? 'Grupo A', entries[1]?.[0] ?? 'Grupo B'],
+      groupA: entries[0]?.values ?? [], groupB: entries[1]?.values ?? [],
+      labels: [entries[0]?.label ?? 'Grupo A', entries[1]?.label ?? 'Grupo B'],
       headers: { outcome: outcome.label, group: 'grupo territorial' },
-      groupOrder: entries.map(([label]) => label),
+      groupOrder: entries.map((entry) => entry.label),
     };
     validateEngine(validateMannWhitney(dataset), testId);
     const result = runMannWhitney(dataset);
@@ -277,10 +375,10 @@ function runGroupTest(input: RunGuidedTestsInput, testId: string, alpha: number)
       direction(result.rankBiserial));
   }
 
-  const groups = Object.fromEntries(entries);
+  const groups = Object.fromEntries(entries.map((entry) => [entry.label, entry.values]));
   if (testId === 'anova-tukey') {
     const dataset: AnovaBuiltDataset = {
-      groups, groupOrder: entries.map(([label]) => label), headers: { outcome: outcome.label, group: 'grupo territorial' },
+      groups, groupOrder: entries.map((entry) => entry.label), headers: { outcome: outcome.label, group: 'grupo territorial' },
     };
     validateEngine(validateAnova(dataset), testId);
     const result = runAnova(dataset);
@@ -295,13 +393,22 @@ function runGroupTest(input: RunGuidedTestsInput, testId: string, alpha: number)
   }
 
   const dataset: KruskalBuiltDataset = {
-    groups, groupOrder: entries.map(([label]) => label), headers: { outcome: outcome.label, group: 'grupo territorial' },
+    groups, groupOrder: entries.map((entry) => entry.label), headers: { outcome: outcome.label, group: 'grupo territorial' },
   };
   validateEngine(validateKruskal(dataset), testId);
   const result = runKruskal(dataset);
   const output = toKruskalOutput(dataset, result);
   const presets = buildKruskalChartPresets(dataset.groupOrder.length);
-  return { ...resultBase(input, testId, outcome.variableId, buildKruskalMetrics(result, dataset),
+  const epsilonSquared = kruskalEpsilonSquared(result.h, dataset.groupOrder.length, used);
+  const metrics = [
+    ...buildKruskalMetrics(result, dataset),
+    ...(epsilonSquared === null ? [] : [{
+      label: 'Tamanho de efeito (ε²)',
+      value: epsilonSquared.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
+      hint: 'Magnitude global da separação entre os grupos por postos',
+    }]),
+  ];
+  return { ...resultBase(input, testId, outcome.variableId, metrics,
     presets[0]!.buildChart(output),
     buildKruskalInterpretation(result, alpha, dataset.headers, dataset.groupOrder.length),
     resultCoverage, result.p, 'null'),
@@ -437,15 +544,103 @@ function runChiSquareTest(input: RunGuidedTestsInput, alpha: number): GuidedTest
   );
 }
 
-function runOne(input: RunGuidedTestsInput, testId: string, alpha: number): GuidedTestResult {
+interface GuidedTestExecution {
+  results: GuidedTestResult[];
+  skipped: GuidedSkippedOutcome[];
+}
+
+function runOne(input: RunGuidedTestsInput, testId: string, alpha: number): GuidedTestExecution {
   if (['t-student', 'mann-whitney', 'anova-tukey', 'kruskal-dunn'].includes(testId)) {
-    return runGroupTest(input, testId, alpha);
+    const role: GuidedSkippedOutcome['role'] = testId === input.primaryTestId ? 'principal' : 'sensibilidade';
+    return groupOutcomeProfiles(input, testId).reduce<GuidedTestExecution>((execution, profile) => {
+      const perOutcome = evaluateTests({
+        design: input.design,
+        scenario: input.scenario,
+        profiles: [profile],
+        roleAssignments: { ...input.roleAssignments, outcome: profile.variableId },
+      }).find((item) => item.testId === testId);
+      if (!perOutcome || perOutcome.status === 'ineligible') {
+        execution.skipped.push({
+          testId,
+          outcomeVariableId: profile.variableId,
+          role,
+          reason: perOutcome?.reasons.map((item) => item.message).join(' ') || 'Combinação não calculável com segurança.',
+          support: 'largest_valid',
+        });
+        return execution;
+      }
+      try {
+        execution.results.push(runGroupTest(input, testId, alpha, profile));
+      } catch (error) {
+        execution.skipped.push({
+          testId,
+          outcomeVariableId: profile.variableId,
+          role,
+          reason: error instanceof Error ? error.message : 'O motor bloqueou este desfecho.',
+          support: 'largest_valid',
+        });
+      }
+      return execution;
+    }, { results: [], skipped: [] });
   }
-  if (testId === 'correlacao') return runCorrelationTest(input, alpha);
-  if (testId === 'prais-winsten') return runPraisTest(input, alpha);
-  if (testId === 'qui-quadrado') return runChiSquareTest(input, alpha);
-  if (testId === 'poisson' || testId === 'binomial-negativa') return runCountModel(input, testId, alpha);
+  if (testId === 'correlacao') return { results: [runCorrelationTest(input, alpha)], skipped: [] };
+  if (testId === 'prais-winsten') return { results: [runPraisTest(input, alpha)], skipped: [] };
+  if (testId === 'qui-quadrado') return { results: [runChiSquareTest(input, alpha)], skipped: [] };
+  if (testId === 'poisson' || testId === 'binomial-negativa') return { results: [runCountModel(input, testId, alpha)], skipped: [] };
   throw new Error(`${labelForTest(testId)} ainda não possui um adaptador seguro para dados territoriais agregados.`);
+}
+
+export function adjustPValuesHolm(pValues: readonly number[]): number[] {
+  if (pValues.some((value) => !Number.isFinite(value) || value < 0 || value > 1)) {
+    throw new Error('Valores de p inválidos para a correção de Holm.');
+  }
+  const ordered = pValues
+    .map((value, index) => ({ value, index }))
+    .sort((left, right) => left.value - right.value || left.index - right.index);
+  let previous = 0;
+  const adjusted = Array<number>(pValues.length);
+  ordered.forEach((item, rank) => {
+    previous = Math.max(previous, Math.min(1, item.value * (ordered.length - rank)));
+    adjusted[item.index] = previous;
+  });
+  return adjusted;
+}
+
+function formatPValue(value: number): string {
+  if (value < 0.001) return '< 0,001';
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+}
+
+function applyHolmToPrimaryFamily(results: GuidedTestResult[], alpha: number): GuidedTestResult[] {
+  const family = results.filter((result) =>
+    result.role === 'principal'
+    && typeof result.rawPValue === 'number'
+    && Number.isFinite(result.rawPValue));
+  if (family.length < 2) return results;
+  const adjusted = adjustPValuesHolm(family.map((result) => result.rawPValue!));
+  const adjustedByResult = new Map(family.map((result, index) => [result, adjusted[index]!]));
+  return results.map((result) => {
+    const adjustedP = adjustedByResult.get(result);
+    if (adjustedP === undefined) return result;
+    const rawMetric = result.metrics.find((metric) => /evidência|p-valor/i.test(metric.label));
+    const metrics = [
+      ...result.metrics.filter((metric) => metric !== rawMetric),
+      ...(rawMetric ? [{ ...rawMetric, label: 'p bruto (sem ajuste)' }] : []),
+      { label: 'p ajustado por Holm', value: formatPValue(adjustedP), hint: `${family.length} desfechos na família confirmatória` },
+    ];
+    const effectParagraphs = result.interpretation.filter((paragraph) =>
+      !/estatisticamente significativ|encontrou evidência|não encontrou evidência|\bp\s*=/.test(paragraph.toLowerCase()));
+    const holmConclusion = adjustedP < alpha
+      ? `Após a correção de Holm da família confirmatória, este desfecho manteve evidência estatística no limiar de ${(alpha * 100).toLocaleString('pt-BR')}% (p ajustado = ${formatPValue(adjustedP)}).`
+      : `Após a correção de Holm da família confirmatória, este desfecho não manteve evidência estatística no limiar de ${(alpha * 100).toLocaleString('pt-BR')}% (p ajustado = ${formatPValue(adjustedP)}).`;
+    return {
+      ...result,
+      metrics: orderedMetrics(metrics),
+      interpretation: [...effectParagraphs, holmConclusion],
+      pValue: adjustedP,
+      adjustedPValue: adjustedP,
+    };
+  });
 }
 
 export function runGuidedTests(input: RunGuidedTestsInput): GuidedTestRun {
@@ -464,10 +659,12 @@ export function runGuidedTests(input: RunGuidedTestsInput): GuidedTestRun {
     ...input.selectedTestIds.filter((testId) => testId !== input.primaryTestId),
   ];
   const alpha = input.alpha ?? 0.05;
-  const results = ordered.map((testId) => runOne(input, testId, alpha));
+  const executions = ordered.map((testId) => runOne(input, testId, alpha));
+  const results = applyHolmToPrimaryFamily(executions.flatMap((item) => item.results), alpha);
   return {
     fingerprint: `guided-results:${input.scenario.fingerprint}:${ordered.join(',')}:${JSON.stringify(input.roleAssignments)}`,
     scenarioFingerprint: input.scenario.fingerprint,
     results,
+    skippedOutcomes: executions.flatMap((item) => item.skipped),
   };
 }

@@ -14,7 +14,7 @@ import { loadCatalog, type LoadedCatalog } from '@/features/catalog/loadCatalog'
 import { DISEASES } from '@/features/catalog/taxonomy';
 import type { CatalogEntry } from '@/features/catalog/types';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
-import { evaluateTests } from '@/features/research/eligibility';
+import { evaluateTestsForSelection } from '@/features/research/eligibility';
 import type { AnalysisScenario, ResearchDesign, ResearchPeriod } from '@/features/research/types';
 import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import { useSession } from '@/shared/session/SessionProvider';
@@ -22,11 +22,22 @@ import { GuidedResearchFlow } from './GuidedResearchFlow';
 import { GuidedResultsSection } from './GuidedResultsSection';
 import type { GuidedResearchSelection, ResearchCutSummaryViewModel } from './guidedViewModels';
 import { buildHospitalOutcomeContingency } from './hospitalOutcomeContingency';
-import { runGuidedTests, type GuidedTestRun } from './runGuidedTests';
+import {
+  attachCommonCoverageSensitivity,
+  isGroupComparisonTest,
+  isGroupOutcomeTypeForTest,
+  runGuidedTests,
+  type GuidedTestRun,
+} from './runGuidedTests';
 import { VariableDetailPanel } from './VariableDetailPanel';
 import { VariableFilters } from './VariableFilters';
 import { VariableList } from './VariableList';
-import { buildProfileViewModel, toEligibilityViewModels, useGuidedResearch } from './useGuidedResearch';
+import {
+  buildCommonCoverageScenario,
+  buildProfileViewModel,
+  toEligibilityViewModels,
+  useGuidedResearch,
+} from './useGuidedResearch';
 
 const INITIAL_FILTERS: CatalogFilters = {
   query: '',
@@ -283,7 +294,7 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
   );
   const activeDecisions = useMemo(
     () => activeScenario && selectedProfiles.length > 0 && selection.goal !== 'describe'
-      ? evaluateTests({
+      ? evaluateTestsForSelection({
           design,
           scenario: activeScenario,
           profiles: selectedProfiles,
@@ -305,6 +316,12 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
   );
   const activeReviewsResolved = activeScenario !== null
     && !activeScenario.cells.some((cell) => cell.analyticStatus === 'requires_review');
+  const commonCoverage = useMemo(() => {
+    if (!guided.data || !selection.primaryTestId || !isGroupComparisonTest(selection.primaryTestId)) return null;
+    const outcomes = selectedProfiles.filter((profile) =>
+      isGroupOutcomeTypeForTest(selection.primaryTestId!, profile.variableType));
+    return outcomes.length > 0 ? buildCommonCoverageScenario(guided.data, outcomes, activeScenario) : null;
+  }, [activeScenario, guided.data, selectedProfiles, selection.primaryTestId]);
   const resultState = useMemo<{ run: GuidedTestRun | null; error: string | null }>(() => {
     if (
       !activeScenario
@@ -314,17 +331,55 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
       || !activeReviewsResolved
     ) return { run: null, error: null };
     try {
+      const mainRun = runGuidedTests({
+        design,
+        scenario: activeScenario,
+        profiles: selectedProfiles,
+        eligibility: activeDecisions,
+        selectedTestIds: selection.testIds,
+        primaryTestId: selection.primaryTestId,
+        roleAssignments: guided.effectiveRoles,
+        ...(activeContingency ? { contingency: activeContingency } : {}),
+      });
+      if (!commonCoverage || commonCoverage.state === 'no_restriction') {
+        return { run: mainRun, error: null };
+      }
+      if (!commonCoverage.scenario) {
+        return {
+          run: attachCommonCoverageSensitivity(mainRun, null, commonCoverage.explanation),
+          error: null,
+        };
+      }
+      const commonDecisions = evaluateTestsForSelection({
+        design,
+        scenario: commonCoverage.scenario,
+        profiles: selectedProfiles,
+        roleAssignments: guided.effectiveRoles,
+      });
+      const primaryDecision = commonDecisions.find((item) => item.testId === selection.primaryTestId);
+      if (!primaryDecision || primaryDecision.status === 'ineligible') {
+        const reason = primaryDecision?.reasons.map((item) => item.message).join(' ')
+          ?? 'O teste principal não foi liberado no suporte comum.';
+        return {
+          run: attachCommonCoverageSensitivity(
+            mainRun,
+            null,
+            `${commonCoverage.explanation} Não foi possível recalcular com segurança: ${reason}`,
+          ),
+          error: null,
+        };
+      }
+      const commonRun = runGuidedTests({
+        design,
+        scenario: commonCoverage.scenario,
+        profiles: selectedProfiles,
+        eligibility: commonDecisions,
+        selectedTestIds: [selection.primaryTestId],
+        primaryTestId: selection.primaryTestId,
+        roleAssignments: guided.effectiveRoles,
+      });
       return {
-        run: runGuidedTests({
-          design,
-          scenario: activeScenario,
-          profiles: selectedProfiles,
-          eligibility: activeDecisions,
-          selectedTestIds: selection.testIds,
-          primaryTestId: selection.primaryTestId,
-          roleAssignments: guided.effectiveRoles,
-          ...(activeContingency ? { contingency: activeContingency } : {}),
-        }),
+        run: attachCommonCoverageSensitivity(mainRun, commonRun, commonCoverage.explanation),
         error: null,
       };
     } catch (error) {
@@ -335,6 +390,7 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
     activeContingency,
     activeReviewsResolved,
     activeScenario,
+    commonCoverage,
     design,
     guided.effectiveRoles,
     selectedProfiles,

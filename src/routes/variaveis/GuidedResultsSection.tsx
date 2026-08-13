@@ -1,5 +1,4 @@
 import { AlertTriangle, CheckCircle2, FlaskConical } from 'lucide-react';
-import { compareScenarios } from '@/features/research/scenarios';
 import type { AnalysisScenario, ResearchDesign } from '@/features/research/types';
 import { ResultsPanel } from '@/routes/estatistica/ResultsPanel';
 import { GuidedResultMap } from './GuidedResultMap';
@@ -28,22 +27,35 @@ function ResultRoleBadge({ role }: { role: 'principal' | 'sensibilidade' }) {
   );
 }
 
-function conclusion(run: GuidedTestRun): string {
-  const primary = run.results.find((result) => result.role === 'principal') ?? run.results[0];
-  if (!primary) return 'Nenhum resultado foi calculado.';
-  const effect = primary.metrics.find((metric) => /efeito|diferença|coeficiente|variação|mudança/i.test(metric.label))
-    ?? primary.metrics.find((metric) => !/evidência|p-valor/i.test(metric.label));
-  const interval = primary.metrics.find((metric) => /intervalo/i.test(metric.label));
-  const effectText = effect
-    ? `${effect.label}: ${effect.value}${effect.hint && /IC\s*95%|intervalo/i.test(effect.hint) ? ` (${effect.hint})` : ''}`
-    : 'consulte a estimativa e o intervalo apresentados acima';
-  const intervalText = interval && interval !== effect ? ` ${interval.label}: ${interval.value}.` : '';
-  const evidence = primary.pValue !== null && Number.isFinite(primary.pValue)
-    ? primary.pValue < 0.05
-      ? 'forneceu evidência estatística no limiar de 5%'
-      : 'não forneceu evidência estatística suficiente no limiar de 5%'
-    : 'deve ser interpretado pelos efeitos, intervalos e diagnósticos apresentados';
-  return `Efeito principal — ${effectText}.${intervalText} Depois, quanto à evidência, ${primary.title} ${evidence}. Como a análise usa agregados territoriais, a diferença ou associação não demonstra causalidade nem efeito individual.`;
+function conclusion(run: GuidedTestRun, variableLabels: Record<string, string>): string {
+  const primaryResults = run.results.filter((result) => result.role === 'principal');
+  const results = primaryResults.length > 0 ? primaryResults : run.results.slice(0, 1);
+  if (results.length === 0) return 'Nenhum resultado foi calculado.';
+  const summaries = results.map((result) => {
+    const effect = result.metrics.find((metric) => /efeito|diferença|coeficiente|variação|mudança/i.test(metric.label))
+      ?? result.metrics.find((metric) => !/evidência|p-valor|^p\s/i.test(metric.label));
+    const interval = result.metrics.find((metric) => /intervalo/i.test(metric.label));
+    const effectText = effect
+      ? `${effect.label}: ${effect.value}${effect.hint && /IC\s*95%|intervalo/i.test(effect.hint) ? ` (${effect.hint})` : ''}`
+      : 'consulte a estimativa e o intervalo apresentados acima';
+    const intervalText = interval && interval !== effect ? `; ${interval.label}: ${interval.value}` : '';
+    const evidence = result.pValue !== null && Number.isFinite(result.pValue)
+      ? result.pValue < 0.05
+        ? 'forneceu evidência estatística no limiar de 5%'
+        : 'não forneceu evidência estatística suficiente no limiar de 5%'
+      : 'deve ser interpretado pelos efeitos, intervalos e diagnósticos apresentados';
+    return `${variableLabels[result.outcomeVariableId] ?? result.outcomeVariableId} — primeiro, ${effectText}${intervalText}; depois, ${result.title} ${evidence}`;
+  });
+  const lead = results.length === 1
+    ? `Efeito principal — ${summaries[0]}.`
+    : `Resultados principais, preservando todos os ${results.length} desfechos sem seleção por favorabilidade: ${summaries.join('. ')}.`;
+  const skipped = (run.skippedOutcomes ?? []).filter((item) => item.role === 'principal' && item.support !== 'common_coverage').length;
+  const skippedText = skipped > 0
+    ? skipped === 1
+      ? ' Um desfecho principal não foi calculado e permanece listado com o motivo; ele não entrou em Holm.'
+      : ` ${skipped} desfechos principais não foram calculados e permanecem listados com os motivos; eles não entraram em Holm.`
+    : '';
+  return `${lead}${skippedText} Como a análise usa agregados territoriais, a diferença ou associação não demonstra causalidade nem efeito individual.`;
 }
 
 function reviewedCellsSummary(
@@ -67,6 +79,80 @@ function reviewedCellsSummary(
   if (items.length === 0) return null;
   const remaining = scenario.decisions.length - items.length;
   return `${items.join(' ')}${remaining > 0 ? ` E mais ${remaining} alteração(ões).` : ''}`;
+}
+
+function resultEffect(result: GuidedTestRun['results'][number]) {
+  return result.metrics.find((metric) =>
+    /efeito|diferença|coeficiente|variação|mudança|r de pearson|ρ de spearman/i.test(metric.label));
+}
+
+function coverageSensitivityLines(
+  run: GuidedTestRun,
+  variableLabels: Record<string, string>,
+): string[] {
+  if (!run.coverageSensitivity) return [];
+  if (run.coverageSensitivity.state === 'not_calculable') {
+    return [run.coverageSensitivity.explanation];
+  }
+  const common = run.results.filter((result) => result.support === 'common_coverage');
+  return [
+    run.coverageSensitivity.explanation,
+    ...common.map((result) => {
+      const main = run.results.find((candidate) =>
+        candidate.support !== 'common_coverage'
+        && candidate.role === 'principal'
+        && candidate.testId === result.testId
+        && candidate.outcomeVariableId === result.outcomeVariableId);
+      if (!main) return `${variableLabels[result.outcomeVariableId] ?? result.outcomeVariableId}: resultado calculado no suporte comum.`;
+      const before = resultEffect(main)?.value ?? 'n/d';
+      const after = resultEffect(result)?.value ?? 'n/d';
+      const direction = main.effectDirection === 'null' && result.effectDirection === 'null'
+        ? 'direção global não se aplica'
+        : main.effectDirection === result.effectDirection
+          ? 'direção preservada'
+          : 'direção alterada';
+      const evidence = main.pValue === null || result.pValue === null
+        ? 'evidência comparada pelos diagnósticos'
+        : (main.pValue < 0.05) === (result.pValue < 0.05)
+          ? 'interpretação no limiar de 5% preservada'
+          : 'interpretação no limiar de 5% alterada';
+      return `${variableLabels[result.outcomeVariableId] ?? result.outcomeVariableId}: n ${main.coverage.used} → ${result.coverage.used}; efeito ${before} → ${after}; ${direction}; ${evidence}.`;
+    }),
+  ];
+}
+
+function revisionComparisonLines(
+  run: GuidedTestRun,
+  recommendedRun: GuidedTestRun | null | undefined,
+  variableLabels: Record<string, string>,
+): string[] {
+  if (!recommendedRun) return ['O cenário original não sustentou a mesma análise; compare os diagnósticos acima.'];
+  const revised = new Map(run.results
+    .filter((result) => result.role === 'principal' && result.support !== 'common_coverage')
+    .map((result) => [`${result.testId}:${result.outcomeVariableId}`, result]));
+  const original = new Map(recommendedRun.results
+    .filter((result) => result.role === 'principal' && result.support !== 'common_coverage')
+    .map((result) => [`${result.testId}:${result.outcomeVariableId}`, result]));
+  const keys = [...new Set([...original.keys(), ...revised.keys()])];
+  return keys.map((key) => {
+    const before = original.get(key);
+    const result = revised.get(key);
+    const outcomeVariableId = result?.outcomeVariableId ?? before?.outcomeVariableId ?? key;
+    const label = variableLabels[outcomeVariableId] ?? outcomeVariableId;
+    if (!before) return `${label}: o resultado só ficou calculável no cenário revisado.`;
+    if (!result) return `${label}: deixou de ser calculável após a revisão; o resultado original não foi mantido.`;
+    const beforeEffect = resultEffect(before)?.value ?? 'n/d';
+    const afterEffect = resultEffect(result)?.value ?? 'n/d';
+    const direction = before.effectDirection === result.effectDirection
+      ? 'a direção foi preservada'
+      : 'a direção mudou';
+    const evidence = before.pValue === null || result.pValue === null
+      ? 'a evidência deve ser comparada pelos diagnósticos'
+      : (before.pValue < 0.05) === (result.pValue < 0.05)
+        ? 'a conclusão no limiar de 5% não mudou'
+        : 'a conclusão no limiar de 5% mudou';
+    return `${label}: n ${before.coverage.used} → ${result.coverage.used}; efeito ${beforeEffect} → ${afterEffect}; ${direction}; ${evidence}.`;
+  });
 }
 
 export function GuidedResultsSection({
@@ -162,31 +248,6 @@ export function GuidedResultsSection({
   }
 
   const primary = run.results.find((result) => result.role === 'principal') ?? run.results[0];
-  const recommendedPrimary = recommendedRun?.results.find((result) => result.role === 'principal') ?? recommendedRun?.results[0];
-  const comparison = compareScenarios(recommendedScenario, activeScenario, {
-    ...(recommendedPrimary ? {
-      recommended: {
-        n: recommendedPrimary.coverage.used,
-        effectDirection: recommendedPrimary.effectDirection,
-        interpretationKey: recommendedPrimary.pValue === null
-          ? 'sem-limiar'
-          : recommendedPrimary.pValue < 0.05 ? 'evidencia' : 'sem-evidencia',
-      },
-    } : {}),
-    ...(primary ? {
-      revised: {
-        n: primary.coverage.used,
-        effectDirection: primary.effectDirection,
-        interpretationKey: primary.pValue === null
-          ? 'sem-limiar'
-          : primary.pValue < 0.05 ? 'evidencia' : 'sem-evidencia',
-      },
-    } : {}),
-  });
-  const directionChanged = comparison.effectDirection.changed;
-  const evidenceChanged = comparison.interpretationChanged;
-  const recommendedEffect = recommendedPrimary?.metrics.find((metric) => /efeito|diferença|coeficiente|variação|mudança/i.test(metric.label));
-  const revisedEffect = primary?.metrics.find((metric) => /efeito|diferença|coeficiente|variação|mudança/i.test(metric.label));
   const reviewSummary = reviewedCellsSummary(design, activeScenario, variableLabels);
   const excludedZeros = activeScenario.cells.filter((cell) => cell.rawValue === 0 && cell.analyticStatus !== 'include').length;
 
@@ -206,22 +267,54 @@ export function GuidedResultsSection({
       </div>
 
       {run.results.map((result) => (
-        <article key={result.testId} className="rounded-2xl border border-border bg-surface/55 p-4 sm:p-5">
+        <article key={`${result.testId}:${result.outcomeVariableId}:${result.support ?? 'default'}`} className="rounded-2xl border border-border bg-surface/55 p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-sans text-base font-bold text-text">{result.title} · {result.role}</h3>
-            <ResultRoleBadge role={result.role} />
+            <h3 className="font-sans text-base font-bold text-text">
+              {result.title} · {variableLabels[result.outcomeVariableId] ?? result.outcomeVariableId} · {result.role}
+            </h3>
+            <div className="flex flex-wrap items-center gap-2">
+              {result.support === 'common_coverage' ? (
+                <span className="rounded-full bg-violet-400/10 px-2.5 py-1 font-sans text-xs font-semibold text-violet-300">
+                  Suporte temporal comum
+                </span>
+              ) : null}
+              <ResultRoleBadge role={result.role} />
+            </div>
           </div>
           <ResultsPanel
-            title={`Resultado de ${result.title}`}
+            title={`Resultado de ${result.title} para ${variableLabels[result.outcomeVariableId] ?? result.outcomeVariableId}`}
             metrics={result.metrics}
             chart={result.chart}
             additionalCharts={result.additionalCharts}
             interpretation={result.interpretation}
-            exportFilename={`${result.testId}-recorte-lacirstat.png`}
+            exportFilename={`${result.testId}-${result.outcomeVariableId}-recorte-lacirstat.png`}
             headingLevel={4}
           />
         </article>
       ))}
+
+      {(run.skippedOutcomes?.length ?? 0) > 0 ? (
+        <aside className="rounded-2xl border border-amber-400/25 bg-amber-400/5 p-4" aria-labelledby="skipped-outcomes-heading">
+          <h3 id="skipped-outcomes-heading" className="font-sans text-sm font-bold text-text">Desfechos não calculáveis</h3>
+          <ul className="mt-2 space-y-1 font-sans text-xs leading-relaxed text-text-muted">
+            {run.skippedOutcomes?.map((item) => (
+              <li key={`${item.testId}:${item.outcomeVariableId}:${item.support ?? 'default'}`}>
+                {variableLabels[item.outcomeVariableId] ?? item.outcomeVariableId}: {item.reason}
+                {item.support === 'common_coverage' ? ' (suporte temporal comum)' : ''}
+              </li>
+            ))}
+          </ul>
+        </aside>
+      ) : null}
+
+      {run.coverageSensitivity ? (
+        <aside className="rounded-2xl border border-violet-400/25 bg-violet-400/5 p-4" aria-labelledby="coverage-sensitivity-heading">
+          <h3 id="coverage-sensitivity-heading" className="font-sans text-sm font-bold text-text">Sensibilidade da cobertura</h3>
+          <div className="mt-2 space-y-1 font-sans text-xs leading-relaxed text-text-muted">
+            {coverageSensitivityLines(run, variableLabels).map((line) => <p key={line}>{line}</p>)}
+          </div>
+        </aside>
+      ) : null}
 
       {primary ? <GuidedResultMap
         design={design}
@@ -232,7 +325,7 @@ export function GuidedResultsSection({
 
       <section aria-labelledby="guided-conclusion-heading" className="rounded-2xl border border-accent/25 bg-accent/5 p-4 sm:p-5">
         <h3 id="guided-conclusion-heading" className="font-sans text-base font-bold text-text">Conclusão</h3>
-        <p className="mt-2 font-sans text-sm leading-relaxed text-text-muted">{conclusion(run)}</p>
+        <p className="mt-2 font-sans text-sm leading-relaxed text-text-muted">{conclusion(run, variableLabels)}</p>
         <p className="mt-2 font-sans text-xs leading-relaxed text-text-muted">
           {excludedZeros > 0
             ? `${excludedZeros} zero(s) bruto(s) ficaram fora por revisão ou forte suspeita de não coleta; isso foi mantido separado de “sem dados” no mapa.`
@@ -240,11 +333,9 @@ export function GuidedResultsSection({
         </p>
         {activeScenario.createdAfterResults ? (
           <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/5 px-3 py-2 font-sans text-xs text-amber-200">
-            Análise exploratória após revisão: o número de células incluídas mudou de {comparison.n.recommended} para {comparison.n.revised}.
-            {recommendedEffect && revisedEffect ? ` Efeito principal: ${recommendedEffect.value} → ${revisedEffect.value}.` : ''}
-            {directionChanged === null ? '' : directionChanged ? ' A direção do efeito mudou.' : ' A direção do efeito foi preservada.'}
-            {evidenceChanged === null ? '' : evidenceChanged ? ' A conclusão no limiar de 5% mudou.' : ' A conclusão no limiar de 5% não mudou.'}
-            {reviewSummary ? ` ${reviewSummary}` : ''}
+            <p>Análise exploratória após revisão:</p>
+            {revisionComparisonLines(run, recommendedRun, variableLabels).map((line) => <p key={line}>{line}</p>)}
+            {reviewSummary ? <p>{reviewSummary}</p> : null}
           </div>
         ) : null}
         <div className="mt-3">

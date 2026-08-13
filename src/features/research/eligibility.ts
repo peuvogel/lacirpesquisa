@@ -161,7 +161,10 @@ function groupTest(
   }
   const cells = cellsFor(input.scenario.cells, profile.variableId);
   const counts = groupCounts(cells);
-  const groupNumberOk = requiredGroups === 2 ? counts.size === 2 : counts.size >= 3;
+  const selectedGroupCount = input.design.groups.length;
+  const allSelectedGroupsRepresented = counts.size === selectedGroupCount;
+  const groupNumberOk = allSelectedGroupsRepresented
+    && (requiredGroups === 2 ? selectedGroupCount === 2 : selectedGroupCount >= 3);
   if (!groupNumberOk) {
     return decision(testId, 'ineligible', [reason('group_count_mismatch', requiredGroups === 2 ? 'Este teste exige exatamente dois grupos.' : 'Este teste exige três ou mais grupos.')], roles);
   }
@@ -421,5 +424,77 @@ export function evaluateTests(input: EvaluateTestsInput): EligibilityDecision[] 
   byId.set('poisson', countModel('poisson', input));
   byId.set('binomial-negativa', countModel('binomial-negativa', input));
   byId.set('logistica', decision('logistica', 'ineligible', [reason('aggregated_logistic_not_supported', 'O catálogo contém agregados territoriais, não desfechos individuais binários.')], roles));
+  return TEST_IDS.map((testId) => byId.get(testId)!);
+}
+
+const GROUP_TEST_TYPES: Record<string, readonly VariableProfile['variableType'][]> = {
+  't-student': ['numeric', 'rate'],
+  'mann-whitney': ['numeric', 'rate', 'ordinal'],
+  'anova-tukey': ['numeric', 'rate'],
+  'kruskal-dunn': ['numeric', 'rate', 'ordinal'],
+};
+
+/**
+ * Evaluates comparisons as a family of separate outcomes. Directional tests
+ * still use the explicit roles from `evaluateTests`; only map-defined group
+ * comparisons are combined here.
+ */
+export function evaluateTestsForSelection(input: EvaluateTestsInput): EligibilityDecision[] {
+  const base = evaluateTests(input);
+  const byId = new Map(base.map((item) => [item.testId, item]));
+
+  for (const [testId, acceptedTypes] of Object.entries(GROUP_TEST_TYPES)) {
+    const outcomes = input.profiles.filter((profile) => acceptedTypes.includes(profile.variableType));
+    if (outcomes.length === 0) continue;
+    const perOutcome = outcomes.map((profile) => ({
+      profile,
+      result: evaluateTests({
+        ...input,
+        profiles: [profile],
+        roleAssignments: { ...(input.roleAssignments ?? {}), outcome: profile.variableId },
+      }).find((item) => item.testId === testId)!,
+    }));
+    const incompatible = perOutcome.filter(({ result }) => result.status === 'ineligible');
+    const excluded = input.profiles.filter((profile) => !acceptedTypes.includes(profile.variableType));
+    const status: EligibilityDecision['status'] = incompatible.length === perOutcome.length
+      ? 'ineligible'
+      : incompatible.length > 0 || excluded.length > 0 || perOutcome.some(({ result }) => result.status === 'eligible_with_caveat')
+        ? 'eligible_with_caveat'
+        : 'eligible';
+    const decisionsToExplain = incompatible.length > 0
+      ? incompatible
+      : perOutcome.filter(({ result }) => result.status === 'eligible_with_caveat');
+    const outcomeReasons = decisionsToExplain.flatMap(({ profile, result }) => result.reasons.map((item) => ({
+      code: `${profile.variableId}:${item.code}`,
+      message: `${profile.label}: ${item.message}`,
+    })));
+    const compatibleCount = perOutcome.length - incompatible.length;
+    const familyReason = compatibleCount > 1
+      ? [{
+          code: 'multiple_outcomes_separate',
+          message: `${compatibleCount} variáveis calculáveis serão analisadas separadamente; a família confirmatória receberá correção de Holm.`,
+        }]
+      : [];
+    const partialReason = incompatible.length > 0 && incompatible.length < perOutcome.length
+      ? [{
+          code: 'partial_outcome_eligibility',
+          message: `${compatibleCount} ${compatibleCount === 1 ? 'desfecho compatível continua' : 'desfechos compatíveis continuam'} separadamente; ${incompatible.length} ${incompatible.length === 1 ? 'aparece como não calculável e fica' : 'aparecem como não calculáveis e ficam'} fora da correção de Holm.`,
+        }]
+      : [];
+    const excludedReason = excluded.length > 0
+      ? [{
+          code: 'variables_outside_test_family',
+          message: `Este teste será aplicado somente a ${outcomes.map((profile) => profile.label).join(', ')}; ${excluded.map((profile) => profile.label).join(', ')} exige outra família ou permanece descritiva.`,
+        }]
+      : [];
+    byId.set(testId, {
+      testId,
+      status,
+      reasons: [...familyReason, ...partialReason, ...excludedReason, ...outcomeReasons],
+      roleAssignments: { ...(input.roleAssignments ?? {}) },
+      diagnosticsUsed: [...new Set(perOutcome.flatMap(({ result }) => result.diagnosticsUsed))],
+    });
+  }
+
   return TEST_IDS.map((testId) => byId.get(testId)!);
 }
