@@ -22,8 +22,8 @@ declare
   v_uf bigint;
 begin
   select count(*) into v_uf from sih_metric_uf;
-  if v_uf is distinct from 207131 then
-    raise exception 'sih-swap-contagens: sih_metric_uf tem % linha(s), esperado % (medido na corrida, nunca adivinhado -- D-16)', v_uf, 207131;
+  if v_uf is distinct from 207664 then
+    raise exception 'sih-swap-contagens: sih_metric_uf tem % linha(s), esperado % (medido na corrida, nunca adivinhado -- D-16)', v_uf, 207664;
   end if;
 end $$;
 

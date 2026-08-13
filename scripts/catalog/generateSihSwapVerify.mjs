@@ -34,15 +34,31 @@ export const VERIFY_RELATIVE_PATH = 'supabase/verify/sih-swap-contagens.sql';
 
 /**
  * Contagem REAL de `sih_metric_uf` pós-swap e a `cid_map_version` da corrida que produziu essa
- * contagem -- preenchidos em 2026-08-12 com o valor medido na substituição real de produção
- * (Task 3 do 09-10, D-16): `upload.py` copiou 207131 linhas para staging, o swap trocou a tabela
- * viva, e `recount_via_postgrest` releu exatamente 207131 linhas via PostgREST paginado (nem uma
- * a mais, nem a menos) -- 103353 de local=ocorrencia + 103778 de local=residencia, conferido de
- * novo, de forma independente, direto contra o Postgres de produção. `cid_map_version()` é o
- * mesmo hash estável de `lista-morb-cid.json` + `cid-corrections.json` que `sih_collection_status`
- * carrega para cada linha da corrida (D-15) -- nunca recalculado à mão aqui.
+ * contagem.
+ *
+ * SEGUNDA SUBSTITUIÇÃO (2026-08-12/13, ad-hoc sem PLAN.md formal, dataset completo de 331 agravos
+ * incluindo `amputacao_mmii`, o único `filterKind: "procedimento"`, recuperado pelo
+ * `09-10-PROCEDIMENTO`): `upload.py` copiou 207664 linhas para staging, o swap trocou a tabela
+ * viva, e `recount_via_postgrest` releu exatamente 207664 linhas via PostgREST paginado (nem uma
+ * a mais, nem a menos) -- 103619 de local=ocorrencia + 104045 de local=residencia, reconferido de
+ * novo, de forma independente, direto contra o Postgres de produção. `cid_map_version` permanece
+ * O MESMO hash da primeira corrida (`lista-morb-cid.json`/`cid-corrections.json` não mudaram --
+ * só o eixo de classificação por procedimento em `aggregate.py` mudou, e esse eixo não entra
+ * neste hash) -- confirmado ao vivo por `cid_map_version()` e por consulta direta a
+ * `sih_collection_status` (33560 linhas, todas com este único valor).
+ *
+ * 207664 é 3 linhas a menos que as 207667 chaves únicas `(disease_id, local, territorio_codigo,
+ * ano)` presentes nos 27 `agregados/{uf}.parquet` -- explicado, não um defeito desta corrida: 3
+ * linhas de grão UF (`AM/2023 neoplasia_maligna_do_colon`, `CE/2023
+ * outras_malformacoes_do_aparelho_geniturinario`, `DF/2022
+ * flebite_tromboflebite_embolia_e_trombose_venosa`) carregam um `UF_ZI` malformado ('02', '00',
+ * '  ' -- nenhum dos 27 códigos de UF válidos) e são descartadas silenciosamente por
+ * `partitions._uf_dona`/`construir_indice_territorial` (`dona is None -> continue`), o mesmo
+ * comportamento documentado desde o `09-09-FIX-RESIDENCIA` para código de território
+ * desconhecido -- nunca uma UF errada por coerção. Mesma classe de achado, escala ainda menor,
+ * do `09-04-FIX-MUNICIPIO-BRANCO` (MUNIC_MOV/MUNIC_RES ilegível, 8 registros em 82M).
  */
-export const ESPERADO_SIH_METRIC_UF = 207131;
+export const ESPERADO_SIH_METRIC_UF = 207664;
 export const CID_MAP_VERSION_DA_CORRIDA =
   '5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f';
 

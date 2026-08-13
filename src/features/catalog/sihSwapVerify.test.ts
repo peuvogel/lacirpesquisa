@@ -92,16 +92,19 @@ describe('sih swap verify generation (D-16 — a substituição atômica provada
     expect(linhas.at(-1)).toBe('where d.id not in (select distinct disease_id from sih_metric_uf);');
   });
 
-  it('ESPERADO_SIH_METRIC_UF/CID_MAP_VERSION_DA_CORRIDA carregam o valor medido na substituição real de produção (Task 3 do 09-10, D-16, 2026-08-12) — nunca adivinhado', () => {
-    // 207131 = a contagem que copy_to_staging escreveu, swap trocou e recount_via_postgrest
+  it('ESPERADO_SIH_METRIC_UF/CID_MAP_VERSION_DA_CORRIDA carregam o valor medido na SEGUNDA substituição real de produção (2026-08-12/13, ad-hoc, dataset completo de 331 agravos com amputacao_mmii) — nunca adivinhado', () => {
+    // 207664 = a contagem que copy_to_staging escreveu, swap trocou e recount_via_postgrest
     // releu de volta via PostgREST paginado (nem uma a mais, nem a menos) — reconferido de forma
-    // independente direto contra produção: 103353 (local=ocorrencia) + 103778 (local=residencia).
-    expect(ESPERADO_SIH_METRIC_UF).toBe(207131);
+    // independente direto contra produção: 103619 (local=ocorrencia) + 104045 (local=residencia).
+    // cid_map_version permanece o MESMO hash da primeira corrida (lista-morb-cid.json/
+    // cid-corrections.json não mudaram — só o eixo de procedimento em aggregate.py mudou, fora
+    // deste hash).
+    expect(ESPERADO_SIH_METRIC_UF).toBe(207664);
     expect(CID_MAP_VERSION_DA_CORRIDA).toBe(
       '5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f',
     );
     const verifyText = renderVerifySql(loadSchema());
-    expect(verifyText).toContain('is distinct from 207131');
+    expect(verifyText).toContain('is distinct from 207664');
     expect(verifyText).not.toContain('is distinct from NULL');
   });
 
@@ -116,6 +119,6 @@ describe('sih swap verify generation (D-16 — a substituição atômica provada
     // as constantes exportadas (o que fica commitado) continuam as da corrida real — só o
     // parâmetro explícito desta chamada mudou, provando que renderVerifySql é pura, não depende
     // de estado mutável.
-    expect(ESPERADO_SIH_METRIC_UF).toBe(207131);
+    expect(ESPERADO_SIH_METRIC_UF).toBe(207664);
   });
 });
