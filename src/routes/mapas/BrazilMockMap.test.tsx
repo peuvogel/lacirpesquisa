@@ -298,7 +298,7 @@ describe('BrazilMapCanvas', () => {
     const reviewedMunicipality = container.querySelector(
       '[data-territory-id="2927408"]',
     ) as SVGPathElement;
-    expect(reviewedMunicipality.style.getPropertyValue('--lacir-path-accent')).toBe('#fbbf24');
+    expect(reviewedMunicipality).toHaveStyle({ stroke: '#fbbf24' });
   });
 
   it('returns to Brasil UF choropleth when mapView level is uf', () => {

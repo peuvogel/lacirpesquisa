@@ -748,6 +748,7 @@ export function BrazilMapCanvas({
                         ? groupColor(membership.groupIndex).stroke
                         : metric?.stroke ?? pendingColor.stroke
                     }
+                    stroke={membership ? undefined : metric?.stroke}
                     hideStroke={false}
                     glowClass="stroke-white/25 [stroke-width:0.55px]"
                     onHover={onHoverUF}

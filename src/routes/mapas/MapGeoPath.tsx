@@ -15,6 +15,8 @@ export interface MapGeoPathProps {
   fill: string;
   /** Stroke / focus accent for the pending group palette. */
   accentStroke?: string;
+  /** Persistent status outline; focus continues to use `accentStroke`. */
+  stroke?: string;
   glowClass?: string;
   groupBadge?: string;
   /** Accessible explanation of the metric state under the pointer/focus. */
@@ -38,6 +40,7 @@ export function MapGeoPath({
   hideStroke = false,
   fill,
   accentStroke = '#209978',
+  stroke,
   glowClass,
   groupBadge,
   description,
@@ -82,6 +85,7 @@ export function MapGeoPath({
         {
           vectorEffect: 'non-scaling-stroke',
           fill,
+          stroke,
           ['--lacir-path-accent']: accentStroke,
         } as CSSProperties
       }
