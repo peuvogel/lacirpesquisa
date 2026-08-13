@@ -27,8 +27,8 @@ export function GuidedResearchFlow({
   design: _design,
   summary,
   variables,
-  profilesByVariableId = {},
-  eligibility = [],
+  profilesByVariableId,
+  eligibility,
   reviewsResolved = false,
   onSelectionChange,
 }: GuidedResearchFlowProps) {
@@ -68,8 +68,14 @@ export function GuidedResearchFlow({
     notify({ goal, variableIds, testIds, primaryTestId: nextPrimaryTestId });
   }
 
-  const profiles = variableIds.flatMap((id) => profilesByVariableId[id] ? [profilesByVariableId[id]!] : []);
-  const hasAllProfiles = variableIds.length > 0 && profiles.length === variableIds.length;
+  const profiles = variableIds.flatMap((id) => {
+    const profile = profilesByVariableId?.[id];
+    return profile ? [profile] : [];
+  });
+  const hasAllProfiles =
+    profilesByVariableId !== undefined
+    && variableIds.length > 0
+    && profiles.length === variableIds.length;
 
   return (
     <div className="space-y-5">
@@ -102,18 +108,30 @@ export function GuidedResearchFlow({
 
       {hasAllProfiles ? (
         <FlowStep><DataProfileSection profiles={profiles} reviewsResolved={reviewsResolved} /></FlowStep>
+      ) : variableIds.length > 0 ? (
+        <LoadingStep
+          title="3. Preparando o perfil dos dados…"
+          body="Os sumários e diagnósticos aparecerão quando o perfil real estiver pronto."
+        />
       ) : null}
 
       {hasAllProfiles && reviewsResolved ? (
-        <FlowStep>
-          <EligibleTestsSection
-            tests={eligibility}
-            selectedTestIds={testIds}
-            primaryTestId={primaryTestId}
-            onSelectedTestIdsChange={changeTests}
-            onPrimaryTestIdChange={changePrimary}
+        eligibility ? (
+          <FlowStep>
+            <EligibleTestsSection
+              tests={eligibility}
+              selectedTestIds={testIds}
+              primaryTestId={primaryTestId}
+              onSelectedTestIdsChange={changeTests}
+              onPrimaryTestIdChange={changePrimary}
+            />
+          </FlowStep>
+        ) : (
+          <LoadingStep
+            title="4. Preparando testes permitidos…"
+            body="As decisões de elegibilidade aparecerão depois da avaliação real dos dados."
           />
-        </FlowStep>
+        )
       ) : null}
     </div>
   );
@@ -123,16 +141,20 @@ function FlowStep({ children }: { children: React.ReactNode }) {
   return <div className="rounded-3xl border border-border bg-surface/45 p-5 shadow-sm sm:p-6">{children}</div>;
 }
 
-function LoadingStep() {
+function LoadingStep({
+  title = '2. Preparando variáveis disponíveis…',
+  body = 'Estamos aguardando a disponibilidade real para este recorte. Nenhum valor será presumido.',
+}: {
+  title?: string;
+  body?: string;
+}) {
   return (
     <section aria-live="polite" aria-busy="true" className="rounded-3xl border border-border bg-surface/45 p-5 sm:p-6">
       <div className="flex items-center gap-3">
         <span className="size-2.5 animate-pulse rounded-full bg-accent" aria-hidden />
         <div>
-          <h2 className="font-sans text-heading font-bold text-text">2. Preparando variáveis disponíveis…</h2>
-          <p className="mt-1 font-sans text-sm text-text-muted">
-            Estamos aguardando a disponibilidade real para este recorte. Nenhum valor será presumido.
-          </p>
+          <h2 className="font-sans text-heading font-bold text-text">{title}</h2>
+          <p className="mt-1 font-sans text-sm text-text-muted">{body}</p>
         </div>
       </div>
     </section>

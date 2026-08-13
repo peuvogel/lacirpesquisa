@@ -137,6 +137,9 @@ describe('GuidedResearchFlow', () => {
     await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
     expect(screen.getByRole('heading', { name: '3. Conheça seus dados' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '4. Testes permitidos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Permitidos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Com ressalvas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Não permitidos' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /Resultados/i })).not.toBeInTheDocument();
   });
 
@@ -205,6 +208,29 @@ describe('GuidedResearchFlow', () => {
     await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
 
     expect(screen.getByText('Revise as pendências antes de escolher testes.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '4. Testes permitidos' })).not.toBeInTheDocument();
+  });
+
+  it('shows honest loading states while profile and eligibility view-models are pending', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <GuidedResearchFlow design={design} summary={summary} variables={variables} />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    expect(screen.getByRole('heading', { name: '3. Preparando o perfil dos dados…' })).toBeInTheDocument();
+
+    rerender(
+      <GuidedResearchFlow
+        design={design}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{ internacoes: countProfile }}
+        reviewsResolved
+      />,
+    );
+    expect(screen.getByRole('heading', { name: '4. Preparando testes permitidos…' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '4. Testes permitidos' })).not.toBeInTheDocument();
   });
 });

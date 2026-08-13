@@ -14,15 +14,18 @@ export interface SourceMethodViewModel {
   url?: string;
 }
 
-export interface GuidedVariableViewModel {
+interface GuidedVariableBaseViewModel {
   id: string;
   label: string;
   type: VariableType;
   typeLabel: string;
-  availability: GuidedAvailability;
-  availabilityReason?: string;
   sourceMethod: SourceMethodViewModel;
 }
+
+export type GuidedVariableViewModel = GuidedVariableBaseViewModel & (
+  | { availability: 'complete'; availabilityReason?: never }
+  | { availability: 'partial' | 'none'; availabilityReason: string }
+);
 
 export interface ProfileCoverageViewModel {
   expected: number;

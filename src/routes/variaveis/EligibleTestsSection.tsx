@@ -10,6 +10,15 @@ export interface EligibleTestsSectionProps {
   onPrimaryTestIdChange: (id: string) => void;
 }
 
+const STATUS_GROUPS: Array<{
+  status: EligibleTestViewModel['status'];
+  label: string;
+}> = [
+  { status: 'eligible', label: 'Permitidos' },
+  { status: 'eligible_with_caveat', label: 'Com ressalvas' },
+  { status: 'ineligible', label: 'Não permitidos' },
+];
+
 export function EligibleTestsSection({
   tests,
   selectedTestIds,
@@ -39,24 +48,60 @@ export function EligibleTestsSection({
         </p>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        {tests.map((test) => {
-          const selected = selectedTestIds.includes(test.id);
-          const disabled = test.status === 'ineligible';
+      <div className="space-y-5">
+        {STATUS_GROUPS.map((group) => {
+          const groupedTests = tests.filter((test) => test.status === group.status);
+          if (groupedTests.length === 0) return null;
           return (
-            <article
-              key={test.id}
-              className={cn(
-                'rounded-2xl border p-4',
-                selected ? 'border-accent/50 bg-accent/8' : 'border-border bg-surface/65',
-                disabled && 'opacity-60',
-              )}
-            >
+            <section key={group.status} aria-labelledby={`test-status-${group.status}`} className="space-y-2">
+              <h3 id={`test-status-${group.status}`} className="font-sans text-sm font-bold text-text">
+                {group.label}
+              </h3>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {groupedTests.map((test) => <TestDecisionCard
+                  key={test.id}
+                  test={test}
+                  selected={selectedTestIds.includes(test.id)}
+                  primaryTestId={primaryTestId}
+                  onToggle={() => toggleTest(test.id)}
+                  onPrimary={() => onPrimaryTestIdChange(test.id)}
+                />)}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function TestDecisionCard({
+  test,
+  selected,
+  primaryTestId,
+  onToggle,
+  onPrimary,
+}: {
+  test: EligibleTestViewModel;
+  selected: boolean;
+  primaryTestId: string | null;
+  onToggle: () => void;
+  onPrimary: () => void;
+}) {
+  const disabled = test.status === 'ineligible';
+  return (
+    <article
+      className={cn(
+        'rounded-2xl border p-4',
+        selected ? 'border-accent/50 bg-accent/8' : 'border-border bg-surface/65',
+        disabled && 'opacity-60',
+      )}
+    >
               <div className="flex items-start gap-3">
                 <Checkbox
                   checked={selected}
                   disabled={disabled}
-                  onCheckedChange={() => toggleTest(test.id)}
+                  onCheckedChange={onToggle}
                   aria-label={`Selecionar ${test.label}`}
                   className="mt-0.5"
                 />
@@ -81,7 +126,7 @@ export function EligibleTestsSection({
                         type="radio"
                         name="primary-test"
                         checked={primaryTestId === test.id}
-                        onChange={() => onPrimaryTestIdChange(test.id)}
+                        onChange={onPrimary}
                         aria-label={`Definir ${test.label} como principal`}
                         className="size-4 accent-[var(--color-accent)]"
                       />
@@ -94,10 +139,6 @@ export function EligibleTestsSection({
                   ) : null}
                 </div>
               </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
+    </article>
   );
 }
