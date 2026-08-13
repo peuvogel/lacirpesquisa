@@ -1,9 +1,13 @@
 import { EmptyState } from '@/components/EmptyState';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { resolveHint } from '@/features/catalog/suggestTestForVariable';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import type { CatalogEntry } from '@/features/catalog/types';
-import { SuggestedTestCard } from '@/routes/mapas/SuggestedTestCard';
+import { ChevronDown, Database } from 'lucide-react';
 import { VARIABLE_TYPE_LABELS } from './VariableFilters';
 
 export interface VariableDetailPanelProps {
@@ -51,7 +55,7 @@ export function VariableDetailPanel({
       <div className="flex flex-1 items-center justify-center">
         <EmptyState
           heading="Selecione uma variável"
-          body="Escolha um item na lista para ver a proveniência completa, o teste sugerido e as ações de carregamento."
+          body="Escolha um item na lista para ver seu resumo, consultar fonte e método e acessar as ações disponíveis."
         />
       </div>
     );
@@ -67,10 +71,8 @@ export function VariableDetailPanel({
     );
   }
 
-  const hint = resolveHint(entry);
-
   return (
-    <div className="flex h-full min-h-0 flex-col gap-6">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-sans text-heading font-bold text-text">{entry.label}</h2>
@@ -81,10 +83,13 @@ export function VariableDetailPanel({
         <p className="font-sans text-sm text-text-muted">Domínio: {entry.domain}</p>
       </header>
 
-      <section aria-labelledby="provenance-heading" className="space-y-3">
-        <h3 id="provenance-heading" className="font-sans text-label font-bold text-text">
-          Proveniência
-        </h3>
+      <Collapsible className="rounded-xl border border-border bg-elevated/35">
+        <CollapsibleTrigger className="group flex w-full items-center gap-2 px-3 py-2.5 text-left font-sans text-sm font-semibold text-text">
+          <Database className="size-4 text-accent" aria-hidden />
+          Fonte e método
+          <ChevronDown className="ml-auto size-4 text-text-muted transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="border-t border-border px-3 py-3">
         <dl className="grid gap-3 sm:grid-cols-2" data-testid="provenance-block">
           <ProvenanceField label="Fonte/sistema" value={entry.sourceSystem} />
           <ProvenanceField label="Nome da fonte" value={entry.sourceName} />
@@ -116,19 +121,8 @@ export function VariableDetailPanel({
             </dd>
           </div>
         </dl>
-      </section>
-
-      <section
-        aria-labelledby="hint-heading"
-        className="space-y-3"
-        data-testid="suggested-test-hint"
-        data-hint-test-id={hint.testId}
-      >
-        <h3 id="hint-heading" className="font-sans text-label font-bold text-text">
-          Teste sugerido
-        </h3>
-        <SuggestedTestCard testId={hint.testId} rationale={hint.rationale} />
-      </section>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className="mt-auto flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:flex-wrap">
         <Button

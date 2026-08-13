@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useEffect } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -6,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { resetCatalogCache } from '@/features/catalog/loadCatalog';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
+import type { ResearchDesign } from '@/features/research/types';
 import { VariaveisPage } from './VariaveisPage';
 
 const CATALOG_ROOT = resolve(process.cwd(), 'public/data/catalog');
@@ -39,7 +41,30 @@ function DatasetProbe() {
   );
 }
 
-function renderPage(initialPath = '/variaveis') {
+const guidedDesign: ResearchDesign = {
+  groups: [
+    {
+      id: 'nordeste',
+      name: 'Nordeste',
+      territories: [
+        { id: '29', label: 'Bahia' },
+        { id: '28', label: 'Sergipe' },
+      ],
+    },
+  ],
+  geography: 'uf',
+  locationBasis: 'ocorrencia',
+  diseaseIds: ['embolia_e_trombose_arteriais'],
+  period: { scope: 'shared', time: { mode: 'range', start: '2023', end: '2025' } },
+};
+
+function ResearchDesignSeeder({ design }: { design: ResearchDesign }) {
+  const { setResearchDesign } = useSession();
+  useEffect(() => setResearchDesign(design), [design, setResearchDesign]);
+  return null;
+}
+
+function renderPage(initialPath = '/variaveis', researchDesign?: ResearchDesign) {
   return render(
     <SessionProvider>
       <MemoryRouter initialEntries={[initialPath]}>
@@ -48,6 +73,7 @@ function renderPage(initialPath = '/variaveis') {
             path="/variaveis"
             element={
               <>
+                {researchDesign ? <ResearchDesignSeeder design={researchDesign} /> : null}
                 <VariaveisPage />
                 <DatasetProbe />
               </>
@@ -149,7 +175,7 @@ describe('VariaveisPage', () => {
     expect(within(list).queryByText(/\bAVC\b/)).not.toBeInTheDocument();
   });
 
-  it('shows full provenance and suggested test hint when a row is selected (CAT-02/03)', async () => {
+  it('keeps source and method closed and removes unsafe suggested tests in direct catalog mode', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -162,6 +188,11 @@ describe('VariaveisPage', () => {
       within(list).getByRole('button', { name: /Médicos vasculares no SUS/i }),
     );
 
+    expect(screen.queryByTestId('provenance-block')).not.toBeInTheDocument();
+    expect(screen.queryByText('cnes/cnv/prid02br.def')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('suggested-test-hint')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Fonte e método' }));
     const provenance = await screen.findByTestId('provenance-block');
     expect(within(provenance).getByText('CNES')).toBeInTheDocument();
     expect(within(provenance).getByText('cnes/cnv/prid02br.def')).toBeInTheDocument();
@@ -172,9 +203,20 @@ describe('VariaveisPage', () => {
       }),
     ).toHaveAttribute('rel', expect.stringContaining('noopener'));
 
-    const hint = screen.getByTestId('suggested-test-hint');
-    expect(hint).toHaveAttribute('data-hint-test-id', 'poisson');
-    expect(within(hint).getByText('Regressão de Poisson')).toBeInTheDocument();
+  });
+
+  it('uses the guided shell for a research design without exposing invented availability', async () => {
+    const user = userEvent.setup();
+    renderPage('/variaveis', guidedDesign);
+
+    expect(await screen.findByRole('heading', { name: /Nordeste · Embolia e trombose arteriais/i })).toBeInTheDocument();
+    expect(screen.getByText('2 territórios')).toBeInTheDocument();
+    expect(screen.getByText('2023–2025')).toBeInTheDocument();
+    expect(screen.queryByRole('listbox', { name: 'Variáveis do catálogo' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: 'Descrever' }));
+    expect(screen.getByRole('heading', { name: '2. Preparando variáveis disponíveis…' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 
   it('loads a loadable selection into Estatística via setDataset (D-14)', async () => {

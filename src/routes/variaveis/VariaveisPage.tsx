@@ -14,7 +14,11 @@ import { loadCatalog, type LoadedCatalog } from '@/features/catalog/loadCatalog'
 import { resolveHint } from '@/features/catalog/suggestTestForVariable';
 import { DISEASES } from '@/features/catalog/taxonomy';
 import type { CatalogEntry } from '@/features/catalog/types';
+import { fingerprintResearchDesign } from '@/features/research/researchDesign';
+import type { ResearchDesign, ResearchPeriod } from '@/features/research/types';
 import { useSession } from '@/shared/session/SessionProvider';
+import { GuidedResearchFlow } from './GuidedResearchFlow';
+import type { ResearchCutSummaryViewModel } from './guidedViewModels';
 import { VariableDetailPanel } from './VariableDetailPanel';
 import { VariableFilters } from './VariableFilters';
 import { VariableList } from './VariableList';
@@ -28,6 +32,16 @@ const INITIAL_FILTERS: CatalogFilters = {
 };
 
 export function VariaveisPage() {
+  const { researchDesign } = useSession();
+
+  if (researchDesign) {
+    return <GuidedVariablesPage design={researchDesign} />;
+  }
+
+  return <DirectCatalogPage />;
+}
+
+function DirectCatalogPage() {
   const navigate = useNavigate();
   const { setDataset } = useSession();
 
@@ -231,4 +245,56 @@ export function VariaveisPage() {
       </div>
     </motion.div>
   );
+}
+
+function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.main
+      className="lacir-page-enter mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8"
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+    >
+      <GuidedResearchFlow
+        key={fingerprintResearchDesign(design)}
+        design={design}
+        summary={buildResearchSummary(design)}
+      />
+    </motion.main>
+  );
+}
+
+function buildResearchSummary(design: ResearchDesign): ResearchCutSummaryViewModel {
+  const territoryCount = new Set(
+    design.groups.flatMap((group) => group.territories.map((territory) => territory.id)),
+  ).size;
+  const groupNames = design.groups.map((group) => group.name).join(', ');
+  const diseaseNames = design.diseaseIds.map(diseaseLabel).join(', ');
+
+  return {
+    eyebrow: 'Recorte recebido de Mapas',
+    title: `${groupNames} · ${diseaseNames}`,
+    facts: [
+      `${territoryCount} ${territoryCount === 1 ? 'território' : 'territórios'}`,
+      formatResearchPeriod(design),
+      design.locationBasis === 'ocorrencia' ? 'Local de ocorrência' : 'Local de residência',
+    ],
+  };
+}
+
+function diseaseLabel(diseaseId: string): string {
+  return DISEASES.find((disease) => disease.id === diseaseId)?.label
+    ?? diseaseId.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function formatPeriod(period: ResearchPeriod): string {
+  if (period.mode === 'point') return period.point;
+  if (period.mode === 'range') return `${period.start}–${period.end}`;
+  return `${period.periodA} × ${period.periodB}`;
+}
+
+function formatResearchPeriod(design: ResearchDesign): string {
+  if (design.period.scope === 'shared') return formatPeriod(design.period.time);
+  return 'Períodos definidos por grupo';
 }
