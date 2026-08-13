@@ -250,7 +250,7 @@ function DirectCatalogPage() {
 function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
   const reduceMotion = useReducedMotion();
   return (
-    <motion.main
+    <motion.div
       className="lacir-page-enter mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8"
       initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -261,7 +261,7 @@ function GuidedVariablesPage({ design }: { design: ResearchDesign }) {
         design={design}
         summary={buildResearchSummary(design)}
       />
-    </motion.main>
+    </motion.div>
   );
 }
 

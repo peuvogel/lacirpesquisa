@@ -151,7 +151,7 @@ function LoadingStep({
   return (
     <section aria-live="polite" aria-busy="true" className="rounded-3xl border border-border bg-surface/45 p-5 sm:p-6">
       <div className="flex items-center gap-3">
-        <span className="size-2.5 animate-pulse rounded-full bg-accent" aria-hidden />
+        <span className="size-2.5 animate-pulse rounded-full bg-accent motion-reduce:animate-none" aria-hidden />
         <div>
           <h2 className="font-sans text-heading font-bold text-text">{title}</h2>
           <p className="mt-1 font-sans text-sm text-text-muted">{body}</p>

@@ -210,6 +210,7 @@ describe('VariaveisPage', () => {
     renderPage('/variaveis', guidedDesign);
 
     expect(await screen.findByRole('heading', { name: /Nordeste · Embolia e trombose arteriais/i })).toBeInTheDocument();
+    expect(screen.queryByRole('main')).not.toBeInTheDocument();
     expect(screen.getByText('2 territórios')).toBeInTheDocument();
     expect(screen.getByText('2023–2025')).toBeInTheDocument();
     expect(screen.queryByRole('listbox', { name: 'Variáveis do catálogo' })).not.toBeInTheDocument();

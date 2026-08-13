@@ -156,6 +156,19 @@ describe('GuidedResearchFlow', () => {
     expect(within(paths).getByText('Comparação')).toBeInTheDocument();
   });
 
+  it('disables the loading pulse when the user prefers reduced motion', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <GuidedResearchFlow design={design} summary={summary} />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Descrever' }));
+
+    const loading = screen.getByRole('heading', { name: '2. Preparando variáveis disponíveis…' }).closest('section');
+    expect(loading).toBeInTheDocument();
+    expect(container.querySelector('.motion-reduce\\:animate-none')).toBeInTheDocument();
+  });
+
   it('allows multiple tests, one primary, and resets downstream choices', async () => {
     const user = userEvent.setup();
     render(
