@@ -38,18 +38,29 @@ function partitionBase(): string {
   if (!supabaseUrl) {
     throw new Error('Partição de município offline: VITE_SUPABASE_URL não configurada.');
   }
-  return `${supabaseUrl}/storage/v1/object/public/sih-municipio/`;
+  return `${supabaseUrl}/storage/v1/object/public/sih-municipio/v1/`;
 }
 
-const cache = new Map<string, Promise<MunicipioPartition>>();
+interface PartitionCacheEntry {
+  promise: Promise<MunicipioPartition>;
+  controller: AbortController;
+  consumers: number;
+  settled: boolean;
+}
+
+const cache = new Map<string, PartitionCacheEntry>();
 
 /** Limpa o cache em memória -- usado só por teste. */
 export function clearPartitionCache(): void {
   cache.clear();
 }
 
-async function fetchPartition(uf: string, url: string): Promise<MunicipioPartition> {
-  const response = await fetch(url);
+async function fetchPartition(
+  uf: string,
+  url: string,
+  signal: AbortSignal,
+): Promise<MunicipioPartition> {
+  const response = await fetch(url, { signal });
   if (!response.ok) {
     throw new Error(
       `Falha ao carregar partição de município ${uf} (${url}): ${response.status}`,
@@ -76,13 +87,65 @@ async function fetchPartition(uf: string, url: string): Promise<MunicipioPartiti
  * rejeição de promessa, nunca uma exceção síncrona escapando de uma função que o chamador trata
  * como `Promise<T>` -- consistência de contrato para quem chama `.catch()`/`await`.
  */
-export async function loadMunicipioPartition(uf: string): Promise<MunicipioPartition> {
+export interface LoadMunicipioPartitionOptions {
+  signal?: AbortSignal;
+}
+
+function abortError(): DOMException {
+  return new DOMException('Aborted', 'AbortError');
+}
+
+function consumePartition(
+  uf: string,
+  entry: PartitionCacheEntry,
+  signal?: AbortSignal,
+): Promise<MunicipioPartition> {
+  if (signal?.aborted) return Promise.reject(abortError());
+  entry.consumers += 1;
+  return new Promise((resolve, reject) => {
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      signal?.removeEventListener('abort', onAbort);
+      entry.consumers -= 1;
+      if (!entry.settled && entry.consumers === 0) {
+        if (cache.get(uf) === entry) cache.delete(uf);
+        entry.controller.abort();
+      }
+    };
+    const onAbort = () => {
+      release();
+      reject(abortError());
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+    entry.promise.then(
+      (partition) => {
+        if (released) return;
+        release();
+        resolve(partition);
+      },
+      (error: unknown) => {
+        if (released) return;
+        release();
+        reject(error);
+      },
+    );
+  });
+}
+
+export async function loadMunicipioPartition(
+  uf: string,
+  options: LoadMunicipioPartitionOptions = {},
+): Promise<MunicipioPartition> {
   if (!UF_SIGLA.test(uf)) {
     throw new Error(`Partição de município: sigla de UF inválida (${uf}).`);
   }
+  if (options.signal?.aborted) throw abortError();
 
   const cached = cache.get(uf);
-  if (cached) return cached;
+  if (cached) return consumePartition(uf, cached, options.signal);
 
   const base = partitionBase();
   const url = `${base}${uf}.json.gz`;
@@ -94,12 +157,23 @@ export async function loadMunicipioPartition(uf: string): Promise<MunicipioParti
     throw new Error('Partição de município offline: não é permitido carregar de DATASUS/IBGE.');
   }
 
-  const promise = fetchPartition(uf, url).catch((error: unknown) => {
+  const controller = new AbortController();
+  const entry: PartitionCacheEntry = {
+    controller,
+    consumers: 0,
+    settled: false,
+    promise: Promise.resolve(null as unknown as MunicipioPartition),
+  };
+  entry.promise = fetchPartition(uf, url, controller.signal).catch((error: unknown) => {
     // Uma falha (rede, 404, host mal-configurado) não deve envenenar o cache para tentativas
     // futuras -- a promessa rejeitada é removida, a próxima chamada tenta de novo.
-    cache.delete(uf);
+    if (cache.get(uf) === entry) cache.delete(uf);
     throw error;
   });
-  cache.set(uf, promise);
-  return promise;
+  entry.promise.then(
+    () => { entry.settled = true; },
+    () => { entry.settled = true; },
+  );
+  cache.set(uf, entry);
+  return consumePartition(uf, entry, options.signal);
 }

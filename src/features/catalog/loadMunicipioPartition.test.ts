@@ -9,7 +9,7 @@ import {
 } from './loadMunicipioPartition';
 
 const SUPABASE_URL = 'https://exemplo.supabase.co';
-const BASE = `${SUPABASE_URL}/storage/v1/object/public/sih-municipio/`;
+const BASE = `${SUPABASE_URL}/storage/v1/object/public/sih-municipio/v1/`;
 
 // Mesma fixture real que o produtor Python (partitions.py, Task 1) grava e testa contra --
 // produtor e consumidor são provados contra o mesmo byte (D-20/D-21).
@@ -182,5 +182,56 @@ describe('loadMunicipioPartition', () => {
     const partition = await loadMunicipioPartition('AC');
     expect(partition.dados[idx]).toEqual([null]);
     expect(partition.dados[idx]).not.toEqual([0]);
+  });
+
+  it('isolates caller abort while sharing the underlying same-UF fetch', async () => {
+    let release: (() => void) | undefined;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      await new Promise<void>((resolve, reject) => {
+        release = resolve;
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {
+          once: true,
+        });
+      });
+      return new Response(fixtureGzipBuffer(), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const firstController = new AbortController();
+    const secondController = new AbortController();
+
+    const first = loadMunicipioPartition('AC', { signal: firstController.signal });
+    const second = loadMunicipioPartition('AC', { signal: secondController.signal });
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+    firstController.abort();
+
+    await expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).not.toBe(firstController.signal);
+    release!();
+    await expect(second).resolves.toMatchObject({ uf: 'AC' });
+  });
+
+  it('aborts the underlying fetch when its last consumer aborts and allows retry', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (fetchMock.mock.calls.length === 1) {
+        await new Promise<void>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {
+            once: true,
+          });
+        });
+      }
+      return new Response(fixtureGzipBuffer(), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const controller = new AbortController();
+
+    const stale = loadMunicipioPartition('AC', { signal: controller.signal });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    controller.abort();
+
+    await expect(stale).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(loadMunicipioPartition('AC')).resolves.toMatchObject({ uf: 'AC' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
