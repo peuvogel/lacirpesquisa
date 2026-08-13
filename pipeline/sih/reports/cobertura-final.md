@@ -141,42 +141,87 @@ contra o estado medido hoje.
 ## 6. Auditoria de cobertura (`sih_pipeline.cli audit`, Task 2)
 
 Comando real, contra produção: `cd pipeline/sih && uv run python -m sih_pipeline.cli audit`.
-Saída medida:
+
+**Medido em duas rodadas — antes e depois do fechamento da lacuna do grão município decidido no
+checkpoint da Task 3 (§6.1):**
 
 ```
+ANTES  (Task 2, antes da decisão do operador):
 audit: esperado=68848 coletado=33560 zero_verdadeiro=0 ausente=0 faltantes=35288 status={'coletado': 33560} anos_incompletos={} ok=True
 audit: faltantes por grão -- {'municipio': 34424, 'uf': 864}
+
+DEPOIS (Task 3, após upload.py --municipio escrever a Camada 2 do grão município):
+audit: esperado=68848 coletado=67120 zero_verdadeiro=0 ausente=0 faltantes=1728 status={'coletado': 67120} anos_incompletos={} ok=True
+audit: faltantes por grão -- {'municipio': 864, 'uf': 864}
 ```
 
 `esperado=68.848` é o produto cartesiano completo do D-13 (331 agravos × 4 medidas × 2 grãos × 2
 locais × 13 anos). `anos_incompletos={}` confirma, medido pela Camada 1 (não por suposição), que
 **nenhum ano da janela está parcial no ledger de arquivo** — inclusive 2025, o ano mais recente,
-que é justamente o caso que o D-13 existe para tornar visível quando acontece (ver §1: era
-exatamente isso que os 12 arquivos ausentes do Acre teriam produzido, se não tivessem sido
-fechados antes desta auditoria rodar).
+que é justamente o caso que o D-13 existe para tornar visível quando acontece (ver §1).
 
 `ok=True` porque nenhuma linha de `sih_collection_status` tem `status='falhou'` ou
 `'nunca_tentado'` — mas **isso não significa cobertura completa**: `ok` mede só o que o ledger
-*declara* explicitamente como falho, não o que está *ausente por completo*. Os 35.288 "faltantes"
-são o achado real que este parágrafo existe para não esconder atrás de `ok=True`:
+*declara* explicitamente como falho, não o que está *ausente por completo*. Os "faltantes" são o
+achado real que este parágrafo existe para não esconder atrás de `ok=True`. **`faltantes` caiu de
+35.288 para 1.728** com o fechamento do §6.1 — os 1.728 remanescentes (864 por grão) são
+exatamente as 108 combinações (disease_id, ano) genuinamente zero em todo o Brasil, explicadas
+individualmente em §6.2, não uma lacuna de escritor.
 
-### 6.1. Achado arquitetural — grão `municipio` sem escritor de Camada 2 (34.424 faltantes)
+### 6.1. Grão `municipio` sem escritor de Camada 2 — FECHADO (decisão do operador, checkpoint Task 3)
 
-`upload.py::_persistir_collection_status` (a única função que escreve `sih_collection_status` em
-produção) filtra explicitamente `linha.grao == GRAO_UF` — **nenhum código do pipeline escreve
-uma linha de `sih_collection_status` para o grão `municipio`**. `partitions.py` (o módulo que
-sobe as 27 partições ao Storage, D-20) também não escreve essa tabela. Isto não é um problema de
-*dado* — as partições de município estão completas e servidas (§4, 27/27 com `GET` 200 real) —
-é um problema de **proveniência auditável**: hoje não existe, em `sih_collection_status`, nenhuma
-linha que diga "processamos o grão município para o agravo X, ano Y, e o resultado foi Z" (D-13/
-PIPE-02 cobrindo só metade do que declaram). A auditoria reflete isso honestamente: toda
-combinação de grão `municipio` cai em `faltantes`, nunca em `zero_verdadeiro` — a regra do D-14
-(`classificar_ausencia`) não é aplicada a uma combinação sem nenhuma linha de status, por
-desenho, exatamente para não confundir "sem escritor" com "zero verdadeiro".
+**Achado original (Task 2):** `upload.py::_persistir_collection_status` (a única função que
+escrevia `sih_collection_status` em produção) filtrava explicitamente `linha.grao == GRAO_UF` —
+nenhum código do pipeline escrevia uma linha de `sih_collection_status` para o grão `municipio`.
+`partitions.py` (o módulo que sobe as 27 partições ao Storage, D-20) também não escrevia essa
+tabela. Não era um problema de *dado* (as partições de município já estavam completas e servidas,
+§4) — era um problema de **proveniência auditável**.
 
-**Este achado está fora do `file_scope` desta execução** (exigiria editar `upload.py` ou
-`partitions.py`, ambos fora do escopo declarado do 09-12) — registrado aqui para decisão do
-operador, não corrigido. Ver §8.
+**Decisão do operador (checkpoint Task 3): fechar antes do encerramento da fase, não registrar
+como débito.** O operador ampliou o `file_scope` desta execução, autorizando tocar `upload.py`/
+`partitions.py` **exclusivamente** para escrever a proveniência do grão município, sem tocar o
+swap de `sih_metric_uf` nem reenviar partições.
+
+**Implementado, TDD (RED→GREEN, 8 testes novos + 2 no `audit.py`), medido contra produção:**
+
+- `upload.py` ganhou `_linhas_grao_municipio()` (lê a MESMA fonte territorial que `partitions.py`
+  usa para montar as partições, `construir_indice_territorial` — nunca uma segunda fonte de
+  verdade) e `_persistir_collection_status_municipio()` (MESMO padrão de `COPY`+upsert do grão
+  UF, função nova e separada de propósito — decisão explícita de não tocar/refatorar o caminho já
+  provado duas vezes em produção). Um novo flag `upload.py --municipio` (e `--municipio --dry-run`)
+  expõe isso na CLI, isolado do fluxo de `--tabela sih_metric_uf`: `copy_to_staging`/`swap`/
+  `recount_via_postgrest`/`release_cache` **nunca são chamados** por esse caminho (provado por
+  teste, `test_main_municipio_nunca_toca_caminho_de_sih_metric_uf`).
+- **Nenhuma partição foi reenviada, nenhum swap de `sih_metric_uf` rodou** — só a trilha de
+  proveniência foi escrita.
+- **`--dry-run` mediu antes de escrever**: 12.327.573 linhas de grão município, 331 agravos, anos
+  2013–2025.
+- **Escrita real**: 33.560 linhas novas em `sih_collection_status` (grão `municipio`) — **o mesmo
+  número exato do grão UF**, não coincidência: se um agravo tem zero internações em TODAS as 27
+  UFs num ano, mecanicamente também tem zero em TODOS os municípios (mesma pergunta: houve alguma
+  internação no Brasil?). Confirmado por SQL: o conjunto de `(disease_id, ano)` do grão `uf` e do
+  grão `municipio` em `sih_collection_status` é **idêntico** (`EXCEPT` entre os dois devolve 0
+  linhas).
+- `sih_collection_status` total: **33.560 → 67.120** linhas, `0` sem `derived_at`/`cid_map_version`
+  em qualquer um dos dois grãos.
+- **D-13/D-14 preservados**: um par (disease_id, medida, local, ano) sem NENHUM município com dado
+  não ganhou linha nenhuma (provado por teste Docker,
+  `test_persistir_collection_status_municipio_nao_grava_ano_sem_nenhum_municipio`) — continua
+  "faltante" na auditoria, nunca virou uma linha `coletado` vazia inventada.
+- **Leitura anônima confirmada** pelo caminho real do app: `GET sih_collection_status?grao=eq.municipio`
+  com a chave `anon` devolve 200 e dado real (ex.: `outras_anemias`/2013/`internacoes`/ocorrência,
+  `row_count=2384` municípios).
+- **`audit.py` também precisou de um ajuste** (mesmo `file_scope` desta plan, `audit.py` já era
+  seu): `_metric_keys_grao_municipio` foi adicionada para que a auditoria não classificasse TODA
+  combinação de município recém-provisionada como zero verdadeiro por omissão — ela usa a MESMA
+  fonte territorial local (`upload._linhas_grao_municipio`) como proxy da fonte servida, já que
+  não existe forma barata de reler o conteúdo do Storage em lote via SQL (D-20 tirou o grão
+  município do Postgres exatamente para não pagar esse custo).
+
+**Resultado medido, não estimado:** `audit.py` passou a reportar `faltantes` no grão município
+caindo de **34.424 para 864** — os 864 remanescentes são exatamente os mesmos 108 pares
+(disease_id, ano) genuinamente zero em todo o Brasil que já explicavam os 864 faltantes do grão UF
+(§6.2), não uma lacuna nova. `sih_collection_status` cobre agora os dois grãos por igual.
 
 ### 6.2. Achado explicado — 108 pares agravo×ano com zero nacional no grão UF (864 faltantes)
 
@@ -215,11 +260,34 @@ CAUSA EXTERNA (capítulo V/Y) como diagnóstico secundário — não mais como `
 também não tem dado para estas 8 categorias a partir de 2016** — porque ele também classifica só
 por `DIAG_PRINC`. Não é um defeito do nosso matcher nem uma lacuna de coleta: é uma característica
 real e documentada da fonte (mudança de prática de codificação hospitalar), que afeta TabNet e
-microdado da MESMA forma. Corrigir isto (adicionar `DIAGSEC1` como eixo alternativo de
-classificação para causas externas) seria uma mudança estrutural em `aggregate.py`/`matcher.py`
-— fora do `file_scope` desta execução — e mudaria o que a fase inteira reconcilia contra o TabNet
-(o SC-7 inteiro é `DIAG_PRINC`-based); registrado para decisão de fase futura, não uma correção
-aqui.
+microdado da MESMA forma.
+
+**Decisão do operador (checkpoint da Task 3, 09-12): registrar e seguir — não construir suporte a
+`DIAGSEC1` agora, e não remover estas 8 categorias do catálogo.** Corrigir a causa raiz (adicionar
+`DIAGSEC1` como eixo alternativo de classificação para causas externas) seria uma mudança
+estrutural em `aggregate.py`/`matcher.py` — fora do `file_scope` desta execução — e mudaria o que
+a fase inteira reconcilia contra o TabNet (o SC-7 inteiro é `DIAG_PRINC`-based). Registrado aqui
+com destaque, não escondido:
+
+- **A causa é mudança de prática de codificação do DATASUS** (migração do código de causa externa
+  de `DIAG_PRINC` para `DIAGSEC1` por volta de 2016) — **não é defeito do pipeline**.
+- **Confirmado contra o próprio TabNet**, que devolve "Nenhum registro selecionado" para as
+  mesmas combinações pós-2015 (tabela acima) — o mesmo comportamento no oráculo e no microdado.
+- **2013–2015 têm dado bom para estas 8 categorias** — só a série pós-2016 quebra. Um agravo como
+  `acidentes_de_transporte` não é um agravo "sem dado": é um agravo com série interrompida numa
+  data conhecida e explicada.
+
+**Risco didático explícito, para quem for construir a interface (não é escopo desta plan
+implementar, é escopo deixar o aviso onde quem for fazer a UI vá encontrá-lo):** um aluno que
+abrir "acidentes de transporte" no mapa/série temporal vê zero de 2016 em diante e pode concluir
+algo clinicamente falso sobre o Brasil (que acidentes de transporte praticamente desapareceram),
+quando na verdade o zero é um artefato de reclassificação de campo na fonte, não uma queda real de
+incidência. **Item de acompanhamento para uma fase de UI (Fase 10 ou posterior): a tela precisa
+sinalizar quando uma série zera por mudança de fonte/prática de codificação, de forma distinta de
+um zero verdadeiro genuíno** (ex.: um selo/nota na série a partir de 2016 para estas 8 categorias,
+ou uma heurística mais geral de "série interrompida" que a Fase 10 possa generalizar). A lista
+completa dos 8 `disease_id` afetados está acima (Grupo A) — qualquer implementação futura pode
+usar essa lista diretamente ou generalizar a heurística por capítulo CID (V01–Y98).
 
 **Grupo B — 6 doenças raras/quase erradicadas no Brasil, com anos genuinamente sem caso
 registrado:**
@@ -264,14 +332,18 @@ Isto é o que a Fase 10 (MAPA-03/MAPA-04) vai renderizar de forma honesta em vez
 
 ---
 
-## 8. Achados registrados para decisão do operador (não corrigidos nesta execução)
+## 8. Achados — estado final após as decisões do operador no checkpoint da Task 3
 
-| # | Achado | Escopo | Ação recomendada |
-|---|---|---|---|
-| 1 | `sih_collection_status` não tem NENHUMA linha para o grão `municipio` — `upload.py`/`partitions.py` nunca escrevem essa Camada 2 para esse grão (§6.1) | Exigiria editar `upload.py` ou `partitions.py`, fora do `file_scope` desta execução | Decisão: aceitar a lacuna (o dado de município está servido e provado por `GET` anônimo real, só a proveniência auditável em `sih_collection_status` está incompleta) ou planejar um plano futuro para escrever Camada 2 do grão município |
-| 2 | 8 categorias de causa externa (V01–Y98) zeradas de 2016 em diante — explicado e confirmado contra o TabNet, mas a causa raiz (código migrou de `DIAG_PRINC` para `DIAGSEC1`) não foi corrigida (§6.2, Grupo A) | Exigiria um eixo de classificação novo em `aggregate.py`/`matcher.py` (mudaria o que o SC-7 reconcilia) | Decisão: aceitar como característica documentada da fonte (igual ao TabNet) ou priorizar correção em fase futura |
-| 3 | Carga de `sih_population_*` (4 tabelas, D-24) continua sem executor — `upload.py` recusa `--tabela` diferente de `sih_metric_uf` por desenho | Fora do escopo de qualquer plano executado até aqui (registrado desde o `09-10-SUMMARY.md`) | Decisão: planejar a carga real de população numa fase futura ou plano ad-hoc |
-| 4 | Gap de ledger de 12 arquivos (Camada 1, AC/2025) — já **fechado nesta sessão** (§1) | Resolvido | Nenhuma — documentado para auditoria |
+| # | Achado | Estado |
+|---|---|---|
+| 1 | `sih_collection_status` não tinha NENHUMA linha para o grão `municipio` (§6.1) | **RESOLVIDO nesta sessão.** `file_scope` ampliado pelo operador; `upload.py --municipio` escreveu 33.560 linhas novas (67.120 total), `faltantes` do grão município caiu de 34.424 para 864 (medido, ver §6.1). |
+| 2 | 8 categorias de causa externa (V01–Y98) zeradas de 2016 em diante — confirmado contra o TabNet, causa raiz (`DIAG_PRINC`→`DIAGSEC1`) não corrigida (§6.2, Grupo A) | **Decisão do operador: registrar e seguir.** Não construir suporte a `DIAGSEC1` agora, não remover as categorias do catálogo. Risco didático documentado com destaque (§6.2) e item de acompanhamento registrado para a Fase 10/UI (sinalizar série que zera por mudança de fonte). |
+| 3 | Carga de `sih_population_*` (4 tabelas, D-24) continua sem executor — `upload.py` recusa `--tabela` diferente de `sih_metric_uf` por desenho | Fora do escopo desta plan (registrado desde o `09-10-SUMMARY.md`) — decisão: planejar a carga real de população numa fase futura ou plano ad-hoc |
+| 4 | Gap de ledger de 12 arquivos (Camada 1, AC/2025) — **fechado nesta sessão** (§1) | Resolvido — documentado para auditoria |
+
+**Item 3 permanece aberto por decisão implícita** (o checkpoint da Task 3 não o mencionou) — não é
+bloqueante para o fechamento desta fase (população nunca foi declarada como parte do critério de
+"fase pronta" do `09-01`), registrado para planejamento futuro.
 
 ---
 
@@ -289,20 +361,25 @@ IDENT já fecharam e o operador já aprovou conscientemente:
 
 ---
 
-## 10. Resumo para a conferência humana (Task 3)
+## 10. Resumo — fase fechada com as três decisões do operador (checkpoint Task 3)
 
-- **331/331 agravos servidos**, 4/4 medidas, 2/2 grãos (UF no banco, município no Storage), 2/2
-  locais, janela 2013–2025 completa (§2–4).
+**Cobertura: aprovada pelo operador.** 331/331 agravos servidos, 4/4 medidas, 2/2 grãos (UF no
+banco, município no Storage), 2/2 locais, janela 2013–2025 completa (§2–4), ledger de arquivo
+4.212/4.212 (§1–2). `sih_collection_status` agora cobre os dois grãos por igual (67.120 linhas,
+§6.1). SC-7 inalterado, `exato=34, explicado=61, inexplicado=3`, `ok=False` por desenho — já
+aprovado antes, nada mudou aqui (§9).
+
 - **Antes × depois medido** (§5): de 115/331 agravos com qualquer conteúdo e 424/654 CSVs vazios
   para 331/331 agravos com as 4 medidas e 0 arquivos vazios.
 - **Ano mais recente (2025) está completo no ledger de arquivo** — `anos_incompletos={}` (§6),
   depois do fechamento do gap do Acre (§1).
 - **Verificação null-vs-zero confirmada contra o TabNet ao vivo, em dois casos concretos** (§7):
   o TabNet nunca emite célula `0`, sempre omite a linha (parcial) ou a tabela inteira (total).
-- **Dois achados genuínos, não corrigidos, registrados para decisão** (§8): grão município sem
-  Camada 2 de proveniência; 8 categorias de causa externa zeradas desde 2016 por mudança de
-  prática de codificação da fonte (confirmado contra o TabNet, não um defeito do pipeline).
-- **SC-7 permanece com o resíduo pequeno já conhecido e aprovado** (§9) — nada mudou aqui.
+- **Grão município: lacuna de Camada 2 fechada** (§6.1) — `faltantes` caiu de 34.424 para 864
+  (mesmos 108 pares zero-nacionais já explicados, não uma lacuna nova).
+- **8 categorias de causa externa zeradas desde 2016: registradas e aceitas como característica da
+  fonte** (§6.2, Grupo A), com risco didático documentado e item de acompanhamento para a Fase 10/
+  UI (sinalizar série que zera por mudança de fonte, distinto de zero verdadeiro genuíno).
 
-Este relatório não assume conclusão — os achados de #8 esperam decisão explícita do operador no
-checkpoint da Task 3.
+Todas as três decisões do checkpoint da Task 3 estão refletidas neste relatório e no
+`09-12-SUMMARY.md`.
