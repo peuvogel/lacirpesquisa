@@ -92,7 +92,18 @@ def municipio6(codigo: str | int) -> str:
     `int` é normalizado com zero à esquerda antes da checagem de comprimento (um `int` nunca
     preserva zero à esquerda em Python — `str` é levada literalmente, sem preenchimento,
     porque já preserva o comprimento real do dado de origem). Comprimento fora de `{6, 7}`
-    levanta `ValueError`.
+    levanta `ValueError` — e, desde 09-04-FIX-MUNICIPIO-BRANCO, um código do comprimento CERTO
+    mas com caractere não numérico TAMBÉM levanta (medido ao vivo em `MUNIC_MOV` real de
+    PR/2020: `'01510.'`, `'     8'`, `'51059.'` — comprimento 6, mas lixo; antes desta correção
+    passavam pela checagem de comprimento e eram devolvidos como código de município válido,
+    corrompendo `sih_metric_muni.municipio_codigo` em silêncio, sem nunca levantar).
+
+    Para o único consumidor que precisa tratar "não dá para localizar este registro" como dado
+    esperado em vez de erro (a agregação do SIH, `aggregate.py` — o SIH real tem `MUNIC_MOV`/
+    `MUNIC_RES` em branco ou malformado em ~1 a cada 10 milhões de registros, medido
+    nacionalmente), ver `municipio6_ou_none` abaixo. `municipio6` continua levantando para todo
+    o resto do pipeline (`population.py` e qualquer consumidor futuro) — nunca reescrito para
+    engolir o erro silenciosamente.
     """
     if isinstance(codigo, int):
         texto = str(codigo).zfill(6)
@@ -106,7 +117,29 @@ def municipio6(codigo: str | int) -> str:
             f"municipio6: comprimento inválido (esperado 6 ou 7 dígitos): {codigo!r}"
         )
 
+    if not texto.isdigit():
+        raise ValueError(f"municipio6: código não numérico (esperado só dígitos): {codigo!r}")
+
     return texto[:6]
+
+
+def municipio6_ou_none(codigo: str | int | None) -> str | None:
+    """Como `municipio6`, mas devolve `None` em vez de levantar para entrada em branco,
+    malformada, do tipo errado, ou `None` — nunca inventa um código, só recusa a levantar.
+
+    Único uso pretendido: `aggregate.py`, onde um `MUNIC_MOV`/`MUNIC_RES` ilegível precisa ser
+    CONTADO como descarte e tratado por medida (grão município não localizável para aquele
+    registro), não travar a agregação da UF inteira inteira (09-04-FIX-MUNICIPIO-BRANCO,
+    medido: 8 registros afetados em 82.091.610 que alcançam este ponto do laço em 11 UFs —
+    dado real, não corrupção sistemática, ver SUMMARY). Qualquer outro consumidor deste módulo
+    (`population.py`) deve continuar usando `municipio6`, que levanta — o POPSVS não tem essa
+    classe de defeito medida, e esconder um `COD_MUN` inválido ali seria o mesmo erro que este
+    módulo existe para evitar.
+    """
+    try:
+        return municipio6(codigo)
+    except ValueError:
+        return None
 
 
 def uf_de_municipio(codigo: str | int) -> str:

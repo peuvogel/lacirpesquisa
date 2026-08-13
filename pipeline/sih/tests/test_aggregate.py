@@ -17,11 +17,12 @@ import pytest
 from sih_pipeline.aggregate import (
     NEEDED_COLUMNS,
     Row,
+    _MAX_TAXA_DESCARTE_MUNICIPIO,
     _taxa_mortalidade,
     aggregate_parquet_dir,
 )
 from sih_pipeline.corrections import apply_corrections, load_corrections
-from sih_pipeline.matcher import build_index, load_cid_map
+from sih_pipeline.matcher import build_index, load_cid_map, match_category
 from sih_pipeline.paths import repo_root
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "rdac_2019.parquet"
@@ -31,6 +32,16 @@ FIXTURE_PATH = Path(__file__).parent / "fixtures" / "rdac_2019.parquet"
 # vazios (IDENT='', ANO_CMPT='' -- lixo/registro corrompido do DBC) e continua abaixo do limite
 # de descarte T-09-30 (0,0436% medido) -- ver SUMMARY desta correção para a medição completa.
 FIXTURE_DF_VAZIO_PATH = Path(__file__).parent / "fixtures" / "rddf_1708_vazio.parquet"
+# PR real, competência 2020-04 inteira (RDPR2004.parquet, projetado a NEEDED_COLUMNS+UF_ZI),
+# 25.493 registros -- arquivo COMPLETO (não uma janela) para que a taxa de descarte de
+# município medida sobre esta fixture reflita a mesma escala usada por
+# _MAX_TAXA_DESCARTE_MUNICIPIO (denominador = total de registros do arquivo, ver docstring de
+# aggregate.py). Contém o único registro real que quebrou a recoleta nacional em PR
+# (`municipio6: comprimento inválido (esperado 6 ou 7 dígitos): ''`, `MUNIC_MOV=''`, última
+# linha do arquivo original, DIAG_PRINC='O021', IDENT='1', ANO_CMPT=2020, MUNIC_RES='410120'
+# válido, UF_ZI='410000' válido) -- ver 09-04-FIX-MUNICIPIO-BRANCO-SUMMARY.md para a medição
+# completa.
+FIXTURE_PR_MUNICIPIO_VAZIO_PATH = Path(__file__).parent / "fixtures" / "rdpr_2004_municipio_vazio.parquet"
 
 
 def _schema_v3() -> dict:
@@ -176,6 +187,7 @@ def test_registros_sem_categoria_sao_contados_e_acima_de_01_por_cento_levanta(in
             "ANO_CMPT": ["2019"] * 5,
             "IDENT": ["1"] * 5,
             "PROC_REA": ["0000000000"] * 5,
+            "UF_ZI": ["120040"] * 5,
         }
     )
     caminho = tmp_path / "descarte_alto.parquet"
@@ -199,6 +211,7 @@ def test_registros_sem_categoria_abaixo_do_limite_nao_levanta(index, tmp_path):
             "ANO_CMPT": ["2019"] * (n_ok + 1),
             "IDENT": ["1"] * (n_ok + 1),
             "PROC_REA": ["0000000000"] * (n_ok + 1),
+            "UF_ZI": ["120040"] * (n_ok + 1),
         }
     )
     caminho = tmp_path / "descarte_baixo.parquet"
@@ -222,6 +235,7 @@ def test_ano_fora_da_janela_e_excluido(index, tmp_path):
             "ANO_CMPT": ["2010", "2019"],
             "IDENT": ["1", "1"],
             "PROC_REA": ["0000000000", "0000000000"],
+            "UF_ZI": ["120040", "120040"],
         }
     )
     caminho = tmp_path / "janela_ano.parquet"
@@ -246,6 +260,7 @@ def test_morte_tipo_inesperado_levanta_tyoe_error(index, tmp_path):
             "ANO_CMPT": ["2019"],
             "IDENT": ["1"],
             "PROC_REA": ["0000000000"],
+            "UF_ZI": ["120040"],
         }
     )
     caminho = tmp_path / "morte_tipo_errado.parquet"
@@ -285,6 +300,7 @@ def test_ident_diferente_de_1_e_excluido_da_contagem(index, tmp_path):
             "ANO_CMPT": ["2019"] * 4,
             "IDENT": ["1", "1", "5", "9"],
             "PROC_REA": ["0000000000"] * 4,
+            "UF_ZI": ["120040"] * 4,
         }
     )
     caminho = tmp_path / "ident_longa_permanencia.parquet"
@@ -339,6 +355,7 @@ def _tabela_com_proc_rea(*, diag_princ, proc_rea, ident):
             "ANO_CMPT": ["2019"] * n,
             "IDENT": ident,
             "PROC_REA": proc_rea,
+            "UF_ZI": ["120040"] * n,
         }
     )
 
@@ -489,6 +506,7 @@ def _tabela_valor_vazio(*, val_tot, dias_perm, morte, diag_princ=None, ident=Non
             "ANO_CMPT": ano_cmpt,
             "IDENT": ident,
             "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": ["120040"] * n,
         }
     )
 
@@ -652,3 +670,333 @@ def test_cid_nao_muda_com_adicao_do_procedimento_regressao(fixture_rows):
         if r.disease_id != "amputacao_mmii" and r.grao == "uf" and r.local == "ocorrencia"
     )
     assert total_cid_ocorrencia == 44_563
+
+
+# --- Correção 09-04-FIX-MUNICIPIO-BRANCO: MUNIC_MOV/MUNIC_RES em branco ou malformado --------
+#
+# Regressão medida na recoleta nacional: PR falhou a agregação da UF INTEIRA com
+# "municipio6: comprimento inválido (esperado 6 ou 7 dígitos): ''" -- risco lateral já previsto
+# (e deliberadamente não corrigido, por estar fora do file_scope daquela correção) pelo SUMMARY
+# de 09-04-FIX-AGREGACAO-VAZIO: "se uma futura UF tiver um registro... E MUNIC_MOV/MUNIC_RES
+# vazio ou malformado, a agregação dessa UF quebraria". Medido nacionalmente contra as 27 UFs em
+# cache (`~/.lacir/sih-cache/parquet/`, ~86 milhões de registros brutos, 11 UFs falhas): dos
+# 82.091.610 registros que alcançam este ponto do laço (IDENT='1', ano válido, alguma doença
+# casada -- a MESMA população da taxa de descarte de DIAG_PRINC), só 8 têm MUNIC_MOV ou
+# MUNIC_RES em branco/malformado (0,00001%) -- dado real esparso, não corrupção sistemática (o
+# raw scan sem esses filtros mostra clusters de até ~90% de um ÚNICO arquivo/mês, mas esses
+# registros têm IDENT/DIAG_PRINC TAMBÉM corrompidos juntos -- já excluídos antes de alcançar
+# este ponto, mesma classe "registro corrompido do DBC" já documentada em
+# 09-04-FIX-AGREGACAO-VAZIO). Decisão de semântica por grão, medida e não suposta:
+#
+# - Grão MUNICÍPIO nunca é recuperável quando o próprio campo (MUNIC_MOV ou MUNIC_RES) vem em
+#   branco/malformado -- não há como inferir qual dos milhares de municípios seria o certo.
+# - Grão UF de OCORRÊNCIA (MUNIC_MOV) PODE ser recuperado via UF_ZI -- campo oficial e ESTÁVEL
+#   do SIH-RD para a UF do estabelecimento, medido idêntico a MUNIC_MOV[:2] em TODO registro
+#   válido da amostra nacional (100% de concordância). Nos 8 registros reais afetados, MUNIC_RES
+#   sempre veio válido e UF_ZI sempre veio válido -- o único campo problemático era MUNIC_MOV.
+# - Grão UF de RESIDÊNCIA (MUNIC_RES) NÃO tem fallback -- o SIH-RD não publica um campo
+#   equivalente a UF_ZI para a UF de residência do paciente (UF_ZI é documentadamente a UF do
+#   ESTABELECIMENTO, não do paciente); usá-lo aqui juntaria endereço do hospital com residência
+#   do paciente, um erro de atribuição pior que o descarte.
+#
+# Ver `codigos.py` (`municipio6_ou_none`) e `aggregate.py` (`_territorio_ocorrencia`,
+# `_territorio_residencia`, `_MAX_TAXA_DESCARTE_MUNICIPIO`) para a implementação, e
+# 09-04-FIX-MUNICIPIO-BRANCO-SUMMARY.md para a medição completa.
+
+
+def test_limiar_de_descarte_de_municipio_e_mais_apertado_que_o_de_diag_princ():
+    # município em branco é medida como ~10.000x mais raro que DIAG_PRINC sem categoria (ver
+    # bloco de medição acima) -- o limiar precisa refletir essa raridade, nunca reusar
+    # _MAX_TAXA_DESCARTE (0,1%) por conveniência, o que toleraria uma corrupção MUITO maior
+    # antes de falhar alto.
+    from sih_pipeline.aggregate import _MAX_TAXA_DESCARTE
+
+    assert 0 < _MAX_TAXA_DESCARTE_MUNICIPIO < _MAX_TAXA_DESCARTE
+
+
+# As 4 semânticas abaixo (mov vazio, mov malformado, res vazio, mov+uf_zi vazios) usam 1
+# registro problemático "afogado" em N registros bons -- não 1 registro isolado -- porque
+# _MAX_TAXA_DESCARTE_MUNICIPIO (0,01%) é calibrado para a escala real de produção (uma UF
+# inteira, milhões de registros: aggregate_parquet_dir é sempre chamada por UF completa via
+# `aggregate_years`, nunca por arquivo/mês isolado -- ver `collect.py::_aggregate_uf`). Um
+# parquet sintético de 1 linha com 1 registro ruim mediria 100% de descarte e estouraria o
+# próprio gate que este módulo introduz -- N=20.000 mede 1/20.000=0,005%, abaixo do limiar,
+# preservando o isolamento do comportamento POR REGISTRO que estes testes verificam.
+_N_PADDING = 20_000
+
+
+def test_municipio_mov_vazio_e_excluido_do_grao_municipio_mas_uf_e_resgatada_via_uf_zi(index, tmp_path):
+    n = _N_PADDING
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * n,
+            "MUNIC_MOV": [""] + ["120040"] * (n - 1),
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ["2019"] * n,
+            "IDENT": ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": ["120000"] * n,
+        }
+    )
+    caminho = tmp_path / "mov_vazio.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    uf_ocorrencia = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    municipio_ocorrencia = next(r for r in rows if r.grao == "municipio" and r.local == "ocorrencia")
+    uf_residencia = next(r for r in rows if r.grao == "uf" and r.local == "residencia")
+    municipio_residencia = next(r for r in rows if r.grao == "municipio" and r.local == "residencia")
+
+    assert uf_ocorrencia.territorio_codigo == "12"  # de UF_ZI="120000" -- AC
+    assert uf_ocorrencia.internacoes == n  # o registro com MUNIC_MOV vazio é resgatado aqui
+    assert municipio_ocorrencia.internacoes == n - 1  # mas fica de fora do grão município
+    assert uf_residencia.internacoes == n  # residência intacta -- MUNIC_RES sempre válido aqui
+    assert municipio_residencia.internacoes == n
+
+
+def test_municipio_mov_malformado_recebe_o_mesmo_tratamento_do_vazio(index, tmp_path):
+    # Classe distinta de branco: comprimento certo (6), caractere não numérico -- medido ao vivo
+    # em MUNIC_MOV real de PR/2020 ('01510.', '     8', '51059.'). Mesmo tratamento do vazio.
+    n = _N_PADDING
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * n,
+            "MUNIC_MOV": ["01510."] + ["120040"] * (n - 1),
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ["2019"] * n,
+            "IDENT": ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": ["120000"] * n,
+        }
+    )
+    caminho = tmp_path / "mov_malformado.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    uf_ocorrencia = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    municipio_ocorrencia = next(r for r in rows if r.grao == "municipio" and r.local == "ocorrencia")
+    assert uf_ocorrencia.internacoes == n  # resgatado via UF_ZI, igual ao caso vazio
+    assert municipio_ocorrencia.internacoes == n - 1
+
+
+def test_municipio_res_vazio_exclui_os_dois_graos_de_residencia_sem_fallback(index, tmp_path):
+    # MUNIC_RES não tem campo equivalente a UF_ZI no SIH-RD -- em branco/malformado, os DOIS
+    # grãos de residência ficam indisponíveis (nunca um fallback inventado); ocorrência intacta.
+    # O contraste com o teste acima (uf_ocorrencia continua = n quando é MUNIC_MOV que falha,
+    # mas uf_residencia cai para n-1 quando é MUNIC_RES que falha) é o que prova a assimetria.
+    n = _N_PADDING
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * n,
+            "MUNIC_MOV": ["120040"] * n,
+            "MUNIC_RES": [""] + ["120040"] * (n - 1),
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ["2019"] * n,
+            "IDENT": ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": ["120040"] * n,
+        }
+    )
+    caminho = tmp_path / "res_vazio.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    uf_ocorrencia = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    municipio_ocorrencia = next(r for r in rows if r.grao == "municipio" and r.local == "ocorrencia")
+    uf_residencia = next(r for r in rows if r.grao == "uf" and r.local == "residencia")
+    municipio_residencia = next(r for r in rows if r.grao == "municipio" and r.local == "residencia")
+
+    assert uf_ocorrencia.internacoes == n
+    assert municipio_ocorrencia.internacoes == n
+    assert uf_residencia.internacoes == n - 1  # SEM fallback -- some dos DOIS graos de residência
+    assert municipio_residencia.internacoes == n - 1
+
+
+def test_uf_zi_tambem_invalido_exclui_todo_o_eixo_ocorrencia(index, tmp_path):
+    # MUNIC_MOV E UF_ZI inválidos no mesmo registro -- não sobra nenhum campo confiável para
+    # localizar a ocorrência. Os DOIS grãos de ocorrência ficam ausentes, nunca uma UF inventada.
+    n = _N_PADDING
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * n,
+            "MUNIC_MOV": [""] + ["120040"] * (n - 1),
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ["2019"] * n,
+            "IDENT": ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": [""] + ["120040"] * (n - 1),  # também vazio no mesmo registro -- sem resgate
+        }
+    )
+    caminho = tmp_path / "mov_e_uf_zi_vazios.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    uf_ocorrencia = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    municipio_ocorrencia = next(r for r in rows if r.grao == "municipio" and r.local == "ocorrencia")
+    uf_residencia = next(r for r in rows if r.grao == "uf" and r.local == "residencia")
+    municipio_residencia = next(r for r in rows if r.grao == "municipio" and r.local == "residencia")
+
+    assert uf_ocorrencia.internacoes == n - 1  # sem UF_ZI válido, o grão UF também fica sem resgate
+    assert municipio_ocorrencia.internacoes == n - 1
+    assert uf_residencia.internacoes == n  # residência intacta -- MUNIC_RES sempre válido aqui
+    assert municipio_residencia.internacoes == n
+
+
+def test_uf_zi_nunca_sobrepoe_municipio_mov_valido(index, tmp_path):
+    # UF_ZI é só um fallback -- quando MUNIC_MOV é válido, o grão UF de ocorrência sai de
+    # uf_de_municipio(MUNIC_MOV), exatamente como antes desta correção, mesmo que UF_ZI (que não
+    # deveria divergir na prática) aponte para outra UF -- nunca uma preferência silenciosa pelo
+    # campo errado.
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"],
+            "MUNIC_MOV": ["120040"],  # AC
+            "MUNIC_RES": ["120040"],
+            "MORTE": ["0"],
+            "VAL_TOT": ["  100.00"],
+            "DIAS_PERM": ["  1"],
+            "ANO_CMPT": ["2019"],
+            "IDENT": ["1"],
+            "PROC_REA": ["0000000000"],
+            "UF_ZI": ["350000"],  # SP -- propositalmente divergente
+        }
+    )
+    caminho = tmp_path / "uf_zi_divergente.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    uf_ocorrencia = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert uf_ocorrencia.territorio_codigo == "12"  # de MUNIC_MOV -- nunca "35" de UF_ZI
+
+
+def test_taxa_descarte_municipio_acima_do_limite_levanta(index, tmp_path):
+    # _MAX_TAXA_DESCARTE_MUNICIPIO é muito mais apertado que o de DIAG_PRINC -- município em
+    # branco é uma classe de defeito ~10.000x mais rara (medida nacionalmente, ver acima).
+    # 2 registros com MUNIC_MOV e UF_ZI ambos vazios (sem resgate) em 1000 = 0,2% > limiar.
+    n = 1000
+    n_ruim = 2
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * n,
+            "MUNIC_MOV": [""] * n_ruim + ["120040"] * (n - n_ruim),
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ["2019"] * n,
+            "IDENT": ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": [""] * n_ruim + ["120040"] * (n - n_ruim),
+        }
+    )
+    caminho = tmp_path / "descarte_municipio_alto.parquet"
+    pq.write_table(table, caminho)
+
+    with pytest.raises(ValueError):
+        aggregate_parquet_dir(caminho, index)
+
+
+def test_taxa_descarte_municipio_abaixo_do_limite_nao_levanta(index, tmp_path):
+    # 1 registro com MUNIC_MOV vazio em 100.000 = 0,001% < 0,01% -- não levanta; a UF inteira
+    # continua agregando normalmente, com o registro problemático descartado só do grão
+    # município de ocorrência (mesma disciplina de _MAX_TAXA_DESCARTE para DIAG_PRINC, T-09-30).
+    n = 100_000
+    table = pa.table(
+        {
+            "DIAG_PRINC": ["A00"] * n,
+            "MUNIC_MOV": [""] + ["120040"] * (n - 1),
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ["2019"] * n,
+            "IDENT": ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": ["120000"] * n,
+        }
+    )
+    caminho = tmp_path / "descarte_municipio_baixo.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    uf_ocorrencia = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    municipio_ocorrencia = next(r for r in rows if r.grao == "municipio" and r.local == "ocorrencia")
+    assert uf_ocorrencia.internacoes == n  # todos os n contam no grão UF (resgatados via UF_ZI)
+    assert municipio_ocorrencia.internacoes == n - 1  # 1 ausente do grão município
+
+
+def test_municipio_vazio_real_pr_nao_quebra_a_agregacao_da_uf():
+    # Prova de ponta a ponta sobre dado REAL (não sintético) -- reproduz ao vivo o crash relatado
+    # na recoleta nacional de PR ("municipio6: comprimento inválido (esperado 6 ou 7 dígitos):
+    # ''") e prova que ele desaparece depois da correção, sem desativar o gate de taxa de
+    # descarte (1/25.493 = 0,00392% < 0,01%, medido -- a fixture é o arquivo REAL completo, não
+    # uma amostra recortada, para que a taxa reflita a mesma escala do limiar de produção).
+    # Contagem independente sobre a fixture (via match_category, sem depender dos contadores
+    # internos de aggregate_parquet_dir): medido diretamente que, dos 279 registros do arquivo
+    # que casam a categoria 260 (DIAG_PRINC 'O008'/'O021', "outras_gravidezes_que_terminam_em_
+    # aborto") com IDENT='1' e ANO_CMPT=2020, exatamente 1 (a última linha do arquivo) tem
+    # MUNIC_MOV inválido -- e todos os 279 têm MUNIC_RES válido.
+    cid_map = apply_corrections(load_cid_map(), load_corrections())
+    index = build_index(cid_map)
+    rows = aggregate_parquet_dir(FIXTURE_PR_MUNICIPIO_VAZIO_PATH, index)
+    assert rows, "aggregate_parquet_dir nao produziu nenhuma linha para RDPR2004.parquet"
+
+    table = pq.read_table(FIXTURE_PR_MUNICIPIO_VAZIO_PATH)
+    diag_princ = table["DIAG_PRINC"].to_pylist()
+    ident = table["IDENT"].to_pylist()
+    ano_cmpt = table["ANO_CMPT"].to_pylist()
+    munic_mov = table["MUNIC_MOV"].to_pylist()
+
+    def _mov_valido(v):
+        return v is not None and len(str(v).strip()) in (6, 7) and str(v).strip().isdigit()
+
+    casaveis = [
+        i
+        for i in range(table.num_rows)
+        if ident[i] == "1"
+        and str(ano_cmpt[i]).strip() == "2020"
+        and match_category(diag_princ[i], index) == "260"
+    ]
+    n_total = len(casaveis)
+    n_mov_valido = sum(1 for i in casaveis if _mov_valido(munic_mov[i]))
+    assert n_total == 279
+    assert n_total - n_mov_valido == 1  # só o registro conhecido (última linha) tem MUNIC_MOV ruim
+
+    disease_id = "outras_gravidezes_que_terminam_em_aborto"
+    municipio_ocorrencia = sum(
+        r.internacoes
+        for r in rows
+        if r.disease_id == disease_id and r.grao == "municipio" and r.local == "ocorrencia"
+    )
+    uf_ocorrencia = sum(
+        r.internacoes
+        for r in rows
+        if r.disease_id == disease_id and r.grao == "uf" and r.local == "ocorrencia"
+    )
+    municipio_residencia = sum(
+        r.internacoes
+        for r in rows
+        if r.disease_id == disease_id and r.grao == "municipio" and r.local == "residencia"
+    )
+
+    assert municipio_ocorrencia == n_mov_valido  # o registro com MUNIC_MOV vazio fica de fora
+    assert uf_ocorrencia == n_total  # mas a UF é resgatada via UF_ZI -- ninguém some do grão UF
+    assert municipio_residencia == n_total  # MUNIC_RES sempre válido nesta amostra -- ninguém some
+
+    territorios_uf_ocorrencia = {
+        r.territorio_codigo
+        for r in rows
+        if r.disease_id == disease_id and r.grao == "uf" and r.local == "ocorrencia"
+    }
+    assert "41" in territorios_uf_ocorrencia  # PR -- onde o registro resgatado via UF_ZI cai

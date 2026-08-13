@@ -11,6 +11,7 @@ import pytest
 from sih_pipeline.codigos import (
     UF_POR_CODIGO,
     municipio6,
+    municipio6_ou_none,
     sexo_popsvs,
     sexo_sih,
     uf_de_municipio,
@@ -61,6 +62,39 @@ def test_municipio6_rejeita_comprimento_invalido():
 def test_municipio6_rejeita_string_vazia():
     with pytest.raises(ValueError):
         municipio6("")
+
+
+def test_municipio6_rejeita_codigo_nao_numerico_do_mesmo_comprimento():
+    # Classe distinta da string vazia: comprimento correto (6 ou 7), mas com caractere não
+    # numérico -- medido ao vivo em MUNIC_MOV real de PR/2020 ('01510.', '     8', '51059.',
+    # 09-04-FIX-MUNICIPIO-BRANCO). Antes desta correção, municipio6() só checava comprimento e
+    # devolvia esse lixo sem levantar -- o mesmo bug que produziu o crash de município vazio,
+    # só que silencioso em vez de barulhento.
+    with pytest.raises(ValueError):
+        municipio6("01510.")
+    with pytest.raises(ValueError):
+        municipio6("     8")
+
+
+def test_municipio6_ou_none_devolve_none_para_branco_e_malformado_sem_levantar():
+    # municipio6_ou_none() é o único ponto do pipeline que trata "não dá para localizar este
+    # registro" como dado esperado (SIH real tem MUNIC_MOV/MUNIC_RES em branco/malformado em
+    # ~1 a cada 10 milhões de registros que alcançam este ponto, medido nacionalmente) -- NUNCA
+    # levanta, mas também NUNCA inventa um código; municipio6() continua levantando para todo o
+    # resto do pipeline (population.py e qualquer consumidor futuro).
+    assert municipio6_ou_none("") is None
+    assert municipio6_ou_none("01510.") is None
+    assert municipio6_ou_none("     8") is None
+    assert municipio6_ou_none(None) is None
+    assert municipio6_ou_none("35503") is None  # comprimento inválido também devolve None
+
+
+def test_municipio6_ou_none_preserva_codigo_valido_de_6_ou_7_digitos():
+    # Regressão: para entrada válida, municipio6_ou_none devolve exatamente o mesmo valor que
+    # municipio6() -- nunca um comportamento diferente para o caminho feliz.
+    assert municipio6_ou_none("3550308") == municipio6("3550308") == "355030"
+    assert municipio6_ou_none("355030") == municipio6("355030") == "355030"
+    assert municipio6_ou_none(120040) == municipio6(120040) == "120040"
 
 
 def test_uf_de_municipio_e_uf_por_codigo():

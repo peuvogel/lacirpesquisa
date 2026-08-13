@@ -87,6 +87,63 @@ Preservação do eixo CID: `rdac_2019.parquet` (a fixture congelada usada pelo g
 maioria dos testes deste módulo) não tem NENHUM campo vazio nestes quatro campos (medido:
 0/44.589 em cada um) — esta correção nunca altera o valor computado sobre essa fixture, prova
 em `test_cid_output_identico_byte_a_byte_apos_correcao_de_vazio` (hash SHA-256 de toda a saída).
+
+Correção de município em branco (09-04-FIX-MUNICIPIO-BRANCO, 2026-08-12, brief avulso do
+coordenador, sem PLAN.md formal). A recoleta nacional falhou em PR com `municipio6: comprimento
+inválido (esperado 6 ou 7 dígitos): ''` — risco lateral já PREVISTO (e deliberadamente não
+corrigido, por estar fora do `file_scope` daquela plan) pelo SUMMARY de
+09-04-FIX-AGREGACAO-VAZIO: "se uma futura UF tiver um registro... E MUNIC_MOV/MUNIC_RES vazio ou
+malformado, a agregação dessa UF quebraria". A previsão se confirmou; DF/RR simplesmente não
+continham o caso.
+
+Medido nacionalmente contra as 27 UFs em cache (`~/.lacir/sih-cache/parquet/`, ~86 milhões de
+registros brutos, 11 UFs falhas — BA/CE/ES/GO/MA/MT/PA/PE/PR/RJ/RS): dois números bem
+diferentes, dependendo do que se mede:
+
+1. **Raw scan (sem filtro de IDENT/ano/match)**: `MUNIC_MOV`/`MUNIC_RES` em branco ou malformado
+   aparece em taxas de 0,003% a 0,4% por UF — mas HETEROGÊNEO, concentrado em clusters de até
+   ~90% de um ÚNICO arquivo/mês (ex.: `RDGO1902.parquet` 50,7%, `RDMT1608.parquet` 89,2%,
+   `RDMA1806.parquet` 52,9%) — a assinatura de CORRUPÇÃO SISTEMÁTICA (bytes desalinhados na
+   decodificação do `.dbc`), não de dado real esparso. Inspecionado ao vivo: nesses clusters,
+   `IDENT`/`DIAG_PRINC`/`CNES` vêm TODOS corrompidos JUNTO com `MUNIC_MOV` — a MESMA classe
+   "registro corrompido do DBC" já documentada acima (seção "Correção de valor numérico vazio"),
+   já excluída pelo filtro de `IDENT` ANTES de alcançar `municipio6()`.
+2. **População que de fato alcança este ponto do laço** (`IDENT='1'`, ano válido, alguma doença
+   casada — a MESMA população usada por `_MAX_TAXA_DESCARTE`): dos 82.091.610 registros medidos,
+   só 8 têm `MUNIC_MOV` ou `MUNIC_RES` em branco/malformado (0,00001%) — espalhados em 7 arquivos
+   de 6 UFs diferentes (CE/GO/MA×2/MT×2/PE/PR), nunca mais de 2 no mesmo arquivo. Dado real
+   esparso, não corrupção — confirma a leitura de que o raw scan mede principalmente ruído já
+   filtrado antes de chegar aqui.
+
+Inspecionados os 8 registros reais um a um: em TODOS, `MUNIC_RES` veio válido e `UF_ZI` veio
+válido — o único campo problemático era `MUNIC_MOV` (branco em 6, malformado com comprimento
+certo mas caractere não numérico em 2 — `'01510.'`, `'     8'`/`'51059.'`). Decisão de semântica
+por grão, medida e não suposta:
+
+- **Grão MUNICÍPIO nunca é recuperável** quando o próprio campo (`MUNIC_MOV` ou `MUNIC_RES`) vem
+  em branco/malformado — não há como inferir qual dos milhares de municípios seria o certo.
+  Excluir o registro desse grão/local é a única opção honesta.
+- **Grão UF de OCORRÊNCIA (`MUNIC_MOV`) PODE ser recuperado via `UF_ZI`** — campo oficial e
+  ESTÁVEL do SIH-RD para a UF do estabelecimento hospitalar, medido idêntico a `MUNIC_MOV[:2]`
+  em TODO registro válido de uma amostra de milhares — e válido nos 8 registros reais afetados.
+  Descartar esses registros do grão UF também (quando a UF É conhecível via `UF_ZI`) subcontaria
+  silenciosamente — por isso `_territorio_ocorrencia` usa `UF_ZI` como fallback SÓ para o grão
+  UF, nunca para o grão município.
+- **Grão UF de RESIDÊNCIA (`MUNIC_RES`) NÃO tem fallback** — o SIH-RD não publica um campo
+  equivalente a `UF_ZI` para a UF de residência do paciente (`UF_ZI` é documentadamente a UF do
+  ESTABELECIMENTO, não do paciente); usá-lo aqui juntaria endereço do hospital com residência do
+  paciente, um erro de atribuição pior que o descarte. `_territorio_residencia` nunca tenta.
+
+Descarte contado e taxa-guardada (mesma disciplina de `_MAX_TAXA_DESCARTE`/T-09-30, NUNCA um
+catch-and-ignore silencioso): `_MAX_TAXA_DESCARTE_MUNICIPIO` (0,01%) levanta `ValueError` se a
+taxa medida no arquivo/UF agregado exceder o limiar — ver a constante abaixo para a medição
+completa que o justifica. `codigos.municipio6` também foi endurecida (Rule 1) para rejeitar
+código do comprimento CERTO mas com caractere não numérico — antes desta correção, esse caso
+passava pela checagem de comprimento sem levantar, silenciosamente corrompendo
+`sih_metric_muni.municipio_codigo`; agora recebe o MESMO tratamento do branco (contado, nunca
+propagado). `municipio6_ou_none` (também em `codigos.py`) é o único ponto do pipeline que trata
+essa condição como dado esperado em vez de erro — `municipio6` continua levantando para todo o
+resto (`population.py`).
 """
 
 from __future__ import annotations
@@ -101,7 +158,7 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 
-from sih_pipeline.codigos import municipio6, uf_de_municipio
+from sih_pipeline.codigos import UF_POR_CODIGO, municipio6_ou_none, uf_de_municipio
 from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import CidIndex, build_index, load_cid_map, match_category
 from sih_pipeline.paths import cache_path, repo_root
@@ -118,12 +175,36 @@ NEEDED_COLUMNS = [
     "PROC_REA",
 ]
 
+# `UF_ZI` (fallback de UF quando MUNIC_MOV vem em branco/malformado, ver
+# "Correção de município em branco" abaixo) é OPCIONAL, não um `NEEDED_COLUMNS` -- todo parquet
+# REAL do SIH-RD tem essa coluna (medido: presente em toda UF em cache), mas parquet sintético
+# mínimo já existente em outros módulos (ex.: `partitions.py`, fora do file_scope desta
+# correção) não a projeta. Exigi-la sem exceção quebraria esses consumidores por um campo que
+# nem usam (`MUNIC_MOV` sempre válido lá) -- lida via checagem de schema em
+# `aggregate_parquet_dir`, nunca via um segundo `dataset.to_table` (preserva "numa passada só").
+_COLUNA_UF_ZI = "UF_ZI"
+
 # IDENT='1' é a única AIH que conta como internação nova -- ver docstring do módulo.
 _IDENT_AIH_NORMAL = "1"
 
 # Taxa de descarte (DIAG_PRINC sem categoria) acima da qual a agregação levanta -- T-09-30,
 # spike mediu 0,016% em 44.589 registros de AC/2019.
 _MAX_TAXA_DESCARTE = 0.001
+
+# Taxa de descarte (MUNIC_MOV/MUNIC_RES em branco ou malformado, sem UF derivável) acima da
+# qual a agregação levanta -- 09-04-FIX-MUNICIPIO-BRANCO. Medido nacionalmente contra as 27 UFs
+# em cache (~86 milhões de registros brutos, 11 UFs falhas): dos 82.091.610 registros que
+# alcançam este ponto do laço (IDENT='1', ano válido, alguma doença casada -- a MESMA população
+# usada por `_MAX_TAXA_DESCARTE`), só 8 têm MUNIC_MOV ou MUNIC_RES em branco/malformado
+# (0,00001%) -- dado real esparso, não corrupção sistemática (ver docstring do módulo, seção
+# "Correção de município em branco", para a medição completa). O limiar abaixo tem ~1000x de
+# margem sobre esse baseline medido -- MUITO mais apertado que `_MAX_TAXA_DESCARTE` (0,1%)
+# porque município em branco é uma classe de defeito ~10.000x mais rara que DIAG_PRINC sem
+# categoria: reusar o mesmo limiar por conveniência toleraria uma corrupção bem maior antes de
+# falhar alto. Clusters de corrupção real medidos no raw scan (sem os filtros de IDENT/ano/match
+# acima) chegam a ~90% de um único arquivo/mês -- bem acima deste limiar, então qualquer
+# vazamento futuro desses registros para além do filtro de IDENT ainda dispara o gate cedo.
+_MAX_TAXA_DESCARTE_MUNICIPIO = 0.0001
 
 # --- Eixo de PROCEDIMENTO (amputacao_mmii, filterKind="procedimento") -----------------------
 #
@@ -247,6 +328,45 @@ def _taxa_mortalidade(*, obitos: int, internacoes: int) -> float | None:
     return obitos / internacoes
 
 
+def _uf_de_uf_zi(uf_zi: str | int | None) -> str | None:
+    """2 primeiros dígitos de `UF_ZI`, só se formarem uma UF conhecida (`UF_POR_CODIGO`) —
+    nunca inventa uma UF a partir de lixo. Ver docstring do módulo, seção "Correção de
+    município em branco", para a medição que justifica usar `UF_ZI` como fallback."""
+    if uf_zi is None:
+        return None
+    prefixo = str(uf_zi).strip()[:2]
+    return prefixo if prefixo in UF_POR_CODIGO else None
+
+
+def _territorio_ocorrencia(
+    munic_mov: str | int | None, uf_zi: str | int | None
+) -> tuple[str | None, str | None]:
+    """`(municipio6, uf)` de OCORRÊNCIA a partir de `MUNIC_MOV`, com `UF_ZI` como fallback SÓ
+    para o grão UF quando `MUNIC_MOV` vem em branco/malformado — ver docstring do módulo, seção
+    "Correção de município em branco". O grão MUNICÍPIO nunca é recuperável nesse caso (não há
+    como inferir qual município seria o certo); o grão UF PODE ser, via `UF_ZI` (campo oficial e
+    ESTÁVEL do SIH-RD para a UF do estabelecimento, medido idêntico a `MUNIC_MOV[:2]` em todo
+    registro válido da amostra nacional). Se `UF_ZI` TAMBÉM vier inválido, devolve `(None,
+    None)` — nunca inventa uma UF sem nenhum campo confiável."""
+    mov6 = municipio6_ou_none(munic_mov)
+    if mov6 is not None:
+        return mov6, uf_de_municipio(mov6)
+    return None, _uf_de_uf_zi(uf_zi)
+
+
+def _territorio_residencia(munic_res: str | int | None) -> tuple[str | None, str | None]:
+    """`(municipio6, uf)` de RESIDÊNCIA a partir de `MUNIC_RES` — SEM fallback: o SIH-RD não
+    publica um campo equivalente a `UF_ZI` para a UF de residência do paciente (`UF_ZI` é
+    documentadamente a UF do ESTABELECIMENTO/hospital, não do paciente) — usá-lo aqui juntaria
+    endereço do hospital com residência do paciente, um erro de atribuição pior que o descarte.
+    Quando `MUNIC_RES` vem em branco/malformado, os DOIS grãos (município e UF) de residência
+    ficam indisponíveis para este registro — nunca um fallback inventado."""
+    res6 = municipio6_ou_none(munic_res)
+    if res6 is None:
+        return None, None
+    return res6, uf_de_municipio(res6)
+
+
 def _blank_to_null(col: pa.Array | pa.ChunkedArray) -> pa.Array | pa.ChunkedArray:
     """Troca string vazia (após `utf8_trim_whitespace`) por `null` explícito — NUNCA um coerce
     cego (ver docstring do módulo, seção "Correção de valor numérico vazio"): só o caso
@@ -301,9 +421,23 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     (SÓ o eixo CID — o eixo de procedimento nunca isenta nem contribui para este contador,
     são medidas independentes); acima de `_MAX_TAXA_DESCARTE` (0,1%) a função levanta
     `ValueError` (T-09-30).
+
+    Registros cujo `MUNIC_MOV`/`MUNIC_RES` vêm em branco ou malformados (comprimento errado OU
+    não numérico — ver `codigos.municipio6`) têm o grão MUNICÍPIO correspondente (ocorrência
+    para `MUNIC_MOV`, residência para `MUNIC_RES`) ausente da saída para aquele registro —
+    NUNCA uma `ValueError` que derruba a UF inteira (09-04-FIX-MUNICIPIO-BRANCO). O grão UF de
+    OCORRÊNCIA ainda pode ser recuperado via `UF_ZI` quando `MUNIC_MOV` for o único campo
+    inválido (ver `_territorio_ocorrencia`); o grão UF de RESIDÊNCIA não tem fallback (ver
+    `_territorio_residencia`). Contado como descarte de município (independente do descarte de
+    `DIAG_PRINC` acima — medidas distintas); acima de `_MAX_TAXA_DESCARTE_MUNICIPIO` (0,01%) a
+    função levanta `ValueError`.
     """
     dataset = ds.dataset(str(path), format="parquet")
-    table = dataset.to_table(columns=NEEDED_COLUMNS)
+    # UF_ZI entra na MESMA projeção só quando a fonte a tem (checagem de schema, nunca um
+    # segundo `to_table` -- preserva "numa passada só", ver `_COLUNA_UF_ZI` acima).
+    tem_uf_zi = _COLUNA_UF_ZI in dataset.schema.names
+    colunas = NEEDED_COLUMNS + [_COLUNA_UF_ZI] if tem_uf_zi else NEEDED_COLUMNS
+    table = dataset.to_table(columns=colunas)
 
     # `_blank_to_null` (ver docstring do módulo) troca só string vazia por `null` -- qualquer
     # outro valor não numérico continua estourando `ArrowInvalid` aqui, igual a antes desta
@@ -317,6 +451,10 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     diag_princ = table["DIAG_PRINC"].to_pylist()
     munic_mov = table["MUNIC_MOV"].to_pylist()
     munic_res = table["MUNIC_RES"].to_pylist()
+    # Sem UF_ZI na fonte (parquet sintético mínimo de outro módulo, nunca dado real do SIH-RD),
+    # o fallback de `_territorio_ocorrencia` simplesmente nunca resgata nada -- comportamento
+    # correto e já coberto pelo gate de taxa de descarte (nunca um `None` tratado como válido).
+    uf_zi = table[_COLUNA_UF_ZI].to_pylist() if tem_uf_zi else [None] * len(diag_princ)
 
     disease_ids = _load_disease_ids()
     procedure_map = _load_procedure_disease_map()
@@ -324,6 +462,8 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     acumulador: dict[tuple[str, str, str, str, int], dict[str, float | int]] = {}
     total = len(diag_princ)
     descartes = 0
+    descartes_municipio_ocorrencia = 0
+    descartes_municipio_residencia = 0
 
     for i in range(total):
         ano = ano_cmpt[i]
@@ -355,10 +495,12 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
         if not disease_ids_casados:
             continue
 
-        mov6 = municipio6(munic_mov[i])
-        res6 = municipio6(munic_res[i])
-        mov_uf = uf_de_municipio(mov6)
-        res_uf = uf_de_municipio(res6)
+        mov6, mov_uf = _territorio_ocorrencia(munic_mov[i], uf_zi[i])
+        res6, res_uf = _territorio_residencia(munic_res[i])
+        if mov6 is None:
+            descartes_municipio_ocorrencia += 1
+        if res6 is None:
+            descartes_municipio_residencia += 1
 
         # `VAL_TOT`/`DIAS_PERM`/`MORTE` vazios (após `_blank_to_null`/`_cast_morte`) chegam como
         # `None` aqui -- AIH real (`IDENT='1'`, `ANO_CMPT` na janela), só o campo de
@@ -384,6 +526,13 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
                 (GRAO_MUNICIPIO, LOCAL_OCORRENCIA, mov6),
                 (GRAO_MUNICIPIO, LOCAL_RESIDENCIA, res6),
             ):
+                # `territorio` é `None` quando nem o campo original nem o fallback (só existe
+                # para UF de ocorrência, via UF_ZI) conseguiram localizar o registro nesse
+                # grão/local -- ver `_territorio_ocorrencia`/`_territorio_residencia`. Nunca
+                # inventa um território: a linha correspondente simplesmente não é gerada para
+                # este registro (descarte já contado acima).
+                if territorio is None:
+                    continue
                 chave = (disease_id, grao, local, territorio, ano)
                 entrada = acumulador.setdefault(
                     chave,
@@ -400,6 +549,16 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
             raise ValueError(
                 f"aggregate: taxa de descarte (DIAG_PRINC sem categoria) {descartes}/{total} "
                 f"({taxa_descarte:.4%}) acima do limite {_MAX_TAXA_DESCARTE:.1%} (T-09-30)"
+            )
+
+        descartes_municipio = descartes_municipio_ocorrencia + descartes_municipio_residencia
+        taxa_descarte_municipio = descartes_municipio / total
+        if taxa_descarte_municipio > _MAX_TAXA_DESCARTE_MUNICIPIO:
+            raise ValueError(
+                f"aggregate: taxa de descarte (MUNIC_MOV/MUNIC_RES em branco ou malformado) "
+                f"{descartes_municipio}/{total} ({taxa_descarte_municipio:.6%}) acima do limite "
+                f"{_MAX_TAXA_DESCARTE_MUNICIPIO:.4%} (ocorrência={descartes_municipio_ocorrencia}, "
+                f"residência={descartes_municipio_residencia}) — 09-04-FIX-MUNICIPIO-BRANCO"
             )
 
     linhas: list[Row] = []
