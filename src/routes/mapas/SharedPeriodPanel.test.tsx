@@ -75,4 +75,23 @@ describe('SharedPeriodPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /Preparar comparação/i }));
     expect(dispatch).toHaveBeenCalledWith({ type: 'PREPARE_PERIOD_COMPARE' });
   });
+
+  it('lets the shared recorte choose residence as the location basis', () => {
+    const state = createInitialMapAnalysisState();
+    const dispatch = vi.fn();
+
+    render(
+      <SharedPeriodPanel
+        state={state}
+        dispatch={dispatch}
+        diseaseVariableIds={[]}
+        activeGroup={null}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Residência' }));
+    expect(dispatch).toHaveBeenCalledWith({ type: 'SET_LOCATION_BASIS', locationBasis: 'residencia' });
+  });
 });

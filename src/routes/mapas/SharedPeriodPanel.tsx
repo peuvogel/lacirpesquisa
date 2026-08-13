@@ -82,6 +82,39 @@ export function SharedPeriodPanel({
       <div
         className="mb-3 grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-elevated/60 p-1"
         role="group"
+        aria-label="Base da localização"
+      >
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'SET_LOCATION_BASIS', locationBasis: 'ocorrencia' })}
+          className={cn(
+            'rounded-lg px-2 py-2 font-sans text-xs font-bold transition-colors',
+            state.locationBasis === 'ocorrencia'
+              ? 'bg-accent/20 text-accent'
+              : 'text-text-muted hover:bg-white/5 hover:text-text',
+          )}
+          aria-pressed={state.locationBasis === 'ocorrencia'}
+        >
+          Ocorrência
+        </button>
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'SET_LOCATION_BASIS', locationBasis: 'residencia' })}
+          className={cn(
+            'rounded-lg px-2 py-2 font-sans text-xs font-bold transition-colors',
+            state.locationBasis === 'residencia'
+              ? 'bg-accent/20 text-accent'
+              : 'text-text-muted hover:bg-white/5 hover:text-text',
+          )}
+          aria-pressed={state.locationBasis === 'residencia'}
+        >
+          Residência
+        </button>
+      </div>
+
+      <div
+        className="mb-3 grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-elevated/60 p-1"
+        role="group"
         aria-label="Escopo do período"
       >
         <button

@@ -9,8 +9,9 @@ import {
 } from '@/features/catalog/catalogAnalysisData';
 import { MAX_LOADABLE_SELECTION } from '@/features/catalog/buildSessionDataset';
 import { DISEASES, MEASURES, catalogIdFor, parseCatalogId } from '@/features/catalog/taxonomy';
-import { adaptGroup, adaptPeriods } from '@/features/research/researchDesign';
-import type { ResearchDesign, ResearchGeography } from '@/features/research/types';
+import { adaptGroup, adaptPeriods, validateResearchDesign } from '@/features/research/researchDesign';
+import type { LocationBasis, ResearchDesign, ResearchGeography } from '@/features/research/types';
+import type { ResearchDesignValidation } from '@/features/research/researchDesign';
 
 export type MapProvenance = 'catalog' | 'paste' | 'hybrid';
 
@@ -56,6 +57,7 @@ export interface MapAnalysisState {
   /** Default / shared interval — also seeds new groups. */
   sharedTime: GroupTimeConfig;
   periodScope: PeriodScope;
+  locationBasis: LocationBasis;
 }
 
 export type MapAnalysisAction =
@@ -67,6 +69,7 @@ export type MapAnalysisAction =
   | { type: 'SET_GROUP_TIME'; groupId: string; time: GroupTimeConfig }
   | { type: 'SET_SHARED_TIME'; time: GroupTimeConfig }
   | { type: 'SET_PERIOD_SCOPE'; scope: PeriodScope }
+  | { type: 'SET_LOCATION_BASIS'; locationBasis: LocationBasis }
   /** Didactic: two groups, same place, pré × pós pandemia (or mid-split). */
   | { type: 'PREPARE_PERIOD_COMPARE'; splitYear?: number }
   | { type: 'TOGGLE_GROUP_VARIABLE'; groupId: string; variableId: string }
@@ -205,6 +208,7 @@ export function createInitialMapAnalysisState(): MapAnalysisState {
     provenance: 'catalog',
     sharedTime: { mode: 'point' },
     periodScope: 'shared',
+    locationBasis: 'ocorrencia',
   };
 }
 
@@ -234,6 +238,7 @@ export function normalizeMapAnalysisState(
     provenance: raw.provenance ?? base.provenance,
     sharedTime,
     periodScope: raw.periodScope === 'per-group' ? 'per-group' : 'shared',
+    locationBasis: raw.locationBasis === 'residencia' ? 'residencia' : 'ocorrencia',
   };
 }
 
@@ -378,6 +383,9 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
       }
       return { ...state, periodScope: 'per-group' };
     }
+
+    case 'SET_LOCATION_BASIS':
+      return { ...state, locationBasis: action.locationBasis };
 
     case 'PREPARE_PERIOD_COMPARE': {
       if (state.groups.length === 0) return state;
@@ -692,7 +700,7 @@ export function deriveMapAnalysis(state: MapAnalysisState) {
   };
 }
 
-function geographyForMapLevel(level: GeoLevel): ResearchGeography {
+function geographyForTerritoryLevel(level: GeoLevel): ResearchGeography {
   switch (level) {
     case 'uf':
       return 'uf';
@@ -709,7 +717,28 @@ function geographyForMapLevel(level: GeoLevel): ResearchGeography {
  * Transitional boundary for the legacy Mapas state. Disease ids remain shared
  * in legacy catalog selections; measures intentionally do not cross this boundary.
  */
-export function createResearchDesignFromMapState(state: MapAnalysisState): ResearchDesign {
+export function createResearchDesignFromMapState(state: MapAnalysisState): ResearchDesignValidation {
+  const territoryLevels = [
+    ...new Set(state.groups.flatMap((group) => group.territoryIds.map((territory) => territory.level))),
+  ];
+  if (territoryLevels.length > 1) {
+    return {
+      ok: false,
+      errors: [
+        {
+          code: 'mixed_geography',
+          message: 'Todos os territórios do recorte precisam usar o mesmo grão geográfico.',
+        },
+      ],
+    };
+  }
+  if (territoryLevels.length === 0) {
+    return {
+      ok: false,
+      errors: [{ code: 'missing_territory', message: 'Cada grupo precisa conter ao menos um território.' }],
+    };
+  }
+
   const diseaseIds = [
     ...new Set(
       state.groups.flatMap((group) =>
@@ -722,16 +751,20 @@ export function createResearchDesignFromMapState(state: MapAnalysisState): Resea
   const period = adaptPeriods(state.periodScope, state.sharedTime, state.groups);
 
   if (!period) {
-    throw new Error('Não é possível criar um desenho de pesquisa sem período válido.');
+    return {
+      ok: false,
+      errors: [{ code: 'invalid_period', message: 'Informe um período válido.' }],
+    };
   }
 
-  return {
+  const design: ResearchDesign = {
     groups: state.groups.map(adaptGroup),
-    geography: geographyForMapLevel(state.mapView.level),
-    locationBasis: 'ocorrencia',
+    geography: geographyForTerritoryLevel(territoryLevels[0]!),
+    locationBasis: state.locationBasis,
     diseaseIds,
     period,
   };
+  return validateResearchDesign(design);
 }
 
 /** Flat { ufs, variables } derived from active/complete groups for backward compat. */

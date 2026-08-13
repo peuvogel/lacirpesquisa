@@ -14,7 +14,8 @@ export interface ResearchDesignValidationError {
     | 'missing_territory'
     | 'missing_disease'
     | 'invalid_period'
-    | 'missing_group_period';
+    | 'missing_group_period'
+    | 'mixed_geography';
   message: string;
 }
 

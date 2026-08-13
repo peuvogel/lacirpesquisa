@@ -189,10 +189,11 @@ export function MapasPage() {
     [state, ungroupedTerritories],
   );
 
-  const researchDesign = useMemo(
+  const researchDesignResult = useMemo(
     () => (derived.canReview ? createResearchDesignFromMapState(state) : null),
     [derived.canReview, state],
   );
+  const researchDesign = researchDesignResult?.ok ? researchDesignResult.value : null;
 
   const groupMembership = useMemo(() => collectGroupMembership(state.groups), [state.groups]);
   const groupMunicipioMembership = useMemo(
@@ -745,7 +746,7 @@ export function MapasPage() {
 
   const actionBar = (
     <MapPrimaryActionBar
-      canReview={derived.canReview}
+      canReview={researchDesign !== null}
       onReview={handleReview}
       onPasteTerritories={openPasteMode}
       onClearMap={() => setClearAllOpen(true)}

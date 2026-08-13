@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
 import type { GuidedAnalysisState, ResearchDesign } from '@/features/research/types';
 import type { MapAnalysisState } from '@/routes/mapas/mapAnalysisState';
@@ -42,8 +42,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [mapAnalysis, setMapAnalysis] = useState<MapAnalysisState | null>(null);
   const [researchDesign, setResearchDesignState] = useState<ResearchDesign | null>(null);
   const [guidedAnalysis, setGuidedAnalysis] = useState<GuidedAnalysisState | null>(null);
+  const researchDesignRef = useRef<ResearchDesign | null>(null);
 
   const setResearchDesign = useCallback((design: ResearchDesign | null) => {
+    researchDesignRef.current = design;
     setResearchDesignState((current) => {
       const currentFingerprint = current ? fingerprintResearchDesign(current) : null;
       const nextFingerprint = design ? fingerprintResearchDesign(design) : null;
@@ -52,11 +54,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setGuidedAnalysisForCurrentDesign = useCallback((analysis: GuidedAnalysisState | null) => {
+    const currentDesign = researchDesignRef.current;
+    if (
+      !analysis ||
+      !analysis.design ||
+      !currentDesign ||
+      fingerprintResearchDesign(analysis.design) !== fingerprintResearchDesign(currentDesign)
+    ) {
+      setGuidedAnalysis(null);
+      return;
+    }
+    setGuidedAnalysis(analysis);
+  }, []);
+
   const clearSession = useCallback(() => {
     setDataset(null);
     setDatasusSession(null);
     setMapSelection(null);
     setMapAnalysis(null);
+    researchDesignRef.current = null;
     setResearchDesignState(null);
     setGuidedAnalysis(null);
   }, []);
@@ -80,7 +97,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setMapSelection,
       setMapAnalysis,
       setResearchDesign,
-      setGuidedAnalysis,
+      setGuidedAnalysis: setGuidedAnalysisForCurrentDesign,
       clearSession,
     }),
     [
@@ -92,6 +109,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       guidedAnalysis,
       hasData,
       setResearchDesign,
+      setGuidedAnalysisForCurrentDesign,
       clearSession,
     ],
   );

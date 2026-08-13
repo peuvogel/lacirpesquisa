@@ -301,9 +301,12 @@ describe('deriveMapAnalysis', () => {
       ],
       periodScope: 'shared',
       sharedTime: { mode: 'range', start: '2020-01', end: '2021-12' },
+      locationBasis: 'residencia',
     };
 
     expect(createResearchDesignFromMapState(state)).toEqual({
+      ok: true,
+      value: {
       groups: [
         {
           id: 'g1',
@@ -317,10 +320,75 @@ describe('deriveMapAnalysis', () => {
         },
       ],
       geography: 'uf',
-      locationBasis: 'ocorrencia',
+      locationBasis: 'residencia',
       diseaseIds: ['embolia_e_trombose_arteriais', 'amputacao_mmii'],
       period: { scope: 'shared', time: { mode: 'range', start: '2020-01', end: '2021-12' } },
+      },
     });
+  });
+
+  it('derives municipal geography from the selected territories, not a zoomed-out map view', () => {
+    const state: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      sharedTime: { mode: 'point', point: '2020' },
+      mapView: { level: 'uf' },
+      groups: [
+        completeGroup({
+          territoryIds: [
+            { level: 'municipio', ibgeCode: '2927408', name: 'Salvador' },
+            { level: 'municipio', ibgeCode: '2910800', name: 'Feira de Santana' },
+          ],
+          variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
+        }),
+      ],
+    };
+
+    expect(createResearchDesignFromMapState(state)).toMatchObject({
+      ok: true,
+      value: {
+        geography: 'municipio',
+        groups: [
+          {
+            territories: [
+              { id: '2927408', label: 'Salvador' },
+              { id: '2910800', label: 'Feira de Santana' },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it('fails closed when selected groups mix incompatible territory levels', () => {
+    const state: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      sharedTime: { mode: 'point', point: '2020' },
+      groups: [
+        completeGroup(),
+        completeGroup({
+          id: 'g2',
+          territoryIds: [{ level: 'municipio', ibgeCode: '2927408', name: 'Salvador' }],
+        }),
+      ],
+    };
+
+    expect(createResearchDesignFromMapState(state)).toEqual({
+      ok: false,
+      errors: [
+        {
+          code: 'mixed_geography',
+          message: 'Todos os territórios do recorte precisam usar o mesmo grão geográfico.',
+        },
+      ],
+    });
+  });
+
+  it('defaults location basis to occurrence and updates it through the reducer', () => {
+    const initial = createInitialMapAnalysisState();
+    const next = mapAnalysisReducer(initial, { type: 'SET_LOCATION_BASIS', locationBasis: 'residencia' });
+
+    expect(initial.locationBasis).toBe('ocorrencia');
+    expect(next.locationBasis).toBe('residencia');
   });
 
   it('canReview false with empty groups', () => {
