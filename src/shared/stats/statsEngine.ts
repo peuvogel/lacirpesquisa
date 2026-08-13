@@ -49,6 +49,9 @@ export interface PraisWinstenResult {
   ciBeta: [number, number];
   apc: number;
   ciApc: [number, number];
+  scale: 'log' | 'original';
+  absoluteChange: number;
+  ciAbsoluteChange: [number, number];
   classification: 'estacionária' | 'crescente' | 'decrescente';
 }
 
@@ -300,9 +303,15 @@ export const statsEngine = {
     if (den === 0) return 0;
     return Math.max(-0.99, Math.min(0.99, num / den));
   },
-  praisWinsten(years: number[], values: number[]): PraisWinstenResult {
+  praisWinsten(
+    years: number[],
+    values: number[],
+    scale: PraisWinstenResult['scale'] = 'log',
+  ): PraisWinstenResult {
     const n = years.length;
-    const y = values.map((value) => Math.log10(value));
+    const y = scale === 'log'
+      ? values.map((value) => Math.log10(value))
+      : values.slice();
     const x = years.slice();
     const c = new Array<number>(n).fill(1);
     let fit = statsEngine.olsTransformed(c, x, y);
@@ -337,13 +346,32 @@ export const statsEngine = {
     const p = 2 * (1 - statsEngine.tcdf(Math.abs(t), df));
     const tcrit = statsEngine.tInv(0.975, df);
     const ciBeta: [number, number] = [beta - (tcrit * fit.seBeta), beta + (tcrit * fit.seBeta)];
-    const apc = (Math.pow(10, beta) - 1) * 100;
-    const ciApc: [number, number] = [(Math.pow(10, ciBeta[0]) - 1) * 100, (Math.pow(10, ciBeta[1]) - 1) * 100];
+    const apc = scale === 'log' ? (Math.pow(10, beta) - 1) * 100 : Number.NaN;
+    const ciApc: [number, number] = scale === 'log'
+      ? [(Math.pow(10, ciBeta[0]) - 1) * 100, (Math.pow(10, ciBeta[1]) - 1) * 100]
+      : [Number.NaN, Number.NaN];
     let classification: PraisWinstenResult['classification'] = 'estacionária';
-    if (ciApc[0] > 0) classification = 'crescente';
-    else if (ciApc[1] < 0) classification = 'decrescente';
+    const classificationInterval = scale === 'log' ? ciApc : ciBeta;
+    if (classificationInterval[0] > 0) classification = 'crescente';
+    else if (classificationInterval[1] < 0) classification = 'decrescente';
 
-    return { n, rho, alpha: fit.alpha, beta, seBeta: fit.seBeta, p, df, t, ciBeta, apc, ciApc, classification };
+    return {
+      n,
+      rho,
+      alpha: fit.alpha,
+      beta,
+      seBeta: fit.seBeta,
+      p,
+      df,
+      t,
+      ciBeta,
+      apc,
+      ciApc,
+      scale,
+      absoluteChange: beta,
+      ciAbsoluteChange: ciBeta,
+      classification,
+    };
   },
 };
 

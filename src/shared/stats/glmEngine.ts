@@ -38,6 +38,8 @@ export interface LogisticFitResult extends GlmFitResult {
 export interface GlmDesign {
   terms: string[];
   matrix: number[][];
+  /** Fixed contribution to the linear predictor, usually log(person-time/population). */
+  offset?: number[];
 }
 
 function assertDesign(y: number[], design: GlmDesign): void {
@@ -50,6 +52,12 @@ function assertDesign(y: number[], design: GlmDesign): void {
   }
   if (design.terms.length > MAX_DESIGN_COLUMNS) {
     throw new Error(`Design matrix excede ${MAX_DESIGN_COLUMNS} colunas.`);
+  }
+  if (design.offset && design.offset.length !== y.length) {
+    throw new Error('Offset com número de linhas diferente da resposta.');
+  }
+  if (design.offset?.some((value) => !Number.isFinite(value))) {
+    throw new Error('Offset deve conter apenas valores finitos.');
   }
 }
 
@@ -146,6 +154,9 @@ function runIrls({ family, y, design, theta = 1 }: IrlsOptions): GlmFitResult & 
   const n = y.length;
   const p = design.terms.length;
   const X = new Matrix(design.matrix);
+  const offset = family === 'binomial'
+    ? new Array<number>(n).fill(0)
+    : design.offset ?? new Array<number>(n).fill(0);
   let beta = new Array<number>(p).fill(0);
   let mu = y.map((value) => {
     if (family === 'binomial') return Math.min(0.95, Math.max(0.05, value === 1 ? 0.75 : 0.25));
@@ -177,11 +188,13 @@ function runIrls({ family, y, design, theta = 1 }: IrlsOptions): GlmFitResult & 
       return value + ((y[index] - muValue) * detaDmu);
     });
 
-    const nextBeta = solveWeightedLeastSquares(X, weights, z);
+    const adjustedZ = z.map((value, index) => value - offset[index]);
+    const nextBeta = solveWeightedLeastSquares(X, weights, adjustedZ);
     const maxDelta = nextBeta.reduce((max, value, index) => Math.max(max, Math.abs(value - beta[index])), 0);
     beta = nextBeta;
-    mu = design.matrix.map((row) => {
-      const linear = row.reduce((sum, xij, j) => sum + (xij * beta[j]), 0);
+    mu = design.matrix.map((row, rowIndex) => {
+      const linear = offset[rowIndex]
+        + row.reduce((sum, xij, j) => sum + (xij * beta[j]), 0);
       if (family === 'binomial') {
         const expEta = Math.exp(linear);
         return expEta / (1 + expEta);

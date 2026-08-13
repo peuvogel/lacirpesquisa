@@ -96,6 +96,20 @@ describe('praisInterpretation', () => {
     expect(paragraphs.length).toBeGreaterThan(0);
     expect(paragraphsContainNoHtml(paragraphs)).toBe(true);
   });
+
+  it('explains zero-series results as absolute change and never as APC', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: Array.from({ length: 8 }, (_, index) => [String(2017 + index), String(index * 2)]),
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+    const output = runAnalysis(dataset);
+    const joined = buildPraisInterpretation(output, 0.05).join(' ');
+
+    expect(joined).toMatch(/sem pseudocontagem/i);
+    expect(joined).toMatch(/mudança absoluta/i);
+    expect(joined).not.toMatch(/Resultado principal: APC/i);
+  });
 });
 
 describe('SeriesPreviewTable truncation copy', () => {

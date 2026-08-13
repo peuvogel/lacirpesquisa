@@ -72,7 +72,7 @@ export function buildPraisResidualPresets(): ChartPreset<PraisEngineOutput>[] {
           pointLabels,
           {
             x: output.dataset.timeHeaderLabel,
-            y: 'Resíduos (log10)',
+            y: output.model.scale === 'log' ? 'Resíduos (log10)' : 'Resíduos (escala original)',
           },
         );
 
@@ -85,7 +85,7 @@ export function buildPraisResidualPresets(): ChartPreset<PraisEngineOutput>[] {
       },
       defaultAxisLabels: {
         x: 'Período',
-        y: 'Resíduo (escala log10)',
+        y: 'Resíduo',
       },
       annotationKeys: PRAIS_RESIDUAL_ANNOTATIONS.map((item) => item.id),
     },

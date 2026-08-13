@@ -6,9 +6,10 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   aliases: {
     contagem: ['contagem', 'count', 'eventos', 'casos', 'frequencia', 'n'],
     preditor: ['preditor', 'exposicao', 'exposição', 'dose', 'tempo', 'covariavel', 'x'],
+    offset_exposure: ['populacao', 'população', 'denominador', 'pessoa_tempo', 'person_time', 'offset'],
   },
   requiredKeys: ['contagem', 'preditor'],
-  numericKeys: ['contagem', 'preditor'],
+  numericKeys: ['contagem', 'preditor', 'offset_exposure'],
   expectedFormatLabel: 'contagem;preditor',
   positionFallback: {
     keysByIndex: ['contagem', 'preditor'],
@@ -31,7 +32,7 @@ export const didacticCards: DidacticCard[] = [
   },
   {
     title: 'Colunas esperadas',
-    body: 'Uma coluna de contagem (inteiro ≥ 0) e ao menos um preditor numérico. Cada linha é uma observação independente.',
+    body: 'Uma coluna de contagem (inteiro ≥ 0) e ao menos um preditor numérico. Em comparações territoriais, inclua população ou pessoa-tempo positiva: o sistema usa log(exposição) como offset.',
   },
   {
     title: 'Superdispersão',

@@ -14,6 +14,7 @@ import {
   validateColumnTypes,
   validateDataset,
 } from './binomialNegativaEngine';
+import { computeBinomialNegativaFittedValues } from './binomialNegativaCharts';
 
 const fixtureDir = join(__dirname, '../../../test/fixtures');
 const goldenDir = join(fixtureDir, 'jasp');
@@ -65,6 +66,27 @@ describe('binomialNegativaEngine golden parity', () => {
     expect(result.dfResid).toBe(golden.expected.dfResid);
   });
 
+  it('threads log(exposure) through the negative-binomial fit', () => {
+    const rows = [
+      ['10', '0', '100'], ['18', '0', '200'], ['35', '0', '300'],
+      ['100', '1', '1000'], ['180', '1', '2000'], ['350', '1', '3000'],
+    ];
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['contagem', 'grupo', 'populacao'],
+      rows,
+      recognizedColumns: { contagem: 0, preditor: 1, offset_exposure: 2 },
+      requireExposure: true,
+    });
+    const result = runAnalysis(dataset);
+    const slope = result.coefficients.find((coefficient) => coefficient.term !== '(Intercept)')!;
+
+    expect(dataset.design.offset).toHaveLength(rows.length);
+    expect(Math.exp(slope.beta)).toBeCloseTo(1, 2);
+    const fitted = computeBinomialNegativaFittedValues({ result, dataset, nudges: [] });
+    expect(fitted[0]).toBeGreaterThan(0);
+    expect(fitted[5]).toBeGreaterThan(fitted[0]);
+  });
+
   it('builds design matrix from tabular paste', () => {
     const dataset = loadExemploDataset();
     expect(dataset.n).toBe(12);
@@ -99,6 +121,22 @@ describe('binomialNegativaEngine metrics', () => {
 });
 
 describe('binomialNegativaEngine validation', () => {
+  it('rejects absent or non-positive exposure when territorial comparison requires it', () => {
+    const missing = buildDatasetFromConfirmed({
+      headers: ['contagem', 'preditor'],
+      rows: [['2', '1'], ['3', '2'], ['4', '3']],
+      recognizedColumns: { contagem: 0, preditor: 1 },
+      requireExposure: true,
+    });
+    expect(validateDataset(missing)).toContainEqual(expect.stringMatching(/exposição|offset/i));
+
+    expect(validateColumnTypes(
+      ['contagem', 'preditor', 'populacao'],
+      [['2', '1', '0'], ['3', '2', '-1']],
+      { contagem: 0, preditor: 1, offset_exposure: 2 },
+      { requireExposure: true },
+    )).toContainEqual(expect.stringMatching(/positiva/i));
+  });
   it('rejects negative counts', () => {
     const errors = validateColumnTypes(
       ['contagem', 'exposicao'],

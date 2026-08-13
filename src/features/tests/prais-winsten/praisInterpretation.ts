@@ -33,8 +33,11 @@ export function buildPraisInterpretation(
       ? ` para ${dataset.idHeaderLabel} = ${dataset.uniqueIds[0]}`
       : '';
   const context = (researchQuestion ?? '').trim() || DEFAULT_CONTEXT;
+  const scaleText = model.scale === 'log'
+    ? 'A série foi analisada em escala log10, permitindo estimar a APC.'
+    : 'Como a série contém zero, ela foi analisada na escala original, sem pseudocontagem; por isso o efeito é expresso como mudança absoluta, não APC.';
 
-  const lead = `Analisou-se a tendência temporal de ${dataset.yHeaderLabel}${idText}, usando ${dataset.timeHeaderLabel} como eixo temporal, em ${dataset.periodLabel || 'todo o período disponível'}, com ${dataset.validCount} pontos válidos. A série foi classificada como ${model.classification}, ${pText}; em termos práticos, ${directionText(model.classification)}. Contexto informado: ${context}.`;
+  const lead = `Analisou-se a tendência temporal de ${dataset.yHeaderLabel}${idText}, usando ${dataset.timeHeaderLabel} como eixo temporal, em ${dataset.periodLabel || 'todo o período disponível'}, com ${dataset.validCount} pontos válidos. A série foi classificada como ${model.classification}, ${pText}; em termos práticos, ${directionText(model.classification)}. ${scaleText} Contexto informado: ${context}.`;
 
   const acText =
     Math.abs(model.rho) < 0.3
@@ -43,10 +46,16 @@ export function buildPraisInterpretation(
         ? 'autocorrelação moderada'
         : 'autocorrelação forte';
 
+  const mainResult = model.scale === 'log'
+    ? `Resultado principal: APC ${fmtSigned(model.apc, 2)}% (IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)}), p = ${fmtP(model.p)}.`
+    : `Resultado principal: mudança absoluta de ${fmtSigned(model.absoluteChange, 2)} por período (IC95% ${fmtNumber(model.ciAbsoluteChange[0], 2)} a ${fmtNumber(model.ciAbsoluteChange[1], 2)}), p = ${fmtP(model.p)}.`;
+
   const bullets = [
-    `Resultado principal: APC ${fmtSigned(model.apc, 2)}% (IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)}), p = ${fmtP(model.p)}.`,
+    mainResult,
     `Coeficiente da tendência (β): ${fmtSigned(model.beta, 4)} · Autocorrelação estimada: ρ = ${fmtSigned(model.rho, 3)} (${acText}).`,
-    `Magnitude da mudança: ${trendStrength(model.apc)}.`,
+    model.scale === 'log'
+      ? `Magnitude da mudança: ${trendStrength(model.apc)}.`
+      : 'A magnitude absoluta deve ser interpretada na unidade original do indicador.',
     `Período analisado: ${dataset.periodLabel || 'não informado'}.`,
   ];
 

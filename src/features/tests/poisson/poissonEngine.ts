@@ -24,12 +24,21 @@ export interface PoissonBuiltDataset {
   outcomeHeader: string;
   predictorHeaders: string[];
   n: number;
+  requiresExposure: boolean;
+  exposureHeader?: string;
+  invalidExposureCount: number;
+  zeroShare: number;
 }
 
 export interface BuildDatasetInput {
   headers: string[];
   rows: string[][];
   recognizedColumns: Record<string, number>;
+  requireExposure?: boolean;
+}
+
+export interface ValidationOptions {
+  requireExposure?: boolean;
 }
 
 export interface PoissonAnalysisResult extends GlmFitResult {
@@ -57,11 +66,15 @@ function isNonNegativeInteger(value: number): boolean {
 }
 
 export function buildDatasetFromConfirmed(input: BuildDatasetInput): PoissonBuiltDataset {
-  const { headers, rows, recognizedColumns } = input;
+  const { headers, rows, recognizedColumns, requireExposure = false } = input;
   const indexOutcome = recognizedColumns.contagem;
   const indexPredictor = recognizedColumns.preditor;
   const outcomeHeader = resolveOutcomeHeader(headers, recognizedColumns);
   const predictorHeader = resolvePredictorHeader(headers, recognizedColumns);
+  const indexExposure = recognizedColumns.offset_exposure;
+  const exposureHeader = indexExposure === undefined
+    ? undefined
+    : headers[indexExposure] || 'exposição';
 
   if (indexOutcome === undefined || indexPredictor === undefined) {
     return {
@@ -70,11 +83,17 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PoissonBuil
       outcomeHeader,
       predictorHeaders: [predictorHeader],
       n: 0,
+      requiresExposure: requireExposure,
+      exposureHeader,
+      invalidExposureCount: 0,
+      zeroShare: 0,
     };
   }
 
   const y: number[] = [];
   const matrix: number[][] = [];
+  const offset: number[] = [];
+  let invalidExposureCount = 0;
   const predictorTerm = predictorHeader.replace(/\s+/g, '_');
 
   rows.forEach((row) => {
@@ -83,6 +102,14 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PoissonBuil
     const outcome = statsEngine.parseNumber(rawOutcome);
     const predictor = statsEngine.parseNumber(rawPredictor);
     if (outcome === null || predictor === null) return;
+    if (indexExposure !== undefined) {
+      const exposure = statsEngine.parseNumber((row[indexExposure] ?? '').trim());
+      if (exposure === null || exposure <= 0) {
+        invalidExposureCount += 1;
+        return;
+      }
+      offset.push(Math.log(exposure));
+    }
     y.push(outcome);
     matrix.push([1, predictor]);
   });
@@ -92,10 +119,15 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PoissonBuil
     design: {
       terms: ['(Intercept)', predictorTerm],
       matrix,
+      ...(indexExposure === undefined ? {} : { offset }),
     },
     outcomeHeader,
     predictorHeaders: [predictorHeader],
     n: y.length,
+    requiresExposure: requireExposure,
+    exposureHeader,
+    invalidExposureCount,
+    zeroShare: y.length ? y.filter((value) => value === 0).length / y.length : 0,
   };
 }
 
@@ -103,6 +135,14 @@ export function validateDataset(dataset: PoissonBuiltDataset): string[] {
   const errors: string[] = [];
   const { design, n } = dataset;
   const p = design.terms.length;
+
+  if (dataset.requiresExposure && !design.offset) {
+    errors.push('Esta comparação territorial exige exposição positiva para usar log(exposição) como offset.');
+  }
+
+  if (dataset.invalidExposureCount > 0) {
+    errors.push(`A exposição deve ser positiva em todas as linhas; ${dataset.invalidExposureCount} linha(s) foram inválidas.`);
+  }
 
   if (n === 0) {
     errors.push(
@@ -131,10 +171,16 @@ export function validateColumnTypes(
   headers: string[],
   rows: string[][],
   recognizedColumns: Record<string, number>,
+  options: ValidationOptions = {},
 ): string[] {
   const errors: string[] = [];
   const indexOutcome = recognizedColumns.contagem;
   const indexPredictor = recognizedColumns.preditor;
+  const indexExposure = recognizedColumns.offset_exposure;
+
+  if (options.requireExposure && indexExposure === undefined) {
+    errors.push('Falta mapear a coluna de exposição/denominador usada como offset.');
+  }
 
   if (indexOutcome === undefined && indexPredictor === undefined) {
     errors.push('Mapeie as colunas contagem e preditor antes de analisar.');
@@ -151,6 +197,20 @@ export function validateColumnTypes(
 
   if (indexOutcome === undefined || indexPredictor === undefined) {
     return errors;
+  }
+
+  if (indexExposure !== undefined) {
+    const invalidExposure = rows.reduce((count, row) => {
+      const raw = (row[indexExposure] ?? '').trim();
+      if (!raw) return count + 1;
+      const exposure = statsEngine.parseNumber(raw);
+      return exposure === null || exposure <= 0 ? count + 1 : count;
+    }, 0);
+    if (invalidExposure > 0) {
+      errors.push(
+        `A coluna "${headers[indexExposure] || 'exposição'}" deve conter exposição positiva (> 0) em todas as linhas.`,
+      );
+    }
   }
 
   let invalidCount = 0;
@@ -251,7 +311,7 @@ export function buildMetrics(result: PoissonAnalysisResult, dataset: PoissonBuil
     {
       label: 'Observações',
       value: String(dataset.n),
-      hint: `${dataset.outcomeHeader} ~ ${dataset.predictorHeaders.join(' + ')}`,
+      hint: `${dataset.outcomeHeader} ~ ${dataset.predictorHeaders.join(' + ')}${dataset.exposureHeader ? ` · offset = log(${dataset.exposureHeader})` : ''}`,
     },
     {
       label: 'Convergência IRLS',
@@ -263,7 +323,7 @@ export function buildMetrics(result: PoissonAnalysisResult, dataset: PoissonBuil
 
 export function computeAssumptionNudges(
   result: PoissonAnalysisResult,
-  _dataset: PoissonBuiltDataset,
+  dataset: PoissonBuiltDataset,
 ): AssumptionNudge[] {
   const nudges: AssumptionNudge[] = [];
 
@@ -285,6 +345,13 @@ export function computeAssumptionNudges(
       severity: 'warning',
       message:
         'O ajuste IRLS não convergiu completamente. Revise os dados ou reduza a complexidade do modelo.',
+    });
+  }
+
+  if (dataset.zeroShare > 0.5) {
+    nudges.push({
+      severity: 'warning',
+      message: `${fmtNumber(dataset.zeroShare * 100, 1)}% das observações são zero. Avalie excesso de zeros antes de interpretar o modelo.`,
     });
   }
 

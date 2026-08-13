@@ -102,6 +102,55 @@ describe('praisEngine differential parity', () => {
     });
   });
 
+  it('keeps confirmed zero rows and switches to original scale without pseudocount', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: Array.from({ length: 8 }, (_, index) => [String(2017 + index), String(index * 2)]),
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(dataset.values).toEqual([0, 2, 4, 6, 8, 10, 12, 14]);
+    expect(dataset.orderedRows[0]).toMatchObject({ yRaw: '0', yValue: 0 });
+    const output = runAnalysis(dataset);
+    expect(output.model.scale).toBe('original');
+    expect(output.model.apc).toBeNaN();
+    expect(output.model.beta).toBeCloseTo(2, 8);
+    expect(output.fitted[0]).toBeCloseTo(0, 8);
+    expect(output.residuals.every(Number.isFinite)).toBe(true);
+  });
+
+  it('uses log scale and APC only for a strictly positive series', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: Array.from({ length: 8 }, (_, index) => [String(2017 + index), String(100 * 1.1 ** index)]),
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+    const output = runAnalysis(dataset);
+
+    expect(output.model.scale).toBe('log');
+    expect(output.model.apc).toBeCloseTo(10, 8);
+  });
+
+  it('rejects internal temporal gaps instead of connecting them', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2017', '1'], ['2018', '2'], ['2020', '3'], ['2021', '4']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(validateSeries(dataset)).toContainEqual(expect.stringMatching(/intervalos regulares|lacuna/i));
+  });
+
+  it('rejects negative indicators instead of silently dropping them', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2017', '1'], ['2018', '-2'], ['2019', '3'], ['2020', '4']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(validateSeries(dataset)).toContainEqual(expect.stringMatching(/negativo/i));
+  });
+
   it('parseTemporalValue handles year-month tokens and numeric years', () => {
     const year = parseTemporalValue('2015');
     expect(year.numeric).toBe(2015);

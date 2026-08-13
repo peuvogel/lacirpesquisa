@@ -174,6 +174,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
 
   const validRows: PraisSeriesRow[] = [];
   const duplicateMap = new Map<string, string[]>();
+  let negativeValueCount = 0;
 
   rows.forEach((row, rowIndex) => {
     const idRaw = idIndex !== undefined ? normalizeSpaces(row[idIndex] ?? '') : '';
@@ -183,7 +184,11 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
     const yValue = statsEngine.parseNumber(yRaw);
     const rowLabel = idRaw || `Linha ${rowIndex + 1}`;
 
-    if (timeInfo.numeric !== null && yValue !== null && yValue > 0) {
+    if (timeInfo.numeric !== null && yValue !== null && yValue < 0) {
+      negativeValueCount += 1;
+    }
+
+    if (timeInfo.numeric !== null && yValue !== null && yValue >= 0) {
       validRows.push({
         index: rowIndex + 1,
         idLabel: rowLabel,
@@ -199,6 +204,12 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
       duplicateMap.set(timeInfo.sortKey, list);
     }
   });
+
+  if (negativeValueCount > 0) {
+    dataset.errors.push(
+      `A série contém ${negativeValueCount} valor(es) negativo(s). O Prais-Winsten deste fluxo aceita apenas indicadores não negativos.`,
+    );
+  }
 
   const duplicateTimes = [...duplicateMap.values()]
     .filter((list) => list.length > 1)
@@ -251,11 +262,28 @@ export function validateSeries(dataset: PraisBuiltDataset): string[] {
     errors.push(`A série excede o limite de ${SERIES_LENGTH_CAP} pontos. Reduza o período antes de analisar.`);
   }
 
+  if (dataset.time.length >= 3) {
+    const intervals = dataset.time.slice(1).map((time, index) => time - dataset.time[index]);
+    const expectedInterval = Math.min(...intervals);
+    const tolerance = Math.max(1e-8, Math.abs(expectedInterval) * 0.05);
+    if (
+      expectedInterval <= 0 ||
+      intervals.some((interval) => Math.abs(interval - expectedInterval) > tolerance)
+    ) {
+      errors.push(
+        'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
+      );
+    }
+  }
+
   return errors;
 }
 
 export function computeFitted(time: number[], model: PraisWinstenResult): number[] {
-  return time.map((t) => 10 ** (model.alpha + model.beta * t));
+  return time.map((t) => {
+    const fitted = model.alpha + model.beta * t;
+    return model.scale === 'log' ? 10 ** fitted : fitted;
+  });
 }
 
 export function computeResiduals(
@@ -263,13 +291,17 @@ export function computeResiduals(
   values: number[],
   model: PraisWinstenResult,
 ): number[] {
-  return values.map(
-    (value, index) => Math.log10(value) - (model.alpha + model.beta * time[index]),
-  );
+  return values.map((value, index) => {
+    const observed = model.scale === 'log' ? Math.log10(value) : value;
+    return observed - (model.alpha + model.beta * time[index]);
+  });
 }
 
 export function runPraisWinsten(time: number[], values: number[]): RunPraisOutput['model'] {
-  return statsEngine.praisWinsten(time, values);
+  const scale: PraisWinstenResult['scale'] = values.some((value) => value === 0)
+    ? 'original'
+    : 'log';
+  return statsEngine.praisWinsten(time, values, scale);
 }
 
 export function runAnalysis(dataset: PraisBuiltDataset): RunPraisOutput {
@@ -296,6 +328,18 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
     return 'marcante';
   })();
 
+  const changeMetric: ResultMetric = model.scale === 'log'
+    ? {
+        label: 'Variação percentual (APC)',
+        value: `${fmtSigned(model.apc, 2)}%`,
+        hint: `IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)}`,
+      }
+    : {
+        label: 'Mudança absoluta por período',
+        value: fmtSigned(model.absoluteChange, 2),
+        hint: `IC95% ${fmtNumber(model.ciAbsoluteChange[0], 2)} a ${fmtNumber(model.ciAbsoluteChange[1], 2)} · escala original por conter zero`,
+      };
+
   return [
     {
       label: 'Pontos temporais',
@@ -305,7 +349,9 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
     {
       label: 'Coeficiente da tendência (β)',
       value: fmtSigned(model.beta, 4),
-      hint: 'Estimado na escala log10 do indicador.',
+      hint: model.scale === 'log'
+        ? 'Estimado na escala log10 do indicador.'
+        : 'Estimado na escala original; nenhum valor artificial foi somado aos zeros.',
     },
     {
       label: 'Erro-padrão (β)',
@@ -320,13 +366,9 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
     {
       label: 'Classificação',
       value: model.classification,
-      hint: `Mudança ${trendStrength}.`,
+      hint: model.scale === 'log' ? `Mudança ${trendStrength}.` : 'Tendência na unidade original do indicador.',
     },
-    {
-      label: 'Variação percentual (APC)',
-      value: `${fmtSigned(model.apc, 2)}%`,
-      hint: `IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)}`,
-    },
+    changeMetric,
     {
       label: 'Autocorrelação (ρ)',
       value: fmtSigned(model.rho, 3),

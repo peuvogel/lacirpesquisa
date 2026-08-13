@@ -10,10 +10,10 @@ import type { BinomialNegativaEngineOutput } from './binomialNegativaEngine';
 
 export const BINOMIAL_NEGATIVA_CHART_ANNOTATIONS = BINOMIAL_NEGATIVA_ANNOTATIONS;
 
-function computeFittedValues(output: BinomialNegativaEngineOutput): number[] {
+export function computeBinomialNegativaFittedValues(output: BinomialNegativaEngineOutput): number[] {
   const { dataset, result } = output;
-  return dataset.design.matrix.map((row) => {
-    const linear = row.reduce(
+  return dataset.design.matrix.map((row, rowIndex) => {
+    const linear = (dataset.design.offset?.[rowIndex] ?? 0) + row.reduce(
       (sum, value, index) => sum + value * (result.coefficients[index]?.beta ?? 0),
       0,
     );
@@ -62,7 +62,7 @@ export function buildBinomialNegativaChartPresets(): ChartPreset<BinomialNegativ
       visualType: 'scatter',
       buildChart: (output) => {
         const observed = output.dataset.y;
-        const fitted = computeFittedValues(output);
+        const fitted = computeBinomialNegativaFittedValues(output);
         const maxValue = Math.max(...observed, ...fitted, 1);
 
         const data = {
