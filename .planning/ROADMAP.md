@@ -162,7 +162,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-04-PLAN.md — Enumeração determinística (SC-1), ledger de arquivo, download com isolamento de falha por arquivo, e o disparo da corrida completa (Onda 2)
+- [x] 09-04-PLAN.md — Enumeração determinística (SC-1), ledger de arquivo, download com isolamento de falha por arquivo, e o disparo da corrida completa (Onda 2)
 - [x] 09-05-PLAN.md — Raspador mínimo do TabNet e o oráculo dos 85 pares re-raspado ao vivo, com os descartes escritos (Onda 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -189,7 +189,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 09-13-PLAN.md — Os 10 packs regerados do dado novo e o corpus legado de 654 CSVs fora do caminho de build (Onda 8)
+- [x] 09-13-PLAN.md — Os 10 packs regerados do dado novo e o corpus legado de 654 CSVs fora do caminho de build (Onda 8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 

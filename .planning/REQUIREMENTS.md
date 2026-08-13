@@ -38,12 +38,12 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 
 ### Pipeline de coleta
 
-- [ ] **PIPE-01**: Uma falha de rede/DNS/parse é registrada como falha ruidosa, nunca como sucesso com 0 linhas
+- [x] **PIPE-01**: Uma falha de rede/DNS/parse é registrada como falha ruidosa, nunca como sucesso com 0 linhas
 - [x] **PIPE-02**: Existe um ledger consultável que informa, por (agravo × medida × grão), se a combinação foi coletada, falhou ou nunca foi tentada — e o app consegue lê-lo
 - [x] **PIPE-03**: A coleta é retomável: reexecutar após interrupção continua de onde parou, sem duplicar linhas
 - [x] **PIPE-04**: O cache bruto só é descartado após o upload correspondente ser confirmado
 - [x] **PIPE-05**: O operador consegue verificar que uma coleta capturou o que afirma ter capturado
-- [ ] **PIPE-06**: A coleta respeita a fonte remota (FTP do DATASUS) e sobrevive a execuções longas sem supervisão
+- [x] **PIPE-06**: A coleta respeita a fonte remota (FTP do DATASUS) e sobrevive a execuções longas sem supervisão
 
 ### Cobertura de dados
 
@@ -116,12 +116,12 @@ O critério de sucesso não é "mais funcionalidades". É: **um estudante da lig
 | TAX-04 | Phase 8 | Complete |
 | TAX-05 | Phase 8 | Complete |
 | TAX-06 | Phase 8 | Complete |
-| PIPE-01 | Phase 9 | Pending |
+| PIPE-01 | Phase 9 | Complete |
 | PIPE-02 | Phase 9 | Complete |
 | PIPE-03 | Phase 9 | Complete |
 | PIPE-04 | Phase 9 | Complete |
 | PIPE-05 | Phase 9 | Complete |
-| PIPE-06 | Phase 9 | Pending |
+| PIPE-06 | Phase 9 | Complete |
 | DATA-01 | Phase 9 | Complete |
 | DATA-02 | Phase 9 | Complete |
 | DATA-03 | Phase 9 | Complete |
