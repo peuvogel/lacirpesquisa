@@ -35,6 +35,21 @@ const summary: ResearchCutSummaryViewModel = {
   facts: ['2 territórios', '2023–2025', 'Local de ocorrência'],
 };
 
+const comparisonDesign: ResearchDesign = {
+  ...design,
+  groups: [
+    ...design.groups,
+    {
+      id: 'sudeste',
+      name: 'Sudeste',
+      territories: [
+        { id: '35', label: 'São Paulo' },
+        { id: '33', label: 'Rio de Janeiro' },
+      ],
+    },
+  ],
+};
+
 const variables: GuidedVariableViewModel[] = [
   {
     id: 'internacoes',
@@ -114,6 +129,54 @@ const eligibleTests: EligibleTestViewModel[] = [
 ];
 
 describe('GuidedResearchFlow', () => {
+  it('shows disease, period, basis and every map group before variable checkboxes', async () => {
+    const user = userEvent.setup();
+    render(
+      <GuidedResearchFlow design={comparisonDesign} summary={summary} variables={variables} />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+
+    const context = screen.getByRole('region', { name: 'Recorte que será analisado' });
+    expect(within(context).getByText('Embolia e trombose arteriais')).toBeInTheDocument();
+    expect(within(context).getByText('2023–2025')).toBeInTheDocument();
+    expect(within(context).getByText('Ocorrência')).toBeInTheDocument();
+    expect(within(context).getByText('Nordeste')).toBeInTheDocument();
+    expect(within(context).getByText('Bahia, Sergipe')).toBeInTheDocument();
+    expect(within(context).getByText('Sudeste')).toBeInTheDocument();
+    expect(within(context).getByText('São Paulo, Rio de Janeiro')).toBeInTheDocument();
+    expect(within(context).getByText(/cada variável marcada será analisada como um desfecho separado e comparada entre estes grupos territoriais/i)).toBeInTheDocument();
+
+    const firstVariable = screen.getByRole('checkbox', { name: /Internações, Contagem/i });
+    expect(context.compareDocumentPosition(firstVariable) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('labels group tests as comparisons of the map groups', async () => {
+    const user = userEvent.setup();
+    render(
+      <GuidedResearchFlow
+        design={comparisonDesign}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{
+          taxa_mortalidade: {
+            ...countProfile,
+            variableId: 'taxa_mortalidade',
+            label: 'Taxa de mortalidade',
+            kind: 'rate',
+          },
+        }}
+        eligibility={eligibleTests}
+        reviewsResolved
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Comparar' }));
+    await user.click(screen.getByRole('checkbox', { name: /Taxa de mortalidade, Taxa/i }));
+
+    expect(screen.getByText('Nordeste × Sudeste')).toBeInTheDocument();
+  });
+
   it('reveals the guided sections progressively and never renders results', async () => {
     const user = userEvent.setup();
     render(
@@ -346,6 +409,7 @@ describe('GuidedVariableSelector', () => {
     const user = userEvent.setup();
     render(
       <GuidedVariableSelector
+        design={design}
         variables={variables}
         selectedVariableIds={[]}
         onSelectionChange={() => undefined}

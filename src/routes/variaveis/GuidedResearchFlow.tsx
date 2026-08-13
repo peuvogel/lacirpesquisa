@@ -27,7 +27,7 @@ export interface GuidedResearchFlowProps {
 }
 
 export function GuidedResearchFlow({
-  design: _design,
+  design,
   summary,
   variables,
   profilesByVariableId,
@@ -118,7 +118,7 @@ export function GuidedResearchFlow({
         loadError ? (
           <ErrorStep message={loadError} />
         ) : variables ? (
-          <FlowStep><GuidedVariableSelector variables={variables} selectedVariableIds={variableIds} onSelectionChange={changeVariables} /></FlowStep>
+          <FlowStep><GuidedVariableSelector design={design} variables={variables} selectedVariableIds={variableIds} onSelectionChange={changeVariables} /></FlowStep>
         ) : (
           <LoadingStep />
         )
@@ -143,6 +143,7 @@ export function GuidedResearchFlow({
         eligibility ? (
           <FlowStep>
             <EligibleTestsSection
+              design={design}
               tests={eligibility}
               selectedTestIds={testIds}
               primaryTestId={primaryTestId}

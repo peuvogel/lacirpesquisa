@@ -17,7 +17,7 @@ const GOALS: Array<{
   {
     value: 'compare',
     label: 'Comparar',
-    description: 'Investigar diferenças entre grupos ou períodos.',
+    description: 'Investigar diferenças entre grupos territoriais do mapa ou períodos.',
     icon: GitCompareArrows,
   },
   {

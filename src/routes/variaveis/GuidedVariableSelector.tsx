@@ -5,9 +5,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import type { VariableType } from '@/features/research/types';
+import type { ResearchDesign, VariableType } from '@/features/research/types';
 import { cn } from '@/lib/utils';
 import type { GuidedVariableViewModel } from './guidedViewModels';
+import { ResearchCutContext } from './ResearchCutContext';
 
 const COLUMNS: Array<{ title: string; types: VariableType[] }> = [
   { title: 'Contagens', types: ['count'] },
@@ -17,12 +18,14 @@ const COLUMNS: Array<{ title: string; types: VariableType[] }> = [
 ];
 
 export interface GuidedVariableSelectorProps {
+  design: ResearchDesign;
   variables: GuidedVariableViewModel[];
   selectedVariableIds: string[];
   onSelectionChange: (ids: string[]) => void;
 }
 
 export function GuidedVariableSelector({
+  design,
   variables,
   selectedVariableIds,
   onSelectionChange,
@@ -48,6 +51,8 @@ export function GuidedVariableSelector({
           Selecione uma ou mais. Cobertura parcial continua disponível e será explicada.
         </p>
       </div>
+
+      <ResearchCutContext design={design} />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {COLUMNS.map((column) => (

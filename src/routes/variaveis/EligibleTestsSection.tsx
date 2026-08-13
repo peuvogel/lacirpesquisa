@@ -1,8 +1,10 @@
 import { Checkbox } from '@/components/ui/checkbox';
+import type { ResearchDesign } from '@/features/research/types';
 import { cn } from '@/lib/utils';
 import type { EligibleTestViewModel } from './guidedViewModels';
 
 export interface EligibleTestsSectionProps {
+  design: ResearchDesign;
   tests: EligibleTestViewModel[];
   selectedTestIds: string[];
   primaryTestId: string | null;
@@ -23,6 +25,7 @@ const STATUS_GROUPS: Array<{
 ];
 
 export function EligibleTestsSection({
+  design,
   tests,
   selectedTestIds,
   primaryTestId,
@@ -32,6 +35,8 @@ export function EligibleTestsSection({
   roleAssignments = {},
   onRoleAssignmentsChange,
 }: EligibleTestsSectionProps) {
+  const groupComparisonLabel = design.groups.map((group) => group.name).join(' × ');
+
   function toggleTest(id: string) {
     onSelectedTestIdsChange(
       selectedTestIds.includes(id)
@@ -81,10 +86,14 @@ export function EligibleTestsSection({
             </select>
           </label>
           <p className="sm:col-span-2 font-sans text-xs text-text-muted">
-            Os papéis só afetam testes direcionais, como correlação e regressão. O sistema continua bloqueando combinações sem base estatística.
+            Os papéis só afetam testes direcionais, como correlação e regressão. Eles não redefinem os grupos territoriais do mapa, que continuam sendo comparados.
           </p>
         </div>
       ) : null}
+
+      <p className="rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3 font-sans text-sm text-text">
+        Os testes de grupo comparam os grupos territoriais do mapa: <strong>{groupComparisonLabel}</strong>.
+      </p>
 
       <div className="space-y-5">
         {STATUS_GROUPS.map((group) => {
