@@ -8,7 +8,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { resetCatalogCache } from '@/features/catalog/loadCatalog';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import type { ResearchDesign } from '@/features/research/types';
-import { VariaveisPage } from './VariaveisPage';
+import { formatResearchPeriodLabel, VariaveisPage } from './VariaveisPage';
 
 const CATALOG_ROOT = resolve(process.cwd(), 'public/data/catalog');
 
@@ -331,5 +331,14 @@ describe('VariaveisPage', () => {
     expect(location.startsWith('/mapas|')).toBe(true);
     expect(location).toContain('sih.embolia_e_trombose_arteriais.internacoes');
     expect(location).toContain('sih.embolia_e_trombose_arteriais.obitos');
+  });
+});
+
+describe('formatResearchPeriodLabel', () => {
+  it('simplifies complete annual boundaries without changing monthly labels', () => {
+    expect(formatResearchPeriodLabel({ mode: 'range', start: '2013-01', end: '2025-12' })).toBe('2013–2025');
+    expect(formatResearchPeriodLabel({ mode: 'point', point: '2020' })).toBe('2020');
+    expect(formatResearchPeriodLabel({ mode: 'compare', periodA: '2019-01', periodB: '2020-12' })).toBe('2019 × 2020');
+    expect(formatResearchPeriodLabel({ mode: 'range', start: '2020-03', end: '2020-11' })).toBe('2020-03–2020-11');
   });
 });

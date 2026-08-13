@@ -288,13 +288,27 @@ function diseaseLabel(diseaseId: string): string {
     ?? diseaseId.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase());
 }
 
-function formatPeriod(period: ResearchPeriod): string {
+export function formatResearchPeriodLabel(period: ResearchPeriod): string {
   if (period.mode === 'point') return period.point;
-  if (period.mode === 'range') return `${period.start}–${period.end}`;
-  return `${period.periodA} × ${period.periodB}`;
+  if (period.mode === 'range') {
+    const annualStart = annualBoundaryYear(period.start, '01');
+    const annualEnd = annualBoundaryYear(period.end, '12');
+    return annualStart && annualEnd
+      ? `${annualStart}–${annualEnd}`
+      : `${period.start}–${period.end}`;
+  }
+  const annualStart = annualBoundaryYear(period.periodA, '01');
+  const annualEnd = annualBoundaryYear(period.periodB, '12');
+  return annualStart && annualEnd
+    ? `${annualStart} × ${annualEnd}`
+    : `${period.periodA} × ${period.periodB}`;
+}
+
+function annualBoundaryYear(value: string, month: '01' | '12'): string | null {
+  return new RegExp(`^(\\d{4})-${month}$`).exec(value)?.[1] ?? null;
 }
 
 function formatResearchPeriod(design: ResearchDesign): string {
-  if (design.period.scope === 'shared') return formatPeriod(design.period.time);
+  if (design.period.scope === 'shared') return formatResearchPeriodLabel(design.period.time);
   return 'Períodos definidos por grupo';
 }
