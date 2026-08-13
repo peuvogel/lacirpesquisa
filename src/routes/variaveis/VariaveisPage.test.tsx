@@ -8,7 +8,8 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { resetCatalogCache } from '@/features/catalog/loadCatalog';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import type { ResearchDesign } from '@/features/research/types';
-import { formatResearchPeriodLabel, VariaveisPage } from './VariaveisPage';
+import { formatResearchPeriodLabel } from './researchCutSummary';
+import { VariaveisPage } from './VariaveisPage';
 
 const CATALOG_ROOT = resolve(process.cwd(), 'public/data/catalog');
 
@@ -205,7 +206,7 @@ describe('VariaveisPage', () => {
 
   });
 
-  it('uses the guided shell and fails closed when Supabase is unavailable in tests', async () => {
+  it('keeps the legacy guided route compatible', async () => {
     const user = userEvent.setup();
     renderPage('/variaveis', guidedDesign);
 
