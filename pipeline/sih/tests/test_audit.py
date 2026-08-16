@@ -158,7 +158,9 @@ def test_fetch_all_paginated_pagina_ate_cobrir_o_total(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(audit_mod, "_fetch", _fetch_falso)
 
-    linhas = _fetch_all_paginated("sih_collection_status")
+    linhas = _fetch_all_paginated(
+        "sih_collection_status", order="disease_id.asc", chave=("disease_id",)
+    )
 
     assert len(linhas) == total
 
@@ -178,7 +180,99 @@ def test_fetch_all_paginated_levanta_quando_leitura_fica_truncada(
     monkeypatch.setattr(audit_mod, "_fetch", _fetch_truncado)
 
     with pytest.raises(RuntimeError, match="truncad"):
-        _fetch_all_paginated("sih_collection_status")
+        _fetch_all_paginated(
+            "sih_collection_status", order="disease_id.asc", chave=("disease_id",)
+        )
+
+
+# ---------------------------------------------------------------------------
+# Paginação estável (achado do 09-13, `generateSihPacks.mjs` `e631e2f`) -- sem `order=` o corte
+# de página não é estável entre requisições, e uma linha some de uma página para reaparecer
+# duplicada em outra COM O TOTAL ANUNCIADO INTACTO. A checagem de total sozinha não pega isso.
+# ---------------------------------------------------------------------------
+
+
+def test_fetch_all_paginated_manda_order_explicito_na_query(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Sem `order=` na query, o Postgres não garante o mesmo corte entre duas requisições."""
+    monkeypatch.setenv("SUPABASE_URL", "https://exemplo.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "chave-de-teste")
+
+    urls_vistas: list[str] = []
+
+    def _fetch_falso(request: Any, timeout: int = 30) -> tuple[bytes, dict[str, str]]:
+        urls_vistas.append(request.full_url)
+        return json.dumps([{"disease_id": "d0"}]).encode("utf-8"), {"content-range": "0-0/1"}
+
+    monkeypatch.setattr(audit_mod, "_fetch", _fetch_falso)
+
+    _fetch_all_paginated(
+        "sih_metric_uf", order="disease_id.asc,ano.asc", chave=("disease_id", "ano")
+    )
+
+    assert urls_vistas, "nenhuma requisição foi feita"
+    assert "order=disease_id.asc%2Cano.asc" in urls_vistas[0]
+
+
+def test_fetch_all_paginated_levanta_quando_chave_repete_entre_paginas(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Chave repetida significa que a paginação escorregou e ALGUMA outra linha foi pulada --
+    e o total de content-range continuaria batendo. Falhar alto, nunca deduplicar em silêncio."""
+    monkeypatch.setenv("SUPABASE_URL", "https://exemplo.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "chave-de-teste")
+
+    tamanho_pagina = audit_mod._PAGE_SIZE
+    total = tamanho_pagina * 2
+
+    def _fetch_escorregado(request: Any, timeout: int = 30) -> tuple[bytes, dict[str, str]]:
+        offset = int(request.headers["Range"].split("-")[0])
+        # A 2a página repete a última chave da 1a -- exatamente o sintoma do corte instável.
+        base = 0 if offset == 0 else tamanho_pagina - 1
+        corpo = json.dumps(
+            [{"disease_id": f"d{base + i}"} for i in range(tamanho_pagina)]
+        ).encode("utf-8")
+        return corpo, _content_range(offset, tamanho_pagina, total)
+
+    monkeypatch.setattr(audit_mod, "_fetch", _fetch_escorregado)
+
+    with pytest.raises(RuntimeError, match="duplicada"):
+        _fetch_all_paginated(
+            "sih_collection_status", order="disease_id.asc", chave=("disease_id",)
+        )
+
+
+def test_fetch_all_paginated_le_cada_linha_uma_vez_na_fronteira_de_pagina(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Total exatamente divisível pelo tamanho de página, e uma linha a mais -- os dois casos
+    onde um laço de paginação erra por um."""
+    monkeypatch.setenv("SUPABASE_URL", "https://exemplo.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "chave-de-teste")
+
+    tamanho_pagina = audit_mod._PAGE_SIZE
+
+    for total in (tamanho_pagina * 2, tamanho_pagina * 2 + 1):
+
+        def _fetch_falso(
+            request: Any, timeout: int = 30, _total: int = total
+        ) -> tuple[bytes, dict[str, str]]:
+            offset = int(request.headers["Range"].split("-")[0])
+            n = min(tamanho_pagina, _total - offset)
+            corpo = json.dumps(
+                [{"disease_id": f"d{offset + i}"} for i in range(n)]
+            ).encode("utf-8")
+            return corpo, _content_range(offset, tamanho_pagina, _total)
+
+        monkeypatch.setattr(audit_mod, "_fetch", _fetch_falso)
+
+        linhas = _fetch_all_paginated(
+            "sih_collection_status", order="disease_id.asc", chave=("disease_id",)
+        )
+
+        assert len(linhas) == total, f"total={total}"
+        assert len({linha["disease_id"] for linha in linhas}) == total, f"duplicata em total={total}"
 
 
 # ---------------------------------------------------------------------------
