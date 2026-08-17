@@ -155,6 +155,7 @@ def test_collect_uf_nao_pula_uf_baixada_mas_nao_agregada(cache_dir, index, monke
 
 
 def test_collect_all_nao_pula_uf_pendente_de_agregacao(cache_dir, index, monkeypatch):
+    _disco_generoso(monkeypatch)
     monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
     _stage_downloaded_file(cache_dir, "RDAC1901")
     # nenhuma entrada prévia no collect ledger -- 'nunca_iniciado', mas já baixada em disco.
@@ -176,6 +177,25 @@ class _FakeDiskUsage:
         self.free = free
         self.total = free * 10
         self.used = 0
+
+
+def _disco_generoso(monkeypatch) -> None:
+    """Neutraliza a guarda de disco para os testes que exercitam o LAÇO, não a guarda.
+
+    Sem isto, `test_collect_all_*` depende do espaço livre AMBIENTE da máquina que roda a suíte:
+    a guarda usa `shutil.disk_usage` de verdade e projeta ~569 MB para o AC, então num disco
+    apertado a corrida para limpo (comportamento CORRETO da guarda) e o teste falha dizendo
+    `'nunca_iniciado' == 'falhou'` — uma mensagem que aponta para o ledger quando o problema é o
+    disco de quem rodou. Medido em 2026-08-17: com 375 MB livres, 4 testes de laço quebravam sem
+    nenhuma regressão de código, e `npm run gate` ficava vermelho por uma razão que não tem nada a
+    ver com o que estes testes provam (isolamento de falha por UF e self-cura do ledger).
+
+    A guarda em si continua provada, com disco FALSO nos dois sentidos, em
+    `test_garantir_espaco_recusa_uf_que_nao_cabe` / `test_garantir_espaco_aceita_uf_pequena_com_
+    disco_generoso` / `test_collect_all_para_limpo_quando_disco_insuficiente`. Estes três é que
+    são os testes da guarda; os de laço não podem herdá-la por acidente do ambiente.
+    """
+    monkeypatch.setattr(collect.shutil, "disk_usage", lambda path: _FakeDiskUsage(64 * 1024**3))
 
 
 def test_garantir_espaco_recusa_uf_que_nao_cabe(cache_dir, monkeypatch):
@@ -228,6 +248,7 @@ def test_collect_uf_levanta_quando_download_deixa_arquivo_pendente(cache_dir, in
 
 
 def test_collect_all_isola_falha_de_uma_uf_e_processa_a_proxima(cache_dir, index, monkeypatch):
+    _disco_generoso(monkeypatch)
     monkeypatch.setattr(
         enumerate_mod,
         "expected_file_names",
@@ -303,6 +324,7 @@ def test_collect_uf_incompleta_self_cura_fantasma_e_conclui(cache_dir, index, mo
 def test_collect_all_self_cura_uma_uf_e_isola_da_proxima(cache_dir, index, monkeypatch):
     """Mesmo cenário acima, mas via `collect_all` (a corrida real) com uma segunda UF saudável
     ao lado -- prova que a self-cura de AC não vaza para DF."""
+    _disco_generoso(monkeypatch)
     monkeypatch.setattr(
         enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901", "RDDF1901"})
     )
@@ -474,6 +496,7 @@ def test_collect_all_isola_estouro_de_guarda_de_self_cura_e_processa_a_proxima(
     """O estouro da guarda (teste acima) passando por `collect_all` -- isola a UF (mesma
     disciplina PIPE-06 já provada para falha de download/agregação) em vez de derrubar a
     corrida inteira; a UF seguinte processa normalmente."""
+    _disco_generoso(monkeypatch)
     monkeypatch.setattr(
         enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901", "RDDF1901"})
     )
