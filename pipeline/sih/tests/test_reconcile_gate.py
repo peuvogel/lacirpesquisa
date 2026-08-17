@@ -114,6 +114,12 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 PARQUET_FIXTURE = FIXTURES_DIR / "rdac_2019.parquet"
 ORACLE_AC_2019_PATH = FIXTURES_DIR / "oracle_ac_2019.json"
 
+# 09-16: a ponta BEM-FORMADA. `rdac_admissao_2019.parquet` são as competências 2019+2020 (o ano
+# de ADMISSÃO 2019 fechado), e `oracle_ac_2019_bem_formado.json` é o TabNet raspado com
+# `janela=1` (24 arquivos de competência submetidos, coluna Ano_atendimento=2019).
+PARQUET_ADMISSAO_FIXTURE = FIXTURES_DIR / "rdac_admissao_2019.parquet"
+ORACLE_AC_2019_BEM_FORMADO_PATH = FIXTURES_DIR / "oracle_ac_2019_bem_formado.json"
+
 _MEDIDAS = ("internacoes", "obitos", "valor_total", "dias_permanencia")
 
 # Conjunto conhecido dos 3 pares que permanecem inexplicado (atualizado 2026-08-10, investigação
@@ -146,9 +152,9 @@ def _load_oracle_ac_2019() -> list[dict]:
         return json.load(fh)
 
 
-def _agregar(cid_map_corrigido) -> dict[tuple[str, str, int, str], float]:
+def _agregar(cid_map_corrigido, parquet=PARQUET_FIXTURE) -> dict[tuple[str, str, int, str], float]:
     index = build_index(cid_map_corrigido)
-    linhas = aggregate_parquet_dir(PARQUET_FIXTURE, index)
+    linhas = aggregate_parquet_dir(parquet, index)
 
     agregado: dict[tuple[str, str, int, str], float] = {}
     for linha in linhas:
@@ -206,6 +212,79 @@ def test_gate_agrega_fixture_pequena_e_compara_com_oraculo_congelado():
     # `ok` passa a True pela primeira vez desde que este gate existe -- e sem que nenhuma
     # correção de faixa CID tenha sido adicionada ou alterada por 09-15-DT-INTER.
     assert resultado.ok is True
+
+
+# ---------------------------------------------------------------------------
+# 09-16 -- O GATE DE PARIDADE BEM-FORMADA.
+#
+# O gate acima compara duas pontas restritas à COMPETÊNCIA 2019. Ele prova que o matcher está
+# certo, mas não é o que o operador vai ver: a produção publica o ano de ADMISSÃO. Este gate
+# fecha essa lacuna comparando o ano de admissão 2019 completo contra um oráculo TabNet que
+# submete as competências necessárias para medir a mesma população (`janela=1`).
+#
+# Medido ao vivo em 2026-08-17 (196 requisições): site 11.211 = TabNet bem-formado 11.211, 98 de
+# 98 pares com delta ZERO. A fixture de admissão reproduz o agregado REAL da recoleta (AC.parquet,
+# 161 competências) agravo a agravo, sem uma única divergência -- verificado antes de congelar.
+# ---------------------------------------------------------------------------
+
+
+def _load_oracle_bem_formado() -> list[dict]:
+    with ORACLE_AC_2019_BEM_FORMADO_PATH.open("r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def test_gate_paridade_bem_formada_ano_de_admissao_2019_bate_exato_com_o_tabnet():
+    """**O critério de aceitação do operador, como teste.**
+
+    "quando user puxe dado tabnet e site lado a lado sejam iguais" -- aqui os dois lados medem a
+    MESMA população (ano de internação 2019) e precisam bater ao registro. Qualquer mudança na
+    agregação, no matcher ou nas correções que desloque um único par derruba isto.
+    """
+    agregado = _agregar(
+        apply_corrections(load_cid_map(), load_corrections()), parquet=PARQUET_ADMISSAO_FIXTURE
+    )
+    resultado = compare(agregado, _load_oracle_bem_formado(), load_divergencias())
+
+    assert {p.disease_id for p in resultado.inexplicado} == frozenset(), resultado.render_markdown()
+    assert len(resultado.exato) == 98
+    assert len(resultado.explicado) == 0
+    assert len(resultado.inexplicado) == 0
+    assert resultado.ok is True
+
+
+def test_gate_paridade_bem_formada_nao_depende_de_nenhuma_divergencia_de_lote():
+    """As ~64 entradas de `cid-divergencias.json` são INERTES nesta comparação: com a lista
+    VAZIA, o resultado é byte-idêntico. É isso que autoriza aposentá-las -- não uma opinião sobre
+    elas, mas a medição de que nenhuma é consultada porque nenhum par tem delta não-zero."""
+    agregado = _agregar(
+        apply_corrections(load_cid_map(), load_corrections()), parquet=PARQUET_ADMISSAO_FIXTURE
+    )
+
+    com = compare(agregado, _load_oracle_bem_formado(), load_divergencias())
+    sem = compare(agregado, _load_oracle_bem_formado(), [])
+
+    assert len(sem.exato) == len(com.exato) == 98
+    assert len(sem.explicado) == len(com.explicado) == 0
+    assert len(sem.inexplicado) == len(com.inexplicado) == 0
+    assert sem.ok is com.ok is True
+
+
+def test_gate_consulta_ingenua_do_tabnet_fica_ABAIXO_e_isso_e_a_justificativa():
+    """A segunda metade do critério: "e se diferentes justificados".
+
+    Contra a consulta INGÊNUA (12 arquivos do ano, a seleção padrão do TabNet), o site fica
+    sistematicamente MAIOR -- nunca menor. A direção é a justificativa que o app precisa mostrar:
+    o site conta internações que o TabNet ingênuo não enxerga porque foram faturadas depois.
+    """
+    entradas = _load_oracle_bem_formado()
+
+    maiores = sum(1 for e in entradas if e["valorTabnet"] > e["valorTabnetIngenuo"])
+    menores = sum(1 for e in entradas if e["valorTabnet"] < e["valorTabnetIngenuo"])
+
+    assert menores == 0, "o site nunca pode ficar ABAIXO da consulta ingênua -- inverteria a razão"
+    assert maiores == 65
+    assert sum(e["valorTabnet"] for e in entradas) == 11211
+    assert sum(e["valorTabnetIngenuo"] for e in entradas) == 10265
 
 
 def test_gate_falha_se_cid_corrections_mudar():
