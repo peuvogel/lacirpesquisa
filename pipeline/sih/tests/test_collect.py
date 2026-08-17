@@ -84,6 +84,38 @@ def test_collect_uf_agrega_persiste_e_recicla_o_bruto(cache_dir, index, monkeypa
     assert collect_ledger.self_heal_count("AC") == 0
 
 
+def test_collect_uf_persiste_a_defasagem_medida_antes_de_reciclar_o_bruto(
+    cache_dir, index, monkeypatch
+):
+    """09-15-DT-INTER: o histograma de defasagem (`ANO_CMPT - ano(DT_INTER)`) e os descartes de
+    `DT_INTER` são medidos sobre o parquet BRUTO e precisam ser gravados no `CollectLedger` antes
+    da reciclagem -- é a única janela em que esse dado existe. Sem isto, responder "a cauda de
+    competência de `enumerate.py` foi suficiente?" exigiria re-baixar os ~8,8 GB, que foi
+    exatamente o preço que o 09-10 pagou por não ter preservado `PROC_REA`.
+
+    Medido sobre a fixture real (AC, competência 2019 inteira): 44.563 registros `IDENT='1'`, dos
+    quais 41.070 são internações de 2019 (defasagem 0) e 3.493 de 2018 (defasagem 1) -- 7,84% da
+    competência. Zero `DT_INTER` malformado."""
+    monkeypatch.setattr(enumerate_mod, "expected_file_names", lambda: frozenset({"RDAC1901"}))
+    _stage_downloaded_file(cache_dir, "RDAC1901")
+
+    collect_ledger = collect.CollectLedger()
+    collect.collect_uf(
+        "AC", collect_ledger=collect_ledger, index=index, download_fn=_download_fn_proibido
+    )
+
+    estatisticas = collect_ledger.entry("AC")["estatisticas"]
+    assert estatisticas["total"] == 44_589
+    assert estatisticas["total_ident_1"] == 44_563
+    assert estatisticas["descartes_dt_inter"] == 0
+    assert estatisticas["lag"] == {"0": 41_070, "1": 3_493}
+
+    # sobrevive ao round-trip por JSON do collect_state.json (chaves de lag são string por isso)
+    collect_ledger.save()
+    recarregado = collect.CollectLedger.load()
+    assert recarregado.entry("AC")["estatisticas"] == estatisticas
+
+
 # ---------------------------------------------------------------------------
 # Prova 2 -- retomada: não rebaixa/re-baixa UF já agregada, não pula UF baixada-mas-não-agregada.
 # ---------------------------------------------------------------------------
