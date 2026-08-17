@@ -1,0 +1,134 @@
+{
+  "gerado_em": "2026-08-17T19:28:42Z",
+  "metodologia": {
+    "site": {
+      "chave_de_ano": "DT_INTER",
+      "descricao": "ano em que a internação ACONTECEU; a coleta submete todas as competências necessárias para fechar o ano, inclusive as do ano seguinte"
+    },
+    "tabnet_bem_formado": {
+      "janela_competencia": 1,
+      "descricao": "submete as 12 competências do ano + as 12 do ano seguinte, lendo a coluna Ano_atendimento do ano pedido"
+    },
+    "tabnet_ingenuo": {
+      "janela_competencia": 0,
+      "descricao": "submete apenas os 12 arquivos de competência do próprio ano -- a seleção padrão do TabNet, e portanto a consulta que um aluno faz sem instrução"
+    }
+  },
+  "distribuicao": {
+    "n": 6,
+    "paridade_exata": 6,
+    "paridade_divergente": 0,
+    "sem_pct_denominador_zero": 0,
+    "site_maior_que_ingenuo": 4,
+    "site_igual_ao_ingenuo": 2,
+    "site_menor_que_ingenuo": 0,
+    "delta_ingenuo_absoluto_total": 22,
+    "total_site": 490,
+    "total_bem_formado": 490,
+    "total_ingenuo": 468,
+    "min_pct": 0.0,
+    "p25_pct": 0.49504950495049505,
+    "mediana_pct": 2.5956035970569538,
+    "p75_pct": 3.388959190129706,
+    "p90_pct": 7.606490872210953,
+    "max_pct": 11.76470588235294
+  },
+  "entradas": [
+    {
+      "disease_id": "acid_vascular_cerebr_nao_espec_hemorrag_ou_isquem",
+      "medida": "internacoes",
+      "grao": "uf",
+      "local": "ocorrencia",
+      "ano": 2015,
+      "uf": "AC",
+      "site": 103,
+      "tabnet_bem_formado": 103,
+      "tabnet_ingenuo": 101,
+      "paridade_exata": true,
+      "delta_bem_formado": 0,
+      "delta_ingenuo": 2,
+      "divergencia_pct": 1.9801980198019802,
+      "divergencia_razao": "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 arquivos de competência do próprio ano, então ela não enxerga as internações do fim do ano faturadas no ano seguinte. Para reproduzir este número no TabNet, submeta também as competências do ano seguinte."
+    },
+    {
+      "disease_id": "embolia_e_trombose_arteriais",
+      "medida": "internacoes",
+      "grao": "uf",
+      "local": "ocorrencia",
+      "ano": 2015,
+      "uf": "AC",
+      "site": 16,
+      "tabnet_bem_formado": 16,
+      "tabnet_ingenuo": 16,
+      "paridade_exata": true,
+      "delta_bem_formado": 0,
+      "delta_ingenuo": 0,
+      "divergencia_pct": 0.0,
+      "divergencia_razao": "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 arquivos de competência do próprio ano, então ela não enxerga as internações do fim do ano faturadas no ano seguinte. Para reproduzir este número no TabNet, submeta também as competências do ano seguinte."
+    },
+    {
+      "disease_id": "flebite_tromboflebite_embolia_e_trombose_venosa",
+      "medida": "internacoes",
+      "grao": "uf",
+      "local": "ocorrencia",
+      "ano": 2015,
+      "uf": "AC",
+      "site": 114,
+      "tabnet_bem_formado": 114,
+      "tabnet_ingenuo": 102,
+      "paridade_exata": true,
+      "delta_bem_formado": 0,
+      "delta_ingenuo": 12,
+      "divergencia_pct": 11.76470588235294,
+      "divergencia_razao": "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 arquivos de competência do próprio ano, então ela não enxerga as internações do fim do ano faturadas no ano seguinte. Para reproduzir este número no TabNet, submeta também as competências do ano seguinte."
+    },
+    {
+      "disease_id": "infarto_cerebral",
+      "medida": "internacoes",
+      "grao": "uf",
+      "local": "ocorrencia",
+      "ano": 2015,
+      "uf": "AC",
+      "site": 225,
+      "tabnet_bem_formado": 225,
+      "tabnet_ingenuo": 218,
+      "paridade_exata": true,
+      "delta_bem_formado": 0,
+      "delta_ingenuo": 7,
+      "divergencia_pct": 3.211009174311927,
+      "divergencia_razao": "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 arquivos de competência do próprio ano, então ela não enxerga as internações do fim do ano faturadas no ano seguinte. Para reproduzir este número no TabNet, submeta também as competências do ano seguinte."
+    },
+    {
+      "disease_id": "outras_doencas_das_arterias_arteriolas_e_capilares",
+      "medida": "internacoes",
+      "grao": "uf",
+      "local": "ocorrencia",
+      "ano": 2015,
+      "uf": "AC",
+      "site": 30,
+      "tabnet_bem_formado": 30,
+      "tabnet_ingenuo": 29,
+      "paridade_exata": true,
+      "delta_bem_formado": 0,
+      "delta_ingenuo": 1,
+      "divergencia_pct": 3.4482758620689653,
+      "divergencia_razao": "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 arquivos de competência do próprio ano, então ela não enxerga as internações do fim do ano faturadas no ano seguinte. Para reproduzir este número no TabNet, submeta também as competências do ano seguinte."
+    },
+    {
+      "disease_id": "outras_doencas_vasculares_perifericas",
+      "medida": "internacoes",
+      "grao": "uf",
+      "local": "ocorrencia",
+      "ano": 2015,
+      "uf": "AC",
+      "site": 2,
+      "tabnet_bem_formado": 2,
+      "tabnet_ingenuo": 2,
+      "paridade_exata": true,
+      "delta_bem_formado": 0,
+      "delta_ingenuo": 0,
+      "divergencia_pct": 0.0,
+      "divergencia_razao": "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 arquivos de competência do próprio ano, então ela não enxerga as internações do fim do ano faturadas no ano seguinte. Para reproduzir este número no TabNet, submeta também as competências do ano seguinte."
+    }
+  ]
+}
