@@ -60,6 +60,20 @@ completed: 2026-08-17
 
 # Phase 9 Plan 15-DT-INTER: Agregação por data de internação Summary
 
+> **CORREÇÃO (09-16, 2026-08-17).** Duas afirmações deste documento foram medidas contra a
+> recoleta real e uma delas não se sustenta:
+>
+> - ❌ *"a defasagem **nunca passou de 1 ano** em ~2,2 milhões de registros medidos"* — com
+>   35.455.908 AIH reais (16× mais dado), existe **1 registro em RO com defasagem 2**. O correto é
+>   "≤ 1 ano em 35.455.907 de 35.455.908 (99,999997%)".
+> - ✅ *"zero descarte de `DT_INTER`"* — **confirmado** nas 15 UFs fechadas, 35.455.908 AIH.
+> - ✅ *`amputacao_mmii` AC/2019 = 66 = 66* — **confirmado** contra o dado realmente coletado,
+>   junto com mais 35 pares exatos (36/39 em AC/RR/DF × 13 anos).
+>
+> Além disso, a pendência que este SUMMARY deixou aberta (*"`oracle_scrape.py` precisa de
+> conserto"*) foi resolvida no 09-16 e virou a ferramenta que prova a paridade.
+> Ver `09-16-PARIDADE-SUMMARY.md` e `pipeline/sih/reports/recoleta-dt-inter.md`.
+
 **A agregação passa a chavear o ano por `DT_INTER` (quando a internação aconteceu) em vez de `ANO_CMPT` (quando a AIH foi faturada) — e, ao alinhar o agregado e o oráculo para medirem a mesma população, o resíduo do SC-7 que este projeto carregava havia duas semanas desapareceu por inteiro: 98 de 98 pares batem com delta ZERO, sem nenhuma correção nova.**
 
 ## Achado central — o resíduo do SC-7 nunca existiu
