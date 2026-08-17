@@ -268,7 +268,13 @@ def _escrever_parquet_bruto_sp_sintetico() -> None:
     `PROC_REA` acrescentado (09-XX-PROCEDIMENTO, correção Rule 3): `aggregate.py` passou a exigir
     essa coluna em `NEEDED_COLUMNS` para o eixo de procedimento (amputacao_mmii) -- valor
     "0000000000" nunca casa nenhum código SIGTAP real, sem mudança de comportamento deste
-    teste."""
+    teste.
+
+    `DT_INTER` acrescentado (09-15-DT-INTER, correção Rule 3, mesma classe da anterior):
+    `aggregate.py` passou a tirar o `ano` da data de INTERNAÇÃO em vez da competência de
+    faturamento, então essa coluna virou obrigatória em `NEEDED_COLUMNS`. Valor "20190315" --
+    mesmo ano que `ANO_CMPT` já declarava, para que o `ano` da linha agregada continue 2019 e
+    nenhum número deste teste se mova."""
     tabela = pa.table(
         {
             "DIAG_PRINC": ["O808"],
@@ -278,6 +284,7 @@ def _escrever_parquet_bruto_sp_sintetico() -> None:
             "VAL_TOT": ["        459.40"],
             "DIAS_PERM": ["    2"],
             "ANO_CMPT": ["2019"],
+            "DT_INTER": ["20190315"],
             "IDENT": ["1"],
             "PROC_REA": ["0000000000"],
         }
