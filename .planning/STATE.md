@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-13 COMPLETO (2026-08-13): os 10 packs de Variaveis regerados a partir de sih_metric_uf/sih_collection_status via PostgREST (chave anon), catalog:build repontado, metricless-diseases.json vazio. Achado real corrigido: paginacao PostgREST sem order= explicito nao e estavel entre requisicoes -- corrigido no gerador, registrado como achado aberto para audit.py/upload.py (fora do file_scope). 09-04 fechado retroativamente na mesma sessao, sem trabalho novo de coleta. npm run gate verde em todos os commits. 09-14 e o unico plano pendente da fase. Ver 09-13-SUMMARY.md e 09-04-SUMMARY.md."
-last_updated: "2026-08-16T20:59:57.415Z"
-last_activity: 2026-08-13
+stopped_at: "09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal): agregacao passou a chavear o ano por DT_INTER (data de internacao) em vez de ANO_CMPT (competencia de faturamento). ACHADO CENTRAL: o residuo do SC-7 nunca existiu -- era artefato de comparar agregado por competencia contra um oraculo por atendimento truncado a uma competencia (oracle_scrape.py submete so os 12 arquivos do ano). Alinhadas as pontas, o gate vai de exato=34/explicado=61/inexplicado=3 (ok=False) para exato=98/explicado=0/inexplicado=0 (ok=True), delta ZERO em 98/98 pares, sem nenhuma correcao nova. amputacao_mmii AC/2019 fecha 66=66 contra o oraculo qibr.def (era 50, -24,2%); serie 2013-2024 bate 24/24 exatos em DF e RR. Defasagem medida em ~2,2M registros reais nunca passa de 1 ano; zero DT_INTER malformado. Janela de competencia da coleta vai a 2026-05 (4.212 obrigatorios + 135 de cauda oportunista); D-11 NAO alargada -- passou a significar ano de internacao. Commits 2edf1c4, 5607324, 55dfdbb, gate verde nos tres. Recoleta nacional (4.347 arquivos) EM ANDAMENTO; producao NAO re-carregada (instrucao do brief). Bloqueio novo: disco (2,4 GB livres) recusa MG e SP pela guarda. Ver 09-15-DT-INTER-SUMMARY.md."
+last_updated: "2026-08-17T13:05:00.000Z"
+last_activity: 2026-08-17
 progress:
   total_phases: 6
   completed_phases: 3
@@ -82,12 +82,75 @@ content-range identico) -- corrigido no gerador, registrado como achado aberto (
 fora do file_scope) para audit.py/upload.py, que usam o mesmo padrao. `metricless-diseases.json`
 esvaziado. Ver 09-13-SUMMARY.md.
 
-Proximo: 09-14 e o unico plano pendente da fase. Segue desbloqueado desde o
-09-10-SEGUNDA-SUBSTITUICAO (amputacao_mmii em producao).
-Status: Ready to execute (09-14)
-Last activity: 2026-08-13
+09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal, brief do coordenador) -- a
+agregacao passou a chavear o `ano` por `DT_INTER` (data em que a internacao ACONTECEU) em vez de
+`ANO_CMPT` (competencia em que a AIH foi FATURADA), por decisao do operador em base
+epidemiologica: por competencia, a taxa por 100 mil casa numerador e denominador de anos
+diferentes, o Prais-Winsten le um atraso sistematico de faturamento como TENDENCIA, e uma
+internacao de dezembro faturada em janeiro cai no ano errado.
+
+**ACHADO CENTRAL -- o residuo do SC-7 nunca existiu.** O vies sempre-positivo que o projeto
+carregava desde o spike de 2026-08-04 (mediana +4,14% -> +3,45% -> +5,10% -> +7,90%), que motivou
+~61 entradas em `cid-divergencias.json`, um checkpoint clinico e dois bloqueios de upload, era
+artefato de comparar um agregado por COMPETENCIA contra um oraculo por ATENDIMENTO TRUNCADO A UMA
+COMPETENCIA: `oracle_scrape.py` submete ao TabNet so os 12 arquivos `nibr{AA}MM.dbf` do ano
+pedido e le a coluna `Ano_atendimento`, entao mede "internacoes de Y faturadas na competencia Y",
+nunca o ano de atendimento completo. Alinhadas as duas pontas para medirem a MESMA populacao, o
+gate vai de `exato=34/explicado=61/inexplicado=3` (ok=False) para **`exato=98/explicado=0/
+inexplicado=0` (ok=True)** -- 98 de 98 pares com delta EXATAMENTE ZERO, sem nenhuma correcao de
+faixa CID nova (as existentes continuam load-bearing: sem elas cai para 96/2). O matcher CID, o
+mapa da Lista Morb, o filtro `IDENT='1'` e a atribuicao territorial estavam corretos o tempo todo.
+
+Validacao independente contra o oraculo `qibr.def` (que submete os 156 arquivos dos 13 anos e
+portanto mede ano de atendimento de verdade): `amputacao_mmii` AC/2019 vai de 50 (-24,2% por
+ANO_CMPT) para **66 = 66, EXATO**; e serie ano a ano das UFs ja recoletadas bate **24/24 exatos**
+em 2013-2024 (DF e RR), contra oscilacao de -24,2% a +16,7% sob ANO_CMPT.
+
+Defasagem medida (nunca suposta) em ~2,2 milhoes de registros reais (AC 2019/2020/2025, SP
+2026-01..06, DF/PR, RR completa): **nunca passa de 1 ano**, decai por fator ~4-8 por mes, e
+**zero `DT_INTER` malformado**. Janela de competencia da coleta passa a 2013-01..2026-05 (4.212
+obrigatorios + 135 de cauda oportunista); a janela D-11 (2013-2025) NAO foi alargada -- passou a
+significar ano de INTERNACAO. Commits `2edf1c4`, `5607324`, `55dfdbb`; `npm run gate` verde nos
+tres. Recoleta nacional (4.347 arquivos, ~8,8 GB) EM ANDAMENTO em segundo plano. Producao NAO
+re-carregada (instrucao explicita do brief). Ver `09-15-DT-INTER-SUMMARY.md`.
+
+Proximo: terminar a recoleta nacional, depois 09-14. Producao aguarda autorizacao do operador
+para um `upload.py` novo com o dado por DT_INTER.
+Status: 09-15-DT-INTER com codigo completo e provado; recoleta em andamento
+Last activity: 2026-08-17
 
 ### Bloqueios abertos
+
+- **[09-15-DT-INTER, 2026-08-17] Disco insuficiente para as duas maiores UFs.** Livre no inicio
+  da recoleta: **2,4 GB**. A guarda de disco projeta MG em 2,33 GB e SP em 2,51 GB (projecao +
+  margem de 500 MB), entao as duas provavelmente serao recusadas com `DiscoInsuficienteError` --
+  que e o comportamento CORRETO (para a corrida limpo em vez de arriscar o disco de boot). **Nao
+  foi contornado**: a guarda nao foi afrouxada e nenhum arquivo do operador foi apagado. Acao do
+  operador: liberar ~1 GB (ha 1,2 GB em `~/Library/Caches/com.todesktop.*/ShipIt`, cache de
+  auto-update regeneravel) e reexecutar `npm run pipeline:collect` -- a retomada e por UF e nao
+  re-baixa nada ja concluido.
+
+- **[09-15-DT-INTER, 2026-08-17] `oracle_scrape.py` produz um oraculo truncado (nao corrigido,
+  fora do file_scope).** Ele submete ao TabNet so os 12 arquivos de competencia do ano pedido e
+  le `Ano_atendimento` -- portanto nunca mede um ano de atendimento completo. O gate SC-7 hoje
+  compara, de proposito e corretamente, a populacao de COMPETENCIA (a fixture do gate e a
+  competencia 2019, que e o que o oraculo enxerga). Consertar `oracle_scrape.py` para submeter
+  todas as competencias necessarias -- como `coleta_vascular_amputacao.py`/`qibr.def` ja faz --
+  permitiria reconciliar o ano de admissao completo tambem no eixo CID.
+
+- **[09-15-DT-INTER, 2026-08-17] `cid-divergencias.json`: ~61 entradas INERTES a aposentar.** As
+  entradas de "divergencia de lote por competencia de processamento" descrevem um residuo que,
+  medido corretamente, nao existe -- nenhuma e consultada hoje (nenhum par tem delta nao-zero).
+  Nao removidas por esta plan (`scripts/catalog/` fora do file_scope; a decisao e do operador),
+  mas uma explicacao que nao explica mais nada nao pode continuar de pe como se explicasse.
+
+- **[09-15-DT-INTER, 2026-08-17] Achado colateral: o DATASUS RE-PUBLICA arquivos de competencia
+  ja fechados.** Medido: `RDDF1708` e `RDPR2004` servidos hoje tem contagem diferente da fatia
+  arquivada em 2026-08-12 (16.292 vs 2.292; 56.146 vs 25.493) e **zero** dos defeitos que as
+  fixtures de regressao capturam (registro corrompido do DBC, `MUNIC_MOV` em branco). As guardas
+  continuam valendo (a corrupcao era real e pode voltar), mas esses dois arquivos ja nao a
+  reproduzem -- por isso as fixtures ficaram INTOCADAS e a coluna `DT_INTER` que faltava e
+  derivada no harness de teste, nunca gravada dentro do binario.
 
 - **RESOLVIDO (2026-08-13, 09-10-SEGUNDA-SUBSTITUICAO, ad-hoc sem PLAN.md formal): segunda substituicao atomica de producao (dataset completo, 331 agravos) executada e reconferida.** Re-coleta nacional completa (27/27 UFs `agregado_reciclado`, 0 `falhou`) com o eixo `PROC_REA` (09-10-PROCEDIMENTO) incluido -- `amputacao_mmii` presente pela primeira vez em producao (702 linhas = 27 UFs x 13 anos x 2 locais, completo). Reaproveitou `upload.py`/`partitions.py` do 09-10 SEM NENHUMA alteracao. As 27 particoes de municipio foram REGENERADAS a partir dos agregados novos e RE-ENVIADAS ao Storage (bucket `sih-municipio`, 130,05 MB total, SP=19,36 MB, sob o teto de 50 MB/objeto) e `upload.py --tabela sih_metric_uf` trocou `sih_metric_uf` atomicamente (207.131->207.664 linhas, 330->331 agravos, ~3min29s de parede). **A sessao que lancou o swap fechou NO MEIO do polling, mas a parte irreversivel ja tinha completado com sucesso antes disso** -- reconferido de forma independente (nao assumido) numa sessao de continuacao: `sih_metric_uf`=207664/331 agravos, `sih_collection_status`=33560, `sih_metric_muni`=1099403 (intocada), `db_size`=420 MB, nenhuma tabela `*_staging` orfa, `sih-swap-contagens.sql` regenerado com `ESPERADO_SIH_METRIC_UF=207664` (commit `df95381`) saiu 0 contra producao real (5 RAISE EXCEPTION, nenhum disparou). `amputacao_mmii` provada end-to-end pelo caminho anonimo real do app (PostgREST, `GET` com chave `anon`, nao SQL direto): AC/2019/ocorrencia=50 internacoes/6 obitos, batendo exato com a reconciliacao do 09-10-PROCEDIMENTO. Leitura anonima confirmada (200), escrita anonima recusada (401 PostgREST RLS, 403 Storage RLS). Discrepancia de 3 linhas entre 207.667 (chaves unicas nos agregados brutos) e 207.664 (producao) investigada e explicada: 3 linhas de grao UF com `UF_ZI` malformado (`'02'`, `'00'`, `'  '`) descartadas silenciosamente por `partitions._uf_dona` (mesma classe do 09-04-FIX-MUNICIPIO-BRANCO, escala menor, nao corrigida -- fora do file_scope desta corrida). `npm run gate` verde. Ver `09-10-SUMMARY.md` §"Segunda substituição de produção — dataset completo, 331 agravos".
 
@@ -263,8 +326,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-13T10:00:00.000Z
-Stopped at: 09-13 COMPLETO (2026-08-13): os 10 packs de Variaveis regerados a partir de sih_metric_uf/sih_collection_status via PostgREST (chave anon), catalog:build repontado, metricless-diseases.json vazio. Achado real corrigido: paginacao PostgREST sem order= explicito nao e estavel entre requisicoes -- corrigido no gerador, registrado como achado aberto para audit.py/upload.py (fora do file_scope). 09-04 fechado retroativamente na mesma sessao, sem trabalho novo de coleta. npm run gate verde em todos os commits. 09-14 e o unico plano pendente da fase. Ver 09-13-SUMMARY.md e 09-04-SUMMARY.md.
+Last session: 2026-08-17T13:05:00.000Z
+Stopped at: 09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal): agregacao passou a chavear o ano por DT_INTER (data de internacao) em vez de ANO_CMPT (competencia de faturamento). ACHADO CENTRAL: o residuo do SC-7 nunca existiu -- era artefato de comparar agregado por competencia contra um oraculo por atendimento truncado a uma competencia (oracle_scrape.py submete so os 12 arquivos do ano). Alinhadas as pontas, o gate vai de exato=34/explicado=61/inexplicado=3 (ok=False) para exato=98/explicado=0/inexplicado=0 (ok=True), delta ZERO em 98/98 pares, sem nenhuma correcao nova. amputacao_mmii AC/2019 fecha 66=66 contra o oraculo qibr.def (era 50, -24,2%); serie 2013-2024 bate 24/24 exatos em DF e RR. Defasagem medida em ~2,2M registros reais nunca passa de 1 ano; zero DT_INTER malformado. Janela de competencia da coleta vai a 2026-05 (4.212 obrigatorios + 135 de cauda oportunista); D-11 NAO alargada -- passou a significar ano de internacao. Commits 2edf1c4, 5607324, 55dfdbb, gate verde nos tres. Recoleta nacional (4.347 arquivos) EM ANDAMENTO; producao NAO re-carregada (instrucao do brief). Bloqueio novo: disco (2,4 GB livres) recusa MG e SP pela guarda. Ver 09-15-DT-INTER-SUMMARY.md.
 Resume file: None
 
 ## Performance Metrics
