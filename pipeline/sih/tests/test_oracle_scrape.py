@@ -183,6 +183,29 @@ def test_scrape_pairs_default_continua_ingenuo_para_nao_mover_a_fixture_congelad
     assert len(arquivos) == 12
 
 
+def test_sum_uf_ano_zero_legitimo_quando_a_tabela_tem_outras_ufs_mas_nao_a_pedida():
+    """Medido ao vivo em AP/2019 (09-16): num agravo raro de UF pequena, o TabNet simplesmente
+    NÃO emite a linha do município — a tabela vem cheia de outras UFs e sem nenhuma do Amapá.
+    Isso é um zero verdadeiro, não uma falha, e tratá-lo como falha derrubava a medição inteira
+    de uma UF pequena, justamente o caso que mais interessa provar."""
+    linhas = [
+        ["Município", "2019"],
+        ["120040 RIO BRANCO", "7"],
+        ["355030 SAO PAULO", "12"],
+    ]
+
+    assert oracle_scrape._sum_uf_ano(linhas, "16", 2019) == 0
+
+
+def test_sum_uf_ano_ainda_levanta_quando_a_tabela_nao_tem_municipio_nenhum():
+    """A guarda original continua valendo onde ela realmente protege: uma tabela sem NENHUM
+    município é resposta malformada, não um zero — devolver 0 aí esconderia o defeito."""
+    linhas = [["Município", "2019"], ["Total", "0"]]
+
+    with pytest.raises(RuntimeError, match="nenhum município"):
+        oracle_scrape._sum_uf_ano(linhas, "16", 2019)
+
+
 def test_scrape_pairs_repete_quando_o_tabnet_devolve_o_formulario_em_vez_da_tabela(monkeypatch):
     """Medido ao vivo em 2026-08-17: o TabNet devolve, de forma intermitente, a própria página do
     `.def` (44 KB, sem tabela) em vez do resultado — e a MESMA requisição, repetida, funciona.

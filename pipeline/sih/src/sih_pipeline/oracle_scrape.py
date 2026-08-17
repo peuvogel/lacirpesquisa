@@ -136,22 +136,38 @@ def _parse_cell(cell: str) -> int:
 
 
 def _sum_uf_ano(rows: list[list[str]], uf_code: str, ano: int) -> int:
+    """Soma a coluna do ano pedido sobre os municípios da UF pedida.
+
+    **Ausência da UF é zero, não falha — desde que a tabela tenha municípios.** Medido ao vivo em
+    AP/2019 (09-16): num agravo raro de UF pequena, o TabNet simplesmente não emite a linha do
+    município (ele omite linhas inteiramente zeradas). Tratar isso como erro derrubava a medição
+    inteira de uma UF pequena, que é justamente o caso que mais interessa provar.
+
+    A guarda original continua onde ela realmente protege: uma tabela **sem nenhum município**
+    é resposta malformada (UF inexistente, layout mudado, resposta truncada) e aí devolver 0
+    esconderia o defeito em vez de mostrá-lo.
+    """
     header = rows[0]
     if str(ano) not in header:
         raise RuntimeError(f"coluna do ano {ano} ausente na resposta do TabNet")
     col_idx = header.index(str(ano))
     total = 0
-    found = False
+    algum_municipio = False
     for row in rows[1:]:
         if not row or row[0].strip().lower() == "total":
             continue
         code_match = re.match(r"(\d{6})", row[0].strip())
-        if not code_match or code_match.group(1)[:2] != uf_code:
+        if not code_match:
             continue
-        found = True
+        algum_municipio = True
+        if code_match.group(1)[:2] != uf_code:
+            continue
         total += _parse_cell(row[col_idx])
-    if not found:
-        raise RuntimeError(f"nenhum município da UF {uf_code} na resposta do TabNet")
+    if not algum_municipio:
+        raise RuntimeError(
+            "nenhum município em NENHUMA UF na resposta do TabNet -- resposta malformada "
+            f"(pedida a UF {uf_code})"
+        )
     return total
 
 
