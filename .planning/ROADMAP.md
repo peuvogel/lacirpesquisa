@@ -195,6 +195,13 @@ Plans:
 
 - [ ] 09-14-PLAN.md — Aposentadoria por remoção: uploader, scrapers, Edge Function, `INGEST_SECRET` e `sih_metric_muni`, mais o contrato documentado (Onda 9)
 
+**Ad-hoc** *(sem PLAN.md formal — brief do coordenador como especificação)*
+
+- [x] 09-15-DT-INTER — Agregação por `DT_INTER` (data de internação) em vez de `ANO_CMPT`, com a janela de competência separada da janela de admissão
+- [x] 09-16-PARIDADE — Paridade site × TabNet provada em 134 pares (delta zero), lacuna da consulta ingênua medida e distribuída, e as 64 divergências de lote aposentadas com medição
+- [ ] **Recoleta nacional** — 15 das 27 UFs; parada pela guarda de disco (372 MB livres contra 2.508 MB de pico em SP). Ver `pipeline/sih/reports/recoleta-dt-inter.md`
+- [ ] **Upload de produção** — bloqueado por dado: `swap()` é substituição total e com 15/27 UFs apagaria 12 UFs. Ver `pipeline/sih/reports/substituicao-producao.md`
+
 ### Phase 10: Mapas dinâmicos sobre Supabase
 
 **Goal**: O estudante pesquisa qualquer um dos 330 agravos no mapa e o que ele vê é verdade
