@@ -159,6 +159,39 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+# Quantas vezes uma MESMA requisição é repetida antes de desistir. Medido ao vivo em 2026-08-17:
+# o TabNet devolve, de forma intermitente, a própria página do `.def` (44 KB, sem tabela) em vez
+# do resultado, e a mesma requisição repetida funciona. Numa corrida de centenas de pares isso é
+# certeza estatística de falha; sem retentativa, ~20 min de raspagem morrem por um hiccup.
+MAX_TENTATIVAS = 4
+BACKOFF_BASE_SEC = 3.0
+
+
+def _tabela_com_retentativa(data: list[tuple[str, str]], *, disease_id: str) -> list[list[str]]:
+    """Faz a requisição e devolve a tabela, repetindo em falha de PARSE (resposta sem tabela).
+
+    Esgotadas as tentativas, a falha SOBE — devolver 0 seria fabricar um dado de oráculo, a
+    classe de erro mais cara que existe neste projeto.
+    """
+    ultima: Exception | None = None
+    for tentativa in range(1, MAX_TENTATIVAS + 1):
+        try:
+            return parse_prn_table(post_tabnet(TABNET_URL, data))
+        except RuntimeError as exc:
+            ultima = exc
+            if tentativa < MAX_TENTATIVAS:
+                espera = BACKOFF_BASE_SEC * tentativa
+                print(
+                    f"oracle-scrape: {disease_id} devolveu resposta sem tabela "
+                    f"(tentativa {tentativa}/{MAX_TENTATIVAS}) -- repetindo em {espera:.0f}s",
+                    file=sys.stderr,
+                )
+                time.sleep(espera)
+    raise RuntimeError(
+        f"oracle-scrape: {disease_id} falhou em {MAX_TENTATIVAS} tentativas: {ultima}"
+    )
+
+
 def scrape_pairs(
     pairs: list[dict],
     *,
@@ -190,8 +223,7 @@ def scrape_pairs(
             ("formato", "prn"),
             ("mostre", "Mostra"),
         ]
-        text = post_tabnet(TABNET_URL, data)
-        rows = parse_prn_table(text)
+        rows = _tabela_com_retentativa(data, disease_id=pair.get("diseaseId", pair["tabnetCode"]))
         valor = _sum_uf_ano(rows, uf_code, ano)
         out.append(
             {

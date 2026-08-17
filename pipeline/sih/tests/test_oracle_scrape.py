@@ -183,6 +183,43 @@ def test_scrape_pairs_default_continua_ingenuo_para_nao_mover_a_fixture_congelad
     assert len(arquivos) == 12
 
 
+def test_scrape_pairs_repete_quando_o_tabnet_devolve_o_formulario_em_vez_da_tabela(monkeypatch):
+    """Medido ao vivo em 2026-08-17: o TabNet devolve, de forma intermitente, a própria página do
+    `.def` (44 KB, sem tabela) em vez do resultado — e a MESMA requisição, repetida, funciona.
+    Numa corrida de centenas de pares isso é certeza estatística de falha, e derrubar a medição
+    inteira por um hiccup de rede seria perder ~20 min de raspagem por nada."""
+    chamadas = {"n": 0}
+    texto_bom = (FIXTURES_DIR / "tabnet_prn_sample.html").read_text(encoding="latin-1")
+
+    def fake_post(url, data, timeout=180):
+        chamadas["n"] += 1
+        if chamadas["n"] < 3:
+            return "<html><body>formulário do .def, sem tabela</body></html>"
+        return texto_bom
+
+    monkeypatch.setattr(oracle_scrape, "post_tabnet", fake_post)
+    monkeypatch.setattr(oracle_scrape.time, "sleep", lambda s: None)
+
+    resultado = scrape_pairs(
+        [{"tabnetCode": "4", "diseaseId": "amebiase", "uf": "AC", "ano": 2019}]
+    )
+
+    assert chamadas["n"] == 3
+    assert resultado[0]["valorTabnet"] == 2
+
+
+def test_scrape_pairs_desiste_depois_do_limite_e_nao_inventa_zero(monkeypatch):
+    """Esgotadas as tentativas, a falha SOBE. Devolver 0 seria fabricar um dado de oráculo —
+    a classe de erro mais cara possível aqui."""
+    monkeypatch.setattr(
+        oracle_scrape, "post_tabnet", lambda url, data, timeout=180: "<html>sem tabela</html>"
+    )
+    monkeypatch.setattr(oracle_scrape.time, "sleep", lambda s: None)
+
+    with pytest.raises(RuntimeError):
+        scrape_pairs([{"tabnetCode": "4", "diseaseId": "amebiase", "uf": "AC", "ano": 2019}])
+
+
 def test_scrape_pairs_com_janela_um_submete_as_competencias_do_ano_seguinte(monkeypatch):
     submetidos: list[list[tuple[str, str]]] = []
 
