@@ -41,8 +41,15 @@ describe('catalogAnalysisData', () => {
 
   it('getMetricByUfAndYear(embolia internações, 2019) for SP matches pack (not mock weights)', () => {
     // 09-13/D-19: o pack é regerado a partir de sih_metric_uf (microdado SIH-RD reconciliado),
-    // não mais do corpus TabNet legado -- 5709 é o valor medido pós-substituição (D-16), não
-    // 5660 (o valor TabNet-era que este teste travava antes da fase 9 trocar a fonte).
+    // não mais do corpus TabNet legado. 5660 é o valor medido na TERCEIRA substituição
+    // (2026-08-18, base de contagem por DT_INTER), conferido ponta a ponta: agregado local =
+    // produção lida pelo PostgREST anônimo = pack.
+    //
+    // ATENÇÃO (colisão registrada, não escondida): 5660 é EXATAMENTE o literal que este teste
+    // travava antes da fase 9 (valor TabNet-era), trocado para 5709 em 03ef66a quando a fonte
+    // virou microdado. Contado por DT_INTER o número voltou a 5660 por coincidência — então este
+    // literal, sozinho, NÃO distingue mais as duas fontes. Quem ainda distingue é o
+    // `toBe(expected)` acima (lê o pack direto) e o `not.toBe(898000)`.
     const expected = packSpValue(
       'sih.embolia_e_trombose_arteriais_uf',
       2019,
@@ -50,7 +57,7 @@ describe('catalogAnalysisData', () => {
     );
     const byUf = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2019);
     expect(byUf.SP).toBe(expected);
-    expect(byUf.SP).toBe(5709);
+    expect(byUf.SP).toBe(5660);
     // Old didactic UF_WEIGHT formula for mock.internacoes SP ≈ 898000
     expect(byUf.SP).not.toBe(898000);
   });
@@ -59,7 +66,7 @@ describe('catalogAnalysisData', () => {
     const viaAlias = getMetricByUfAndYear('mock.internacoes', 2019);
     const viaCatalog = getMetricByUfAndYear('sih.embolia_e_trombose_arteriais.internacoes', 2019);
     expect(viaAlias.SP).toBe(viaCatalog.SP);
-    expect(viaAlias.SP).toBe(5709);
+    expect(viaAlias.SP).toBe(5660);
   });
 
   it('getCatalogTimeSeriesYears for rate/density vars excludes nullYears (e.g. 2023)', () => {
