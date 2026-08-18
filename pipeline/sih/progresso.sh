@@ -38,12 +38,20 @@ PY
   IDLE=$(( ($(date +%s) - $(stat -f %m "$LOG" 2>/dev/null || echo 0)) / 60 ))
   VIVA=$(pgrep -f "sih_pipeline.cli collect" >/dev/null && echo "rodando" || echo "PARADA")
   DISCO=$(df -h / | tail -1 | awk '{print $4}')
+  # esperado = maior contagem de arquivos entre as UFs completas (cobre 2026 parcial,
+  # que o antigo /156 cravado ignorava -- por isso aparecia 158/156)
+  ESPERADO=$(python3 -c "
+import json,os,collections
+led=json.load(open(os.path.expanduser('~/.lacir/sih-cache/ledger/files.json')))
+reg=led.get('arquivos',led)
+c=collections.Counter(k[2:4] for k in reg if k.startswith('RD'))
+print(max(c.values()) if c else 156)" 2>/dev/null || echo 156)
 
   clear
   echo "  SIH — coleta incremental                            $(date +%H:%M:%S)"
   echo "  ──────────────────────────────────────────────────────────────────"
   printf "  UFs      [%s] %2d/27  %3d%%\n" "$BARRA" "$NOK" "$PCT"
-  printf "  Atual     %-3s  %3d/156 arquivos\n" "${ATUAL:-—}" "$ARQ"
+  printf "  Atual     %-3s  %3d/%s arquivos\n" "${ATUAL:-—}" "$ARQ" "$ESPERADO"
   printf "  Ritmo     %-4s arq/2min     Disco %-6s   [%s, %smin sem log]\n" "$RITMO" "$DISCO" "$VIVA" "$IDLE"
   printf "  Linhas    %s agregadas\n" "$LINHAS"
   echo "  ──────────────────────────────────────────────────────────────────"

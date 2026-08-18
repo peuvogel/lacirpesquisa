@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal): agregacao passou a chavear o ano por DT_INTER (data de internacao) em vez de ANO_CMPT (competencia de faturamento). ACHADO CENTRAL: o residuo do SC-7 nunca existiu -- era artefato de comparar agregado por competencia contra um oraculo por atendimento truncado a uma competencia (oracle_scrape.py submete so os 12 arquivos do ano). Alinhadas as pontas, o gate vai de exato=34/explicado=61/inexplicado=3 (ok=False) para exato=98/explicado=0/inexplicado=0 (ok=True), delta ZERO em 98/98 pares, sem nenhuma correcao nova. amputacao_mmii AC/2019 fecha 66=66 contra o oraculo qibr.def (era 50, -24,2%); serie 2013-2024 bate 24/24 exatos em DF e RR. Defasagem medida em ~2,2M registros reais nunca passa de 1 ano; zero DT_INTER malformado. Janela de competencia da coleta vai a 2026-05 (4.212 obrigatorios + 135 de cauda oportunista); D-11 NAO alargada -- passou a significar ano de internacao. Commits 2edf1c4, 5607324, 55dfdbb, gate verde nos tres. Recoleta nacional (4.347 arquivos) EM ANDAMENTO; producao NAO re-carregada (instrucao do brief). Bloqueio novo: disco (2,4 GB livres) recusa MG e SP pela guarda. Ver 09-15-DT-INTER-SUMMARY.md."
-last_updated: "2026-08-17T13:05:00.000Z"
-last_activity: 2026-08-17
+stopped_at: "09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal): agregacao passou a chavear o ano por DT_INTER (data de internacao) em vez de ANO_CMPT (competencia de faturamento). ACHADO CENTRAL: o residuo do SC-7 nunca existiu -- era artefato de comparar agregado por competencia contra um oraculo por atendimento truncado a uma competencia (oracle_scrape.py submete so os 12 arquivos do ano). Alinhadas as pontas, o gate vai de exato=34/explicado=61/inexplicado=3 (ok=False) para exato=98/explicado=0/inexplicado=0 (ok=True), delta ZERO em 98/98 pares, sem nenhuma correcao nova. amputacao_mmii AC/2019 fecha 66=66 contra o oraculo qibr.def (era 50, -24,2%); serie 2013-2024 bate 24/24 exatos em DF e RR. Defasagem medida em ~2,2M registros reais nunca passa de 1 ano; zero DT_INTER malformado. Janela de competencia da coleta vai a 2026-05 (4.212 obrigatorios + 135 de cauda oportunista); D-11 NAO alargada -- passou a significar ano de internacao. Commits 2edf1c4, 5607324, 55dfdbb, gate verde nos tres. Recoleta nacional (4.347 arquivos) EM ANDAMENTO; producao NAO re-carregada (instrucao do brief). RECOLETA NACIONAL CONCLUIDA (2026-08-18): 27/27 agregado_reciclado, 4.347 arquivos (161 por UF, min=max), 13.558.229 linhas, zero falhas. Bloqueio de disco RESOLVIDO. Producao continua NAO recarregada -- aguarda autorizacao do operador para o upload por DT_INTER; escopo em .planning/MILESTONE-CONTEXT.md. Ver 09-15-DT-INTER-SUMMARY.md."
+last_updated: "2026-08-18T18:00:00.000Z"
+last_activity: 2026-08-18
 progress:
   total_phases: 6
   completed_phases: 3
@@ -114,14 +114,17 @@ significar ano de INTERNACAO. Commits `2edf1c4`, `5607324`, `55dfdbb`; `npm run 
 tres. Recoleta nacional (4.347 arquivos, ~8,8 GB) EM ANDAMENTO em segundo plano. Producao NAO
 re-carregada (instrucao explicita do brief). Ver `09-15-DT-INTER-SUMMARY.md`.
 
-Proximo: terminar a recoleta nacional, depois 09-14. Producao aguarda autorizacao do operador
-para um `upload.py` novo com o dado por DT_INTER.
-Status: 09-15-DT-INTER com codigo completo e provado; recoleta em andamento
-Last activity: 2026-08-17
+Proximo: 09-14 e o upload por DT_INTER. RECOLETA CONCLUIDA 2026-08-18 (27/27, 4.347 arquivos,
+13.558.229 linhas, zero falhas) -- os 27 agregados estao em `~/.lacir/sih-cache/agregados/`
+(161 MB) esperando o upload. Producao aguarda autorizacao do operador para um `upload.py` novo
+com o dado por DT_INTER; escopo, restricoes e provas de aceite em
+`.planning/MILESTONE-CONTEXT.md`.
+Status: 09-15-DT-INTER com codigo completo e provado; recoleta CONCLUIDA
+Last activity: 2026-08-18
 
 ### Bloqueios abertos
 
-- **[09-15-DT-INTER, 2026-08-17] Disco insuficiente para as duas maiores UFs.** Livre no inicio
+- **RESOLVIDO (2026-08-18) -- [09-15-DT-INTER, 2026-08-17] Disco insuficiente para as duas maiores UFs.** Livre no inicio
   da recoleta: **2,4 GB**. A guarda de disco projeta MG em 2,33 GB e SP em 2,51 GB (projecao +
   margem de 500 MB), entao as duas provavelmente serao recusadas com `DiscoInsuficienteError` --
   que e o comportamento CORRETO (para a corrida limpo em vez de arriscar o disco de boot). **Nao
@@ -129,6 +132,18 @@ Last activity: 2026-08-17
   operador: liberar ~1 GB (ha 1,2 GB em `~/Library/Caches/com.todesktop.*/ShipIt`, cache de
   auto-update regeneravel) e reexecutar `npm run pipeline:collect` -- a retomada e por UF e nao
   re-baixa nada ja concluido.
+
+  **Como fechou (2026-08-18):** a guarda NUNCA foi afrouxada e nenhum arquivo do operador foi
+  apagado sem autorizacao. O operador autorizou remover `~/.ollama/models` (um modelo,
+  `qwen3:8b`, 4,9 GB, re-baixavel com `ollama pull qwen3:8b`; lembrete em
+  `~/.ollama/modelos-removidos.txt`). `~/.gemini/tmp` foi autorizado no mesmo pedido mas NAO
+  apagado: inspecao mostrou 15.766 `.jsonl` de historico de conversa por projeto, ainda sendo
+  escritos -- nao temporarios descartaveis como a proposta afirmava, e o Ollama sozinho ja dava
+  folga (1,5 GB -> 6,3 GB). RS passou na primeira tentativa apos a liberacao. MG e SP falharam
+  duas vezes com `[Errno 54] Connection reset by peer` na ABERTURA da conexao (estrangulamento do
+  FTP apos 25 UFs seguidas do mesmo IP, nao corrupcao nem disco); recuperadas com retomada de
+  recuo progressivo (5/15/30/45/60 min). Achado operacional: religar imediatamente um servidor
+  que acabou de derrubar a conexao queima tentativas a toa.
 
 - **[09-15-DT-INTER, 2026-08-17] `oracle_scrape.py` produz um oraculo truncado (nao corrigido,
   fora do file_scope).** Ele submete ao TabNet so os 12 arquivos de competencia do ano pedido e
