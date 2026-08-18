@@ -59,7 +59,7 @@ begin
   if v_uf_antes is distinct from v_uf_depois then
     raise exception 'sih_retire_muni: contagem de sih_metric_uf mudou ao dropar sih_metric_muni (antes=%, depois=%)', v_uf_antes, v_uf_depois;
   end if;
-  if v_uf_depois is distinct from 207664 then
-    raise exception 'sih_retire_muni: sih_metric_uf tem % linha(s), esperado 207664', v_uf_depois;
+  if v_uf_depois is distinct from 207965 then
+    raise exception 'sih_retire_muni: sih_metric_uf tem % linha(s), esperado 207965', v_uf_depois;
   end if;
 end $$;

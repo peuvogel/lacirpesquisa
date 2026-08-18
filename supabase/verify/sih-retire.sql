@@ -30,8 +30,8 @@ begin
   -- (3) sih_metric_uf com a contagem final registrada na 09-12 (segunda substituicao de
   -- producao) -- a tabela irma de sih_metric_muni, que este DROP nao deveria tocar.
   select count(*) into v_uf from sih_metric_uf;
-  if v_uf is distinct from 207664 then
-    raise exception 'sih-retire: sih_metric_uf tem % linha(s), esperado 207664', v_uf;
+  if v_uf is distinct from 207965 then
+    raise exception 'sih-retire: sih_metric_uf tem % linha(s), esperado 207965', v_uf;
   end if;
 
   -- (4) as cinco tabelas do schema v3 (09-03) sobrevivem, todas com RLS ligada -- a

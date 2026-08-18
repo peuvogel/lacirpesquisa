@@ -53,13 +53,18 @@ const SIH_V3_TABLES = [
 export const ESPERADO_SIH_DISEASE = 331;
 
 /**
- * Contagem REAL de `sih_metric_uf` pós segunda substituição de produção (09-10-SEGUNDA-
- * SUBSTITUICAO/09-12) — o mesmo número que `generateSihSwapVerify.mjs::ESPERADO_SIH_METRIC_UF`
- * já baked, reconfirmado ao vivo por esta execução antes de gerar este arquivo. `sih_metric_uf`
- * não é tocada por esta migração (só `sih_metric_muni` sai do banco); esta contagem prova que a
- * DROP de `sih_metric_muni` não teve efeito colateral sobre a tabela irmã.
+ * Contagem REAL de `sih_metric_uf` pós TERCEIRA substituição de produção (2026-08-18, a troca da
+ * base de contagem de `ANO_CMPT` para `DT_INTER`) — o mesmo número que
+ * `generateSihSwapVerify.mjs::ESPERADO_SIH_METRIC_UF` já baked, reconfirmado ao vivo direto
+ * contra o Postgres de produção antes de gerar este arquivo. `sih_metric_uf` não é tocada por
+ * esta migração (só `sih_metric_muni` sai do banco); esta contagem prova que a DROP de
+ * `sih_metric_muni` não teve efeito colateral sobre a tabela irmã.
+ *
+ * Os DOIS geradores precisam ser editados juntos a cada substituição —
+ * `sihRetireMigration.test.ts` trava exatamente essa igualdade para que um não se atrase em
+ * relação ao outro.
  */
-export const ESPERADO_SIH_METRIC_UF = 207664;
+export const ESPERADO_SIH_METRIC_UF = 207965;
 
 /**
  * @param {unknown} value
