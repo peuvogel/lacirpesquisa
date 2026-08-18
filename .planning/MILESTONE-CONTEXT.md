@@ -1,5 +1,22 @@
 # Milestone Context — Produção por DT_INTER
 
+> **ATUALIZACAO 2026-08-18: as quatro "Target features" abaixo JA FORAM EXECUTADAS** pelo
+> `09-17-SWAP-DT-INTER` (ad-hoc, dentro da v3.0, sem criar milestone novo). Producao serve
+> `DT_INTER` desde `2026-08-18T18:23Z`: `sih_metric_uf` = 207.965 linhas / 331 agravos, as 27
+> particoes reenviadas ao Storage, os 10 packs refeitos depois do swap, e a prova pelo caminho
+> anonimo obtida (135/135 pares exatos). Ver
+> `.planning/phases/09-pipeline-confi-vel-coleta-completa/09-17-SWAP-DT-INTER-SUMMARY.md`.
+>
+> **A "Decisao pendente do operador" no fim deste arquivo continua ABERTA e continua sendo dele.**
+> O trabalho foi feito pela saida 1 (fase nova dentro da v3.0), que era a recomendada e nao
+> destroi nada -- mas as Fases 10, 11 e 12 seguem nunca construidas e `phase_archive_path`
+> continua `null`, entao `/gsd:new-milestone` continua PERIGOSO (o passo 6 chama `phases.clear`,
+> que e `fs.rmSync` sem copia).
+>
+> O que este arquivo ainda descreve de forma util: as restricoes duras, as pendencias herdadas do
+> 09-15 e as tres saidas da decisao. O que ele descreve de forma DESATUALIZADA: "Producao NAO foi
+> recarregada" (linha abaixo) e o estado das target features.
+
 > Escrito em 2026-08-18 para ser consumido por `/gsd:new-milestone`, que apaga este arquivo
 > depois de usá-lo. **Leia antes a seção "Decisão pendente do operador"** — este milestone não
 > pode ser criado sem resolver o que fazer com a v3.0, que está a 50% e com três fases nunca

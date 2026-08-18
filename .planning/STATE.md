@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal): agregacao passou a chavear o ano por DT_INTER (data de internacao) em vez de ANO_CMPT (competencia de faturamento). ACHADO CENTRAL: o residuo do SC-7 nunca existiu -- era artefato de comparar agregado por competencia contra um oraculo por atendimento truncado a uma competencia (oracle_scrape.py submete so os 12 arquivos do ano). Alinhadas as pontas, o gate vai de exato=34/explicado=61/inexplicado=3 (ok=False) para exato=98/explicado=0/inexplicado=0 (ok=True), delta ZERO em 98/98 pares, sem nenhuma correcao nova. amputacao_mmii AC/2019 fecha 66=66 contra o oraculo qibr.def (era 50, -24,2%); serie 2013-2024 bate 24/24 exatos em DF e RR. Defasagem medida em ~2,2M registros reais nunca passa de 1 ano; zero DT_INTER malformado. Janela de competencia da coleta vai a 2026-05 (4.212 obrigatorios + 135 de cauda oportunista); D-11 NAO alargada -- passou a significar ano de internacao. Commits 2edf1c4, 5607324, 55dfdbb, gate verde nos tres. Recoleta nacional (4.347 arquivos) EM ANDAMENTO; producao NAO re-carregada (instrucao do brief). RECOLETA NACIONAL CONCLUIDA (2026-08-18): 27/27 agregado_reciclado, 4.347 arquivos (161 por UF, min=max), 13.558.229 linhas, zero falhas. Bloqueio de disco RESOLVIDO. Producao continua NAO recarregada -- aguarda autorizacao do operador para o upload por DT_INTER; escopo em .planning/MILESTONE-CONTEXT.md. Ver 09-15-DT-INTER-SUMMARY.md."
-last_updated: "2026-08-18T18:00:00.000Z"
+stopped_at: "09-17-SWAP-DT-INTER COMPLETO (2026-08-18, ad-hoc sem PLAN.md formal, brief operacional do operador com checkpoint humano antes da parte irreversivel): a TERCEIRA substituicao de producao executada e provada -- sih_metric_uf trocou a BASE DE CONTAGEM de competencia de faturamento (ANO_CMPT) para data de internacao (DT_INTER). 207.664 -> 207.965 linhas (+301), os mesmos 331 agravos e os mesmos 13 anos, mas 84,7% das 207.024 chaves comuns MUDAM DE VALOR: +5.724.744 internacoes (+1,85%), +218.804 obitos (+1,54%) no total nacional, todo ano subindo entre +0,63% (2019) e +3,69% (2024). Ordem executada: particoes ao Storage PRIMEIRO (reversivel, 27 objetos, 131,50 MB, SP=19,37 MB), swap depois -- escolha do operador no checkpoint, alinhada ao padrao das duas substituicoes anteriores. copy_to_staging -> swap -> recount_via_postgrest (207965 = 207965) -> release_cache, exit 0 em 4min29s, reconferido de forma independente por psql. sih-swap-contagens.sql regenerado (ESPERADO_SIH_METRIC_UF=207965) saiu 0 contra producao, nenhuma staging orfa, db_size 424 -> 430 MB. Os 10 packs refeitos DEPOIS do swap. amputacao_mmii AC/2019 servia 50 e agora serve 66 pelo PostgREST ANONIMO -- exatamente o que o oraculo qibr.def diz; amostra ampliada de 5 agravos x 27 UFs bate 135/135 exatos. O residuo de 3 linhas com UF_ZI malformado NAO se reproduz (207.965 chaves nos agregados, ZERO invalidas). Commits 1eabd3e, ad51e4b, 737bf38, 3f1cbbf, gate verde nos quatro. Populacao continua NAO carregada (a restricao de ordem do 09-06 segue valendo). Ver 09-17-SWAP-DT-INTER-SUMMARY.md."
+last_updated: "2026-08-18T18:45:00.000Z"
 last_activity: 2026-08-18
 progress:
   total_phases: 6
@@ -26,6 +26,17 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
+
+09-17-SWAP-DT-INTER COMPLETO (2026-08-18, ad-hoc sem PLAN.md formal) -- **producao passou a contar
+por data de internacao**. A terceira substituicao atomica: `sih_metric_uf` 207.664 -> 207.965
+linhas, 331 agravos mantidos, mas 84,7% das chaves comuns mudam de valor (+1,85% de internacoes
+nacionais). As 27 particoes regeneradas e reenviadas ao Storage ANTES do swap (escolha do operador
+no checkpoint -- a parte reversivel primeiro), os 10 packs refeitos DEPOIS. `upload.py`/
+`partitions.py` reaproveitados sem nenhuma alteracao, terceira corrida seguida.
+`sih-swap-contagens.sql` saiu 0 contra producao. Provado pelo caminho anonimo real do aluno:
+`amputacao_mmii` AC/2019 = 66 (servia 50), batendo o oraculo `qibr.def`; 135/135 pares exatos numa
+amostra de 5 agravos x 27 UFs. Ver 09-17-SWAP-DT-INTER-SUMMARY.md.
+
 Plan: 09-10 COMPLETO (2026-08-12) -- a substituicao real de producao (D-16) executada e provada:
 `sih_metric_uf` trocou de 30.313 linhas TabNet para 207.131 linhas de microdado (330 agravos, os
 dois locais), `sih_collection_status` populado pela primeira vez (33.456 linhas), as 27 particoes
@@ -123,6 +134,40 @@ Status: 09-15-DT-INTER com codigo completo e provado; recoleta CONCLUIDA
 Last activity: 2026-08-18
 
 ### Bloqueios abertos
+
+- **RESOLVIDO (2026-08-18, 09-17-SWAP-DT-INTER): producao NAO recarregada -- LEVANTADO.** O
+  bloqueio registrado pelo 09-15/09-16 ("aguarda autorizacao do operador para o upload por
+  DT_INTER") esta fechado: o operador autorizou no checkpoint humano, com o `--dry-run` na mao, e
+  a substituicao rodou. Producao serve DT_INTER desde 2026-08-18T18:23Z.
+
+- **[09-17, 2026-08-18] Colisao de literal: 2 testes perderam poder de discriminar.**
+  `embolia_e_trombose_arteriais` SP/2019/ocorrencia foi de 5709 para **5660** -- e 5660 e
+  EXATAMENTE o literal que `catalogAnalysisData.test.ts` e `assembleHandoffTable.test.ts` travavam
+  antes da Fase 9 (commit `a4356f2`, valor TabNet-era), trocado para 5709 em `03ef66a` justamente
+  para exclui-lo. Contado por DT_INTER o numero voltou por coincidencia. O valor novo foi conferido
+  na cadeia inteira antes de trocar (agregado local = producao lida pelo PostgREST anonimo = pack),
+  entao esta certo -- mas **o literal, sozinho, nao distingue mais as duas fontes**: uma regressao
+  que voltasse a ler o corpus legado passaria por ele. Ainda distinguem: o `toBe(expected)` que le
+  o pack direto (so em `catalogAnalysisData`) e o `not.toBe(898000)` (nos dois). Registrado no
+  comentario de cada teste. **Nao reestruturado -- e decisao de design do operador.**
+
+- **[09-17, 2026-08-18] 16 linhas de proveniencia velha sobrevivem a cada swap.**
+  `sih_collection_status` e upsert, nunca truncado (o swap trunca so `sih_metric_uf`), entao
+  combinacoes que deixam de existir ficam para tras declarando `coletado`. Medido agora:
+  `tetano_neonatal`/2025 e `tifo_exantematico`/2018 (2 combinacoes x 2 locais x 4 medidas), com
+  `derived_at` de 2026-08-13. Nao derrubam o verify porque a checagem de proveniencia e
+  **unidirecional** (`sih_metric_uf` -> `collection_status`, sem a reciproca) e nao afetam o site.
+  Comportamento pre-existente das TRES substituicoes, agora medido em vez de suposto. Conserto
+  possivel: truncar o grao correspondente antes do upsert, ou adicionar a checagem reversa ao
+  verify.
+
+- **[09-17, 2026-08-18] A role `anon` tem GRANT de TRUNCATE em `sih_metric_uf`.** Inspecao de RLS
+  mostrou `DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE` para `anon` (default do
+  Supabase). RLS bloqueia DELETE/INSERT/UPDATE -- a unica policy e `sih_metric_uf_select_anon` --
+  mas **TRUNCATE nao e sujeito a RLS**. Hoje inalcancavel (o PostgREST nao expoe o verbo), entao e
+  item de endurecimento e nao buraco ativo. Nota de metodo: o DELETE anonimo devolve **204**, nao
+  401 -- ambiguo por construcao, porque RLS sem policy de DELETE nao gera erro, so afeta 0 linhas;
+  quem responde e o catalogo de policies, nao o codigo HTTP.
 
 - **RESOLVIDO (2026-08-18) -- [09-15-DT-INTER, 2026-08-17] Disco insuficiente para as duas maiores UFs.** Livre no inicio
   da recoleta: **2,4 GB**. A guarda de disco projeta MG em 2,33 GB e SP em 2,51 GB (projecao +
