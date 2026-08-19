@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-14 COMPLETO (2026-08-19) -- a ultima plan formal da Fase 9 fechada. sih_metric_muni REMOVIDA de producao (1.099.403 linhas, 319 MB) depois de provado que as 27 particoes do Storage servem o grao municipio (27/27 HTTP 200 anonimo, 12.404.039 linhas). db_size 430 MB -> 112 MB, folga sob o teto de 70 -> 388 MB. As tres tabelas que precisavam sobreviver ficaram intactas (207.965 / 331 / 67.168), sih-retire.sql exit 0, migracao aplicada no Remote -- tudo reconferido de forma independente, nao assumido. A DDL foi bloqueada pelo classificador do sandbox em 16/08 e 19/08 e NUNCA contornada via psql; resolvida com backup verificado em ~/.lacir/backup-pre-09-14/ e o operador rodando o push. Caminho TabNet morto por remocao: uploader, 3 scrapers, Edge Function sih-ingest e INGEST_SECRET; varredura por VALOR de segredo deu zero. test_suite_integrity.py (anti-esqueleto + contrato da CLI) provado nominal. docs/SUPABASE-CATALOG.md reescrita para o v3 real capturado ao vivo. Commits e58faf7, 8da19f3, 9e583ac. PROXIMO DESTINO: a populacao agora cabe (~258 MB projetados), e a Fase 10 (Mapas dinamicos sobre Supabase) e o unico consumidor que ainda falta -- o grao municipio so existe no Storage agora. Ver 09-14-SUMMARY.md."
-last_updated: "2026-08-19T15:30:00.000Z"
+stopped_at: "09-18-RAZAO-DIVERGENCIA COMPLETO (2026-08-19). A justificativa da divergencia site x TabNet esta no ar: 67.136 linhas de sih_collection_status com divergencia_razao, os packs carregam o campo, e o mapa mostra a frase abaixo da legenda. Cadeia de fonte unica do Python ate a tela (paridade.py -> upload.py --proveniencia -> banco -> pack -> componente); a frase nao existe em TypeScript de proposito. Commits cd857df, 13ef993, cb5bf8a, gate verde com 844 testes. FASE 9 fechada (09-14 + 09-17 + 09-18). O QUE FICA PARA A OUTRA SESSAO, com handoff escrito em .planning/notes/2026-08-19-handoff-codex-guided-variables.md: (a) fetchHandoffMetrics.ts ainda consulta a sih_metric_uf-irma dropada e devolve null calado para todo municipio -- o conserto e usar loadMunicipioPartition.ts, que os worktrees estao mexendo; (b) wirar a razao nas superficies de maior valor (ReviewAnalysisDialog, GuidedResultsSection, VariableDetailPanel), todas modificadas pelos worktrees. PROXIMO DESTINO do operador: populacao (agora cabe, ~258 MB projetados) ou Fase 10."
+last_updated: "2026-08-19T16:15:00.000Z"
 last_activity: 2026-08-19
 progress:
   total_phases: 6
@@ -26,6 +26,28 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
+
+09-18-RAZAO-DIVERGENCIA COMPLETO (2026-08-19) -- fecha a metade que faltava do criterio do
+operador ("puxou TabNet e site lado a lado: ou batem, ou a diferenca esta justificada"). A
+paridade ja estava provada pelo 09-16 (134/134 exatos contra TabNet bem-formado); a JUSTIFICATIVA
+nao existia em lugar nenhum -- a coluna `divergencia_razao` estava nula nas 67.168 linhas.
+
+Agora a frase percorre uma cadeia de FONTE UNICA: `paridade.RAZAO_DIVERGENCIA_JANELA_CURTA` ->
+`upload.py --proveniencia` -> `sih_collection_status` -> `generateSihPacks.mjs` -> campo
+`divergenciaRazao` no pack -> `getDivergenciaRazao()` -> `<SihDivergenceNote />` abaixo da legenda
+do mapa. A frase NAO existe em TypeScript de proposito: copia-la criaria duas fontes que derivam
+em silencio. Em producao: 67.136 linhas com razao, 32 nulas (a proveniencia velha sem dado).
+
+Flag `--proveniencia` nova (molde isolado do `--municipio`): reescreve os dois graos do ledger sem
+tocar `sih_metric_uf`, sem tocar o Storage, sem chamar `release_cache`. Existe porque re-executar
+o swap inteiro para atualizar metadado trocaria a tabela viva a toa.
+
+`divergencia_pct` segue NULO de proposito: a lacuna do 09-16 e por (agravo, UF, ano) e a tabela
+nao tem coluna de UF -- um percentual nacional aqui seria inventado.
+
+Commits cd857df, 13ef993, cb5bf8a. Gate verde (844 testes). **HANDOFF ESCRITO** para as sessoes
+`codex/guided-variables-*` em `.planning/notes/2026-08-19-handoff-codex-guided-variables.md`.
+
 
 09-14 COMPLETO (2026-08-19) -- **o caminho TabNet morreu por remocao e o projeto voltou a caber
 com folga**. `sih_metric_muni` (1.099.403 linhas, 319 MB) saiu do banco depois de provado que as 27
@@ -149,6 +171,18 @@ Status: 09-15-DT-INTER com codigo completo e provado; recoleta CONCLUIDA
 Last activity: 2026-08-18
 
 ### Bloqueios abertos
+
+- **[09-18, 2026-08-19] ENTREGUE PELA METADE DE PROPOSITO: a razao so aparece no mapa.** O
+  `<SihDivergenceNote />` esta wirado em `MapasPage.tsx` (logo apos `ChoroplethLegend`), mas as
+  superficies de MAIOR valor -- `ReviewAnalysisDialog`/`ReviewAnalysisDataDialog` (onde o aluno
+  confere os numeros antes de rodar o teste), `GuidedResultsSection`, `VariableDetailPanel` --
+  sao todas modificadas pelos dois worktrees `codex/guided-variables-*` (105 e 117 arquivos de
+  `src/` cada). Nao wirei la para nao criar conflito no ponto exato onde a outra sessao trabalha.
+  O componente ja aceita `razao?: string | null` e renderiza `null` quando nao ha: e so passar
+  `getDivergenciaRazao(variableId)`. **Risco de merge conhecido e registrado:** o proprio
+  `MapasPage.tsx` tambem e modificado pelos dois -- o diff foi deixado no minimo (dois imports e
+  um elemento) e esta reproduzido no handoff para reaplicacao trivial. Ver
+  `.planning/notes/2026-08-19-handoff-codex-guided-variables.md`.
 
 - **[09-14, 2026-08-19] REGRESSAO da DROP: `fetchHandoffMetrics.ts` ainda consulta a tabela
   apagada.** `src/features/catalog/fetchHandoffMetrics.ts:143` faz
