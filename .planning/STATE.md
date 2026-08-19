@@ -150,6 +150,27 @@ Last activity: 2026-08-18
 
 ### Bloqueios abertos
 
+- **[09-14, 2026-08-19] REGRESSAO da DROP: `fetchHandoffMetrics.ts` ainda consulta a tabela
+  apagada.** `src/features/catalog/fetchHandoffMetrics.ts:143` faz
+  `supabase.from('sih_metric_muni')` para o ramo de grao municipio. Com a tabela dropada o
+  PostgREST devolve 404, o codigo faz `console.warn` + `continue`, e o lookup devolve **null para
+  toda metrica de municipio** -- degrada sem quebrar, mas e TRUNCAMENTO SILENCIOSO, exatamente o
+  que a Fase 10 do ROADMAP proibe e o que o D-14 existe para tornar distinguivel. Chamado por
+  `src/routes/mapas/ReviewAnalysisDialog.tsx` e `src/routes/mapas/assembleHandoffTable.ts`.
+  **Nenhum teste cobre esse ramo** -- por isso o gate ficou verde.
+
+  Atenuante medido, nao desculpa: ANTES da DROP esse ramo servia o corpus TabNet LEGADO enquanto o
+  mapa ja servia DT_INTER pelo Storage -- o handoff e o mapa discordavam em silencio. A DROP
+  trocou "numero errado calado" por "nenhum numero calado". Menos pior, ainda errado.
+
+  **Conserto conhecido e NAO aplicado:** `src/features/catalog/loadMunicipioPartition.ts` ja e o
+  leitor correto do Storage (D-20/D-21, com cache de promessa e erro explicito em vez de `[]`
+  silencioso); o ramo de municipio do handoff precisa passar a usa-lo. NAO foi feito de proposito:
+  **os DOIS worktrees `codex/guided-variables-flow` e `codex/guided-variables-technical` tem
+  `loadMunicipioPartition.ts` modificado**, entao mexer nessa integracao agora conflita com a outra
+  sessao. Decisao do operador: fazer aqui depois de conferir os worktrees, ou deixar para a Fase 10,
+  que e a dona declarada do drill municipal.
+
 - **RESOLVIDO (2026-08-18, 09-17-SWAP-DT-INTER): producao NAO recarregada -- LEVANTADO.** O
   bloqueio registrado pelo 09-15/09-16 ("aguarda autorizacao do operador para o upload por
   DT_INTER") esta fechado: o operador autorizou no checkpoint humano, com o `--dry-run` na mao, e
