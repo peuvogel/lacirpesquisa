@@ -13,8 +13,9 @@
     "dias_permanencia",
     "taxa_mortalidade"
   ],
-  "derivedAt": "2026-08-18T18:20:23+00:00",
+  "derivedAt": "2026-08-19T15:52:21+00:00",
   "cidMapVersion": "5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f",
+  "divergenciaRazao": "Contado pela data de internação. O TabNet, por padrão, conta pela competência de faturamento e mostra menos — a diferença são as internações faturadas no ano seguinte.",
   "rows": [
     {
       "uf_codigo": "11",

@@ -266,6 +266,7 @@ function resolveMedida(statusByDiseaseMedidaAno, diseaseId, medida, ano, valorMe
  *   frozenByUfAno?: Map<string, { medicos_vasculares_sus:number|null, populacao:number|null, medicos_vasculares_por_100k:number|null }>,
  *   derivedAt: string,
  *   cidMapVersion: string,
+ *   divergenciaRazao?: string | null,
  * }} ctx
  */
 export function buildPack(packId, diseaseId, ctx) {
@@ -345,6 +346,10 @@ export function buildPack(packId, diseaseId, ctx) {
     metricKeys,
     derivedAt: ctx.derivedAt,
     cidMapVersion: ctx.cidMapVersion,
+    // Por que no pack e não numa constante no front: o texto nasce em paridade.py e é gravado em
+    // sih_collection_status por upload.py. Copiá-lo para TypeScript criaria duas fontes que
+    // derivam em silêncio. Vindo pelo pack, mudar a frase no Python e regerar basta.
+    divergenciaRazao: ctx.divergenciaRazao ?? null,
     rows,
   };
 }
@@ -382,7 +387,7 @@ async function fetchPackContext(diseaseIds, fetchImpl = fetch) {
     creds,
     'sih_collection_status',
     {
-      select: 'disease_id,medida,ano,status,derived_at,cid_map_version',
+      select: 'disease_id,medida,ano,status,derived_at,cid_map_version,divergencia_razao',
       filters: { disease_id: `in.(${idList})`, grao: 'eq.uf', local: 'eq.ocorrencia', order: 'disease_id.asc,medida.asc,ano.asc' },
     },
     fetchImpl,
@@ -410,7 +415,19 @@ async function fetchPackContext(diseaseIds, fetchImpl = fetch) {
           `generateSihPacks: proveniência inconsistente para ${r.disease_id} — sih_collection_status carrega mais de um (derived_at,cid_map_version) para o mesmo agravo (DATA-04 exige um só).`,
         );
       }
-      if (!prev) provenanceByDisease.set(r.disease_id, { derivedAt: r.derived_at, cidMapVersion: r.cid_map_version });
+      // A razão de divergência viaja com a proveniência e sob a MESMA guarda: um agravo que
+      // carregasse duas razões diferentes serviria explicações conflitantes para o mesmo número.
+      if (prev && prev.divergenciaRazao !== (r.divergencia_razao ?? null)) {
+        throw new Error(
+          `generateSihPacks: divergencia_razao inconsistente para ${r.disease_id} — sih_collection_status carrega mais de uma razão para o mesmo agravo. Abortando em vez de servir explicação ambígua.`,
+        );
+      }
+      if (!prev)
+        provenanceByDisease.set(r.disease_id, {
+          derivedAt: r.derived_at,
+          cidMapVersion: r.cid_map_version,
+          divergenciaRazao: r.divergencia_razao ?? null,
+        });
     }
   }
 
@@ -476,6 +493,7 @@ export async function main(argv = process.argv.slice(2)) {
       frozenByUfAno,
       derivedAt: provenance.derivedAt,
       cidMapVersion: provenance.cidMapVersion,
+      divergenciaRazao: provenance.divergenciaRazao,
     });
   }
 
