@@ -37,6 +37,18 @@ from typing import Any, Iterable, Sequence
 # Frase que o app mostra ao aluno quando os dois números não batem porque a consulta do TabNet
 # foi a natural. Fica AQUI, uma vez, em vez de espalhada por telas: é a explicação do mecanismo,
 # não um aviso genérico de "os dados podem divergir".
+RAZAO_DIVERGENCIA_JANELA_CURTA = (
+    "Contado pela data de internação. O TabNet, por padrão, conta pela competência de "
+    "faturamento e mostra menos — a diferença são as internações faturadas no ano seguinte."
+)
+"""A mesma explicação de `RAZAO_DIVERGENCIA_JANELA`, em UMA frase, para caber na tela ao lado do
+número (09-18). A longa continua sendo a fonte para relatório e para quem quiser reproduzir a
+consulta; esta é a que o aluno lê sem sair do fluxo.
+
+Universal por construção: descreve o MÉTODO de contagem, não uma exceção de um agravo. Por isso
+mora aqui e não em `cid-divergencias.json`, que é lista de exceção por `diseaseId`."""
+
+
 RAZAO_DIVERGENCIA_JANELA = (
     "Este número conta internações pela data de internação (DT_INTER), incluindo as que foram "
     "faturadas em competências posteriores. A consulta padrão do TabNet submete apenas os 12 "

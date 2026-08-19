@@ -58,6 +58,7 @@ from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.enumerate import expected_file_names
 from sih_pipeline.ledger import STATUS_BAIXADO, FileLedger
 from sih_pipeline.matcher import build_index, load_cid_map
+from sih_pipeline.paridade import RAZAO_DIVERGENCIA_JANELA_CURTA
 from sih_pipeline.partitions import cid_map_version, construir_indice_territorial
 from sih_pipeline.paths import cache_path, repo_root
 
@@ -454,6 +455,32 @@ _COLLECTION_STATUS_COLUMNS: tuple[str, ...] = (
 )
 
 
+def _montar_status_rows(
+    linhas: Sequence[Row], grao: str, derived_at: str, map_version: str
+) -> list[dict[str, Any]]:
+    """As linhas de `sih_collection_status` de um grão, sem tocar no banco -- espelha o que
+    `_persistir_collection_status`/`_persistir_collection_status_municipio` montam antes do
+    `COPY`. Existe para o `--dry-run` de `--proveniencia` poder CONTAR o que seria escrito sem
+    abrir conexão. Deliberadamente não foi usado para refatorar as duas funções de persistência:
+    elas estão provadas em três substituições reais de produção e não valia mexer nelas para
+    economizar seis linhas."""
+    divergencias = carregar_divergencias()
+    anos = sorted({linha.ano for linha in linhas if linha.grao == grao})
+    rows: list[dict[str, Any]] = []
+    for ano in anos:
+        rows.extend(
+            build_collection_status_rows(
+                linhas,
+                grao=grao,
+                ano=ano,
+                divergencias=divergencias,
+                derived_at=derived_at,
+                map_version=map_version,
+            )
+        )
+    return rows
+
+
 def _persistir_collection_status(
     conn: psycopg.Connection,
     linhas: Sequence[Row],
@@ -539,7 +566,18 @@ def build_collection_status_rows(
     D-13/D-14/D-15: uma linha por `(disease_id, medida, grao, local)`, SEMPRE com `derived_at` e
     `cid_map_version` (nunca `None` -- o check constraint da 09-03 recusaria a linha; provado por
     teste antes de sequer chegar no banco). `divergencia_pct`/`divergencia_razao` vêm de
-    `cid-divergencias.json`, nulos para qualquer `disease_id` ausente de lá."""
+    `cid-divergencias.json` quando o agravo tiver entrada lá.
+
+    `divergencia_razao` NUNCA é nulo numa linha `coletado`: toda linha carrega, no mínimo, a
+    razão universal de janela (`RAZAO_DIVERGENCIA_JANELA_CURTA`) -- porque TODO número servido é
+    contado por `DT_INTER` e portanto diverge da consulta padrão do TabNet, que conta por
+    competência. Não é exceção de agravo, é propriedade do método; uma entrada por agravo em
+    `cid-divergencias.json`, se existir, SOMA à razão universal em vez de substituí-la, para que
+    a explicação de método nunca suma quando um agravo ganha uma explicação própria.
+
+    `divergencia_pct` continua vindo só de `cid-divergencias.json`, e fica NULO sem ela --
+    deliberadamente. A lacuna medida no 09-16 é por `(agravo, UF, ano)`, e esta tabela não tem
+    coluna de UF: escrever aqui um percentual nacional que ninguém mediu seria inventar número."""
     derived_at = derived_at or _now_iso()
     map_version = map_version or cid_map_version()
     divergencias = divergencias if divergencias is not None else carregar_divergencias()
@@ -554,6 +592,10 @@ def build_collection_status_rows(
     rows: list[dict[str, Any]] = []
     for (disease_id, local), n_territorios in contagem_territorios.items():
         divergencia = divergencias.get(disease_id)
+        # A razão universal de janela vale para toda linha; a do agravo, quando existe, soma.
+        razao = RAZAO_DIVERGENCIA_JANELA_CURTA
+        if divergencia:
+            razao = f"{razao} {divergencia['razao']}"
         for medida in _MEDIDAS:
             rows.append(
                 {
@@ -567,7 +609,7 @@ def build_collection_status_rows(
                     "cid_map_version": map_version,
                     "row_count": n_territorios,
                     "divergencia_pct": divergencia["deltaPctMediano"] if divergencia else None,
-                    "divergencia_razao": divergencia["razao"] if divergencia else None,
+                    "divergencia_razao": razao,
                 }
             )
     return rows
@@ -734,7 +776,54 @@ def main(argv: list[str]) -> int:
             "lógica de --tabela/sih_metric_uf abaixo."
         ),
     )
+    parser.add_argument(
+        "--proveniencia",
+        action="store_true",
+        help=(
+            "reescreve SÓ sih_collection_status (os DOIS grãos) a partir do cache -- nunca toca "
+            "sih_metric_uf, nunca toca o Storage, nunca chama release_cache. Para quando a "
+            "proveniência muda sem o dado mudar (ex.: a razão de divergência ganhou texto novo): "
+            "re-executar o swap inteiro para atualizar um campo de metadado trocaria a tabela "
+            "viva à toa. Upsert pela PK real, idempotente. Combinável com --dry-run."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.proveniencia:
+        # Ramo isolado como --municipio: retorna ANTES de qualquer lógica de swap. PIPE-04 não é
+        # violado -- este caminho não chega em release_cache, que continua exclusivo do swap.
+        _validar_url_pooler(os.environ["SIH_PIPELINE_DB_URL"])
+        linhas_uf = _linhas_grao_uf(nivel=None)
+        linhas_muni = _linhas_grao_municipio()
+
+        if args.dry_run:
+            derived_at = _now_iso()
+            map_version = cid_map_version()
+            n_uf = len(_montar_status_rows(linhas_uf, GRAO_UF, derived_at, map_version))
+            n_muni = len(_montar_status_rows(linhas_muni, GRAO_MUNICIPIO, derived_at, map_version))
+            print(
+                f"upload: --proveniencia --dry-run -- {n_uf} linha(s) de grão UF e {n_muni} de "
+                "grão município seriam reescritas em sih_collection_status, nada escrito"
+            )
+            return 0
+
+        conn = connect()
+        try:
+            derived_at = _now_iso()
+            map_version = cid_map_version()
+            n_uf = _persistir_collection_status(
+                conn, linhas_uf, derived_at=derived_at, map_version=map_version
+            )
+            n_muni = _persistir_collection_status_municipio(
+                conn, linhas_muni, derived_at=derived_at, map_version=map_version
+            )
+            print(
+                f"upload: --proveniencia -- {n_uf} linha(s) de grão UF e {n_muni} de grão "
+                "município reescritas em sih_collection_status (sih_metric_uf INTOCADA)"
+            )
+        finally:
+            conn.close()
+        return 0
 
     if args.municipio:
         # Ramo isolado e antecipado -- nunca alcança _STAGING_COLUMNS/swap()/copy_to_staging()/

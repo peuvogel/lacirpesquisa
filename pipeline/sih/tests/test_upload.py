@@ -49,6 +49,7 @@ from sih_pipeline.upload import (
     swap,
 )
 from sih_pipeline.aggregate import GRAO_MUNICIPIO, GRAO_UF, LOCAL_OCORRENCIA, LOCAL_RESIDENCIA, Row
+from sih_pipeline.paridade import RAZAO_DIVERGENCIA_JANELA_CURTA
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 # Baseline (v2, cria sih_disease/sih_metric_uf/sih_metric_muni) + schema v3 (09-03, adiciona a
@@ -457,7 +458,10 @@ def test_build_collection_status_rows_divergencia_so_para_ids_conhecidos() -> No
     )
     for row in rows:
         assert row["divergencia_pct"] == 13.36
-        assert row["divergencia_razao"] == "motivo de teste"
+        # A razão do agravo SOMA à universal de janela, nunca a substitui -- se substituísse, um
+        # agravo com explicação própria perderia a explicação de método, que vale para ele também.
+        assert RAZAO_DIVERGENCIA_JANELA_CURTA in row["divergencia_razao"]
+        assert row["divergencia_razao"].endswith("motivo de teste")
 
 
 def test_build_collection_status_rows_nulo_para_id_sem_divergencia_registrada() -> None:
@@ -483,8 +487,15 @@ def test_build_collection_status_rows_nulo_para_id_sem_divergencia_registrada() 
         derived_at="2026-08-11T00:00:00Z",
         map_version="hash-fixo-de-teste",
     )
+    # `divergencia_pct` continua NULO sem entrada própria: a lacuna medida no 09-16 é por
+    # (agravo, UF, ano) e esta tabela não tem coluna de UF -- um percentual nacional aqui seria
+    # inventado.
     assert all(row["divergencia_pct"] is None for row in rows)
-    assert all(row["divergencia_razao"] is None for row in rows)
+    # `divergencia_razao`, ao contrário, NUNCA é nulo numa linha `coletado`: todo número servido é
+    # contado por DT_INTER e portanto diverge da consulta padrão do TabNet. Um agravo sem entrada
+    # própria recebe só a razão universal -- nunca a de outro agravo.
+    assert all(row["divergencia_razao"] == RAZAO_DIVERGENCIA_JANELA_CURTA for row in rows)
+    assert all("x" not in row["divergencia_razao"].split(". ")[-1] for row in rows)
 
 
 def test_carregar_divergencias_chaveado_por_disease_id() -> None:
