@@ -205,6 +205,21 @@ export function getMetricByUfAndYear(
   return metricForYear(entry, year);
 }
 
+/**
+ * A frase que explica por que este número difere de uma consulta padrão do TabNet, ou `null`
+ * quando não há divergência a explicar (o "quando houver" do critério do operador).
+ *
+ * O texto NÃO mora aqui: vem do pack, que o recebe de `sih_collection_status.divergencia_razao`,
+ * gravado por `upload.py` a partir de `paridade.RAZAO_DIVERGENCIA_JANELA_CURTA`. Uma fonte só, do
+ * Python até a tela — copiar a frase para cá criaria uma segunda que deriva em silêncio.
+ */
+export function getDivergenciaRazao(variableId: string): string | null {
+  const entry = getCatalogVariableById(variableId);
+  if (!entry?.packId) return null;
+  const pack = PACKS[entry.packId];
+  return pack?.divergenciaRazao ?? null;
+}
+
 /** Same metrics keyed by IBGE two-digit UF code. */
 export function getMetricByIbgeCode(variableId: string): Record<string, number> {
   const bySigla = getMetricByUf(variableId);

@@ -51,6 +51,7 @@ import {
   MapGroupStrip,
 } from './MapGroupStrip';
 import { MapLegendHint } from './MapLegendHint';
+import { SihDivergenceNote } from '@/components/SihDivergenceNote';
 import { MapPrimaryActionBar } from './MapPrimaryActionBar';
 import { municipalityIdsForMeso } from '@/geo/mesoMembership';
 import { municipioTerritory, suggestGroupName } from '@/geo/municipioNames';
@@ -67,6 +68,7 @@ import {
 } from './mapAnalysisState';
 import {
   getCatalogLabel,
+  getDivergenciaRazao,
   getMetricByUf,
   getMetricByUfAndYear,
 } from '@/features/catalog/catalogAnalysisData';
@@ -913,6 +915,9 @@ export function MapasPage() {
             values={Object.values(choroplethValues)}
             activeVariableId={activeVariableId}
             variableLabel={activeVariableId ? getCatalogLabel(activeVariableId) : undefined}
+          />
+          <SihDivergenceNote
+            razao={activeVariableId ? getDivergenciaRazao(activeVariableId) : null}
           />
           {!hasInteracted ? <MapLegendHint /> : null}
           {hasUngroupedSelection ? (
