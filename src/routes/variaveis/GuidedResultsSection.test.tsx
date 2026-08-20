@@ -5,6 +5,7 @@ import { createRecommendedScenario, reviseScenario, treatAsMissing } from '@/fea
 import type { AnalysisCell, ResearchDesign } from '@/features/research/types';
 import { GuidedResultsSection } from './GuidedResultsSection';
 import { buildGuidedMapModel } from './GuidedResultMap';
+import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
 import type { PraisGroupTrendRun } from './praisGroupTrends';
 import type { GuidedTestRun } from './runGuidedTests';
 
@@ -38,6 +39,7 @@ const cells: AnalysisCell[] = [
 ];
 
 const chart = { type: 'bar' as const, data: { labels: [], datasets: [] }, ariaLabel: 'Gráfico' };
+const SIH_VARIABLE_ID = 'sih.embolia_e_trombose_arteriais.internacoes';
 const run: GuidedTestRun = {
   fingerprint: 'guided-results:test',
   scenarioFingerprint: 'scenario:test',
@@ -119,6 +121,36 @@ describe('GuidedResultsSection', () => {
     const conclusion = within(screen.getByRole('region', { name: 'Conclusão' })).getAllByRole('paragraph')[0]!;
     expect(conclusion).toHaveTextContent(/^Efeito principal/i);
     expect(conclusion.textContent?.indexOf('Efeito')).toBeLessThan(conclusion.textContent?.indexOf('evidência') ?? Infinity);
+  });
+
+  it('explica sem repetir a razão do pack no fluxo descritivo e confirmatório', () => {
+    const sihCells = cells.map((cell) => ({ ...cell, variableId: SIH_VARIABLE_ID }));
+    const recommended = createRecommendedScenario(sihCells);
+    const razao = getDivergenciaRazao(SIH_VARIABLE_ID);
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={recommended}
+      variableLabels={{ [SIH_VARIABLE_ID]: 'Internações por embolia e trombose arteriais' }}
+      run={{
+        ...run,
+        scenarioFingerprint: recommended.fingerprint,
+        results: run.results.map((result) => ({ ...result, outcomeVariableId: SIH_VARIABLE_ID })),
+      }}
+      praisGroupRun={{
+        ...praisGroupRun,
+        results: praisGroupRun.results.map((result) => ({ ...result, outcomeVariableId: SIH_VARIABLE_ID })),
+      }}
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByRole('heading', { name: 'Tendências Prais–Winsten por grupo' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', {
+      name: 'Mann–Whitney · Internações por embolia e trombose arteriais · principal',
+    })).toBeInTheDocument();
+    expect(screen.getAllByText(razao!, { exact: false })).toHaveLength(1);
   });
 
   it('discloses n change when a post-result scenario is revised', () => {

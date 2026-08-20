@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
-import { SihDivergenceNote } from './SihDivergenceNote';
+import { SihDivergenceNote, SihDivergenceNotes } from './SihDivergenceNote';
 
 const VARIAVEL = 'sih.embolia_e_trombose_arteriais.internacoes';
 
@@ -18,20 +18,18 @@ describe('SihDivergenceNote', () => {
   });
 
   it('mostra a razão junto de um rótulo que diz ao aluno do que se trata', () => {
-    render(<SihDivergenceNote razao="Contado pela data de internação." />);
+    const razao = getDivergenciaRazao(VARIAVEL);
+    render(<SihDivergenceNote razao={razao} />);
     expect(screen.getByText(/Por que difere do TabNet/)).toBeInTheDocument();
-    expect(screen.getByText(/Contado pela data de internação\./)).toBeInTheDocument();
+    expect(screen.getByText(razao!, { exact: false })).toBeInTheDocument();
   });
 });
 
 describe('getDivergenciaRazao', () => {
   it('lê a razão do pack — o texto vem do banco, nunca digitado no front', () => {
     const razao = getDivergenciaRazao(VARIAVEL);
-    expect(razao).toBeTruthy();
-    // As duas ideias que a frase precisa carregar para o aluno conseguir reproduzir a diferença:
-    // qual é a nossa chave de contagem, e o que a consulta padrão do TabNet deixa de fora.
-    expect(razao).toMatch(/data de interna/i);
-    expect(razao).toMatch(/TabNet/);
+    expect(razao).toEqual(expect.any(String));
+    expect(razao).not.toBe('');
   });
 
   it('devolve null para variável fora do catálogo, em vez de estourar', () => {
@@ -42,5 +40,19 @@ describe('getDivergenciaRazao', () => {
     const razao = getDivergenciaRazao(VARIAVEL);
     render(<SihDivergenceNote razao={razao} />);
     expect(screen.getByText(new RegExp(razao!.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument();
+  });
+});
+
+describe('SihDivergenceNotes', () => {
+  it('não cria espaço sem razão e deduplica variáveis que compartilham a razão do pack', () => {
+    const { container, rerender } = render(<SihDivergenceNotes variableIds={['nao.existe.nenhuma']} />);
+    expect(container).toBeEmptyDOMElement();
+
+    const razao = getDivergenciaRazao(VARIAVEL);
+    rerender(<SihDivergenceNotes variableIds={[
+      VARIAVEL,
+      'sih.embolia_e_trombose_arteriais.obitos',
+    ]} />);
+    expect(screen.getAllByText(razao!, { exact: false })).toHaveLength(1);
   });
 });

@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, FlaskConical } from 'lucide-react';
+import { SihDivergenceNotes } from '@/components/SihDivergenceNote';
 import type { AnalysisScenario, ResearchDesign } from '@/features/research/types';
 import { ResultsPanel } from '@/routes/estatistica/ResultsPanel';
 import { GuidedResultMap } from './GuidedResultMap';
@@ -258,6 +259,7 @@ export function GuidedResultsSection({
           <h2 className="font-sans text-heading font-bold text-text">O cálculo confirmatório foi bloqueado</h2>
           <p className="mt-1 font-sans text-sm text-text-muted">{runError}</p>
           <p className="mt-2 font-sans text-xs text-text-muted">Revise as escolhas do teste entre grupos; descrições Prais–Winsten elegíveis permanecem separadas abaixo.</p>
+          <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
           <div className="mt-3">
             <ReviewAnalysisDataDialog
               design={design}
@@ -288,6 +290,7 @@ export function GuidedResultsSection({
             <p className="mt-1 max-w-3xl font-sans text-sm text-text-muted">
               Os gráficos e sumários acima descrevem somente os valores disponíveis no recorte. Ausência de dado não foi convertida em zero e nenhuma inferência causal foi feita.
             </p>
+            <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
           </div>
         </div>
         <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
@@ -327,6 +330,8 @@ export function GuidedResultsSection({
           </p>
         </div>
       </div>
+
+      <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
 
       <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
 

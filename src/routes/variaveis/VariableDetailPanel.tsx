@@ -1,4 +1,5 @@
 import { EmptyState } from '@/components/EmptyState';
+import { SihDivergenceNote } from '@/components/SihDivergenceNote';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,6 +8,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import type { CatalogEntry } from '@/features/catalog/types';
+import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
 import { ChevronDown, Database } from 'lucide-react';
 import { VARIABLE_TYPE_LABELS } from './VariableFilters';
 
@@ -82,6 +84,8 @@ export function VariableDetailPanel({
         </div>
         <p className="font-sans text-sm text-text-muted">Domínio: {entry.domain}</p>
       </header>
+
+      <SihDivergenceNote razao={getDivergenciaRazao(entry.id)} />
 
       <Collapsible className="rounded-xl border border-border bg-elevated/35">
         <CollapsibleTrigger className="group flex w-full items-center gap-2 px-3 py-2.5 text-left font-sans text-sm font-semibold text-text">

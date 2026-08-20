@@ -1,3 +1,5 @@
+import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
+
 /**
  * Nota curta que explica, ao lado do número, por que ele difere de uma consulta padrão do TabNet.
  *
@@ -20,4 +22,18 @@ export function SihDivergenceNote({ razao }: { razao?: string | null }) {
       {razao}
     </p>
   );
+}
+
+/**
+ * Reúne as razões vindas dos packs para uma superfície e evita repetir a mesma explicação quando
+ * mais de uma variável aponta para ela. A frase continua a fluir do pack pelo helper, sem cópia.
+ */
+export function SihDivergenceNotes({ variableIds }: { variableIds: readonly string[] }) {
+  const razoes = [...new Set(variableIds
+    .map((variableId) => getDivergenciaRazao(variableId))
+    .filter((razao): razao is string => Boolean(razao)))];
+
+  if (razoes.length === 0) return null;
+
+  return <>{razoes.map((razao) => <SihDivergenceNote key={razao} razao={razao} />)}</>;
 }

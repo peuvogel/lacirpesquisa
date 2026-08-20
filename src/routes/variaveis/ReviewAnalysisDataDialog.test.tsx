@@ -1,9 +1,12 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { createRecommendedScenario } from '@/features/research/scenarios';
 import type { AnalysisCell, ResearchDesign } from '@/features/research/types';
+import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
 import { ReviewAnalysisDataDialog } from './ReviewAnalysisDataDialog';
+
+const SIH_VARIABLE_ID = 'sih.embolia_e_trombose_arteriais.internacoes';
 
 const design: ResearchDesign = {
   groups: [{
@@ -141,5 +144,29 @@ describe('ReviewAnalysisDataDialog', () => {
 
     await user.click(screen.getByRole('button', { name: 'Revisar dados da análise' }));
     expect(screen.getAllByText(/2013–2025/)).not.toHaveLength(0);
+  });
+
+  it('explica uma única vez a divergência do pack antes das células que a compartilham', async () => {
+    const user = userEvent.setup();
+    const recommendedScenario = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      variableId: SIH_VARIABLE_ID,
+    })));
+    const razao = getDivergenciaRazao(SIH_VARIABLE_ID);
+    render(
+      <ReviewAnalysisDataDialog
+        design={design}
+        recommendedScenario={recommendedScenario}
+        activeScenario={recommendedScenario}
+        variableLabels={{ [SIH_VARIABLE_ID]: 'Internações por embolia e trombose arteriais' }}
+        createdAfterResults={false}
+        onApply={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Revisar dados da análise' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getAllByText(razao!, { exact: false })).toHaveLength(1);
+    expect(dialog.textContent?.indexOf(razao!)).toBeLessThan(dialog.textContent?.indexOf('Bahia') ?? Infinity);
   });
 });
