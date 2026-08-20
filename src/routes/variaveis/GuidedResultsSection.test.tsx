@@ -98,6 +98,29 @@ describe('GuidedResultsSection', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
+  it('mantém a razão do pack fora do alerta quando o cálculo confirmatório é bloqueado', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      variableId: SIH_VARIABLE_ID,
+    })));
+    const razao = getDivergenciaRazao(SIH_VARIABLE_ID);
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={recommended}
+      variableLabels={{ [SIH_VARIABLE_ID]: 'Internações por embolia e trombose arteriais' }}
+      run={null}
+      runError="O recorte não sustenta o cálculo confirmatório."
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    const note = screen.getByText(razao!, { exact: false });
+    const alert = screen.getByRole('alert');
+    expect(note).toBeInTheDocument();
+    expect(alert).not.toContainElement(note);
+  });
+
   it('shows principal then sensitivity, a territorial map, and the clickable revision after the conclusion', () => {
     const recommended = createRecommendedScenario(cells.map((cell) => ({ ...cell, analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const })));
     render(<GuidedResultsSection

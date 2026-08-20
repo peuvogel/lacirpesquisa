@@ -259,7 +259,6 @@ export function GuidedResultsSection({
           <h2 className="font-sans text-heading font-bold text-text">O cálculo confirmatório foi bloqueado</h2>
           <p className="mt-1 font-sans text-sm text-text-muted">{runError}</p>
           <p className="mt-2 font-sans text-xs text-text-muted">Revise as escolhas do teste entre grupos; descrições Prais–Winsten elegíveis permanecem separadas abaixo.</p>
-          <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
           <div className="mt-3">
             <ReviewAnalysisDataDialog
               design={design}
@@ -271,6 +270,7 @@ export function GuidedResultsSection({
             />
           </div>
         </section>
+        <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
         <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
       </div>
     );
