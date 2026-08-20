@@ -62,9 +62,15 @@ export interface MapAnalysisState {
 
 export type MapAnalysisAction =
   | { type: 'CREATE_GROUP'; name?: string; territories?: TerritoryRef[] }
+  | {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE';
+      territories: TerritoryRef[];
+      firstGroupName?: string;
+    }
   | { type: 'RENAME_GROUP'; groupId: string; name: string }
   | { type: 'DELETE_GROUP'; groupId: string }
   | { type: 'MERGE_TERRITORIES_TO_GROUP'; groupId: string; territories: TerritoryRef[] }
+  | { type: 'REMOVE_TERRITORIES_FROM_GROUP'; groupId: string; territories: TerritoryRef[] }
   | { type: 'SET_ACTIVE_GROUP'; groupId: string | null }
   | { type: 'SET_GROUP_TIME'; groupId: string; time: GroupTimeConfig }
   | { type: 'SET_SHARED_TIME'; time: GroupTimeConfig }
@@ -273,11 +279,15 @@ function isGroupComplete(group: MapAnalysisGroup): boolean {
   return group.territoryIds.length > 0 && isTimeValid(group.time);
 }
 
+function territoryKey(territory: TerritoryRef): string {
+  return `${territory.level}:${territory.ibgeCode}`;
+}
+
 function mergeTerritories(existing: TerritoryRef[], incoming: TerritoryRef[]): TerritoryRef[] {
-  const seen = new Set(existing.map((t) => `${t.level}:${t.ibgeCode}`));
+  const seen = new Set(existing.map(territoryKey));
   const merged = [...existing];
   for (const t of incoming) {
-    const key = `${t.level}:${t.ibgeCode}`;
+    const key = territoryKey(t);
     if (!seen.has(key)) {
       seen.add(key);
       merged.push(t);
@@ -285,6 +295,18 @@ function mergeTerritories(existing: TerritoryRef[], incoming: TerritoryRef[]): T
     }
   }
   return merged.slice(0, MAX_TERRITORIES_PER_GROUP);
+}
+
+export function territoryOwner(
+  state: MapAnalysisState,
+  territory: TerritoryRef,
+): MapAnalysisGroup | null {
+  const key = territoryKey(territory);
+  return (
+    state.groups.find((group) =>
+      group.territoryIds.some((candidate) => territoryKey(candidate) === key),
+    ) ?? null
+  );
 }
 
 function territoryLabel(t: TerritoryRef): string {
@@ -308,6 +330,40 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
         ...state,
         groups: [...state.groups, group],
         activeGroupId: group.id,
+      };
+    }
+
+    case 'ASSIGN_TERRITORIES_TO_ACTIVE': {
+      if (state.groups.length === 0) {
+        if (action.territories.length === 0) return state;
+        const group = createEmptyGroup(
+          action.firstGroupName?.trim() || 'População selecionada',
+          mergeTerritories([], action.territories),
+        );
+        return {
+          ...state,
+          groups: [{ ...group, time: cloneTime(state.sharedTime) }],
+          activeGroupId: group.id,
+        };
+      }
+
+      const active = state.groups.find((group) => group.id === state.activeGroupId);
+      if (!active) return state;
+      const available = action.territories.filter((territory) => {
+        const key = territoryKey(territory);
+        return !state.groups.some(
+          (group) =>
+            group.id !== active.id &&
+            group.territoryIds.some((candidate) => territoryKey(candidate) === key),
+        );
+      });
+      return {
+        ...state,
+        groups: state.groups.map((group) =>
+          group.id === active.id
+            ? { ...group, territoryIds: mergeTerritories(group.territoryIds, available) }
+            : group,
+        ),
       };
     }
 
@@ -335,6 +391,23 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
             : g,
         ),
       };
+
+    case 'REMOVE_TERRITORIES_FROM_GROUP': {
+      const removed = new Set(action.territories.map(territoryKey));
+      return {
+        ...state,
+        groups: state.groups.map((group) =>
+          group.id === action.groupId
+            ? {
+                ...group,
+                territoryIds: group.territoryIds.filter(
+                  (territory) => !removed.has(territoryKey(territory)),
+                ),
+              }
+            : group,
+        ),
+      };
+    }
 
     case 'SET_ACTIVE_GROUP':
       return { ...state, activeGroupId: action.groupId };

@@ -13,6 +13,7 @@ import {
   mapAnalysisReducer,
   normalizeMapAnalysisState,
   resolveCatalogHandoffIds,
+  territoryOwner,
   type MapAnalysisGroup,
   type MapAnalysisState,
 } from './mapAnalysisState';
@@ -99,6 +100,134 @@ describe('normalizeMapAnalysisState', () => {
 });
 
 describe('mapAnalysisReducer', () => {
+  it('ASSIGN_TERRITORIES_TO_ACTIVE creates and activates the first population', () => {
+    const next = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory],
+    });
+
+    expect(next.groups).toHaveLength(1);
+    expect(next.groups[0]).toMatchObject({
+      name: 'População selecionada',
+      territoryIds: [sampleTerritory],
+    });
+    expect(next.activeGroupId).toBe(next.groups[0]!.id);
+    expect(territoryOwner(next, sampleTerritory)?.id).toBe(next.groups[0]!.id);
+  });
+
+  it('ASSIGN_TERRITORIES_TO_ACTIVE merges new territories without duplicates', () => {
+    const saoPaulo = {
+      level: 'uf' as const,
+      ibgeCode: '35',
+      sigla: 'SP',
+      name: 'São Paulo',
+    };
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory],
+    });
+
+    state = mapAnalysisReducer(state, {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory, saoPaulo, saoPaulo],
+    });
+
+    expect(state.groups[0]!.territoryIds).toEqual([sampleTerritory, saoPaulo]);
+  });
+
+  it('REMOVE_TERRITORIES_FROM_GROUP only changes the addressed population', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      name: 'População selecionada',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'CREATE_GROUP',
+      name: 'Comparador',
+      territories: [sampleTerritory],
+    });
+    const [population, comparator] = state.groups;
+
+    state = mapAnalysisReducer(state, {
+      type: 'REMOVE_TERRITORIES_FROM_GROUP',
+      groupId: population!.id,
+      territories: [sampleTerritory],
+    });
+
+    expect(state.groups.find((group) => group.id === population!.id)!.territoryIds).toEqual([]);
+    expect(state.groups.find((group) => group.id === comparator!.id)!.territoryIds).toEqual([
+      sampleTerritory,
+    ]);
+  });
+
+  it('does not silently move a territory owned by another population', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory],
+    });
+    const ownerId = state.activeGroupId!;
+    state = mapAnalysisReducer(state, { type: 'CREATE_GROUP', name: 'Comparador' });
+    const comparatorId = state.activeGroupId!;
+
+    state = mapAnalysisReducer(state, {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory],
+    });
+
+    expect(territoryOwner(state, sampleTerritory)?.id).toBe(ownerId);
+    expect(state.groups.find((group) => group.id === ownerId)!.territoryIds).toEqual([
+      sampleTerritory,
+    ]);
+    expect(state.groups.find((group) => group.id === comparatorId)!.territoryIds).toEqual([]);
+    expect(state.activeGroupId).toBe(comparatorId);
+  });
+
+  it('explicit comparator creation inherits the shared disease and time seed', () => {
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory],
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'SET_SHARED_TIME',
+      time: { mode: 'range', start: '2018-01', end: '2022-12' },
+    });
+    state = mapAnalysisReducer(state, {
+      type: 'TOGGLE_DISEASE_ALL_GROUPS',
+      diseaseId: 'embolia_e_trombose_arteriais',
+    });
+
+    state = mapAnalysisReducer(state, { type: 'CREATE_GROUP', name: 'Comparador' });
+
+    expect(state.groups[1]!.time).toEqual({
+      mode: 'range',
+      start: '2018-01',
+      end: '2022-12',
+    });
+    expect(state.groups[1]!.variableIds).toContain(
+      'sih.embolia_e_trombose_arteriais.internacoes',
+    );
+  });
+
+  it('direct assignment keeps legacy session defaults valid', () => {
+    const legacy = {
+      groups: [],
+      activeGroupId: null,
+      mapView: { level: 'uf' as const },
+      provenance: 'catalog' as const,
+    };
+
+    const next = mapAnalysisReducer(legacy as unknown as MapAnalysisState, {
+      type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
+      territories: [sampleTerritory],
+      firstGroupName: 'Minha população',
+    });
+
+    expect(next.groups[0]!.name).toBe('Minha população');
+    expect(next.groups[0]!.time).toEqual({ mode: 'point' });
+    expect(next.periodScope).toBe('shared');
+    expect(next.locationBasis).toBe('ocorrencia');
+  });
+
   it('CREATE_GROUP adds a named group and sets active', () => {
     const initial = createInitialMapAnalysisState();
     const next = mapAnalysisReducer(initial, { type: 'CREATE_GROUP', name: 'Meu Grupo' });
