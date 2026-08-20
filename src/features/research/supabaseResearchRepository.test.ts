@@ -535,6 +535,88 @@ describe('Supabase research repository', () => {
     expect(internalSignal?.aborted).toBe(true);
   });
 
+  it('aborts blocked municipal siblings when a Supabase branch fails terminally', async () => {
+    let markPartitionStarted: (() => void) | undefined;
+    const partitionStarted = new Promise<void>((resolve) => {
+      markPartitionStarted = resolve;
+    });
+    const client = new FakeSupabase({
+      sih_collection_status: async () => {
+        await partitionStarted;
+        return { data: null, error: { message: 'ledger unavailable' } };
+      },
+    });
+    let internalSignal: AbortSignal | undefined;
+    let releasePartition: (() => void) | undefined;
+    const loader = vi.fn((uf: string, options?: { signal?: AbortSignal }) => new Promise<MunicipioPartition>((resolve, reject) => {
+      internalSignal = options?.signal;
+      options?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+      releasePartition = () => resolve(municipioPartition(uf, []));
+      markPartitionStarted?.();
+    }));
+    const repo = createResearchRepository({ supabase: client, loadMunicipioPartition: loader });
+    const design = ufDesign({
+      geography: 'municipio', locationBasis: 'ocorrencia', diseaseIds: ['acidente_vascular_cerebral'],
+      groups: [{ id: 'salvador', name: 'Salvador', territories: [{ id: '292740', label: 'Salvador' }] }],
+      period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+    });
+
+    await expect(repo.load(design, [baseProfiles[0]!])).rejects.toMatchObject({ code: 'query_failed' });
+    const siblingWasAborted = internalSignal?.aborted;
+    releasePartition?.();
+
+    expect(siblingWasAborted).toBe(true);
+  });
+
+  it('shares a pending cache entry even when its eventual TTL window would have elapsed', async () => {
+    let clock = 0;
+    let releaseMetric: (() => void) | undefined;
+    const client = new FakeSupabase({
+      sih_metric_uf: (_state, attempt) => attempt === 1
+        ? new Promise<FakeResponse>((resolve) => {
+            releaseMetric = () => resolve({ data: [metricRow()], error: null });
+          })
+        : { data: [metricRow()], error: null },
+      sih_collection_status: () => ({ data: ledgerRows(), error: null }),
+    });
+    const repo = createResearchRepository({ supabase: client, ttlMs: 10, now: () => clock });
+
+    const first = repo.load(ufDesign(), [baseProfiles[0]!]);
+    await vi.waitFor(() => expect(releaseMetric).toBeTypeOf('function'));
+    clock = 100;
+    const second = repo.load(ufDesign(), [baseProfiles[0]!]);
+    releaseMetric!();
+    const [firstSnapshot, secondSnapshot] = await Promise.all([first, second]);
+
+    expect(client.callsFor('sih_metric_uf')).toHaveLength(1);
+    expect(secondSnapshot).toBe(firstSnapshot);
+  });
+
+  it('starts the cache TTL only after the shared load resolves', async () => {
+    let clock = 0;
+    let releaseMetric: (() => void) | undefined;
+    const client = new FakeSupabase({
+      sih_metric_uf: (_state, attempt) => attempt === 1
+        ? new Promise<FakeResponse>((resolve) => {
+            releaseMetric = () => resolve({ data: [metricRow()], error: null });
+          })
+        : { data: [metricRow()], error: null },
+      sih_collection_status: () => ({ data: ledgerRows(), error: null }),
+    });
+    const repo = createResearchRepository({ supabase: client, ttlMs: 10, now: () => clock });
+
+    const first = repo.load(ufDesign(), [baseProfiles[0]!]);
+    await vi.waitFor(() => expect(releaseMetric).toBeTypeOf('function'));
+    clock = 100;
+    releaseMetric!();
+    const firstSnapshot = await first;
+    clock = 105;
+    const cachedSnapshot = await repo.load(ufDesign(), [baseProfiles[0]!]);
+
+    expect(client.callsFor('sih_metric_uf')).toHaveLength(1);
+    expect(cachedSnapshot).toBe(firstSnapshot);
+  });
+
   it('bounds concurrent municipal partition downloads without serializing all of them', async () => {
     const client = new FakeSupabase({ sih_collection_status: () => ({ data: [], error: null }) });
     let active = 0;

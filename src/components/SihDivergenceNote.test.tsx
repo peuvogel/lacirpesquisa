@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
+import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import { SihDivergenceNote, SihDivergenceNotes } from './SihDivergenceNote';
 
 const VARIAVEL = 'sih.embolia_e_trombose_arteriais.internacoes';
@@ -67,4 +68,18 @@ describe('SihDivergenceNotes', () => {
 
     expect(screen.getAllByText(razao!, { exact: false })).toHaveLength(1);
   });
+
+  it.each(VARIABLE_PROFILES.map(({ variableId }) => [variableId]))(
+    'resolve a proveniência do pack para o perfil analítico real %s',
+    (variableId) => {
+      render(
+        <SihDivergenceNotes
+          variableIds={[variableId]}
+          diseaseIds={['embolia_e_trombose_arteriais']}
+        />,
+      );
+
+      expect(screen.getByText(/Por que difere do TabNet/)).toBeInTheDocument();
+    },
+  );
 });

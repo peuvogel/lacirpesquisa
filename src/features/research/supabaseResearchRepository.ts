@@ -705,7 +705,11 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
       }
       const key = `${fingerprintResearchDesign(design)}:${profileFingerprint(profiles)}`;
       const cached = cache.get(key);
-      if (cached && cached.expiresAt > now() && !cached.controller.signal.aborted) {
+      if (
+        cached
+        && !cached.controller.signal.aborted
+        && (!cached.settled || cached.expiresAt > now())
+      ) {
         return attachConsumer(cache, key, cached, loadOptions.signal);
       }
       if (cached) cache.delete(key);
@@ -713,7 +717,7 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
       const controller = new AbortController();
       const promise = loadUncached(design, profiles, controller.signal);
       const entry: CacheEntry = {
-        expiresAt: now() + ttlMs,
+        expiresAt: 0,
         promise,
         controller,
         consumers: 0,
@@ -722,9 +726,11 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
       cache.set(key, entry);
       void promise.then(
         () => {
+          entry.expiresAt = now() + ttlMs;
           entry.settled = true;
         },
         () => {
+          entry.controller.abort();
           entry.settled = true;
           if (cache.get(key) === entry) cache.delete(key);
         },

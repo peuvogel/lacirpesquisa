@@ -36,9 +36,11 @@ export function SihDivergenceNotes({
   variableIds: readonly string[];
   diseaseIds?: readonly string[];
 }) {
+  // Derived analysis profiles do not all have their own catalog column. The divergence reason is
+  // pack-level, so a generic profile resolves through the pack's guaranteed admissions entry.
   const provenanceIds = variableIds.flatMap((variableId) => parseCatalogId(variableId)
     ? [variableId]
-    : diseaseIds.map((diseaseId) => catalogIdFor(variableId, diseaseId)));
+    : diseaseIds.map((diseaseId) => catalogIdFor('internacoes', diseaseId)));
   const razoes = [...new Set(provenanceIds
     .map((variableId) => getDivergenciaRazao(variableId))
     .filter((razao): razao is string => Boolean(razao)))];
