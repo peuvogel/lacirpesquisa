@@ -131,9 +131,11 @@ export function GuidedAnalysisWorkspace({
     return runPraisForProfiles({
       design,
       sourceCells: guided.data.sourceCells,
+      annualCells: guided.data.annualCells,
+      scenario: activeScenario,
       profiles: selectedProfiles,
     });
-  }, [activeReviewsResolved, design, guided.data, selectedProfiles, selection.trendTestIds]);
+  }, [activeReviewsResolved, activeScenario, design, guided.data, selectedProfiles, selection.trendTestIds]);
   const commonCoverage = useMemo(() => {
     if (!guided.data || !selection.primaryTestId || !isGroupComparisonTest(selection.primaryTestId)) return null;
     const outcomes = selectedProfiles.filter((profile) =>

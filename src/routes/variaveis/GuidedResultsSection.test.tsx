@@ -277,7 +277,12 @@ describe('GuidedResultsSection', () => {
     expect(screen.getByRole('heading', { name: 'Prais–Winsten · Grupo B · Taxa de internação' })).toBeInTheDocument();
     expect(screen.getByText(/Grupo B · Custo hospitalar.*pelo menos 8 pontos/i)).toBeInTheDocument();
     expect(screen.getByText(/cada modelo descreve somente o seu grupo.*não compara p-valores/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação · principal/ })).toBeInTheDocument();
+    expect(screen.getByText(/tendências descritivas aparecem primeiro.*bloco confirmatório.*teste principal/i))
+      .toBeInTheDocument();
+    const descriptiveHeading = screen.getByRole('heading', { name: 'Tendências Prais–Winsten por grupo' });
+    const primaryHeading = screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação · principal/ });
+    expect(descriptiveHeading.compareDocumentPosition(primaryHeading) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy();
   });
 
   it('explains whether common temporal support changes n, magnitude, direction or evidence', () => {

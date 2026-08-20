@@ -323,7 +323,7 @@ export function GuidedResultsSection({
           <p className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-accent">Cálculo no próprio fluxo</p>
           <h2 id="guided-results-heading" className="mt-1 font-sans text-heading font-bold text-text">5. Resultados no recorte</h2>
           <p className="mt-1 font-sans text-sm text-text-muted">
-            O teste principal vem primeiro; os demais verificam a sensibilidade da conclusão.
+            As tendências descritivas aparecem primeiro. No bloco confirmatório, o teste principal vem antes das análises de sensibilidade.
           </p>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { aggregatePeriod } from '@/features/research/aggregatePeriod';
+import { scenarioCellKey } from '@/features/research/scenarios';
 import type {
   AnalysisCell,
+  AnalysisScenario,
   ResearchDesign,
   ResearchPeriod,
   VariableProfile,
@@ -58,8 +60,93 @@ interface RunPraisByGroupInput {
 interface RunPraisForProfilesInput {
   design: ResearchDesign;
   sourceCells: AnalysisCell[];
+  annualCells: AnalysisCell[];
+  scenario: AnalysisScenario;
   profiles: readonly VariableProfile[];
   alpha?: number;
+}
+
+interface BuildScenarioAwarePraisCellsInput {
+  sourceCells: AnalysisCell[];
+  annualCells: AnalysisCell[];
+  scenario: AnalysisScenario;
+  profile: VariableProfile;
+}
+
+function profileScopeKey(cell: Pick<AnalysisCell, 'groupId' | 'territoryId'>, variableId: string): string {
+  return JSON.stringify([cell.groupId, cell.territoryId, variableId]);
+}
+
+function profileCellKey(
+  cell: Pick<AnalysisCell, 'groupId' | 'territoryId' | 'periodKey'>,
+  variableId: string,
+): string {
+  return scenarioCellKey({ ...cell, variableId });
+}
+
+/**
+ * Prais needs the annual source components, while review decisions belong to
+ * the derived profile cells shown to the researcher. This projects the annual
+ * policy and explicit scenario decisions back onto every required component.
+ */
+export function buildScenarioAwarePraisCells({
+  sourceCells,
+  annualCells,
+  scenario,
+  profile,
+}: BuildScenarioAwarePraisCellsInput): AnalysisCell[] {
+  const relevantVariableIds = new Set([
+    profile.variableId,
+    profile.numeratorVariableId,
+    profile.denominatorVariableId,
+    profile.exposureVariableId,
+  ].filter((variableId): variableId is string => Boolean(variableId)));
+  const annualPolicyByKey = new Map(
+    annualCells
+      .filter((cell) => cell.variableId === profile.variableId)
+      .map((cell) => [scenarioCellKey(cell), cell]),
+  );
+  const scenarioCellsByKey = new Map(scenario.cells.map((cell) => [scenarioCellKey(cell), cell]));
+  const decisionsByKey = new Map(scenario.decisions.map((decision) => [decision.cellKey, decision]));
+  const decisionsByScope = new Map<string, (typeof scenario.decisions)[number]>();
+  const scenarioProfileCellsByScope = new Map<string, AnalysisCell[]>();
+
+  for (const cell of scenario.cells.filter((item) => item.variableId === profile.variableId)) {
+    const scopeKey = profileScopeKey(cell, profile.variableId);
+    scenarioProfileCellsByScope.set(scopeKey, [...(scenarioProfileCellsByScope.get(scopeKey) ?? []), cell]);
+  }
+  for (const decision of scenario.decisions) {
+    const decidedCell = scenarioCellsByKey.get(decision.cellKey);
+    if (!decidedCell || decidedCell.variableId !== profile.variableId) continue;
+    const scopeKey = profileScopeKey(decidedCell, profile.variableId);
+    if ((scenarioProfileCellsByScope.get(scopeKey)?.length ?? 0) === 1) {
+      decisionsByScope.set(scopeKey, decision);
+    }
+  }
+
+  return sourceCells.map((sourceCell) => {
+    if (!relevantVariableIds.has(sourceCell.variableId)) return sourceCell;
+    const policyKey = profileCellKey(sourceCell, profile.variableId);
+    const annualPolicy = annualPolicyByKey.get(policyKey);
+    if (!annualPolicy) return sourceCell;
+
+    const decision = decisionsByKey.get(policyKey)
+      ?? decisionsByScope.get(profileScopeKey(sourceCell, profile.variableId));
+    const analyticStatus = decision?.analyticStatus ?? annualPolicy.analyticStatus;
+    const reasonCode = decision?.reasonCode ?? annualPolicy.reasonCode;
+
+    if (analyticStatus === 'include') {
+      const hasUsableSource = (sourceCell.sourceStatus === 'observed' || sourceCell.sourceStatus === 'collection_zero')
+        && typeof sourceCell.rawValue === 'number'
+        && Number.isFinite(sourceCell.rawValue);
+      if (!hasUsableSource) return sourceCell;
+    }
+    return {
+      ...sourceCell,
+      analyticStatus,
+      ...(reasonCode ? { reasonCode } : {}),
+    };
+  });
 }
 
 function periodForGroup(design: ResearchDesign, groupId: string): ResearchPeriod | undefined {
@@ -225,11 +312,14 @@ export function runPraisByGroup({
 export function runPraisForProfiles({
   design,
   sourceCells,
+  annualCells,
+  scenario,
   profiles,
   alpha,
 }: RunPraisForProfilesInput): PraisGroupTrendRun {
   return profiles.reduce<PraisGroupTrendRun>((combined, profile) => {
-    const run = runPraisByGroup({ design, sourceCells, profile, ...(alpha === undefined ? {} : { alpha }) });
+    const effectiveCells = buildScenarioAwarePraisCells({ sourceCells, annualCells, scenario, profile });
+    const run = runPraisByGroup({ design, sourceCells: effectiveCells, profile, ...(alpha === undefined ? {} : { alpha }) });
     combined.results.push(...run.results);
     combined.skippedGroups.push(...run.skippedGroups);
     return combined;

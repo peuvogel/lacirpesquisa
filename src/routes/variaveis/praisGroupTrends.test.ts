@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import {
+  createRecommendedScenario,
+  reviseScenario,
+  scenarioCellKey,
+  treatAsMissing,
+  useOriginalValue,
+} from '@/features/research/scenarios';
 import type { AnalysisCell, ResearchDesign, VariableProfile } from '@/features/research/types';
 import {
+  buildScenarioAwarePraisCells,
   buildPraisGroupSeries,
   runPraisByGroup,
   runPraisForProfiles,
@@ -76,7 +84,7 @@ function countCells(): AnalysisCell[] {
         territory.id,
         year,
         'internacoes',
-        Number(year) === 2017 && group.id === 'nordeste' && territoryIndex === 0
+        Number(year) === 2017 && group.id === 'nordeste'
           ? 0
           : 10 + groupIndex * 4 + territoryIndex + (Number(year) - 2017) ** 2,
       )));
@@ -95,7 +103,7 @@ describe('Prais–Winsten por grupo territorial', () => {
 
     expect(series.map((item) => item.groupId)).toEqual(['nordeste', 'sudeste']);
     expect(series[0]?.rows).toHaveLength(8);
-    expect(series[0]?.rows[0]).toEqual({ year: 2017, value: 11 });
+    expect(series[0]?.rows[0]).toEqual({ year: 2017, value: 0 });
     expect(run.results.map((result) => result.groupId)).toEqual(['nordeste', 'sudeste']);
     expect(run.results.every((result) => result.metrics.length > 0)).toBe(true);
     expect(run.results[0]?.interpretation[0]).toMatch(/somente para Nordeste.*não testa diferença/i);
@@ -156,6 +164,8 @@ describe('Prais–Winsten por grupo territorial', () => {
     const run = runPraisForProfiles({
       design: twoGroupRangeDesign,
       sourceCells: [...admissions, ...deaths],
+      annualCells: [...admissions, ...deaths],
+      scenario: createRecommendedScenario([...admissions, ...deaths]),
       profiles: [countProfile, deathsProfile],
     });
 
@@ -188,5 +198,105 @@ describe('Prais–Winsten por grupo territorial', () => {
     expect(run.results).toEqual([]);
     expect(run.skippedGroups).toHaveLength(2);
     expect(run.skippedGroups.every((item) => item.outcomeVariableId === 'internacoes')).toBe(true);
+  });
+
+  it('changes the annual series and result when a reviewed cell is included versus excluded', () => {
+    const design: ResearchDesign = {
+      ...twoGroupRangeDesign,
+      groups: [{ id: 'nordeste', name: 'Nordeste', territories: [{ id: '29', label: 'Bahia' }] }],
+    };
+    const sourceCells = Array.from({ length: 8 }, (_, index) =>
+      cell('nordeste', '29', String(2017 + index), 'internacoes', index === 0 ? 0 : index ** 2 + 4));
+    const annualCells = sourceCells.map((item, index) => index === 0
+      ? { ...item, analyticStatus: 'requires_review' as const, reasonCode: 'zero_requires_review' }
+      : item);
+    const recommended = createRecommendedScenario(annualCells);
+    const reviewedKey = scenarioCellKey(annualCells[0]!);
+    const included = reviseScenario(recommended, [useOriginalValue(reviewedKey)]);
+    const excluded = reviseScenario(recommended, [treatAsMissing(reviewedKey)]);
+
+    const includedCells = buildScenarioAwarePraisCells({
+      sourceCells,
+      annualCells,
+      scenario: included,
+      profile: countProfile,
+    });
+    const excludedCells = buildScenarioAwarePraisCells({
+      sourceCells,
+      annualCells,
+      scenario: excluded,
+      profile: countProfile,
+    });
+    const includedRun = runPraisForProfiles({
+      design,
+      sourceCells,
+      annualCells,
+      scenario: included,
+      profiles: [countProfile],
+    });
+    const excludedRun = runPraisForProfiles({
+      design,
+      sourceCells,
+      annualCells,
+      scenario: excluded,
+      profiles: [countProfile],
+    });
+
+    expect(buildPraisGroupSeries(design, includedCells, countProfile)[0]?.rows[0])
+      .toEqual({ year: 2017, value: 0 });
+    expect(buildPraisGroupSeries(design, excludedCells, countProfile)[0]?.rows.map((row) => row.year))
+      .toEqual([2018, 2019, 2020, 2021, 2022, 2023, 2024]);
+    expect(includedRun.results).toHaveLength(1);
+    expect(excludedRun.results).toHaveLength(0);
+    expect(excludedRun.skippedGroups[0]?.reason).toMatch(/7 de 8/);
+  });
+
+  it('applies the reviewed rate policy to numerator and denominator components', () => {
+    const design: ResearchDesign = {
+      ...twoGroupRangeDesign,
+      groups: [{ id: 'nordeste', name: 'Nordeste', territories: [{ id: '29', label: 'Bahia' }] }],
+    };
+    const sourceCells = Array.from({ length: 8 }, (_, index) => [
+      cell('nordeste', '29', String(2017 + index), 'obitos', index === 0 ? 0 : index + 1),
+      cell('nordeste', '29', String(2017 + index), 'internacoes', 20 + index),
+    ]).flat();
+    const annualCells = Array.from({ length: 8 }, (_, index) => ({
+      ...cell(
+        'nordeste',
+        '29',
+        String(2017 + index),
+        'taxa_mortalidade',
+        index === 0 ? 0 : ((index + 1) / (20 + index)) * 100,
+      ),
+      ...(index === 0
+        ? { analyticStatus: 'requires_review' as const, reasonCode: 'zero_requires_review' }
+        : {}),
+    }));
+    const recommended = createRecommendedScenario(annualCells);
+    const reviewedKey = scenarioCellKey(annualCells[0]!);
+    const included = reviseScenario(recommended, [useOriginalValue(reviewedKey)]);
+    const excluded = reviseScenario(recommended, [treatAsMissing(reviewedKey)]);
+
+    const includedCells = buildScenarioAwarePraisCells({
+      sourceCells,
+      annualCells,
+      scenario: included,
+      profile: mortalityRateProfile,
+    });
+    const excludedCells = buildScenarioAwarePraisCells({
+      sourceCells,
+      annualCells,
+      scenario: excluded,
+      profile: mortalityRateProfile,
+    });
+
+    expect(includedCells.filter((item) => item.periodKey === '2017').map((item) => item.analyticStatus))
+      .toEqual(['include', 'include']);
+    expect(excludedCells.filter((item) => item.periodKey === '2017').map((item) => item.analyticStatus))
+      .toEqual(['exclude_manual', 'exclude_manual']);
+    expect(buildPraisGroupSeries(design, includedCells, mortalityRateProfile)[0]?.rows[0])
+      .toEqual({ year: 2017, value: 0 });
+    expect(buildPraisGroupSeries(design, excludedCells, mortalityRateProfile)[0]?.rows.map((row) => row.year))
+      .toEqual([2018, 2019, 2020, 2021, 2022, 2023, 2024]);
   });
 });
