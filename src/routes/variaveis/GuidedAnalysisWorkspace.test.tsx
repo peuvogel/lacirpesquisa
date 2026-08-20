@@ -22,6 +22,29 @@ const guidedDesign: ResearchDesign = {
 };
 
 describe('GuidedAnalysisWorkspace', () => {
+  it('keeps the default objective step when Mapas opt-ins are absent', () => {
+    render(
+      <SessionProvider>
+        <GuidedAnalysisWorkspace design={guidedDesign} />
+      </SessionProvider>,
+    );
+
+    expect(screen.getByRole('heading', { name: '1. Qual é o objetivo?' })).toBeInTheDocument();
+  });
+
+  it('seeds the objective supplied by Mapas instead of rendering it again', () => {
+    render(
+      <SessionProvider>
+        <GuidedAnalysisWorkspace design={guidedDesign} embedded initialGoal="describe" />
+      </SessionProvider>,
+    );
+
+    expect(screen.queryByRole('heading', { name: '1. Qual é o objetivo?' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: '2. Preparando variáveis disponíveis…' }),
+    ).toBeInTheDocument();
+  });
+
   it('renders the guided analysis without a second page header when embedded', () => {
     render(
       <SessionProvider>

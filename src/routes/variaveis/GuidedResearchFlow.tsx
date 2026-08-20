@@ -3,7 +3,10 @@ import { MapPinned } from 'lucide-react';
 import type { ResearchDesign, ResearchGoal } from '@/features/research/types';
 import { DataProfileSection } from './DataProfileSection';
 import { EligibleTestsSection } from './EligibleTestsSection';
-import { GuidedVariableSelector } from './GuidedVariableSelector';
+import {
+  GuidedVariableSelector,
+  type GuidedVariableSelectorProps,
+} from './GuidedVariableSelector';
 import { GroupTrendTestSection } from './GroupTrendTestSection';
 import type {
   DataProfileViewModel,
@@ -28,7 +31,11 @@ export interface GuidedResearchFlowProps {
   recoverableMessages?: string[];
   resultsSlot?: ReactNode;
   summaryHeadingLevel?: 1 | 2;
+  initialGoal?: ResearchGoal | null;
+  renderVariableSelector?: VariableSelectorRenderer;
 }
+
+export type VariableSelectorRenderer = (props: GuidedVariableSelectorProps) => ReactNode;
 
 export function GuidedResearchFlow({
   design,
@@ -44,8 +51,10 @@ export function GuidedResearchFlow({
   recoverableMessages = [],
   resultsSlot,
   summaryHeadingLevel = 1,
+  initialGoal = null,
+  renderVariableSelector,
 }: GuidedResearchFlowProps) {
-  const [goal, setGoal] = useState<ResearchGoal | null>(null);
+  const [goal, setGoal] = useState<ResearchGoal | null>(initialGoal);
   const [variableIds, setVariableIds] = useState<string[]>([]);
   const [trendTestIds, setTrendTestIds] = useState<string[]>([]);
   const [testIds, setTestIds] = useState<string[]>([]);
@@ -132,13 +141,24 @@ export function GuidedResearchFlow({
         </div>
       </header>
 
-      <FlowStep><ResearchGoalSection value={goal} onChange={changeGoal} /></FlowStep>
+      {initialGoal ? null : (
+        <FlowStep><ResearchGoalSection value={goal} onChange={changeGoal} /></FlowStep>
+      )}
 
       {goal ? (
         loadError ? (
           <ErrorStep message={loadError} />
         ) : variables ? (
-          <FlowStep><GuidedVariableSelector design={design} variables={variables} selectedVariableIds={variableIds} onSelectionChange={changeVariables} /></FlowStep>
+          <FlowStep>
+            {renderVariableSelector
+              ? renderVariableSelector({
+                  design,
+                  variables,
+                  selectedVariableIds: variableIds,
+                  onSelectionChange: changeVariables,
+                })
+              : <GuidedVariableSelector design={design} variables={variables} selectedVariableIds={variableIds} onSelectionChange={changeVariables} />}
+          </FlowStep>
         ) : (
           <LoadingStep />
         )

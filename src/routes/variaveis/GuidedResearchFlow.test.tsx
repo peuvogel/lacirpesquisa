@@ -165,6 +165,35 @@ const eligibleTests: EligibleTestViewModel[] = [
 ];
 
 describe('GuidedResearchFlow', () => {
+  it('uses an initial goal and an opt-in variable selector without asking the objective twice', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    render(
+      <GuidedResearchFlow
+        design={design}
+        summary={summary}
+        variables={variables}
+        initialGoal="describe"
+        onSelectionChange={onSelectionChange}
+        renderVariableSelector={(props) => (
+          <section aria-label="Seletor compacto de Mapas">
+            <button type="button" onClick={() => props.onSelectionChange(['internacoes'])}>
+              Marcar internações
+            </button>
+          </section>
+        )}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: '1. Qual é o objetivo?' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Seletor compacto de Mapas' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Marcar internações' }));
+    expect(onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      goal: 'describe',
+      variableIds: ['internacoes'],
+    }));
+  });
+
   it('shows disease, period, basis and every map group before variable checkboxes', async () => {
     const user = userEvent.setup();
     render(

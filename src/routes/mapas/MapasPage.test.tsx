@@ -74,7 +74,7 @@ describe('MapasPage group workspace', () => {
 
     expect(pathname).toBe('/mapas');
     expect(await screen.findByRole('region', { name: 'Análise do recorte' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '1. Qual é o objetivo?' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '1. Qual é o objetivo?' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('review-analysis-dialog')).not.toBeInTheDocument();
     expect(sessionRef.current?.researchDesign?.groups[0]?.territories).toEqual([
       { id: '29', label: 'Bahia' },

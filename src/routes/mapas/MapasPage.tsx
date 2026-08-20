@@ -26,6 +26,7 @@ import { GuidedAnalysisWorkspace } from '@/routes/variaveis/GuidedAnalysisWorksp
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
 import { MapQuestionBuilder } from './MapQuestionBuilder';
+import { MapVariableList } from './MapVariableList';
 import {
   buildPresetMapState,
   type GroupSelectionPresetId,
@@ -665,7 +666,12 @@ export function MapasPage() {
           tabIndex={-1}
           className="mt-10 scroll-mt-6"
         >
-          <GuidedAnalysisWorkspace design={visibleConfirmedDesign} embedded />
+          <GuidedAnalysisWorkspace
+            design={visibleConfirmedDesign}
+            embedded
+            initialGoal={visibleConfirmedDesign.goal ?? null}
+            renderVariableSelector={(props) => <MapVariableList {...props} />}
+          />
         </section>
       ) : null}
     </motion.div>

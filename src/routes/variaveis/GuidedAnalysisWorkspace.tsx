@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
 import { evaluateTestsForSelection } from '@/features/research/eligibility';
-import type { AnalysisScenario, ResearchDesign } from '@/features/research/types';
+import type { AnalysisScenario, ResearchDesign, ResearchGoal } from '@/features/research/types';
 import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import { useSession } from '@/shared/session/SessionProvider';
-import { GuidedResearchFlow } from './GuidedResearchFlow';
+import {
+  GuidedResearchFlow,
+  type VariableSelectorRenderer,
+} from './GuidedResearchFlow';
 import { GuidedResultsSection } from './GuidedResultsSection';
 import type { GuidedResearchSelection } from './guidedViewModels';
 import { buildHospitalOutcomeContingency } from './hospitalOutcomeContingency';
@@ -28,16 +31,20 @@ import {
 export interface GuidedAnalysisWorkspaceProps {
   design: ResearchDesign;
   embedded?: boolean;
+  initialGoal?: ResearchGoal | null;
+  renderVariableSelector?: VariableSelectorRenderer;
 }
 
 export function GuidedAnalysisWorkspace({
   design,
   embedded = false,
+  initialGoal = null,
+  renderVariableSelector,
 }: GuidedAnalysisWorkspaceProps) {
   const reduceMotion = useReducedMotion();
   const { setGuidedAnalysis } = useSession();
   const [selection, setSelection] = useState<GuidedResearchSelection>({
-    goal: null,
+    goal: initialGoal,
     variableIds: [],
     trendTestIds: [],
     testIds: [],
@@ -312,6 +319,8 @@ export function GuidedAnalysisWorkspace({
       onSelectionChange={setSelection}
       resultsSlot={resultsSlot}
       summaryHeadingLevel={embedded ? 2 : 1}
+      initialGoal={initialGoal}
+      {...(renderVariableSelector ? { renderVariableSelector } : {})}
     />
   );
 
