@@ -65,6 +65,7 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Começar análise' })).toBeEnabled();
@@ -79,6 +80,7 @@ describe('MapasPage group workspace', () => {
       { id: '29', label: 'Bahia' },
     ]);
     expect(sessionRef.current?.researchDesign?.diseaseIds).toEqual(['embolia_e_trombose_arteriais']);
+    expect(sessionRef.current?.researchDesign?.goal).toBe('describe');
     expect(sessionRef.current?.dataset).toBeNull();
   });
 
@@ -93,6 +95,7 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
 
     const region = await screen.findByRole('region', { name: 'Análise do recorte' });
@@ -122,6 +125,7 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
 
     await screen.findByRole('region', { name: 'Análise do recorte' });
@@ -144,6 +148,7 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
     await screen.findByRole('region', { name: 'Análise do recorte' });
     expect(sessionRef.current?.researchDesign).not.toBeNull();
@@ -167,6 +172,38 @@ describe('MapasPage group workspace', () => {
     expect(screen.queryByText('Nada selecionado ainda')).not.toBeInTheDocument();
     expect(screen.queryByText(/estado\(s\) selecionado\(s\)/)).not.toBeInTheDocument();
     expect(screen.queryByText(/clique em Adicionar grupo/i)).not.toBeInTheDocument();
+  });
+
+  it('reveals the question builder only after the first population is painted', () => {
+    renderMapasPage();
+
+    expect(
+      screen.queryByRole('heading', { name: 'O que você quer descobrir?' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    expect(
+      screen.getByRole('heading', { name: 'O que você quer descobrir?' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Na Bahia, como se comportaram os dados/i)).toBeInTheDocument();
+  });
+
+  it('invalidates the unlocked analysis when the comparison axis changes', async () => {
+    const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
+    renderMapasPage(['/mapas'], (session) => {
+      sessionRef.current = session;
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
+    await screen.findByRole('region', { name: 'Análise do recorte' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lugar' }));
+
+    expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
+    expect(sessionRef.current?.researchDesign).toBeNull();
   });
 
   it('creates População selecionada on the first UF click and removes it on the active click', () => {
@@ -318,6 +355,10 @@ describe('MapasPage catalogVariableIds handoff (D-15)', () => {
         },
       },
     ]);
+
+    // The handoff keeps its disease seed, but the progressive question stays hidden
+    // until the learner defines a real population on the map.
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
 
     // Measure × disease: checkbox is the disease name, not the old flat label.
     await waitFor(() => {

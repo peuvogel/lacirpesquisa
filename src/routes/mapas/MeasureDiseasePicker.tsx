@@ -25,6 +25,8 @@ export interface MeasureDiseasePickerProps {
   diseasesOnly?: boolean;
   /** Show disease measures + place/period context vars (step 4). */
   measuresOnly?: boolean;
+  /** Map question flow: keep selected rows visible and show only a short suggestion set until search. */
+  searchFirst?: boolean;
   className?: string;
 }
 
@@ -81,6 +83,7 @@ export function MeasureDiseasePicker({
   onToggleDisease,
   diseasesOnly = false,
   measuresOnly = false,
+  searchFirst = false,
   className,
 }: MeasureDiseasePickerProps) {
   const [query, setQuery] = useState('');
@@ -128,8 +131,12 @@ export function MeasureDiseasePicker({
     // Pack-backed diseases first so period years resolve without hunting.
     const withPack = rest.filter((d) => FIRST_LOADABLE_MEASURE.has(d.id));
     const withoutPack = rest.filter((d) => !FIRST_LOADABLE_MEASURE.has(d.id));
-    return [...selected, ...withPack, ...withoutPack];
-  }, [searchResult, selectedDiseaseSet]);
+    const ordered = [...selected, ...withPack, ...withoutPack];
+    if (!searchFirst || query.trim()) return ordered;
+    const selectedIds = new Set(selected.map((disease) => disease.id));
+    const suggestions = ordered.filter((disease) => !selectedIds.has(disease.id)).slice(0, 8);
+    return [...selected, ...suggestions];
+  }, [query, searchFirst, searchResult, selectedDiseaseSet]);
 
   const toggleDisease = (diseaseId: string) => {
     if (onToggleDisease) {
@@ -288,7 +295,9 @@ export function MeasureDiseasePicker({
         <p className="mb-2 font-sans text-[11px] text-text-muted">
           {q
             ? `${visibleDiseases.length} resultado(s)`
-            : `${DISEASES.length} categorias · busque pelo nome ou pelo CID-10`}
+            : searchFirst
+              ? `${visibleDiseases.length} sugestão(ões) · digite para buscar entre ${DISEASES.length} categorias`
+              : `${DISEASES.length} categorias · busque pelo nome ou pelo CID-10`}
         </p>
         {searchResult.aliasTerm ? (
           <p

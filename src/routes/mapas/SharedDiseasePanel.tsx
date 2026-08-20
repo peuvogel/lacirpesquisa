@@ -56,6 +56,7 @@ export function SharedDiseasePanel({
           dispatch({ type: 'TOGGLE_DISEASE_ALL_GROUPS', diseaseId })
         }
         diseasesOnly
+        searchFirst
       />
     </ResearchAccordionPanel>
   );

@@ -19,15 +19,13 @@ import {
   type RegionPresetId,
 } from '@/geo/territoryCatalog';
 import type { TerritoryRef } from '@/geo/types';
-import { parseCatalogId } from '@/features/catalog/taxonomy';
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
 import type { ResearchDesign } from '@/features/research/types';
 import { useSession } from '@/shared/session/SessionProvider';
 import { GuidedAnalysisWorkspace } from '@/routes/variaveis/GuidedAnalysisWorkspace';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
-import { SharedDiseasePanel } from './SharedDiseasePanel';
-import { SharedPeriodPanel } from './SharedPeriodPanel';
+import { MapQuestionBuilder } from './MapQuestionBuilder';
 import {
   buildPresetMapState,
   type GroupSelectionPresetId,
@@ -49,6 +47,11 @@ import {
   useMapAnalysis,
 } from './mapAnalysisState';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
+import {
+  createInitialMapQuestionDraft,
+  validateMapQuestion,
+  type MapQuestionDraft,
+} from './mapQuestionDraft';
 
 function siglasToTerritories(siglas: string[]): TerritoryRef[] {
   return siglas.map((sigla) => {
@@ -142,15 +145,11 @@ export function MapasPage() {
   const [contextPanelMode, setContextPanelMode] = useState<ContextPanelMode>('explore');
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const [confirmedDesign, setConfirmedDesign] = useState<ResearchDesign | null>(null);
-  const [groupSheetOpen, setGroupSheetOpen] = useState(false);
-  /** Exclusive accordion: at most one large panel; null = all collapsed. */
-  const [openResearchSection, setOpenResearchSection] = useState<'disease' | 'period' | null>(
-    'disease',
+  const [questionDraft, setQuestionDraft] = useState<MapQuestionDraft>(
+    createInitialMapQuestionDraft,
   );
-
-  const openResearch = (section: 'disease' | 'period') => (open: boolean) => {
-    setOpenResearchSection(open ? section : null);
-  };
+  const [confirmedQuestionKey, setConfirmedQuestionKey] = useState<string | null>(null);
+  const [groupSheetOpen, setGroupSheetOpen] = useState(false);
 
   const analysisRef = useRef<HTMLElement>(null);
 
@@ -175,24 +174,44 @@ export function MapasPage() {
     [activeGroup],
   );
 
+  const questionValidation = useMemo(
+    () => validateMapQuestion(state, questionDraft),
+    [questionDraft, state],
+  );
+  const questionKey = `${questionDraft.comparisonAxis}:${questionDraft.objective ?? 'unset'}`;
   const researchDesignResult = useMemo(
     () => (derived.canReview ? createResearchDesignFromMapState(state) : null),
     [derived.canReview, state],
   );
-  const researchDesign = researchDesignResult?.ok ? researchDesignResult.value : null;
+  const researchDesign =
+    researchDesignResult?.ok && questionValidation.safeToStart && questionDraft.objective
+      ? { ...researchDesignResult.value, goal: questionDraft.objective }
+      : null;
   const currentDesignFingerprint = researchDesign ? fingerprintResearchDesign(researchDesign) : null;
   const confirmedFingerprint = confirmedDesign ? fingerprintResearchDesign(confirmedDesign) : null;
-  const visibleConfirmedDesign = confirmedFingerprint === currentDesignFingerprint
-    ? confirmedDesign
-    : null;
+  const visibleConfirmedDesign =
+    confirmedFingerprint === currentDesignFingerprint && confirmedQuestionKey === questionKey
+      ? confirmedDesign
+      : null;
 
   useEffect(() => {
-    if (confirmedFingerprint && confirmedFingerprint !== currentDesignFingerprint) {
+    if (
+      confirmedFingerprint &&
+      (confirmedFingerprint !== currentDesignFingerprint || confirmedQuestionKey !== questionKey)
+    ) {
       setConfirmedDesign(null);
+      setConfirmedQuestionKey(null);
       setGuidedAnalysis(null);
       setResearchDesign(null);
     }
-  }, [confirmedFingerprint, currentDesignFingerprint, setGuidedAnalysis, setResearchDesign]);
+  }, [
+    confirmedFingerprint,
+    confirmedQuestionKey,
+    currentDesignFingerprint,
+    questionKey,
+    setGuidedAnalysis,
+    setResearchDesign,
+  ]);
 
   const groupMembership = useMemo(() => collectGroupMembership(state.groups), [state.groups]);
   const groupMunicipioMembership = useMemo(
@@ -364,6 +383,8 @@ export function MapasPage() {
     setClearAllOpen(false);
     setGroupSheetOpen(false);
     setConfirmedDesign(null);
+    setConfirmedQuestionKey(null);
+    setQuestionDraft(createInitialMapQuestionDraft());
     setGuidedAnalysis(null);
     setResearchDesign(null);
   }, [dispatch, setGuidedAnalysis, setResearchDesign]);
@@ -378,6 +399,7 @@ export function MapasPage() {
     setDataset(null);
     setResearchDesign(researchDesign);
     setConfirmedDesign(researchDesign);
+    setConfirmedQuestionKey(questionKey);
     requestAnimationFrame(() => {
       const section = analysisRef.current;
       if (typeof section?.scrollIntoView !== 'function') return;
@@ -387,7 +409,7 @@ export function MapasPage() {
         block: 'start',
       });
     });
-  }, [reduceMotion, researchDesign, setDataset, setResearchDesign]);
+  }, [questionKey, reduceMotion, researchDesign, setDataset, setResearchDesign]);
 
   const applySelectionPreset = useCallback(
     (presetId: GroupSelectionPresetId) => {
@@ -444,19 +466,6 @@ export function MapasPage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [clearTransientMapState, state.groups.length]);
 
-  const sharedDiseaseVariableIds = useMemo(() => {
-    const seen = new Set<string>();
-    const ids: string[] = [];
-    for (const group of state.groups) {
-      for (const id of group.variableIds) {
-        if (!parseCatalogId(id) || seen.has(id)) continue;
-        seen.add(id);
-        ids.push(id);
-      }
-    }
-    return ids;
-  }, [state.groups]);
-
   const renderExplorePanel = () => (
     <div className="flex h-full min-h-0 items-center justify-center rounded-2xl border border-white/10 bg-surface/60 p-6 backdrop-blur-md">
       <EmptyState
@@ -466,24 +475,16 @@ export function MapasPage() {
     </div>
   );
 
-  const renderSharedResearchPanels = () =>
+  const renderQuestionBuilder = () =>
     state.groups.length > 0 ? (
-      <>
-        <SharedDiseasePanel
-          selectedVariableIds={sharedDiseaseVariableIds}
-          dispatch={dispatch}
-          open={openResearchSection === 'disease'}
-          onOpenChange={openResearch('disease')}
-        />
-        <SharedPeriodPanel
+      <div className="h-full min-h-0 overflow-y-auto pr-1">
+        <MapQuestionBuilder
           state={state}
+          draft={questionDraft}
           dispatch={dispatch}
-          diseaseVariableIds={sharedDiseaseVariableIds}
-          activeGroup={activeGroup}
-          open={openResearchSection === 'period'}
-          onOpenChange={openResearch('period')}
+          onDraftChange={setQuestionDraft}
         />
-      </>
+      </div>
     ) : null;
 
   const renderContextBody = () => {
@@ -497,31 +498,8 @@ export function MapasPage() {
       );
     }
 
-    const sharedPanels = renderSharedResearchPanels();
-
-    if (contextPanelMode === 'group' && activeGroup) {
-      return (
-        <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
-          {sharedPanels}
-          <div className="rounded-2xl border border-border bg-elevated/40 p-5">
-            <p className="font-sans text-sm font-bold text-text">{activeGroup.name}</p>
-            <p className="mt-1 font-sans text-sm leading-relaxed text-text-muted">
-              Territórios definidos para este grupo. Continue com doença e período; as variáveis
-              serão escolhidas depois do recorte.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (sharedPanels) {
-      return (
-        <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden">
-          {sharedPanels}
-          <div className="min-h-0 flex-1 overflow-hidden">{renderExplorePanel()}</div>
-        </div>
-      );
-    }
+    const questionBuilder = renderQuestionBuilder();
+    if (questionBuilder) return questionBuilder;
 
     return renderExplorePanel();
   };
@@ -669,16 +647,7 @@ export function MapasPage() {
                     />
                   ) : (
                     <>
-                      {renderSharedResearchPanels()}
-                      {activeGroup ? (
-                        <div className="rounded-2xl border border-border bg-elevated/40 p-5">
-                          <p className="font-sans text-sm font-bold text-text">{activeGroup.name}</p>
-                          <p className="mt-1 font-sans text-sm leading-relaxed text-text-muted">
-                            Territórios definidos para este grupo. Continue com doença e período;
-                            as variáveis serão escolhidas depois do recorte.
-                          </p>
-                        </div>
-                      ) : renderExplorePanel()}
+                      {renderQuestionBuilder() ?? renderExplorePanel()}
                     </>
                   )}
                 </div>

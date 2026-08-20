@@ -37,7 +37,7 @@ function completeGroup(overrides: Partial<MapAnalysisGroup> = {}): MapAnalysisGr
 }
 
 describe('applyCatalogVariableIds', () => {
-  it('creates a Catálogo group with resolved loadable IDs and UF layer', () => {
+  it('seeds População selecionada with resolved loadable IDs and UF layer', () => {
     const next = applyCatalogVariableIds(createInitialMapAnalysisState(), [
       'sih.embolia_e_trombose_arteriais.internacoes',
       'unknown.var',
@@ -45,7 +45,7 @@ describe('applyCatalogVariableIds', () => {
       'mock.obitos',
     ]);
     expect(next.groups).toHaveLength(1);
-    expect(next.groups[0]!.name).toBe('Catálogo');
+    expect(next.groups[0]!.name).toBe('População selecionada');
     expect(next.groups[0]!.variableIds).toEqual([
       'sih.embolia_e_trombose_arteriais.internacoes',
       'sih.embolia_e_trombose_arteriais.obitos',

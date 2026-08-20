@@ -155,7 +155,7 @@ export function applyCatalogVariableIds(
 
   if (!active) {
     if (groups.length >= MAX_GROUPS) return state;
-    const group = createEmptyGroup('Catálogo');
+    const group = createEmptyGroup('População selecionada');
     groups = [...groups, group];
     activeGroupId = group.id;
   }
