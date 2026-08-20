@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
+import { MemoryRouter, useLocation, useNavigate, type NavigateFunction } from 'react-router-dom';
 import {
   getCatalogLabel,
   getMetricByUf,
@@ -15,6 +15,7 @@ function renderMapasPage(
   initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/mapas'],
   onSession: (session: ReturnType<typeof useSession>) => void = () => {},
   onPathname: (pathname: string) => void = () => {},
+  onNavigate: (navigate: NavigateFunction) => void = () => {},
 ) {
   function SessionObserver() {
     onSession(useSession());
@@ -23,6 +24,7 @@ function renderMapasPage(
 
   function LocationObserver() {
     onPathname(useLocation().pathname);
+    onNavigate(useNavigate());
     return null;
   }
 
@@ -81,8 +83,38 @@ describe('MapasPage group workspace', () => {
     expect(sessionRef.current?.dataset).toBeNull();
   });
 
-  it('invalidates an unlocked analysis when the semantic cut changes', async () => {
+  it('moves focus predictably to the unlocked embedded analysis without adding a second h1', async () => {
+    const scrollSpy = vi.fn();
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollSpy,
+    });
     renderMapasPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
+
+    const region = await screen.findByRole('region', { name: 'Análise do recorte' });
+    await waitFor(() => expect(document.activeElement).toBe(region));
+    expect(region).toHaveAttribute('tabindex', '-1');
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 2, name: /BA · Embolia/i })).toBeInTheDocument();
+    expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: expect.stringMatching(/smooth|auto/) }));
+  });
+
+  it('invalidates an unlocked analysis when the semantic cut changes', async () => {
+    const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
+    let pathname = '/mapas';
+    let navigate: NavigateFunction | null = null;
+    renderMapasPage(
+      ['/mapas'],
+      (session) => { sessionRef.current = session; },
+      (nextPathname) => { pathname = nextPathname; },
+      (nextNavigate) => { navigate = nextNavigate; },
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
     fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
@@ -95,6 +127,32 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Infarto cerebral/i }));
 
     expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
+    expect(sessionRef.current?.researchDesign).toBeNull();
+    act(() => navigate?.('/variaveis'));
+    expect(pathname).toBe('/variaveis');
+    expect(sessionRef.current?.researchDesign).toBeNull();
+  });
+
+  it('clears the persisted research design together with the visible map cut', async () => {
+    const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
+    renderMapasPage(['/mapas'], (session) => {
+      sessionRef.current = session;
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
+    await screen.findByRole('region', { name: 'Análise do recorte' });
+    expect(sessionRef.current?.researchDesign).not.toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Limpar mapa' })
+      .find((button) => button.textContent === 'Limpar mapa')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Sim, apagar' }));
+
+    expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
+    expect(sessionRef.current?.researchDesign).toBeNull();
   });
 
   it('renders group strip, region checkboxes and breadcrumb (no empty CTA strip)', () => {

@@ -26,6 +26,7 @@ const LEDGER_MEASURES = ['internacoes', 'obitos', 'valor_total', 'dias_permanenc
 const DEFAULT_PAGE_SIZE = 500;
 const DEFAULT_MAX_PAGES = 100;
 const DEFAULT_TTL_MS = 5 * 60 * 1000;
+const DEFAULT_MUNICIPIO_PARTITION_CONCURRENCY = 3;
 
 type MetricColumn = (typeof METRIC_COLUMNS)[number];
 type LedgerMeasure = (typeof LEDGER_MEASURES)[number];
@@ -137,6 +138,7 @@ export interface CreateResearchRepositoryOptions {
   maxPages?: number;
   ttlMs?: number;
   now?: () => number;
+  municipioPartitionConcurrency?: number;
 }
 
 export interface ResearchRepository {
@@ -151,6 +153,9 @@ export interface ResearchRepository {
 interface CacheEntry {
   expiresAt: number;
   promise: Promise<ResearchDataSnapshot>;
+  controller: AbortController;
+  consumers: number;
+  settled: boolean;
 }
 
 interface ExpectedCell {
@@ -250,13 +255,52 @@ function assertNotAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 }
 
-function forCaller<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
-  if (!signal) return promise;
+function attachConsumer(
+  cache: Map<string, CacheEntry>,
+  key: string,
+  entry: CacheEntry,
+  signal?: AbortSignal,
+): Promise<ResearchDataSnapshot> {
+  if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
+  if (entry.settled) return signal ? forSettledCaller(entry.promise, signal) : entry.promise;
+  entry.consumers += 1;
+
+  return new Promise((resolve, reject) => {
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      entry.consumers -= 1;
+      if (entry.consumers === 0 && !entry.settled && !entry.controller.signal.aborted) {
+        if (cache.get(key) === entry) cache.delete(key);
+        entry.controller.abort();
+      }
+    };
+    const onAbort = () => {
+      release();
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+    entry.promise.then(
+      (value) => {
+        signal?.removeEventListener('abort', onAbort);
+        release();
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal?.removeEventListener('abort', onAbort);
+        release();
+        reject(error);
+      },
+    );
+  });
+}
+
+function forSettledCaller<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
   return new Promise((resolve, reject) => {
     const onAbort = () => reject(new DOMException('Aborted', 'AbortError'));
     signal.addEventListener('abort', onAbort, { once: true });
-    if (signal.aborted) onAbort();
     promise.then(
       (value) => {
         signal.removeEventListener('abort', onAbort);
@@ -268,6 +312,42 @@ function forCaller<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
       },
     );
   });
+}
+
+async function mapWithConcurrency<T, R>(
+  values: readonly T[],
+  concurrency: number,
+  mapper: (value: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(values.length);
+  let nextIndex = 0;
+  const workers = Array.from({ length: Math.min(concurrency, values.length) }, async () => {
+    while (nextIndex < values.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(values[index]!);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+function createConcurrencyLimiter(concurrency: number) {
+  let active = 0;
+  const queue: Array<() => void> = [];
+  return function limit<T>(task: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const start = () => {
+        active += 1;
+        void task().then(resolve, reject).finally(() => {
+          active -= 1;
+          queue.shift()?.();
+        });
+      };
+      if (active < concurrency) start();
+      else queue.push(start);
+    });
+  };
 }
 
 async function fetchAllPages<T>(input: {
@@ -378,11 +458,18 @@ function sourceValue(input: {
 
 const UF_SIGLA_BY_CODE = new Map(UF_LIST.map((uf) => [uf.ibgeCode, uf.sigla]));
 
+function municipioTransportId(territoryId: string): string {
+  if (/^\d{6}$/.test(territoryId)) return territoryId;
+  if (/^\d{7}$/.test(territoryId)) return territoryId.slice(0, 6);
+  throw new ResearchRepositoryError('query_failed', `Código municipal inválido: ${territoryId}.`);
+}
+
 function municipioUf(territoryId: string): string {
-  if (!/^\d{6}$/.test(territoryId)) {
+  const transportId = municipioTransportId(territoryId);
+  if (!/^\d{6}$/.test(transportId)) {
     throw new ResearchRepositoryError('query_failed', `Código municipal inválido: ${territoryId}.`);
   }
-  const sigla = UF_SIGLA_BY_CODE.get(territoryId.slice(0, 2));
+  const sigla = UF_SIGLA_BY_CODE.get(transportId.slice(0, 2));
   if (!sigla) {
     throw new ResearchRepositoryError('query_failed', `UF desconhecida para o município ${territoryId}.`);
   }
@@ -400,9 +487,16 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
   const ttlMs = options.ttlMs ?? DEFAULT_TTL_MS;
   const now = options.now ?? Date.now;
   const partitionLoader = options.loadMunicipioPartition ?? defaultLoadMunicipioPartition;
-  if (!Number.isInteger(pageSize) || pageSize <= 0 || !Number.isInteger(maxPages) || maxPages <= 0) {
-    throw new Error('pageSize e maxPages precisam ser inteiros positivos.');
+  const municipioPartitionConcurrency = options.municipioPartitionConcurrency
+    ?? DEFAULT_MUNICIPIO_PARTITION_CONCURRENCY;
+  if (
+    !Number.isInteger(pageSize) || pageSize <= 0
+    || !Number.isInteger(maxPages) || maxPages <= 0
+    || !Number.isInteger(municipioPartitionConcurrency) || municipioPartitionConcurrency <= 0
+  ) {
+    throw new Error('pageSize, maxPages e municipioPartitionConcurrency precisam ser inteiros positivos.');
   }
+  const limitMunicipioPartitionLoad = createConcurrencyLimiter(municipioPartitionConcurrency);
 
   async function loadUncached(
     design: ResearchDesign,
@@ -426,11 +520,14 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
     const expected = expectedCells(design);
     const diseases = uniqueSorted(design.diseaseIds);
     const territories = uniqueSorted(expected.map((cell) => cell.territoryId));
+    const grain = design.geography;
+    const transportTerritories = grain === 'municipio'
+      ? uniqueSorted(territories.map(municipioTransportId))
+      : territories;
     const years = uniqueSortedNumbers(expected.flatMap((cell) => cell.years));
     const variables = requestedSourceVariables(profiles);
     const measures = ledgerMeasuresFor(variables);
     const needsPopulation = variables.includes('populacao');
-    const grain = design.geography;
     const local = design.locationBasis;
 
     const ledgerPromise = measures.length === 0 || diseases.length === 0 || years.length === 0
@@ -459,7 +556,7 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
           table: grain === 'uf' ? 'sih_population_total_uf' : 'sih_population_total_muni',
           columns: grain === 'uf' ? 'uf_codigo,ano,populacao' : 'municipio_codigo,uf_codigo,ano,populacao',
           filters: (query) => query
-            .in(grain === 'uf' ? 'uf_codigo' : 'municipio_codigo', territories)
+            .in(grain === 'uf' ? 'uf_codigo' : 'municipio_codigo', transportTerritories)
             .in('ano', years),
           order: [grain === 'uf' ? 'uf_codigo' : 'municipio_codigo', 'ano'],
           keyOf: (row) => `${grain === 'uf' ? row.uf_codigo : row.municipio_codigo}|${row.ano}`,
@@ -499,30 +596,37 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
         const uf = municipioUf(territory);
         territoriesByUf.set(uf, [...(territoriesByUf.get(uf) ?? []), territory]);
       }
-      const partitions = await Promise.all([...territoriesByUf].map(async ([uf, territoryIds]) => {
-        try {
-          const partition = await partitionLoader(uf);
-          assertNotAborted(signal);
-          if (partition.uf !== uf) throw new Error(`partição ${partition.uf} recebida para ${uf}`);
-          return { uf, territoryIds, index: indexMunicipioPartition(partition) };
-        } catch (error) {
-          assertNotAborted(signal);
-          unavailableMunicipioUfs.add(uf);
-          recoverableErrors.push({
-            code: 'municipio_partition_unavailable',
-            message: `Não foi possível carregar a partição municipal de ${uf}: ${error instanceof Error ? error.message : String(error)}`,
-            territoryIds: uniqueSorted(territoryIds),
-            uf,
-          });
-          return { uf, territoryIds, index: null };
-        }
-      }));
+      const partitions = await mapWithConcurrency(
+        [...territoriesByUf],
+        municipioPartitionConcurrency,
+        async ([uf, territoryIds]) => {
+          try {
+            const partition = await limitMunicipioPartitionLoad(async () => {
+              assertNotAborted(signal);
+              return partitionLoader(uf, { signal });
+            });
+            assertNotAborted(signal);
+            if (partition.uf !== uf) throw new Error(`partição ${partition.uf} recebida para ${uf}`);
+            return { uf, territoryIds, index: indexMunicipioPartition(partition) };
+          } catch (error) {
+            assertNotAborted(signal);
+            unavailableMunicipioUfs.add(uf);
+            recoverableErrors.push({
+              code: 'municipio_partition_unavailable',
+              message: `Não foi possível carregar a partição municipal de ${uf}: ${error instanceof Error ? error.message : String(error)}`,
+              territoryIds: uniqueSorted(territoryIds),
+              uf,
+            });
+            return { uf, territoryIds, index: null };
+          }
+        },
+      );
       for (const { index, territoryIds } of partitions) {
         if (!index) continue;
         for (const diseaseId of diseases) {
           for (const territoryId of territoryIds) {
             for (const year of years) {
-              const row = index.get(diseaseId, territoryId, year, local);
+              const row = index.get(diseaseId, municipioTransportId(territoryId), year, local);
               if (row) metricRows.push(row);
             }
           }
@@ -560,7 +664,10 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
     for (const expectedCell of expected) {
       for (const year of expectedCell.years) {
         for (const diseaseId of diseases) {
-          const row = metrics.get(metricKey(diseaseId, expectedCell.territoryId, year));
+          const transportTerritoryId = grain === 'municipio'
+            ? municipioTransportId(expectedCell.territoryId)
+            : expectedCell.territoryId;
+          const row = metrics.get(metricKey(diseaseId, transportTerritoryId, year));
           const partitionUnavailable = grain === 'municipio'
             && unavailableMunicipioUfs.has(municipioUf(expectedCell.territoryId));
           for (const variableId of variables) {
@@ -568,7 +675,7 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
               row,
               variable: variableId,
               ledgerStatus: ledgerStatusFor(ledger, diseaseId, variableId, year),
-              population: population.get(`${expectedCell.territoryId}|${year}`),
+              population: population.get(`${transportTerritoryId}|${year}`),
               partitionUnavailable,
             });
             cells.push({
@@ -598,18 +705,36 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
       }
       const key = `${fingerprintResearchDesign(design)}:${profileFingerprint(profiles)}`;
       const cached = cache.get(key);
-      if (cached && cached.expiresAt > now()) return forCaller(cached.promise, loadOptions.signal);
+      if (cached && cached.expiresAt > now() && !cached.controller.signal.aborted) {
+        return attachConsumer(cache, key, cached, loadOptions.signal);
+      }
       if (cached) cache.delete(key);
 
-      const promise = loadUncached(design, profiles).catch((error: unknown) => {
-        const current = cache.get(key);
-        if (current?.promise === promise) cache.delete(key);
-        throw error;
-      });
-      cache.set(key, { expiresAt: now() + ttlMs, promise });
-      return forCaller(promise, loadOptions.signal);
+      const controller = new AbortController();
+      const promise = loadUncached(design, profiles, controller.signal);
+      const entry: CacheEntry = {
+        expiresAt: now() + ttlMs,
+        promise,
+        controller,
+        consumers: 0,
+        settled: false,
+      };
+      cache.set(key, entry);
+      void promise.then(
+        () => {
+          entry.settled = true;
+        },
+        () => {
+          entry.settled = true;
+          if (cache.get(key) === entry) cache.delete(key);
+        },
+      );
+      return attachConsumer(cache, key, entry, loadOptions.signal);
     },
     clearCache() {
+      for (const entry of cache.values()) {
+        if (!entry.settled) entry.controller.abort();
+      }
       cache.clear();
     },
   };

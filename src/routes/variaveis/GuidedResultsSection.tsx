@@ -15,9 +15,39 @@ export interface GuidedResultsSectionProps {
   run: GuidedTestRun | null;
   praisGroupRun?: PraisGroupTrendRun | null;
   recommendedRun?: GuidedTestRun | null;
+  recommendedRunError?: string | null;
   runError: string | null;
   pendingReview: boolean;
   onScenarioChange: (scenario: AnalysisScenario) => void;
+}
+
+function OutcomeMaps({
+  design,
+  scenario,
+  variableLabels,
+  variableIds,
+}: {
+  design: ResearchDesign;
+  scenario: AnalysisScenario;
+  variableLabels: Record<string, string>;
+  variableIds?: readonly string[];
+}) {
+  const outcomes = [...new Set(variableIds ?? Object.keys(variableLabels))]
+    .map((variableId) => [variableId, variableLabels[variableId] ?? variableId] as const);
+  if (outcomes.length === 0) return null;
+  return (
+    <div className="space-y-4" aria-label="Mapas dos desfechos">
+      {outcomes.map(([variableId, variableLabel]) => (
+        <GuidedResultMap
+          key={variableId}
+          design={design}
+          scenario={scenario}
+          variableId={variableId}
+          variableLabel={variableLabel}
+        />
+      ))}
+    </div>
+  );
 }
 
 function GroupTrendResults({
@@ -45,6 +75,7 @@ function GroupTrendResults({
               title={`Prais–Winsten · ${result.groupLabel} · ${variableLabel}`}
               metrics={result.metrics}
               chart={result.chart}
+              additionalCharts={result.additionalCharts}
               interpretation={result.interpretation}
               exportFilename={`prais-${result.groupId}-${result.outcomeVariableId}.png`}
               headingLevel={4}
@@ -183,8 +214,13 @@ function revisionComparisonLines(
   run: GuidedTestRun,
   recommendedRun: GuidedTestRun | null | undefined,
   variableLabels: Record<string, string>,
+  recommendedRunError: string | null | undefined,
 ): string[] {
-  if (!recommendedRun) return ['O cenário original não sustentou a mesma análise; compare os diagnósticos acima.'];
+  if (!recommendedRun) {
+    return [recommendedRunError
+      ? `O cenário original não pôde ser recalculado: ${recommendedRunError}`
+      : 'O cenário original não sustentou a mesma análise; compare os diagnósticos acima.'];
+  }
   const revised = new Map(run.results
     .filter((result) => result.role === 'principal' && result.support !== 'common_coverage')
     .map((result) => [`${result.testId}:${result.outcomeVariableId}`, result]));
@@ -221,6 +257,7 @@ export function GuidedResultsSection({
   run,
   praisGroupRun = null,
   recommendedRun = null,
+  recommendedRunError = null,
   runError,
   pendingReview,
   onScenarioChange,
@@ -240,6 +277,7 @@ export function GuidedResultsSection({
             </p>
           </div>
         </div>
+        <OutcomeMaps design={design} scenario={activeScenario} variableLabels={variableLabels} />
         <ReviewAnalysisDataDialog
           design={design}
           recommendedScenario={recommendedScenario}
@@ -270,14 +308,14 @@ export function GuidedResultsSection({
             />
           </div>
         </section>
-        <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
+        <SihDivergenceNotes variableIds={Object.keys(variableLabels)} diseaseIds={design.diseaseIds} />
+        <OutcomeMaps design={design} scenario={activeScenario} variableLabels={variableLabels} />
         <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
       </div>
     );
   }
 
   if (!run) {
-    const firstVariable = Object.keys(variableLabels)[0];
     return (
       <section aria-labelledby="guided-description-heading" className="space-y-4">
         <div className="flex items-start gap-3">
@@ -290,16 +328,11 @@ export function GuidedResultsSection({
             <p className="mt-1 max-w-3xl font-sans text-sm text-text-muted">
               Os gráficos e sumários acima descrevem somente os valores disponíveis no recorte. Ausência de dado não foi convertida em zero e nenhuma inferência causal foi feita.
             </p>
-            <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
+            <SihDivergenceNotes variableIds={Object.keys(variableLabels)} diseaseIds={design.diseaseIds} />
           </div>
         </div>
         <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
-        {firstVariable ? <GuidedResultMap
-          design={design}
-          scenario={activeScenario}
-          variableId={firstVariable}
-          variableLabel={variableLabels[firstVariable] ?? firstVariable}
-        /> : null}
+        <OutcomeMaps design={design} scenario={activeScenario} variableLabels={variableLabels} />
         <ReviewAnalysisDataDialog
           design={design}
           recommendedScenario={recommendedScenario}
@@ -312,9 +345,12 @@ export function GuidedResultsSection({
     );
   }
 
-  const primary = run.results.find((result) => result.role === 'principal') ?? run.results[0];
   const reviewSummary = reviewedCellsSummary(design, activeScenario, variableLabels);
   const excludedZeros = activeScenario.cells.filter((cell) => cell.rawValue === 0 && cell.analyticStatus !== 'include').length;
+  const calculatedOutcomeIds = [
+    ...run.results.map((result) => result.outcomeVariableId),
+    ...(praisGroupRun?.results ?? []).map((result) => result.outcomeVariableId),
+  ];
 
   return (
     <section aria-labelledby="guided-results-heading" className="space-y-8">
@@ -331,7 +367,7 @@ export function GuidedResultsSection({
         </div>
       </div>
 
-      <SihDivergenceNotes variableIds={Object.keys(variableLabels)} />
+      <SihDivergenceNotes variableIds={Object.keys(variableLabels)} diseaseIds={design.diseaseIds} />
 
       <GroupTrendResults run={praisGroupRun} variableLabels={variableLabels} />
 
@@ -385,12 +421,12 @@ export function GuidedResultsSection({
         </aside>
       ) : null}
 
-      {primary ? <GuidedResultMap
+      <OutcomeMaps
         design={design}
         scenario={activeScenario}
-        variableId={primary.outcomeVariableId}
-        variableLabel={variableLabels[primary.outcomeVariableId] ?? primary.outcomeVariableId}
-      /> : null}
+        variableLabels={variableLabels}
+        variableIds={calculatedOutcomeIds}
+      />
 
       <section aria-labelledby="guided-conclusion-heading" className="rounded-2xl border border-accent/25 bg-accent/5 p-4 sm:p-5">
         <h3 id="guided-conclusion-heading" className="font-sans text-base font-bold text-text">Conclusão</h3>
@@ -403,7 +439,7 @@ export function GuidedResultsSection({
         {activeScenario.createdAfterResults ? (
           <div className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/5 px-3 py-2 font-sans text-xs text-amber-200">
             <p>Análise exploratória após revisão:</p>
-            {revisionComparisonLines(run, recommendedRun, variableLabels).map((line) => <p key={line}>{line}</p>)}
+            {revisionComparisonLines(run, recommendedRun, variableLabels, recommendedRunError).map((line) => <p key={line}>{line}</p>)}
             {reviewSummary ? <p>{reviewSummary}</p> : null}
           </div>
         ) : null}

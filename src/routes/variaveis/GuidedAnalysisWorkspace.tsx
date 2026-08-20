@@ -224,7 +224,7 @@ export function GuidedAnalysisWorkspace({
       .map((variable) => [variable.id, variable.label])),
     [guided.variables, selection.variableIds],
   );
-  const recommendedRun = useMemo(() => {
+  const recommendedRunState = useMemo(() => {
     if (
       !recommendedScenario
       || recommendedScenario === activeScenario
@@ -232,20 +232,26 @@ export function GuidedAnalysisWorkspace({
       || selection.goal === 'describe'
       || !selection.primaryTestId
       || selection.testIds.length === 0
-    ) return null;
+    ) return { run: null, error: null };
     try {
-      return runGuidedTests({
-        design,
-        scenario: recommendedScenario,
-        profiles: selectedProfiles,
-        eligibility: guided.decisions,
-        selectedTestIds: selection.testIds,
-        primaryTestId: selection.primaryTestId,
-        roleAssignments: guided.effectiveRoles,
-        ...(guided.contingency ? { contingency: guided.contingency } : {}),
-      });
-    } catch {
-      return null;
+      return {
+        run: runGuidedTests({
+          design,
+          scenario: recommendedScenario,
+          profiles: selectedProfiles,
+          eligibility: guided.decisions,
+          selectedTestIds: selection.testIds,
+          primaryTestId: selection.primaryTestId,
+          roleAssignments: guided.effectiveRoles,
+          ...(guided.contingency ? { contingency: guided.contingency } : {}),
+        }),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        run: null,
+        error: error instanceof Error ? error.message : 'Não foi possível recalcular o cenário recomendado.',
+      };
     }
   }, [
     activeScenario,
@@ -279,7 +285,8 @@ export function GuidedAnalysisWorkspace({
       variableLabels={variableLabels}
       run={resultState.run}
       praisGroupRun={praisGroupRun}
-      recommendedRun={recommendedRun}
+      recommendedRun={recommendedRunState.run}
+      recommendedRunError={recommendedRunState.error}
       runError={resultState.error}
       pendingReview={!activeReviewsResolved}
       onScenarioChange={(scenario) => setRevision({
@@ -304,6 +311,7 @@ export function GuidedAnalysisWorkspace({
       recoverableMessages={guided.recoverableMessages}
       onSelectionChange={setSelection}
       resultsSlot={resultsSlot}
+      summaryHeadingLevel={embedded ? 2 : 1}
     />
   );
 

@@ -557,7 +557,7 @@ describe('DataProfileSection', () => {
       },
     ];
 
-    render(<DataProfileSection profiles={profiles} reviewsResolved />);
+    render(<DataProfileSection profiles={profiles} reviewsResolved chartContext="Nordeste · 2023–2025" />);
 
     expect(screen.getByText('Normalidade não se aplica')).toBeInTheDocument();
     expect(screen.getByText('Distribuição não normal')).toBeInTheDocument();
@@ -568,7 +568,7 @@ describe('DataProfileSection', () => {
   });
 
   it('renders supplied histogram and Q–Q values as accessible charts', () => {
-    render(<DataProfileSection profiles={[{
+    render(<DataProfileSection chartContext="Nordeste · 2023–2025" profiles={[{
       ...countProfile,
       kind: 'numeric',
       diagnosticLabel: 'Aproximadamente normal',

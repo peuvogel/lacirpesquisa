@@ -148,17 +148,14 @@ describe('ReviewAnalysisDataDialog', () => {
 
   it('explica uma única vez a divergência do pack antes das células que a compartilham', async () => {
     const user = userEvent.setup();
-    const recommendedScenario = createRecommendedScenario(cells.map((cell) => ({
-      ...cell,
-      variableId: SIH_VARIABLE_ID,
-    })));
+    const recommendedScenario = createRecommendedScenario(cells);
     const razao = getDivergenciaRazao(SIH_VARIABLE_ID);
     render(
       <ReviewAnalysisDataDialog
-        design={design}
+        design={{ ...design, diseaseIds: ['embolia_e_trombose_arteriais'] }}
         recommendedScenario={recommendedScenario}
         activeScenario={recommendedScenario}
-        variableLabels={{ [SIH_VARIABLE_ID]: 'Internações por embolia e trombose arteriais' }}
+        variableLabels={{ internacoes: 'Internações por embolia e trombose arteriais' }}
         createdAfterResults={false}
         onApply={() => undefined}
       />,

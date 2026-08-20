@@ -29,7 +29,17 @@ describe('GuidedAnalysisWorkspace', () => {
       </SessionProvider>,
     );
 
-    expect(screen.getByRole('heading', { name: /Nordeste · Embolia/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /Nordeste · Embolia/i })).toBeInTheDocument();
     expect(screen.queryByTestId('guided-page-shell')).not.toBeInTheDocument();
+  });
+
+  it('keeps the guided summary as the route h1 outside Mapas', () => {
+    render(
+      <SessionProvider>
+        <GuidedAnalysisWorkspace design={guidedDesign} />
+      </SessionProvider>,
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /Nordeste · Embolia/i })).toBeInTheDocument();
   });
 });

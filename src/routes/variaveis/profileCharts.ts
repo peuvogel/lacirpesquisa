@@ -45,7 +45,11 @@ function qqReferenceLine(points: NonNullable<DistributionViewModel['qqPoints']>)
   return line.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y)) ? line : [];
 }
 
-export function buildHistogramChart(distribution: DistributionViewModel, label: string): GuidedProfileChart {
+export function buildHistogramChart(
+  distribution: DistributionViewModel,
+  label: string,
+  context?: string,
+): GuidedProfileChart {
   const bins = distribution.histogram ?? [];
   const labels = bins.map((bin) => binLabel(bin.lower, bin.upper));
   return {
@@ -63,7 +67,7 @@ export function buildHistogramChart(distribution: DistributionViewModel, label: 
     },
     options: mergeChartOptions(BASE_OPTS, {
       plugins: {
-        title: { display: true, text: `Distribuição de ${label}` },
+        title: { display: true, text: `Distribuição de ${label}${context ? ` · ${context}` : ''}` },
         tooltip: {
           callbacks: {
             title: (items) => `Faixa: ${items[0]?.label ?? ''}`,
@@ -78,7 +82,11 @@ export function buildHistogramChart(distribution: DistributionViewModel, label: 
   };
 }
 
-export function buildQqChart(distribution: DistributionViewModel, label: string): GuidedProfileChart {
+export function buildQqChart(
+  distribution: DistributionViewModel,
+  label: string,
+  context?: string,
+): GuidedProfileChart {
   const points = distribution.qqPoints ?? [];
 
   return {
@@ -107,7 +115,7 @@ export function buildQqChart(distribution: DistributionViewModel, label: string)
     },
     options: mergeChartOptions(BASE_OPTS, {
       plugins: {
-        title: { display: true, text: `Gráfico Q–Q de ${label}` },
+        title: { display: true, text: `Gráfico Q–Q de ${label}${context ? ` · ${context}` : ''}` },
       },
       scales: {
         x: { title: { display: true, text: 'Quantil esperado' } },
@@ -117,7 +125,11 @@ export function buildQqChart(distribution: DistributionViewModel, label: string)
   };
 }
 
-export function buildCategoryChart(distribution: DistributionViewModel, label: string): GuidedProfileChart {
+export function buildCategoryChart(
+  distribution: DistributionViewModel,
+  label: string,
+  context?: string,
+): GuidedProfileChart {
   const categories = distribution.categories ?? [];
   return {
     type: 'bar',
@@ -134,7 +146,7 @@ export function buildCategoryChart(distribution: DistributionViewModel, label: s
     },
     options: mergeChartOptions(BASE_OPTS, {
       plugins: {
-        title: { display: true, text: `Frequências de ${label}` },
+        title: { display: true, text: `Frequências de ${label}${context ? ` · ${context}` : ''}` },
       },
       scales: {
         x: { title: { display: true, text: 'Categoria' }, grid: { display: false } },

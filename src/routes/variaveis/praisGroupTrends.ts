@@ -7,7 +7,7 @@ import type {
   ResearchPeriod,
   VariableProfile,
 } from '@/features/research/types';
-import { praisTrendPresets } from '@/features/tests/prais-winsten/praisCharts';
+import { praisResidualPresets, praisTrendPresets } from '@/features/tests/prais-winsten/praisCharts';
 import {
   buildDatasetFromConfirmed as buildPraisDataset,
   buildMetrics as buildPraisMetrics,
@@ -33,6 +33,7 @@ export interface PraisGroupTrendResult {
   outcomeVariableId: string;
   metrics: ResultMetric[];
   chart: ResultsPanelProps['chart'];
+  additionalCharts: NonNullable<ResultsPanelProps['additionalCharts']>;
   interpretation: string[];
   pValue: number;
   effectDirection: 'positive' | 'negative' | 'null';
@@ -288,6 +289,7 @@ export function runPraisByGroup({
         outcomeVariableId: profile.variableId,
         metrics: buildPraisMetrics(output.model, dataset),
         chart: praisTrendPresets[0]!.buildChart(output),
+        additionalCharts: praisResidualPresets.map((preset) => preset.buildChart(output)),
         interpretation: [
           `Tendência estimada somente para ${series.groupLabel}; este resultado não testa diferença em relação aos demais grupos.`,
           ...buildPraisInterpretation(output, alpha),

@@ -55,4 +55,16 @@ describe('SihDivergenceNotes', () => {
     ]} />);
     expect(screen.getAllByText(razao!, { exact: false })).toHaveLength(1);
   });
+
+  it('expande IDs analíticos genéricos por doença apenas para consultar a proveniência', () => {
+    const razao = getDivergenciaRazao(VARIAVEL);
+    render(
+      <SihDivergenceNotes
+        variableIds={['internacoes', 'obitos']}
+        diseaseIds={['embolia_e_trombose_arteriais']}
+      />,
+    );
+
+    expect(screen.getAllByText(razao!, { exact: false })).toHaveLength(1);
+  });
 });

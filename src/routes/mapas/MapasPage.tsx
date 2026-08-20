@@ -53,7 +53,7 @@ import {
   MapGroupStrip,
 } from './MapGroupStrip';
 import { MapLegendHint } from './MapLegendHint';
-import { SihDivergenceNote } from '@/components/SihDivergenceNote';
+import { SihDivergenceNotes } from '@/components/SihDivergenceNote';
 import { MapPrimaryActionBar } from './MapPrimaryActionBar';
 import { municipalityIdsForMeso } from '@/geo/mesoMembership';
 import { municipioTerritory, suggestGroupName } from '@/geo/municipioNames';
@@ -67,7 +67,6 @@ import {
   resolveCatalogHandoffIds,
   useMapAnalysis,
 } from './mapAnalysisState';
-import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
 
 function siglasToTerritories(siglas: string[]): TerritoryRef[] {
@@ -182,12 +181,6 @@ export function MapasPage() {
     [state.activeGroupId, state.groups],
   );
 
-  const activeVariableId = useMemo(() => {
-    if (activeGroup?.variableIds[0]) return activeGroup.variableIds[0];
-    const firstWithVars = state.groups.find((group) => group.variableIds.length > 0);
-    return firstWithVars?.variableIds[0] ?? null;
-  }, [activeGroup, state.groups]);
-
   const [dragSiglas, setDragSiglas] = useState<string[]>([]);
   const [dragProximity, setDragProximity] = useState(0);
   const groupStripRef = useRef<HTMLDivElement>(null);
@@ -207,13 +200,17 @@ export function MapasPage() {
   const researchDesign = researchDesignResult?.ok ? researchDesignResult.value : null;
   const currentDesignFingerprint = researchDesign ? fingerprintResearchDesign(researchDesign) : null;
   const confirmedFingerprint = confirmedDesign ? fingerprintResearchDesign(confirmedDesign) : null;
+  const visibleConfirmedDesign = confirmedFingerprint === currentDesignFingerprint
+    ? confirmedDesign
+    : null;
 
   useEffect(() => {
     if (confirmedFingerprint && confirmedFingerprint !== currentDesignFingerprint) {
       setConfirmedDesign(null);
       setGuidedAnalysis(null);
+      setResearchDesign(null);
     }
-  }, [confirmedFingerprint, currentDesignFingerprint, setGuidedAnalysis]);
+  }, [confirmedFingerprint, currentDesignFingerprint, setGuidedAnalysis, setResearchDesign]);
 
   const groupMembership = useMemo(() => collectGroupMembership(state.groups), [state.groups]);
   const groupMunicipioMembership = useMemo(
@@ -539,7 +536,8 @@ export function MapasPage() {
     setGroupSheetOpen(false);
     setConfirmedDesign(null);
     setGuidedAnalysis(null);
-  }, [dispatch, setGuidedAnalysis]);
+    setResearchDesign(null);
+  }, [dispatch, setGuidedAnalysis, setResearchDesign]);
 
   const openPasteMode = useCallback(() => {
     setContextPanelMode('paste');
@@ -554,6 +552,7 @@ export function MapasPage() {
     requestAnimationFrame(() => {
       const section = analysisRef.current;
       if (typeof section?.scrollIntoView !== 'function') return;
+      section.focus({ preventScroll: true });
       section.scrollIntoView({
         behavior: reduceMotion ? 'auto' : 'smooth',
         block: 'start',
@@ -779,7 +778,7 @@ export function MapasPage() {
   const actionBar = (
     <MapPrimaryActionBar
       canReview={researchDesign !== null}
-      analysisUnlocked={confirmedDesign !== null}
+      analysisUnlocked={visibleConfirmedDesign !== null}
       onReview={startAnalysis}
       onPasteTerritories={openPasteMode}
       onClearMap={() => setClearAllOpen(true)}
@@ -919,8 +918,8 @@ export function MapasPage() {
             values={[]}
             activeVariableId={null}
           />
-          <SihDivergenceNote
-            razao={activeVariableId ? getDivergenciaRazao(activeVariableId) : null}
+          <SihDivergenceNotes
+            variableIds={state.groups.flatMap((group) => group.variableIds)}
           />
           {!hasInteracted ? <MapLegendHint /> : null}
           {hasUngroupedSelection ? (
@@ -997,14 +996,15 @@ export function MapasPage() {
         accentStroke={groupColor(state.groups.length).stroke}
       />
 
-      {confirmedDesign ? (
+      {visibleConfirmedDesign ? (
         <section
           ref={analysisRef}
           id="analise-do-recorte"
           aria-label="Análise do recorte"
+          tabIndex={-1}
           className="mt-10 scroll-mt-6"
         >
-          <GuidedAnalysisWorkspace design={confirmedDesign} embedded />
+          <GuidedAnalysisWorkspace design={visibleConfirmedDesign} embedded />
         </section>
       ) : null}
     </motion.div>

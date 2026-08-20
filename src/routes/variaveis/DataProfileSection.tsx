@@ -6,9 +6,10 @@ import { ProfileDistributionVisual } from './ProfileDistributionVisual';
 export interface DataProfileSectionProps {
   profiles: DataProfileViewModel[];
   reviewsResolved: boolean;
+  chartContext: string;
 }
 
-export function DataProfileSection({ profiles, reviewsResolved }: DataProfileSectionProps) {
+export function DataProfileSection({ profiles, reviewsResolved, chartContext }: DataProfileSectionProps) {
   return (
     <section aria-labelledby="profile-heading" className="space-y-4">
       <div>
@@ -51,7 +52,12 @@ export function DataProfileSection({ profiles, reviewsResolved }: DataProfileSec
                   {profile.distribution.description}
                 </p>
                 <div className="mt-3">
-                  {profile.distribution.slot ?? <ProfileDistributionVisual distribution={profile.distribution} label={profile.label} />}
+                  {profile.distribution.slot ?? <ProfileDistributionVisual
+                    distribution={profile.distribution}
+                    label={profile.label}
+                    variableId={profile.variableId}
+                    context={chartContext}
+                  />}
                 </div>
               </div>
             </div>

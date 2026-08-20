@@ -27,6 +27,7 @@ export interface GuidedResearchFlowProps {
   loadError?: string | null;
   recoverableMessages?: string[];
   resultsSlot?: ReactNode;
+  summaryHeadingLevel?: 1 | 2;
 }
 
 export function GuidedResearchFlow({
@@ -42,6 +43,7 @@ export function GuidedResearchFlow({
   loadError,
   recoverableMessages = [],
   resultsSlot,
+  summaryHeadingLevel = 1,
 }: GuidedResearchFlowProps) {
   const [goal, setGoal] = useState<ResearchGoal | null>(null);
   const [variableIds, setVariableIds] = useState<string[]>([]);
@@ -105,6 +107,11 @@ export function GuidedResearchFlow({
     profilesByVariableId !== undefined
     && variableIds.length > 0
     && profiles.length === variableIds.length;
+  const chartContext = [
+    design.groups.map((group) => group.name).join(' × '),
+    summary.facts.find((fact) => /\d{4}/.test(fact)),
+  ].filter((item): item is string => Boolean(item)).join(' · ');
+  const SummaryHeading = summaryHeadingLevel === 2 ? 'h2' : 'h1';
 
   return (
     <div className="space-y-5">
@@ -115,7 +122,7 @@ export function GuidedResearchFlow({
           </span>
           <div className="min-w-0">
             <p className="font-sans text-xs font-semibold uppercase tracking-[0.16em] text-accent">{summary.eyebrow}</p>
-            <h1 className="mt-1 font-sans text-2xl font-bold tracking-tight text-text sm:text-3xl">{summary.title}</h1>
+            <SummaryHeading className="mt-1 font-sans text-2xl font-bold tracking-tight text-text sm:text-3xl">{summary.title}</SummaryHeading>
             <ul className="mt-3 flex flex-wrap gap-2" aria-label="Resumo do recorte">
               {summary.facts.map((fact) => (
                 <li key={fact} className="rounded-full border border-white/10 bg-black/10 px-3 py-1 font-sans text-xs text-text-muted">{fact}</li>
@@ -138,7 +145,7 @@ export function GuidedResearchFlow({
       ) : null}
 
       {hasAllProfiles ? (
-        <FlowStep><DataProfileSection profiles={profiles} reviewsResolved={reviewsResolved} /></FlowStep>
+        <FlowStep><DataProfileSection profiles={profiles} reviewsResolved={reviewsResolved} chartContext={chartContext} /></FlowStep>
       ) : variableIds.length > 0 ? (
         <LoadingStep
           title="3. Preparando o perfil dos dados…"

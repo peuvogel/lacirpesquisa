@@ -201,7 +201,10 @@ export function ReviewAnalysisDataDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-2">
-          <SihDivergenceNotes variableIds={cells.map((cell) => cell.variableId)} />
+          <SihDivergenceNotes
+            variableIds={cells.map((cell) => cell.variableId)}
+            diseaseIds={design.diseaseIds}
+          />
           {cells.map((cell) => {
             const key = scenarioCellKey(cell);
             const territory = territoryLabels.get(cell.territoryId) ?? cell.territoryId;

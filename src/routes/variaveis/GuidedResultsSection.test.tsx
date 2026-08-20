@@ -10,15 +10,23 @@ import type { PraisGroupTrendRun } from './praisGroupTrends';
 import type { GuidedTestRun } from './runGuidedTests';
 
 vi.mock('@/routes/estatistica/ResultsPanel', () => ({
-  ResultsPanel: ({ title, metrics, interpretation }: {
+  ResultsPanel: ({ title, metrics, interpretation, additionalCharts = [] }: {
     title: string;
     metrics: Array<{ label: string; value: string }>;
     interpretation: string[];
-  }) => <article><h3>{title}</h3>{metrics.map((metric) => <p key={metric.label}>{metric.label}: {metric.value}</p>)}<p>{interpretation[0]}</p></article>,
+    additionalCharts?: Array<{ ariaLabel: string }>;
+  }) => <article>
+    <h3>{title}</h3>
+    {metrics.map((metric) => <p key={metric.label}>{metric.label}: {metric.value}</p>)}
+    {additionalCharts.map((item) => <div key={item.ariaLabel} role="img" aria-label={item.ariaLabel} />)}
+    <p>{interpretation[0]}</p>
+  </article>,
 }));
 
 vi.mock('@/routes/mapas/BrazilMapCanvas', () => ({
-  BrazilMapCanvas: () => <div role="img" aria-label="Mapa coroplético do resultado" />,
+  BrazilMapCanvas: ({ activeVariableId }: { activeVariableId: string }) => (
+    <div role="img" aria-label={`Mapa coroplético do resultado para ${activeVariableId}`} />
+  ),
 }));
 
 const design: ResearchDesign = {
@@ -62,12 +70,14 @@ const praisGroupRun: PraisGroupTrendRun = {
     {
       groupId: 'a', groupLabel: 'Grupo A', outcomeVariableId: 'taxa',
       metrics: [{ label: 'Coeficiente da tendência (β)', value: '0,12' }], chart,
+      additionalCharts: [{ ...chart, ariaLabel: 'Resíduos de Prais–Winsten · Grupo A' }],
       interpretation: ['Tendência estimada somente para Grupo A; este resultado não testa diferença em relação aos demais grupos.'],
       pValue: 0.04, effectDirection: 'positive',
     },
     {
       groupId: 'b', groupLabel: 'Grupo B', outcomeVariableId: 'taxa',
       metrics: [{ label: 'Coeficiente da tendência (β)', value: '-0,08' }], chart,
+      additionalCharts: [],
       interpretation: ['Tendência estimada somente para Grupo B; este resultado não testa diferença em relação aos demais grupos.'],
       pValue: 0.3, effectDirection: 'negative',
     },
@@ -94,6 +104,9 @@ describe('GuidedResultsSection', () => {
     />);
 
     expect(screen.getByRole('heading', { name: 'Revise os dados da análise' })).toBeInTheDocument();
+    const map = screen.getByRole('img', { name: 'Mapa coroplético do resultado para taxa' });
+    const reviewButton = screen.getByRole('button', { name: 'Revisar dados da análise' });
+    expect(map.compareDocumentPosition(reviewButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Revisar dados da análise' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
@@ -138,7 +151,7 @@ describe('GuidedResultsSection', () => {
     const principal = screen.getByRole('heading', { name: 'Mann–Whitney · Taxa de internação · principal' });
     const sensitivity = screen.getByRole('heading', { name: 't de Student · Taxa de internação · sensibilidade' });
     expect(principal.compareDocumentPosition(sensitivity) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Mapa coroplético do resultado' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Mapa coroplético do resultado para taxa' })).toBeInTheDocument();
     expect(screen.getByText(/não demonstra causalidade/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Revisar dados da análise' })).toBeInTheDocument();
     const conclusion = within(screen.getByRole('region', { name: 'Conclusão' })).getAllByRole('paragraph')[0]!;
@@ -147,22 +160,21 @@ describe('GuidedResultsSection', () => {
   });
 
   it('explica sem repetir a razão do pack no fluxo descritivo e confirmatório', () => {
-    const sihCells = cells.map((cell) => ({ ...cell, variableId: SIH_VARIABLE_ID }));
-    const recommended = createRecommendedScenario(sihCells);
+    const recommended = createRecommendedScenario(cells.map((cell) => ({ ...cell, variableId: 'internacoes' })));
     const razao = getDivergenciaRazao(SIH_VARIABLE_ID);
     render(<GuidedResultsSection
-      design={design}
+      design={{ ...design, diseaseIds: ['embolia_e_trombose_arteriais'] }}
       recommendedScenario={recommended}
       activeScenario={recommended}
-      variableLabels={{ [SIH_VARIABLE_ID]: 'Internações por embolia e trombose arteriais' }}
+      variableLabels={{ internacoes: 'Internações por embolia e trombose arteriais' }}
       run={{
         ...run,
         scenarioFingerprint: recommended.fingerprint,
-        results: run.results.map((result) => ({ ...result, outcomeVariableId: SIH_VARIABLE_ID })),
+        results: run.results.map((result) => ({ ...result, outcomeVariableId: 'internacoes' })),
       }}
       praisGroupRun={{
         ...praisGroupRun,
-        results: praisGroupRun.results.map((result) => ({ ...result, outcomeVariableId: SIH_VARIABLE_ID })),
+        results: praisGroupRun.results.map((result) => ({ ...result, outcomeVariableId: 'internacoes' })),
       }}
       runError={null}
       pendingReview={false}
@@ -215,6 +227,32 @@ describe('GuidedResultsSection', () => {
     expect(screen.getByText(/análise exploratória/i)).toBeInTheDocument();
     expect(screen.getByText(/n 2 → 1/i)).toBeInTheDocument();
     expect(screen.getByText(/0,40.*0,20/i)).toBeInTheDocument();
+  });
+
+  it('preserves the engine diagnostic when the recommended scenario cannot be recalculated', () => {
+    const recommended = createRecommendedScenario(cells.map((cell) => ({
+      ...cell,
+      analyticStatus: cell.rawValue === null ? 'exclude_missing' as const : 'include' as const,
+    })));
+    const revised = reviseScenario(
+      recommended,
+      [treatAsMissing(JSON.stringify(['a', '29', '2025', 'taxa']))],
+      { createdAfterResults: true },
+    );
+    render(<GuidedResultsSection
+      design={design}
+      recommendedScenario={recommended}
+      activeScenario={revised}
+      variableLabels={{ taxa: 'Taxa de internação' }}
+      run={{ ...run, scenarioFingerprint: revised.fingerprint }}
+      recommendedRun={null}
+      recommendedRunError="Matriz singular após filtrar o suporte comum."
+      runError={null}
+      pendingReview={false}
+      onScenarioChange={() => undefined}
+    />);
+
+    expect(screen.getByText(/Matriz singular após filtrar o suporte comum/i)).toBeInTheDocument();
   });
 
   it('compares every primary outcome after a post-result revision', () => {
@@ -278,6 +316,8 @@ describe('GuidedResultsSection', () => {
 
     expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação · principal/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Mann–Whitney · Custo hospitalar · principal/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Distribuição no mapa · Taxa de internação' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Distribuição no mapa · Custo hospitalar' })).toBeInTheDocument();
     expect(screen.getByText(/preservando todos os 2 desfechos sem seleção por favorabilidade/i)).toBeInTheDocument();
   });
 
@@ -308,6 +348,7 @@ describe('GuidedResultsSection', () => {
     expect(screen.getByRole('heading', { name: 'Desfechos não calculáveis' })).toBeInTheDocument();
     expect(screen.getByText(/Custo hospitalar.*pelo menos 3 unidades/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /Mann–Whitney · Taxa de internação/ })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Distribuição no mapa · Custo hospitalar' })).not.toBeInTheDocument();
   });
 
   it('renders every descriptive group trend and skip separately from confirmatory comparisons', () => {
@@ -329,6 +370,7 @@ describe('GuidedResultsSection', () => {
 
     expect(screen.getByRole('heading', { name: 'Tendências Prais–Winsten por grupo' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Prais–Winsten · Grupo A · Taxa de internação' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Resíduos de Prais–Winsten · Grupo A' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Prais–Winsten · Grupo B · Taxa de internação' })).toBeInTheDocument();
     expect(screen.getByText(/Grupo B · Custo hospitalar.*pelo menos 8 pontos/i)).toBeInTheDocument();
     expect(screen.getByText(/cada modelo descreve somente o seu grupo.*não compara p-valores/i)).toBeInTheDocument();

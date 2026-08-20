@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import type { MunicipioPartition } from '@/features/catalog/loadMunicipioPartition';
 import type { ResearchDesign, VariableProfile } from './types';
 import {
+  createResearchDesignFromMapState,
+  type MapAnalysisState,
+} from '@/routes/mapas/mapAnalysisState';
+import {
   ResearchRepositoryError,
   createResearchRepository,
 } from './supabaseResearchRepository';
@@ -387,6 +391,57 @@ describe('Supabase research repository', () => {
     ]));
   });
 
+  it('normalizes the canonical seven-digit Mapas municipality only at SIH transport boundaries', async () => {
+    const client = new FakeSupabase({
+      sih_collection_status: () => ({
+        data: [{
+          disease_id: 'embolia_e_trombose_arteriais', medida: 'internacoes', grao: 'municipio',
+          local: 'ocorrencia', ano: 2020, status: 'coletado', derived_at: '2026-08-13T00:00:00Z', cid_map_version: 'v1',
+        }],
+        error: null,
+      }),
+      sih_population_total_muni: () => ({
+        data: [{ municipio_codigo: '292740', uf_codigo: '29', ano: 2020, populacao: 2_900_000 }],
+        error: null,
+      }),
+    });
+    const mapState: MapAnalysisState = {
+      groups: [{
+        id: 'salvador',
+        name: 'Salvador',
+        territoryIds: [{ level: 'municipio', ibgeCode: '2927408', sigla: 'BA', name: 'Salvador' }],
+        time: { mode: 'point', point: '2020' },
+        variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
+      }],
+      activeGroupId: 'salvador',
+      mapView: { level: 'municipio', parentCode: 'BA', ufIbge: '29' },
+      provenance: 'catalog',
+      sharedTime: { mode: 'point', point: '2020' },
+      periodScope: 'shared',
+      locationBasis: 'ocorrencia',
+    };
+    const designResult = createResearchDesignFromMapState(mapState);
+    expect(designResult.ok).toBe(true);
+    if (!designResult.ok) throw new Error('recorte municipal deveria ser válido');
+    const loadPartition = vi.fn(async () => municipioPartition('BA', [municipioMetricRow({
+      disease_id: 'embolia_e_trombose_arteriais',
+    })]));
+    const repo = createResearchRepository({ supabase: client, loadMunicipioPartition: loadPartition });
+
+    const snapshot = await repo.load(designResult.value, [baseProfiles[0]!, populationRate]);
+
+    expect(loadPartition).toHaveBeenCalledWith('BA', expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(client.callsFor('sih_population_total_muni')[0]?.filters).toContainEqual({
+      kind: 'in', column: 'municipio_codigo', value: ['292740'],
+    });
+    expect(snapshot.cells.find((cell) => cell.variableId === 'internacoes')).toMatchObject({
+      territoryId: '2927408', rawValue: 7, sourceStatus: 'observed',
+    });
+    expect(snapshot.cells.find((cell) => cell.variableId === 'populacao')).toMatchObject({
+      territoryId: '2927408', rawValue: 2_900_000, sourceStatus: 'observed',
+    });
+  });
+
   it('isolates caller abort from an identical shared load and rejects aborted cache reads', async () => {
     let releaseFirstMetric: (() => void) | undefined;
     const client = new FakeSupabase({
@@ -410,7 +465,9 @@ describe('Supabase research repository', () => {
     const snapshot = await active;
 
     expect(client.callsFor('sih_metric_uf')).toHaveLength(1);
-    expect(client.callsFor('sih_metric_uf')[0]?.signal).toBeUndefined();
+    expect(client.callsFor('sih_metric_uf')[0]?.signal).toBeInstanceOf(AbortSignal);
+    expect(client.callsFor('sih_metric_uf')[0]?.signal).not.toBe(staleController.signal);
+    expect(client.callsFor('sih_metric_uf')[0]?.signal).not.toBe(activeController.signal);
     const alreadyAborted = new AbortController();
     alreadyAborted.abort();
     await expect(repo.load(
@@ -419,6 +476,127 @@ describe('Supabase research repository', () => {
       { signal: alreadyAborted.signal },
     )).rejects.toMatchObject({ name: 'AbortError' });
     await expect(repo.load(ufDesign(), [baseProfiles[0]!])).resolves.toBe(snapshot);
+  });
+
+  it('keeps a shared municipal load alive when one of two consumers abandons it', async () => {
+    const client = new FakeSupabase({ sih_collection_status: () => ({ data: [], error: null }) });
+    let release: (() => void) | undefined;
+    let internalSignal: AbortSignal | undefined;
+    const loader = vi.fn((uf: string, options?: { signal?: AbortSignal }) => new Promise<MunicipioPartition>((resolve, reject) => {
+      internalSignal = options?.signal;
+      options?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+      release = () => resolve(municipioPartition(uf, [municipioMetricRow()]));
+    }));
+    const repo = createResearchRepository({ supabase: client, loadMunicipioPartition: loader });
+    const design = ufDesign({
+      geography: 'municipio', locationBasis: 'ocorrencia', diseaseIds: ['acidente_vascular_cerebral'],
+      groups: [{ id: 'salvador', name: 'Salvador', territories: [{ id: '292740', label: 'Salvador' }] }],
+      period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+    });
+    const abandoned = new AbortController();
+    const active = new AbortController();
+
+    const first = repo.load(design, [baseProfiles[0]!], { signal: abandoned.signal });
+    const second = repo.load(design, [baseProfiles[0]!], { signal: active.signal });
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+    abandoned.abort();
+    await expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    expect(internalSignal?.aborted).toBe(false);
+    release!();
+    await expect(second).resolves.toMatchObject({ cells: expect.any(Array) });
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  it('aborts the shared municipal work only after every consumer abandons it', async () => {
+    const client = new FakeSupabase({ sih_collection_status: () => ({ data: [], error: null }) });
+    let internalSignal: AbortSignal | undefined;
+    const loader = vi.fn((_uf: string, options?: { signal?: AbortSignal }) => new Promise<MunicipioPartition>((_resolve, reject) => {
+      internalSignal = options?.signal;
+      options?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+    }));
+    const repo = createResearchRepository({ supabase: client, loadMunicipioPartition: loader });
+    const design = ufDesign({
+      geography: 'municipio', locationBasis: 'ocorrencia', diseaseIds: ['acidente_vascular_cerebral'],
+      groups: [{ id: 'salvador', name: 'Salvador', territories: [{ id: '292740', label: 'Salvador' }] }],
+      period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+    });
+    const firstController = new AbortController();
+    const secondController = new AbortController();
+    const first = repo.load(design, [baseProfiles[0]!], { signal: firstController.signal });
+    const second = repo.load(design, [baseProfiles[0]!], { signal: secondController.signal });
+    await vi.waitFor(() => expect(internalSignal).toBeInstanceOf(AbortSignal));
+
+    firstController.abort();
+    expect(internalSignal?.aborted).toBe(false);
+    secondController.abort();
+
+    await expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(second).rejects.toMatchObject({ name: 'AbortError' });
+    expect(internalSignal?.aborted).toBe(true);
+  });
+
+  it('bounds concurrent municipal partition downloads without serializing all of them', async () => {
+    const client = new FakeSupabase({ sih_collection_status: () => ({ data: [], error: null }) });
+    let active = 0;
+    let maximum = 0;
+    const loader = vi.fn(async (uf: string) => {
+      active += 1;
+      maximum = Math.max(maximum, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active -= 1;
+      return municipioPartition(uf, []);
+    });
+    const repo = createResearchRepository({
+      supabase: client,
+      loadMunicipioPartition: loader,
+      municipioPartitionConcurrency: 2,
+    });
+    const design = ufDesign({
+      geography: 'municipio', locationBasis: 'ocorrencia', diseaseIds: ['acidente_vascular_cerebral'],
+      groups: [{
+        id: 'multirregional', name: 'Cinco UFs', territories: [
+          { id: '120001', label: 'AC' }, { id: '130001', label: 'AM' }, { id: '150001', label: 'PA' },
+          { id: '290001', label: 'BA' }, { id: '350001', label: 'SP' },
+        ],
+      }],
+      period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+    });
+
+    await repo.load(design, [baseProfiles[0]!]);
+
+    expect(loader).toHaveBeenCalledTimes(5);
+    expect(maximum).toBe(2);
+  });
+
+  it('shares the municipal concurrency bound across simultaneous distinct repository loads', async () => {
+    const client = new FakeSupabase({ sih_collection_status: () => ({ data: [], error: null }) });
+    let active = 0;
+    let maximum = 0;
+    const loader = vi.fn(async (uf: string) => {
+      active += 1;
+      maximum = Math.max(maximum, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active -= 1;
+      return municipioPartition(uf, []);
+    });
+    const repo = createResearchRepository({
+      supabase: client,
+      loadMunicipioPartition: loader,
+      municipioPartitionConcurrency: 2,
+    });
+    const designFor = (id: string, territories: Array<{ id: string; label: string }>) => ufDesign({
+      geography: 'municipio', locationBasis: 'ocorrencia', diseaseIds: ['acidente_vascular_cerebral'],
+      groups: [{ id, name: id, territories }],
+      period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+    });
+
+    await Promise.all([
+      repo.load(designFor('norte-1', [{ id: '120001', label: 'AC' }, { id: '130001', label: 'AM' }]), [baseProfiles[0]!]),
+      repo.load(designFor('norte-2', [{ id: '150001', label: 'PA' }, { id: '290001', label: 'BA' }]), [baseProfiles[0]!]),
+    ]);
+
+    expect(loader).toHaveBeenCalledTimes(4);
+    expect(maximum).toBe(2);
   });
 
   it('fetches municipal population in one batch only when requested', async () => {

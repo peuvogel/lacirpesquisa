@@ -106,6 +106,7 @@ describe('Prais–Winsten por grupo territorial', () => {
     expect(series[0]?.rows[0]).toEqual({ year: 2017, value: 0 });
     expect(run.results.map((result) => result.groupId)).toEqual(['nordeste', 'sudeste']);
     expect(run.results.every((result) => result.metrics.length > 0)).toBe(true);
+    expect(run.results[0]?.additionalCharts?.map((item) => item.ariaLabel).join(' ')).toMatch(/resíduos/i);
     expect(run.results[0]?.interpretation[0]).toMatch(/somente para Nordeste.*não testa diferença/i);
     expect(run.skippedGroups).toEqual([]);
   });

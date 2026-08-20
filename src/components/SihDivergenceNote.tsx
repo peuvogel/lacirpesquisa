@@ -1,4 +1,5 @@
 import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
+import { catalogIdFor, parseCatalogId } from '@/features/catalog/taxonomy';
 
 /**
  * Nota curta que explica, ao lado do número, por que ele difere de uma consulta padrão do TabNet.
@@ -28,8 +29,17 @@ export function SihDivergenceNote({ razao }: { razao?: string | null }) {
  * Reúne as razões vindas dos packs para uma superfície e evita repetir a mesma explicação quando
  * mais de uma variável aponta para ela. A frase continua a fluir do pack pelo helper, sem cópia.
  */
-export function SihDivergenceNotes({ variableIds }: { variableIds: readonly string[] }) {
-  const razoes = [...new Set(variableIds
+export function SihDivergenceNotes({
+  variableIds,
+  diseaseIds = [],
+}: {
+  variableIds: readonly string[];
+  diseaseIds?: readonly string[];
+}) {
+  const provenanceIds = variableIds.flatMap((variableId) => parseCatalogId(variableId)
+    ? [variableId]
+    : diseaseIds.map((diseaseId) => catalogIdFor(variableId, diseaseId)));
+  const razoes = [...new Set(provenanceIds
     .map((variableId) => getDivergenciaRazao(variableId))
     .filter((razao): razao is string => Boolean(razao)))];
 
