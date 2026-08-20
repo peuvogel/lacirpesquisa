@@ -5,7 +5,6 @@ import {
   getMetricByUfAndYear,
   resolveVariableId,
 } from '@/features/catalog/catalogAnalysisData';
-import type { MetricLookup } from '@/features/catalog/fetchHandoffMetrics';
 import {
   formatHandoffNumber,
   handoffMeasureHeader,
@@ -15,6 +14,12 @@ import type { GroupTimeConfig, MapAnalysisGroup, MapProvenance } from './mapAnal
 import { formatTimeSummary } from './mapAnalysisState';
 
 const MAX_HANDOFF_ROWS = 10_000;
+
+export type MetricLookup = (
+  variableId: string,
+  territoryKey: string,
+  year: number | null,
+) => number | null;
 
 export interface PasteHandoffData {
   headers: string[];

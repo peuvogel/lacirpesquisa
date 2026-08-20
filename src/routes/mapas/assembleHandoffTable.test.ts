@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MapAnalysisGroup } from './mapAnalysisState';
-import { assembleHandoffTable } from './assembleHandoffTable';
+import { assembleHandoffTable, type MetricLookup } from './assembleHandoffTable';
 
 const baTerritory = {
   level: 'uf' as const,
@@ -132,5 +132,22 @@ describe('assembleHandoffTable', () => {
       }),
     ]);
     expect(result.rows).toHaveLength(0);
+  });
+
+  it('keeps an injected municipal zero as an assembled numeric handoff cell', () => {
+    const metricLookup: MetricLookup = (variableId, territoryKey, year) =>
+      variableId === 'sih.embolia_e_trombose_arteriais.internacoes' &&
+      territoryKey === '292740' &&
+      year === 2019
+        ? 0
+        : null;
+
+    const result = assembleHandoffTable([
+      group({
+        territoryIds: [{ level: 'municipio', ibgeCode: '292740', name: 'Salvador' }],
+      }),
+    ], { metricLookup });
+
+    expect(result.rows).toEqual([['Salvador', 'Grupo 1', '0']]);
   });
 });
