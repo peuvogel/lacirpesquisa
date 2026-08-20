@@ -63,7 +63,6 @@ describe('MapasPage group workspace', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
-    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
 
@@ -92,7 +91,6 @@ describe('MapasPage group workspace', () => {
     renderMapasPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
-    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
@@ -101,7 +99,12 @@ describe('MapasPage group workspace', () => {
     await waitFor(() => expect(document.activeElement).toBe(region));
     expect(region).toHaveAttribute('tabindex', '-1');
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole('heading', { level: 2, name: /BA · Embolia/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: /População selecionada · Embolia/i,
+      }),
+    ).toBeInTheDocument();
     expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: expect.stringMatching(/smooth|auto/) }));
   });
 
@@ -117,7 +120,6 @@ describe('MapasPage group workspace', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
-    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
@@ -140,7 +142,6 @@ describe('MapasPage group workspace', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
-    fireEvent.click(screen.getByRole('button', { name: /Adicionar grupo 1 com 1 território/i }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Embolia e trombose arteriais/i }));
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
@@ -155,15 +156,64 @@ describe('MapasPage group workspace', () => {
     expect(sessionRef.current?.researchDesign).toBeNull();
   });
 
-  it('renders group strip, region checkboxes and breadcrumb (no empty CTA strip)', () => {
+  it('renders the population bar, region checkboxes and breadcrumb', () => {
     renderMapasPage();
 
-    expect(screen.getByLabelText('Grupos de análise')).toBeInTheDocument();
+    expect(screen.getByLabelText('Populações da pergunta')).toBeInTheDocument();
+    expect(screen.getByText(/Clique no mapa para criar a População selecionada/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Presets territoriais')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Mesorregiões' })).toBeInTheDocument();
     expect(screen.getByLabelText('Navegação do mapa')).toBeInTheDocument();
     expect(screen.queryByText('Nada selecionado ainda')).not.toBeInTheDocument();
     expect(screen.queryByText(/estado\(s\) selecionado\(s\)/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/clique em Adicionar grupo/i)).not.toBeInTheDocument();
+  });
+
+  it('creates População selecionada on the first UF click and removes it on the active click', () => {
+    renderMapasPage();
+
+    const bahia = screen.getByRole('button', { name: 'Bahia' });
+    fireEvent.click(bahia);
+
+    expect(screen.getByRole('tab', { name: /População selecionada/i })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByText(/Clique no mapa para adicionar à População selecionada/i)).toBeInTheDocument();
+    expect(bahia).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(bahia);
+    expect(bahia).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('creates an empty active comparator and activates a territory owner instead of moving it', () => {
+    renderMapasPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar comparador' }));
+    const comparator = screen.getByRole('tab', { name: /Comparador/i });
+    expect(comparator).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rio de Janeiro' }));
+    fireEvent.click(screen.getByRole('tab', { name: /População selecionada/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rio de Janeiro' }));
+
+    expect(comparator).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Rio de Janeiro' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('tab', { name: /População selecionada/i })).toHaveTextContent('1');
+    expect(comparator).toHaveTextContent('1');
+  });
+
+  it('has no staging CTA, drag instruction or right-click shortcut in the normal path', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+
+    expect(screen.queryByText(/^Adicionar grupo$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/botão direito/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/clique ou solte/i)).not.toBeInTheDocument();
   });
 
   it('applies the 5 regiões group preset from the strip menu', () => {
@@ -174,7 +224,7 @@ describe('MapasPage group workspace', () => {
     expect(screen.getByRole('tab', { name: /Sudeste/i })).toBeInTheDocument();
   });
 
-  it('checking Norte selects regional UFs without instructional strip CTA', () => {
+  it('checking Norte assigns its UFs directly to the active population', () => {
     renderMapasPage();
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Norte' }));
@@ -184,6 +234,7 @@ describe('MapasPage group workspace', () => {
       'aria-pressed',
       'true',
     );
+    expect(screen.getByRole('tab', { name: /População selecionada/i })).toHaveTextContent('7');
   });
 
   it('unchecking Norte clears the regional UF selection', () => {
@@ -240,6 +291,18 @@ describe('MapasPage group workspace', () => {
     expect(screen.getByRole('checkbox', { name: /Metropolitana de Salvador/i })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Norte' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: /Metropolitana de São Paulo/i })).not.toBeInTheDocument();
+  });
+
+  it('assigns a health macro directly to the active population', async () => {
+    renderMapasPage();
+    fireEvent.dblClick(screen.getByRole('button', { name: 'Bahia' }));
+    fireEvent.click(await screen.findByRole('tab', { name: 'Macrorregiões de saúde' }));
+
+    const macroPaths = await screen.findAllByRole('button', { name: /Macro Bahia Norte/i });
+    fireEvent.click(macroPaths[0]!);
+
+    expect(screen.getByRole('tab', { name: /População selecionada/i })).toHaveTextContent('3');
+    expect(macroPaths[0]).toHaveAttribute('aria-pressed', 'true');
   });
 });
 
@@ -306,6 +369,10 @@ describe('MapasPage paste integration', () => {
     );
     expect(screen.getByText('Reconhecidos (1)')).toBeInTheDocument();
     expect(screen.getAllByText('BA').length).toBeGreaterThan(0);
+    expect(screen.getByRole('tab', { name: /População selecionada/i })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   it('shows unmatched lines without blocking map interaction', async () => {
