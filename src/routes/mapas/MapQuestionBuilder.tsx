@@ -33,8 +33,23 @@ export interface MapQuestionBuilderProps {
 }
 
 function objectiveDisabled(axis: ComparisonAxis, goal: ResearchGoal): boolean {
+  // O snapshot atual colapsa doenças antes da análise e ainda não contém
+  // exposições territoriais juntadas. Nem mesmo uma descrição nesses eixos
+  // seria lado a lado; habilitá-la apresentaria uma soma como comparação.
+  if (axis === 'disease' || axis === 'exposure') return true;
   if (axis === 'none') return goal !== 'describe';
   return false;
+}
+
+function objectiveDisabledReason(axis: ComparisonAxis): string | undefined {
+  if (axis === 'disease') {
+    return 'Ainda não é possível separar as doenças lado a lado com a unidade analítica atual.';
+  }
+  if (axis === 'exposure') {
+    return 'Ainda não há uma exposição carregável e ligada ao território e período.';
+  }
+  if (axis === 'none') return 'Escolha um eixo de comparação para liberar este objetivo.';
+  return undefined;
 }
 
 export function MapQuestionBuilder({
@@ -117,8 +132,8 @@ export function MapQuestionBuilder({
       {(draft.comparisonAxis === 'disease' || draft.comparisonAxis === 'exposure') ? (
         <p role="status" className="rounded-xl border border-warning/30 bg-warning/5 px-3 py-2.5 font-sans text-xs leading-relaxed text-text-muted">
           {draft.comparisonAxis === 'disease'
-            ? 'Hoje as doenças são combinadas antes da análise. Esta opção fica visível para estruturar a pergunta, mas nenhum teste é liberado de forma espúria.'
-            : 'Uma exposição precisa estar realmente carregável e ligada ao território e ao período. Enquanto isso não for comprovado, nenhum teste é liberado.'}
+            ? 'Hoje as doenças são combinadas antes da análise. Esta opção estrutura a pergunta, mas nenhum objetivo é liberado até que os dados possam ser mostrados lado a lado sem somá-los.'
+            : 'Uma exposição precisa estar realmente carregável e ligada ao território e ao período. Enquanto isso não for comprovado, nenhum objetivo é liberado.'}
         </p>
       ) : null}
 
@@ -148,7 +163,7 @@ export function MapQuestionBuilder({
                 type="button"
                 disabled={disabled}
                 aria-pressed={draft.objective === objective.value}
-                title={disabled ? 'Escolha um eixo de comparação para liberar este objetivo.' : undefined}
+                title={disabled ? objectiveDisabledReason(draft.comparisonAxis) : undefined}
                 onClick={() => onDraftChange({ ...draft, objective: objective.value })}
                 className={cn(
                   'rounded-xl border px-2 py-2.5 font-sans text-xs font-bold transition-colors',

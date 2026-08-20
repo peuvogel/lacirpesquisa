@@ -126,7 +126,9 @@ export function MeasureDiseasePicker({
 
   const visibleDiseases = useMemo(() => {
     const { pool } = searchResult;
-    const selected = pool.filter((d) => selectedDiseaseSet.has(d.id));
+    // A seleção é contexto da pergunta, não resultado da busca: mantenha-a
+    // visível mesmo quando o termo atual só encontra outras doenças.
+    const selected = DISEASES.filter((d) => selectedDiseaseSet.has(d.id));
     const rest = pool.filter((d) => !selectedDiseaseSet.has(d.id));
     // Pack-backed diseases first so period years resolve without hunting.
     const withPack = rest.filter((d) => FIRST_LOADABLE_MEASURE.has(d.id));

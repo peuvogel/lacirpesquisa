@@ -96,6 +96,9 @@ describe('MapQuestionBuilder', () => {
     })();
 
     expect(screen.getByRole('status')).toHaveTextContent(/doenças são combinadas/i);
+    expect(screen.getByRole('button', { name: 'Descrever' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Comparar/relacionar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ambos' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Exposição' }));
     expect(onDraftChange).toHaveBeenCalledWith({ comparisonAxis: 'exposure', objective: null });
 
@@ -108,6 +111,9 @@ describe('MapQuestionBuilder', () => {
       />,
     );
     expect(screen.getByRole('status')).toHaveTextContent(/exposição.*carregável/i);
+    expect(screen.getByRole('button', { name: 'Descrever' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Comparar/relacionar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Ambos' })).toBeDisabled();
   });
 
   it('reveals objectives after the axis and disables comparison without a comparison axis', () => {

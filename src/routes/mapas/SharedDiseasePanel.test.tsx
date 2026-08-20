@@ -53,5 +53,15 @@ describe('SharedDiseasePanel', () => {
       }),
     ).toBeChecked();
     expect(screen.getByText(/digite para buscar/i)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Buscar doença' }), {
+      target: { value: 'diabetes' },
+    });
+    expect(
+      within(list).getByRole('checkbox', {
+        name: /Amputação.*membros inferiores/i,
+      }),
+    ).toBeChecked();
+    expect(within(list).getByRole('checkbox', { name: /Diabetes mellitus/i })).toBeInTheDocument();
   });
 });
