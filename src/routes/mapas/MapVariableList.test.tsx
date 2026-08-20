@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { ResearchDesign } from '@/features/research/types';
+import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import type { GuidedVariableViewModel } from '@/routes/variaveis/guidedViewModels';
 import { MapVariableList } from './MapVariableList';
 
@@ -61,13 +62,14 @@ const variables: GuidedVariableViewModel[] = [
 function renderList(
   selectedVariableIds: string[] = [],
   onSelectionChange = vi.fn(),
+  sourceVariables = variables,
 ) {
   return {
     onSelectionChange,
     ...render(
       <MapVariableList
         design={design}
-        variables={variables}
+        variables={sourceVariables}
         selectedVariableIds={selectedVariableIds}
         onSelectionChange={onSelectionChange}
       />,
@@ -103,8 +105,36 @@ describe('MapVariableList', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por tipo' }), 'all');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por disponibilidade' }), 'all');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por papel' }), 'denominator');
-    expect(screen.getByText('Internações')).toBeInTheDocument();
-    expect(screen.queryByText('Taxa de mortalidade')).not.toBeInTheDocument();
+    expect(screen.queryByText('Internações')).not.toBeInTheDocument();
+    expect(screen.getByText(/Nenhuma variável corresponde aos filtros/i)).toBeInTheDocument();
+  });
+
+  it('does not rebrand calculation dependencies as epidemiological exposures', async () => {
+    const user = userEvent.setup();
+    const allProfiles: GuidedVariableViewModel[] = VARIABLE_PROFILES.map((profile) => ({
+      id: profile.variableId,
+      label: profile.label,
+      type: profile.variableType,
+      typeLabel: profile.variableType,
+      availability: 'complete',
+      sourceMethod: { source: 'SIH/SUS', method: 'Método real do indicador.' },
+    }));
+    renderList([], vi.fn(), allProfiles);
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Filtrar por papel' }),
+      'exposure',
+    );
+    expect(screen.queryByText('Internações')).not.toBeInTheDocument();
+    expect(screen.getByText(/Nenhuma variável corresponde aos filtros/i)).toBeInTheDocument();
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Filtrar por papel' }),
+      'outcome',
+    );
+    expect(screen.getByRole('list', { name: 'Variáveis para análise' }))
+      .toHaveTextContent('Internações');
+    expect(screen.getAllByRole('checkbox')).toHaveLength(VARIABLE_PROFILES.length);
   });
 
   it('allows partial coverage, blocks no-data rows and keeps provenance collapsed', async () => {

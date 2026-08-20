@@ -26,19 +26,19 @@ const AVAILABILITY_LABELS: Record<GuidedAvailability, string> = {
   none: 'Indisponível',
 };
 
-const EXPOSURE_VARIABLE_IDS = new Set(
-  VARIABLE_PROFILES.flatMap((profile) =>
-    profile.exposureVariableId ? [profile.exposureVariableId] : []),
-);
-const DENOMINATOR_VARIABLE_IDS = new Set(
-  VARIABLE_PROFILES.flatMap((profile) =>
-    profile.denominatorVariableId ? [profile.denominatorVariableId] : []),
-);
+type VariableRole = Exclude<RoleFilter, 'all'>;
+
+// Papéis epidemiológicos da linha exibida, deliberadamente explícitos.
+// `exposureVariableId`/`denominatorVariableId` dos perfis são dependências
+// internas de cálculo de outro indicador e não classificam a variável na UI.
+// Os nove indicadores atualmente selecionáveis são desfechos; exposição e
+// denominador permanecem vazios até haver uma linha realmente carregável.
+const MAP_VARIABLE_ROLES: Readonly<Record<string, readonly VariableRole[]>> =
+  Object.fromEntries(VARIABLE_PROFILES.map((profile) => [profile.variableId, ['outcome']]));
 
 function matchesRole(variableId: string, role: RoleFilter): boolean {
-  if (role === 'all' || role === 'outcome') return true;
-  if (role === 'exposure') return EXPOSURE_VARIABLE_IDS.has(variableId);
-  return DENOMINATOR_VARIABLE_IDS.has(variableId);
+  if (role === 'all') return true;
+  return MAP_VARIABLE_ROLES[variableId]?.includes(role) ?? false;
 }
 
 function matchesType(type: VariableType, filter: TypeFilter): boolean {
@@ -118,8 +118,8 @@ export function MapVariableList({
           options={[
             ['all', 'Todos os papéis'],
             ['outcome', 'Desfecho'],
-            ['exposure', 'Exposição/contexto'],
-            ['denominator', 'Denominador'],
+            ['exposure', 'Exposição/contexto (quando disponível)'],
+            ['denominator', 'Denominador (quando disponível)'],
           ]}
         />
         <FilterSelect
