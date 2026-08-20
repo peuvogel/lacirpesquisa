@@ -107,3 +107,158 @@ def test_scrape_pairs_soma_por_uf_usando_fixture_real(monkeypatch):
 
 def test_main_e_chamavel():
     assert callable(oracle_scrape.main)
+
+
+# ---------------------------------------------------------------------------
+# Janela de competência do oráculo (09-16) -- consulta INGÊNUA vs BEM-FORMADA.
+#
+# O TabNet tabula `Coluna=Ano_atendimento`, então ele mesmo separa por ano de internação. Mas
+# ele só enxerga as internações que estão nos arquivos de competência SUBMETIDOS. Submeter só as
+# 12 competências do ano Y (o que este módulo fazia, e o que um aluno faz por padrão) mede
+# "internações de Y faturadas em Y" -- não o ano de atendimento. As internações de dezembro/Y
+# faturadas em janeiro/Y+1 ficam de fora do próprio oráculo.
+# ---------------------------------------------------------------------------
+
+
+def test_competence_file_names_janela_zero_e_a_consulta_ingenua_12_arquivos():
+    nomes = oracle_scrape.competence_file_names(2019, janela=0)
+
+    assert nomes == [f"nibr19{mes:02d}.dbf" for mes in range(1, 13)]
+    assert len(nomes) == 12
+
+
+def test_competence_file_names_janela_um_fecha_o_ano_de_atendimento_com_24_arquivos():
+    nomes = oracle_scrape.competence_file_names(2019, janela=1)
+
+    assert nomes[:12] == [f"nibr19{mes:02d}.dbf" for mes in range(1, 13)]
+    assert nomes[12:] == [f"nibr20{mes:02d}.dbf" for mes in range(1, 13)]
+    assert len(nomes) == 24
+
+
+def test_competence_file_names_nunca_submete_arquivo_que_o_tabnet_nao_oferece():
+    """A cauda do ano corrente não existe inteira: em 2026 o TabNet publica até Jun/2026. Pedir
+    `nibr2607.dbf` faria o TabNet responder tabela vazia -- que `parse_prn_table` trata como
+    FALHA (correto), derrubando a medição inteira por um arquivo que ainda não foi publicado."""
+    disponiveis = {f"nibr25{mes:02d}.dbf" for mes in range(1, 13)}
+    disponiveis |= {f"nibr26{mes:02d}.dbf" for mes in range(1, 7)}
+
+    nomes = oracle_scrape.competence_file_names(2025, janela=1, disponiveis=disponiveis)
+
+    assert len(nomes) == 18
+    assert "nibr2607.dbf" not in nomes
+    assert "nibr2606.dbf" in nomes
+
+
+def test_parse_arquivos_disponiveis_le_as_options_do_def():
+    html = (
+        '<SELECT NAME="Arquivos" ID="A" SIZE=4 MULTIPLE>\n'
+        '<OPTION VALUE="nibr2606.dbf" SELECTED >Jun/2026\n'
+        '<OPTION VALUE="nibr2605.dbf">Mai/2026\n'
+        '<OPTION VALUE="nibr1901.dbf">Jan/2019\n'
+        "</SELECT>"
+    )
+
+    assert oracle_scrape.parse_arquivos_disponiveis(html) == {
+        "nibr2606.dbf",
+        "nibr2605.dbf",
+        "nibr1901.dbf",
+    }
+
+
+def test_scrape_pairs_default_continua_ingenuo_para_nao_mover_a_fixture_congelada(monkeypatch):
+    """O default NÃO pode mudar: `oracle_ac_2019.json` foi raspado com a consulta ingênua e o
+    gate SC-7 compara contra ela. Mudar o default silenciosamente reescreveria o significado de
+    uma fixture congelada sem ninguém pedir."""
+    submetidos: list[list[tuple[str, str]]] = []
+
+    def fake_post(url, data, timeout=180):
+        submetidos.append(data)
+        return (FIXTURES_DIR / "tabnet_prn_sample.html").read_text(encoding="latin-1")
+
+    monkeypatch.setattr(oracle_scrape, "post_tabnet", fake_post)
+
+    scrape_pairs([{"tabnetCode": "4", "diseaseId": "amebiase", "uf": "AC", "ano": 2019}])
+
+    arquivos = [v for k, v in submetidos[0] if k == "Arquivos"]
+    assert len(arquivos) == 12
+
+
+def test_sum_uf_ano_zero_legitimo_quando_a_tabela_tem_outras_ufs_mas_nao_a_pedida():
+    """Medido ao vivo em AP/2019 (09-16): num agravo raro de UF pequena, o TabNet simplesmente
+    NÃO emite a linha do município — a tabela vem cheia de outras UFs e sem nenhuma do Amapá.
+    Isso é um zero verdadeiro, não uma falha, e tratá-lo como falha derrubava a medição inteira
+    de uma UF pequena, justamente o caso que mais interessa provar."""
+    linhas = [
+        ["Município", "2019"],
+        ["120040 RIO BRANCO", "7"],
+        ["355030 SAO PAULO", "12"],
+    ]
+
+    assert oracle_scrape._sum_uf_ano(linhas, "16", 2019) == 0
+
+
+def test_sum_uf_ano_ainda_levanta_quando_a_tabela_nao_tem_municipio_nenhum():
+    """A guarda original continua valendo onde ela realmente protege: uma tabela sem NENHUM
+    município é resposta malformada, não um zero — devolver 0 aí esconderia o defeito."""
+    linhas = [["Município", "2019"], ["Total", "0"]]
+
+    with pytest.raises(RuntimeError, match="nenhum município"):
+        oracle_scrape._sum_uf_ano(linhas, "16", 2019)
+
+
+def test_scrape_pairs_repete_quando_o_tabnet_devolve_o_formulario_em_vez_da_tabela(monkeypatch):
+    """Medido ao vivo em 2026-08-17: o TabNet devolve, de forma intermitente, a própria página do
+    `.def` (44 KB, sem tabela) em vez do resultado — e a MESMA requisição, repetida, funciona.
+    Numa corrida de centenas de pares isso é certeza estatística de falha, e derrubar a medição
+    inteira por um hiccup de rede seria perder ~20 min de raspagem por nada."""
+    chamadas = {"n": 0}
+    texto_bom = (FIXTURES_DIR / "tabnet_prn_sample.html").read_text(encoding="latin-1")
+
+    def fake_post(url, data, timeout=180):
+        chamadas["n"] += 1
+        if chamadas["n"] < 3:
+            return "<html><body>formulário do .def, sem tabela</body></html>"
+        return texto_bom
+
+    monkeypatch.setattr(oracle_scrape, "post_tabnet", fake_post)
+    monkeypatch.setattr(oracle_scrape.time, "sleep", lambda s: None)
+
+    resultado = scrape_pairs(
+        [{"tabnetCode": "4", "diseaseId": "amebiase", "uf": "AC", "ano": 2019}]
+    )
+
+    assert chamadas["n"] == 3
+    assert resultado[0]["valorTabnet"] == 2
+
+
+def test_scrape_pairs_desiste_depois_do_limite_e_nao_inventa_zero(monkeypatch):
+    """Esgotadas as tentativas, a falha SOBE. Devolver 0 seria fabricar um dado de oráculo —
+    a classe de erro mais cara possível aqui."""
+    monkeypatch.setattr(
+        oracle_scrape, "post_tabnet", lambda url, data, timeout=180: "<html>sem tabela</html>"
+    )
+    monkeypatch.setattr(oracle_scrape.time, "sleep", lambda s: None)
+
+    with pytest.raises(RuntimeError):
+        scrape_pairs([{"tabnetCode": "4", "diseaseId": "amebiase", "uf": "AC", "ano": 2019}])
+
+
+def test_scrape_pairs_com_janela_um_submete_as_competencias_do_ano_seguinte(monkeypatch):
+    submetidos: list[list[tuple[str, str]]] = []
+
+    def fake_post(url, data, timeout=180):
+        submetidos.append(data)
+        return (FIXTURES_DIR / "tabnet_prn_sample.html").read_text(encoding="latin-1")
+
+    monkeypatch.setattr(oracle_scrape, "post_tabnet", fake_post)
+
+    resultado = scrape_pairs(
+        [{"tabnetCode": "4", "diseaseId": "amebiase", "uf": "AC", "ano": 2019}], janela=1
+    )
+
+    arquivos = [v for k, v in submetidos[0] if k == "Arquivos"]
+    assert len(arquivos) == 24
+    assert "nibr2001.dbf" in arquivos
+    # a janela usada fica registrada NA SAÍDA -- um número de oráculo sem a janela que o produziu
+    # é exatamente o tipo de dado que causou o resíduo fantasma do SC-7.
+    assert resultado[0]["janelaCompetencia"] == 1

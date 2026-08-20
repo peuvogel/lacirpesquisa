@@ -53,6 +53,7 @@ import {
   MapGroupStrip,
 } from './MapGroupStrip';
 import { MapLegendHint } from './MapLegendHint';
+import { SihDivergenceNote } from '@/components/SihDivergenceNote';
 import { MapPrimaryActionBar } from './MapPrimaryActionBar';
 import { municipalityIdsForMeso } from '@/geo/mesoMembership';
 import { municipioTerritory, suggestGroupName } from '@/geo/municipioNames';
@@ -66,6 +67,7 @@ import {
   resolveCatalogHandoffIds,
   useMapAnalysis,
 } from './mapAnalysisState';
+import { getDivergenciaRazao } from '@/features/catalog/catalogAnalysisData';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
 
 function siglasToTerritories(siglas: string[]): TerritoryRef[] {
@@ -179,6 +181,12 @@ export function MapasPage() {
     () => state.groups.find((group) => group.id === state.activeGroupId) ?? null,
     [state.activeGroupId, state.groups],
   );
+
+  const activeVariableId = useMemo(() => {
+    if (activeGroup?.variableIds[0]) return activeGroup.variableIds[0];
+    const firstWithVars = state.groups.find((group) => group.variableIds.length > 0);
+    return firstWithVars?.variableIds[0] ?? null;
+  }, [activeGroup, state.groups]);
 
   const [dragSiglas, setDragSiglas] = useState<string[]>([]);
   const [dragProximity, setDragProximity] = useState(0);
@@ -910,6 +918,9 @@ export function MapasPage() {
           <ChoroplethLegend
             values={[]}
             activeVariableId={null}
+          />
+          <SihDivergenceNote
+            razao={activeVariableId ? getDivergenciaRazao(activeVariableId) : null}
           />
           {!hasInteracted ? <MapLegendHint /> : null}
           {hasUngroupedSelection ? (

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: milestone
 status: executing
-stopped_at: "09-13 COMPLETO (2026-08-13): os 10 packs de Variaveis regerados a partir de sih_metric_uf/sih_collection_status via PostgREST (chave anon), catalog:build repontado (corpus legado de 654 CSVs fora do caminho de build), metricless-diseases.json vazio. Achado real corrigido antes do commit: paginacao PostgREST sem order= explicito nao e estavel entre requisicoes (linha some de uma pagina e reaparece duplicada em outra, total de content-range identico) -- corrigido no gerador, registrado como achado aberto para audit.py/upload.py (mesmo padrao, fora do file_scope). 09-04 fechado retroativamente na mesma sessao (sem trabalho novo de coleta -- codigo e corrida ja estavam prontos ha dias, faltava so o SUMMARY/checkbox do ROADMAP). npm run gate verde em todos os commits. 09-14 e o unico plano pendente da fase. Ver 09-13-SUMMARY.md e 09-04-SUMMARY.md."
-last_updated: "2026-08-13T10:00:00.000Z"
-last_activity: 2026-08-13
+stopped_at: "09-18-RAZAO-DIVERGENCIA COMPLETO (2026-08-19). A justificativa da divergencia site x TabNet esta no ar: 67.136 linhas de sih_collection_status com divergencia_razao, os packs carregam o campo, e o mapa mostra a frase abaixo da legenda. Cadeia de fonte unica do Python ate a tela (paridade.py -> upload.py --proveniencia -> banco -> pack -> componente); a frase nao existe em TypeScript de proposito. Commits cd857df, 13ef993, cb5bf8a, gate verde com 844 testes. FASE 9 fechada (09-14 + 09-17 + 09-18). O QUE FICA PARA A OUTRA SESSAO, com handoff escrito em .planning/notes/2026-08-19-handoff-codex-guided-variables.md: (a) fetchHandoffMetrics.ts ainda consulta sih_metric_muni, que foi dropada, e devolve null calado para todo municipio -- o conserto e usar loadMunicipioPartition.ts, que os worktrees estao mexendo; (b) wirar a razao nas superficies de maior valor (ReviewAnalysisDialog, GuidedResultsSection, VariableDetailPanel), todas modificadas pelos worktrees. PROXIMO DESTINO do operador: populacao (agora cabe, ~258 MB projetados) ou Fase 10."
+last_updated: "2026-08-19T16:15:00.000Z"
+last_activity: 2026-08-19
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 31
-  completed_plans: 30
-  percent: 33
+  completed_plans: 42
+  percent: 50
 ---
 
 # Project State
@@ -26,6 +26,54 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 09 (pipeline-confi-vel-coleta-completa) — EXECUTING
+
+09-18-RAZAO-DIVERGENCIA COMPLETO (2026-08-19) -- fecha a metade que faltava do criterio do
+operador ("puxou TabNet e site lado a lado: ou batem, ou a diferenca esta justificada"). A
+paridade ja estava provada pelo 09-16 (134/134 exatos contra TabNet bem-formado); a JUSTIFICATIVA
+nao existia em lugar nenhum -- a coluna `divergencia_razao` estava nula nas 67.168 linhas.
+
+Agora a frase percorre uma cadeia de FONTE UNICA: `paridade.RAZAO_DIVERGENCIA_JANELA_CURTA` ->
+`upload.py --proveniencia` -> `sih_collection_status` -> `generateSihPacks.mjs` -> campo
+`divergenciaRazao` no pack -> `getDivergenciaRazao()` -> `<SihDivergenceNote />` abaixo da legenda
+do mapa. A frase NAO existe em TypeScript de proposito: copia-la criaria duas fontes que derivam
+em silencio. Em producao: 67.136 linhas com razao, 32 nulas (a proveniencia velha sem dado).
+
+Flag `--proveniencia` nova (molde isolado do `--municipio`): reescreve os dois graos do ledger sem
+tocar `sih_metric_uf`, sem tocar o Storage, sem chamar `release_cache`. Existe porque re-executar
+o swap inteiro para atualizar metadado trocaria a tabela viva a toa.
+
+`divergencia_pct` segue NULO de proposito: a lacuna do 09-16 e por (agravo, UF, ano) e a tabela
+nao tem coluna de UF -- um percentual nacional aqui seria inventado.
+
+Commits cd857df, 13ef993, cb5bf8a. Gate verde (844 testes). **HANDOFF ESCRITO** para as sessoes
+`codex/guided-variables-*` em `.planning/notes/2026-08-19-handoff-codex-guided-variables.md`.
+
+
+09-14 COMPLETO (2026-08-19) -- **o caminho TabNet morreu por remocao e o projeto voltou a caber
+com folga**. `sih_metric_muni` (1.099.403 linhas, 319 MB) saiu do banco depois de provado que as 27
+particoes do Storage servem o mesmo grao: 27/27 HTTP 200 por leitura anonima, 12.404.039 linhas,
+geografia batendo. **db_size 430 MB -> 112 MB.** A DDL foi bloqueada pelo classificador do sandbox
+DUAS vezes (16/08 e 19/08) e em nenhuma foi contornada via psql -- resolvida pelo caminho certo:
+backup verificado (`~/.lacir/backup-pre-09-14/`) e o operador rodando o push. Edge Function
+`sih-ingest` e `INGEST_SECRET` ja nao existem (segredo morto por REMOCAO, nao rotacao); varredura
+por VALOR de segredo no working tree deu zero. `test_suite_integrity.py` fecha o anti-esqueleto e o
+contrato da CLI, os tres casos provados nominais plantando sonda. `docs/SUPABASE-CATALOG.md`
+reescrita a partir de `pg_dump --schema-only` ao vivo. Ver 09-14-SUMMARY.md.
+
+**A populacao agora CABE**: a restricao de ordem do 09-06 esta satisfeita (nao contornada) --
+112 MB + ~146 MB medidos = ~258 MB projetados contra o teto de 500 MB.
+
+
+09-17-SWAP-DT-INTER COMPLETO (2026-08-18, ad-hoc sem PLAN.md formal) -- **producao passou a contar
+por data de internacao**. A terceira substituicao atomica: `sih_metric_uf` 207.664 -> 207.965
+linhas, 331 agravos mantidos, mas 84,7% das chaves comuns mudam de valor (+1,85% de internacoes
+nacionais). As 27 particoes regeneradas e reenviadas ao Storage ANTES do swap (escolha do operador
+no checkpoint -- a parte reversivel primeiro), os 10 packs refeitos DEPOIS. `upload.py`/
+`partitions.py` reaproveitados sem nenhuma alteracao, terceira corrida seguida.
+`sih-swap-contagens.sql` saiu 0 contra producao. Provado pelo caminho anonimo real do aluno:
+`amputacao_mmii` AC/2019 = 66 (servia 50), batendo o oraculo `qibr.def`; 135/135 pares exatos numa
+amostra de 5 agravos x 27 UFs. Ver 09-17-SWAP-DT-INTER-SUMMARY.md.
+
 Plan: 09-10 COMPLETO (2026-08-12) -- a substituicao real de producao (D-16) executada e provada:
 `sih_metric_uf` trocou de 30.313 linhas TabNet para 207.131 linhas de microdado (330 agravos, os
 dois locais), `sih_collection_status` populado pela primeira vez (33.456 linhas), as 27 particoes
@@ -82,12 +130,157 @@ content-range identico) -- corrigido no gerador, registrado como achado aberto (
 fora do file_scope) para audit.py/upload.py, que usam o mesmo padrao. `metricless-diseases.json`
 esvaziado. Ver 09-13-SUMMARY.md.
 
-Proximo: 09-14 e o unico plano pendente da fase. Segue desbloqueado desde o
-09-10-SEGUNDA-SUBSTITUICAO (amputacao_mmii em producao).
-Status: Ready to execute (09-14)
-Last activity: 2026-08-13
+09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal, brief do coordenador) -- a
+agregacao passou a chavear o `ano` por `DT_INTER` (data em que a internacao ACONTECEU) em vez de
+`ANO_CMPT` (competencia em que a AIH foi FATURADA), por decisao do operador em base
+epidemiologica: por competencia, a taxa por 100 mil casa numerador e denominador de anos
+diferentes, o Prais-Winsten le um atraso sistematico de faturamento como TENDENCIA, e uma
+internacao de dezembro faturada em janeiro cai no ano errado.
+
+**ACHADO CENTRAL -- o residuo do SC-7 nunca existiu.** O vies sempre-positivo que o projeto
+carregava desde o spike de 2026-08-04 (mediana +4,14% -> +3,45% -> +5,10% -> +7,90%), que motivou
+~61 entradas em `cid-divergencias.json`, um checkpoint clinico e dois bloqueios de upload, era
+artefato de comparar um agregado por COMPETENCIA contra um oraculo por ATENDIMENTO TRUNCADO A UMA
+COMPETENCIA: `oracle_scrape.py` submete ao TabNet so os 12 arquivos `nibr{AA}MM.dbf` do ano
+pedido e le a coluna `Ano_atendimento`, entao mede "internacoes de Y faturadas na competencia Y",
+nunca o ano de atendimento completo. Alinhadas as duas pontas para medirem a MESMA populacao, o
+gate vai de `exato=34/explicado=61/inexplicado=3` (ok=False) para **`exato=98/explicado=0/
+inexplicado=0` (ok=True)** -- 98 de 98 pares com delta EXATAMENTE ZERO, sem nenhuma correcao de
+faixa CID nova (as existentes continuam load-bearing: sem elas cai para 96/2). O matcher CID, o
+mapa da Lista Morb, o filtro `IDENT='1'` e a atribuicao territorial estavam corretos o tempo todo.
+
+Validacao independente contra o oraculo `qibr.def` (que submete os 156 arquivos dos 13 anos e
+portanto mede ano de atendimento de verdade): `amputacao_mmii` AC/2019 vai de 50 (-24,2% por
+ANO_CMPT) para **66 = 66, EXATO**; e serie ano a ano das UFs ja recoletadas bate **24/24 exatos**
+em 2013-2024 (DF e RR), contra oscilacao de -24,2% a +16,7% sob ANO_CMPT.
+
+Defasagem medida (nunca suposta) em ~2,2 milhoes de registros reais (AC 2019/2020/2025, SP
+2026-01..06, DF/PR, RR completa): **nunca passa de 1 ano**, decai por fator ~4-8 por mes, e
+**zero `DT_INTER` malformado**. Janela de competencia da coleta passa a 2013-01..2026-05 (4.212
+obrigatorios + 135 de cauda oportunista); a janela D-11 (2013-2025) NAO foi alargada -- passou a
+significar ano de INTERNACAO. Commits `2edf1c4`, `5607324`, `55dfdbb`; `npm run gate` verde nos
+tres. Recoleta nacional (4.347 arquivos, ~8,8 GB) EM ANDAMENTO em segundo plano. Producao NAO
+re-carregada (instrucao explicita do brief). Ver `09-15-DT-INTER-SUMMARY.md`.
+
+Proximo: 09-14 e o upload por DT_INTER. RECOLETA CONCLUIDA 2026-08-18 (27/27, 4.347 arquivos,
+13.558.229 linhas, zero falhas) -- os 27 agregados estao em `~/.lacir/sih-cache/agregados/`
+(161 MB) esperando o upload. Producao aguarda autorizacao do operador para um `upload.py` novo
+com o dado por DT_INTER; escopo, restricoes e provas de aceite em
+`.planning/MILESTONE-CONTEXT.md`.
+Status: 09-15-DT-INTER com codigo completo e provado; recoleta CONCLUIDA
+Last activity: 2026-08-18
 
 ### Bloqueios abertos
+
+- **[09-18, 2026-08-19] ENTREGUE PELA METADE DE PROPOSITO: a razao so aparece no mapa.** O
+  `<SihDivergenceNote />` esta wirado em `MapasPage.tsx` (logo apos `ChoroplethLegend`), mas as
+  superficies de MAIOR valor -- `ReviewAnalysisDialog`/`ReviewAnalysisDataDialog` (onde o aluno
+  confere os numeros antes de rodar o teste), `GuidedResultsSection`, `VariableDetailPanel` --
+  sao todas modificadas pelos dois worktrees `codex/guided-variables-*` (105 e 117 arquivos de
+  `src/` cada). Nao wirei la para nao criar conflito no ponto exato onde a outra sessao trabalha.
+  O componente ja aceita `razao?: string | null` e renderiza `null` quando nao ha: e so passar
+  `getDivergenciaRazao(variableId)`. **Risco de merge conhecido e registrado:** o proprio
+  `MapasPage.tsx` tambem e modificado pelos dois -- o diff foi deixado no minimo (dois imports e
+  um elemento) e esta reproduzido no handoff para reaplicacao trivial. Ver
+  `.planning/notes/2026-08-19-handoff-codex-guided-variables.md`.
+
+- **[09-14, 2026-08-19] REGRESSAO da DROP: `fetchHandoffMetrics.ts` ainda consulta a tabela
+  apagada.** `src/features/catalog/fetchHandoffMetrics.ts:143` faz
+  `supabase.from('sih_metric_muni')` para o ramo de grao municipio. Com a tabela dropada o
+  PostgREST devolve 404, o codigo faz `console.warn` + `continue`, e o lookup devolve **null para
+  toda metrica de municipio** -- degrada sem quebrar, mas e TRUNCAMENTO SILENCIOSO, exatamente o
+  que a Fase 10 do ROADMAP proibe e o que o D-14 existe para tornar distinguivel. Chamado por
+  `src/routes/mapas/ReviewAnalysisDialog.tsx` e `src/routes/mapas/assembleHandoffTable.ts`.
+  **Nenhum teste cobre esse ramo** -- por isso o gate ficou verde.
+
+  Atenuante medido, nao desculpa: ANTES da DROP esse ramo servia o corpus TabNet LEGADO enquanto o
+  mapa ja servia DT_INTER pelo Storage -- o handoff e o mapa discordavam em silencio. A DROP
+  trocou "numero errado calado" por "nenhum numero calado". Menos pior, ainda errado.
+
+  **Conserto conhecido e NAO aplicado:** `src/features/catalog/loadMunicipioPartition.ts` ja e o
+  leitor correto do Storage (D-20/D-21, com cache de promessa e erro explicito em vez de `[]`
+  silencioso); o ramo de municipio do handoff precisa passar a usa-lo. NAO foi feito de proposito:
+  **os DOIS worktrees `codex/guided-variables-flow` e `codex/guided-variables-technical` tem
+  `loadMunicipioPartition.ts` modificado**, entao mexer nessa integracao agora conflita com a outra
+  sessao. Decisao do operador: fazer aqui depois de conferir os worktrees, ou deixar para a Fase 10,
+  que e a dona declarada do drill municipal.
+
+- **RESOLVIDO (2026-08-18, 09-17-SWAP-DT-INTER): producao NAO recarregada -- LEVANTADO.** O
+  bloqueio registrado pelo 09-15/09-16 ("aguarda autorizacao do operador para o upload por
+  DT_INTER") esta fechado: o operador autorizou no checkpoint humano, com o `--dry-run` na mao, e
+  a substituicao rodou. Producao serve DT_INTER desde 2026-08-18T18:23Z.
+
+- **[09-17, 2026-08-18] Colisao de literal: 2 testes perderam poder de discriminar.**
+  `embolia_e_trombose_arteriais` SP/2019/ocorrencia foi de 5709 para **5660** -- e 5660 e
+  EXATAMENTE o literal que `catalogAnalysisData.test.ts` e `assembleHandoffTable.test.ts` travavam
+  antes da Fase 9 (commit `a4356f2`, valor TabNet-era), trocado para 5709 em `03ef66a` justamente
+  para exclui-lo. Contado por DT_INTER o numero voltou por coincidencia. O valor novo foi conferido
+  na cadeia inteira antes de trocar (agregado local = producao lida pelo PostgREST anonimo = pack),
+  entao esta certo -- mas **o literal, sozinho, nao distingue mais as duas fontes**: uma regressao
+  que voltasse a ler o corpus legado passaria por ele. Ainda distinguem: o `toBe(expected)` que le
+  o pack direto (so em `catalogAnalysisData`) e o `not.toBe(898000)` (nos dois). Registrado no
+  comentario de cada teste. **Nao reestruturado -- e decisao de design do operador.**
+
+- **[09-17, 2026-08-18] 16 linhas de proveniencia velha sobrevivem a cada swap.**
+  `sih_collection_status` e upsert, nunca truncado (o swap trunca so `sih_metric_uf`), entao
+  combinacoes que deixam de existir ficam para tras declarando `coletado`. Medido agora:
+  `tetano_neonatal`/2025 e `tifo_exantematico`/2018 (2 combinacoes x 2 locais x 4 medidas), com
+  `derived_at` de 2026-08-13. Nao derrubam o verify porque a checagem de proveniencia e
+  **unidirecional** (`sih_metric_uf` -> `collection_status`, sem a reciproca) e nao afetam o site.
+  Comportamento pre-existente das TRES substituicoes, agora medido em vez de suposto. Conserto
+  possivel: truncar o grao correspondente antes do upsert, ou adicionar a checagem reversa ao
+  verify.
+
+- **[09-17, 2026-08-18] A role `anon` tem GRANT de TRUNCATE em `sih_metric_uf`.** Inspecao de RLS
+  mostrou `DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE` para `anon` (default do
+  Supabase). RLS bloqueia DELETE/INSERT/UPDATE -- a unica policy e `sih_metric_uf_select_anon` --
+  mas **TRUNCATE nao e sujeito a RLS**. Hoje inalcancavel (o PostgREST nao expoe o verbo), entao e
+  item de endurecimento e nao buraco ativo. Nota de metodo: o DELETE anonimo devolve **204**, nao
+  401 -- ambiguo por construcao, porque RLS sem policy de DELETE nao gera erro, so afeta 0 linhas;
+  quem responde e o catalogo de policies, nao o codigo HTTP.
+
+- **RESOLVIDO (2026-08-18) -- [09-15-DT-INTER, 2026-08-17] Disco insuficiente para as duas maiores UFs.** Livre no inicio
+  da recoleta: **2,4 GB**. A guarda de disco projeta MG em 2,33 GB e SP em 2,51 GB (projecao +
+  margem de 500 MB), entao as duas provavelmente serao recusadas com `DiscoInsuficienteError` --
+  que e o comportamento CORRETO (para a corrida limpo em vez de arriscar o disco de boot). **Nao
+  foi contornado**: a guarda nao foi afrouxada e nenhum arquivo do operador foi apagado. Acao do
+  operador: liberar ~1 GB (ha 1,2 GB em `~/Library/Caches/com.todesktop.*/ShipIt`, cache de
+  auto-update regeneravel) e reexecutar `npm run pipeline:collect` -- a retomada e por UF e nao
+  re-baixa nada ja concluido.
+
+  **Como fechou (2026-08-18):** a guarda NUNCA foi afrouxada e nenhum arquivo do operador foi
+  apagado sem autorizacao. O operador autorizou remover `~/.ollama/models` (um modelo,
+  `qwen3:8b`, 4,9 GB, re-baixavel com `ollama pull qwen3:8b`; lembrete em
+  `~/.ollama/modelos-removidos.txt`). `~/.gemini/tmp` foi autorizado no mesmo pedido mas NAO
+  apagado: inspecao mostrou 15.766 `.jsonl` de historico de conversa por projeto, ainda sendo
+  escritos -- nao temporarios descartaveis como a proposta afirmava, e o Ollama sozinho ja dava
+  folga (1,5 GB -> 6,3 GB). RS passou na primeira tentativa apos a liberacao. MG e SP falharam
+  duas vezes com `[Errno 54] Connection reset by peer` na ABERTURA da conexao (estrangulamento do
+  FTP apos 25 UFs seguidas do mesmo IP, nao corrupcao nem disco); recuperadas com retomada de
+  recuo progressivo (5/15/30/45/60 min). Achado operacional: religar imediatamente um servidor
+  que acabou de derrubar a conexao queima tentativas a toa.
+
+- **[09-15-DT-INTER, 2026-08-17] `oracle_scrape.py` produz um oraculo truncado (nao corrigido,
+  fora do file_scope).** Ele submete ao TabNet so os 12 arquivos de competencia do ano pedido e
+  le `Ano_atendimento` -- portanto nunca mede um ano de atendimento completo. O gate SC-7 hoje
+  compara, de proposito e corretamente, a populacao de COMPETENCIA (a fixture do gate e a
+  competencia 2019, que e o que o oraculo enxerga). Consertar `oracle_scrape.py` para submeter
+  todas as competencias necessarias -- como `coleta_vascular_amputacao.py`/`qibr.def` ja faz --
+  permitiria reconciliar o ano de admissao completo tambem no eixo CID.
+
+- **[09-15-DT-INTER, 2026-08-17] `cid-divergencias.json`: ~61 entradas INERTES a aposentar.** As
+  entradas de "divergencia de lote por competencia de processamento" descrevem um residuo que,
+  medido corretamente, nao existe -- nenhuma e consultada hoje (nenhum par tem delta nao-zero).
+  Nao removidas por esta plan (`scripts/catalog/` fora do file_scope; a decisao e do operador),
+  mas uma explicacao que nao explica mais nada nao pode continuar de pe como se explicasse.
+
+- **[09-15-DT-INTER, 2026-08-17] Achado colateral: o DATASUS RE-PUBLICA arquivos de competencia
+  ja fechados.** Medido: `RDDF1708` e `RDPR2004` servidos hoje tem contagem diferente da fatia
+  arquivada em 2026-08-12 (16.292 vs 2.292; 56.146 vs 25.493) e **zero** dos defeitos que as
+  fixtures de regressao capturam (registro corrompido do DBC, `MUNIC_MOV` em branco). As guardas
+  continuam valendo (a corrupcao era real e pode voltar), mas esses dois arquivos ja nao a
+  reproduzem -- por isso as fixtures ficaram INTOCADAS e a coluna `DT_INTER` que faltava e
+  derivada no harness de teste, nunca gravada dentro do binario.
 
 - **RESOLVIDO (2026-08-13, 09-10-SEGUNDA-SUBSTITUICAO, ad-hoc sem PLAN.md formal): segunda substituicao atomica de producao (dataset completo, 331 agravos) executada e reconferida.** Re-coleta nacional completa (27/27 UFs `agregado_reciclado`, 0 `falhou`) com o eixo `PROC_REA` (09-10-PROCEDIMENTO) incluido -- `amputacao_mmii` presente pela primeira vez em producao (702 linhas = 27 UFs x 13 anos x 2 locais, completo). Reaproveitou `upload.py`/`partitions.py` do 09-10 SEM NENHUMA alteracao. As 27 particoes de municipio foram REGENERADAS a partir dos agregados novos e RE-ENVIADAS ao Storage (bucket `sih-municipio`, 130,05 MB total, SP=19,36 MB, sob o teto de 50 MB/objeto) e `upload.py --tabela sih_metric_uf` trocou `sih_metric_uf` atomicamente (207.131->207.664 linhas, 330->331 agravos, ~3min29s de parede). **A sessao que lancou o swap fechou NO MEIO do polling, mas a parte irreversivel ja tinha completado com sucesso antes disso** -- reconferido de forma independente (nao assumido) numa sessao de continuacao: `sih_metric_uf`=207664/331 agravos, `sih_collection_status`=33560, `sih_metric_muni`=1099403 (intocada), `db_size`=420 MB, nenhuma tabela `*_staging` orfa, `sih-swap-contagens.sql` regenerado com `ESPERADO_SIH_METRIC_UF=207664` (commit `df95381`) saiu 0 contra producao real (5 RAISE EXCEPTION, nenhum disparou). `amputacao_mmii` provada end-to-end pelo caminho anonimo real do app (PostgREST, `GET` com chave `anon`, nao SQL direto): AC/2019/ocorrencia=50 internacoes/6 obitos, batendo exato com a reconciliacao do 09-10-PROCEDIMENTO. Leitura anonima confirmada (200), escrita anonima recusada (401 PostgREST RLS, 403 Storage RLS). Discrepancia de 3 linhas entre 207.667 (chaves unicas nos agregados brutos) e 207.664 (producao) investigada e explicada: 3 linhas de grao UF com `UF_ZI` malformado (`'02'`, `'00'`, `'  '`) descartadas silenciosamente por `partitions._uf_dona` (mesma classe do 09-04-FIX-MUNICIPIO-BRANCO, escala menor, nao corrigida -- fora do file_scope desta corrida). `npm run gate` verde. Ver `09-10-SUMMARY.md` §"Segunda substituição de produção — dataset completo, 331 agravos".
 
@@ -259,11 +452,15 @@ None yet.
 - **[investigacao nova 2026-08-10] RESOLVIDO -- colisao residual dos codigos `9` e `77`:** faixa correta determinada por fonte autoritativa (tabela oficial DATASUS `mxcid10lm.htm`, correspondencia exata de rotulo) + medicao empirica ao vivo (TabNet + microdado, coincidencia exata 26=26 em SP/2019 e 0=0 em AC/2019 para o codigo 9, que nao tem item proprio na tabela impressa). Achado: a cadeia envolvia TRES codigos com valores trocados (9 tinha o valor de 14; 15/restante_de_outras_tuberculoses tinha o valor de 77; 77 tinha o valor de 274), nao dois -- corrigir 77 sem corrigir 15 primeiro criaria uma colisao nova. As tres correcoes (`cid-corrections.json`, tabnetCode 9/15/77) aplicadas juntas, varredura de colisao sobre o mapa inteiro (493 tokens) confirma zero sobreposicoes. Efeito medido na fixture congelada do gate (AC/2019): `tuberculose_miliar` (14) passa de ausente para EXATO (3=3); `doencas_infecciosas_e_parasitarias_congenitas` (274) passa de ausente para EXPLICADO (53 vs 50, +6%, banda ja aceita). `scripts/catalog/cid-divergencias.json` (`PENDENTE_colisao_codigos_9_e_77`) tem `bloqueiaUpload: false`. Ver `pipeline/sih/reports/reconciliacao-sc7.md` §"Investigacao nova, 2026-08-10".
 - **[investigacao nova 2026-08-10, RESOLVIDO pelo fix de 2026-08-10] 7 categorias com delta extremo, mecanismo identificado E CORRIGIDO:** `restante_de_outras_tuberculoses` (+3.451%, faixa CID corrigida nesta investigacao -- residuo agora +33%/+18% com IDENT=1), `demencia` (+665%), `tuberculose_pulmonar` (+108%), `doenca_de_parkinson` (+47,5%), `tuberculose_do_sistema_nervoso` (+47,4%), `doenca_de_alzheimer` (+45,7%), `tuberc_intest_peritonio_glangl_mesentericos` (+44,4%) -- deltas medidos em SP/2019 ANTES do fix. Mecanismo identificado nesta investigacao: campo `IDENT` (tipo de AIH) do microdado nao era filtrado por `aggregate.py`; `IDENT='5'` (AIH de longa permanencia, renovacao mensal de faturamento, nao nova admissao) concentrava 11,5% a 86,0% dos registros destas sete categorias em SP/2019 (contra 2,7% de baseline no dataset inteiro e 0% em condicoes agudas como apendicite/colelitiase) e era 0% em TODAS as sete em AC/2019 -- explica com mecanismo, nao so volume, por que o Acre nunca revelou o defeito. **RESOLVIDO (fix 2026-08-10, commits `defa477`/`53b7323`/`dfcffed`):** operador aprovou filtrar `aggregate.py` para contar so `IDENT='1'`. Remedido em SP/2019 com o codigo real (nao script ad-hoc): os deltas colapsam para +3,7% a +21,1% -- a mesma ordem de grandeza da banda de competencia de processamento ja aceita. `scripts/catalog/cid-divergencias.json` (`PENDENTE_sete_categorias_delta_extremo_sp`) atualizado para `bloqueiaUpload: false`, com `resolvidoEm`/`resolvidoPor` e o campo `residuoNaoBloqueante` documentando o resto pequeno de AC (3 categorias, mesmos deltas de antes, mecanismo diferente -- nao bloqueia). Ver `.planning/phases/09-pipeline-confi-vel-coleta-completa/09-07-IDENT-FIX-SUMMARY.md` e `pipeline/sih/reports/reconciliacao-sc7.md` §"Remedicao pos-fix IDENT, 2026-08-10".
 - [09-10] **RESOLVIDO 2026-08-12 -- a substituicao real de producao (D-16) rodou.** A corrida do `collect` fechou 27/27 UFs `agregado_reciclado` (0 `falhou`, MA retomado com sucesso), a guarda de trava do `09-04-GUARDA-TRAVAMENTO` seguiu sem disparar de novo, e o operador autorizou a execucao apos medir SP de verdade (19,26 MB, dentro da faixa projetada). `upload.py` executou contra producao real: `sih_metric_uf` 30.313 -> 207.131 linhas (330 agravos, ocorrencia+residencia), `sih_collection_status` 0 -> 33.456 linhas de proveniencia, `sih-swap-contagens.sql` saiu 0 (5 RAISE EXCEPTION, nenhum disparou). As 27 particoes de municipio reais tambem foram enviadas ao Storage (bucket `sih-municipio`, 130,31 MB) -- preparacao para o `09-14`, que continua sendo quem efetivamente remove `sih_metric_muni` do banco (ainda presente, 1.099.403 linhas, 319 MB). A restricao de ordem populacao/municipio foi provada AO VIVO (RuntimeError real contra producao, nao so teste local). Dois bugs reais encontrados e corrigidos durante a propria execucao: `main()` nunca escrevia `sih_collection_status` (Rule 1), e a primeira correcao usava `INSERT` por linha, medida em 35+ minutos sem terminar contra producao -- reescrita para `COPY` em lote (Rule 3). Ver `09-10-SUMMARY.md`.
+- **RESOLVIDO (2026-08-19): 09-14 COMPLETO, o bloqueio abaixo esta LEVANTADO.** O operador rodou o `supabase db push` manualmente (a acao exata que este registro pedia) depois de o backup verificado existir. Reconferido de forma INDEPENDENTE contra producao, nao assumido do relato: `to_regclass('public.sih_metric_muni')` = null, o indice secundario sumiu, `sih_metric_uf`=207.965 / `sih_disease`=331 / `sih_collection_status`=67.168 todas INTACTAS, `sih-retire.sql` exit 0, migracao `20260806000000` aplicada no Remote, nenhuma `*_staging` orfa. **`db_size` caiu de 430 MB para 112 MB** -- 318 MB liberados, folga sob o teto vai de 70 MB para 388 MB. Task 3 fechada no mesmo dia (`test_suite_integrity.py` + `docs/SUPABASE-CATALOG.md` reescrita ao vivo). Ver `09-14-SUMMARY.md`. Historico do bloqueio preservado abaixo para auditoria.
+
+- 09-14 Task 2 [BLOCKING]: gerador/migracao/rollback/verify de aposentadoria de sih_metric_muni (D-20) construidos, ensaiados ponta a ponta em Postgres local Docker (caminho de falha com contagem corrompida abortando via RAISE EXCEPTION, caminho feliz com DROP+verify saindo 0, rollback recriando a tabela byte-identica) e commitados (a30c308). O gate de auditoria foi reconfirmado de forma independente (log pipeline/sih/reports/audit-pos-fix.log: coletado=67120 faltantes-municipio=864 esperado=68848 igual a 331x4x2x2x13 ok=True, commit 5468715) e as 27 particoes do Storage foram provadas por leitura anonima real hoje (HTTP 200 nas 27, bytes identicos ao relatorio anterior, conteudo com grao municipio real -- SP 645 municipios, MG 853, AC 22, todos batendo com a geografia real -- total 12327573 linhas, identico ao dry-run independente do upload.py --municipio do 09-12). Apesar disso, o comando supabase db push contra a URL de producao foi BLOQUEADO pelo classificador de seguranca do sandbox do Claude Code (DDL destrutiva em producao) -- nao por falta de prontidao, e o agente NAO tentou contornar via psql direto (seria burlar a mesma protecao). sih_metric_muni SEGUE em producao intacta (1099403 linhas, 319 MB). Task 3 (docs) nao foi iniciada porque descreveria sih_metric_muni como ausente enquanto ela ainda existe -- falso no momento da escrita. Acao necessaria do operador: rodar manualmente o supabase db push com --db-url apontando para a variavel SIH_PIPELINE_DB_URL de .env.pipeline (o mesmo padrao ja usado em todo 09-14/09-10/09-03), e depois o supabase db query -f supabase/verify/sih-retire.sql para confirmar -- OU conceder permissao Bash para esse comando especifico a um agente futuro. So depois disso a Task 3 e o fechamento da fase 9 podem seguir. **RECONFIRMADO 2026-08-19, com backup feito:** o mesmo `supabase db push --db-url` foi tentado de novo e BLOQUEADO pelo mesmo classificador -- e de novo NAO foi contornado via psql. Antes da tentativa o operador pediu backup e ele existe, verificado: `~/.lacir/backup-pre-09-14/` com `producao-completo.dump` (12 MB, -Fc -Z9, as 8 tabelas com DDL e DATA), `sih_metric_muni.csv.gz` (6,3 MB, 1.099.404 linhas com header), `SHA256SUMS` e `MANIFESTO.md`. Integridade provada por `pg_restore -f /dev/null` (descomprimiu inteiro) e as contagens lidas de DENTRO do dump batem exato com producao (muni=1.099.403, uf=207.965, status=67.168, disease=331). Pre-condicao do D-20 tambem reprovada HOJE contra as particoes NOVAS por DT_INTER: 27/27 HTTP 200 por leitura anonima, total 12.404.039 linhas, identico ao dry-run independente do `upload.py --municipio` de 18/08, geografia batendo (SP 645, MG 853, AC 22, RR 15). NOTA sobre o criterio do plano: ele pede que o total nas particoes seja IGUAL a contagem de `sih_metric_muni` -- isso e insatisfazivel e indesejavel, sao datasets diferentes (12,4M de microdado por DT_INTER contra 1,1M do TabNet legado, 11,3x mais cobertura). Lido como prova de COBERTURA, que foi como a sessao de 16/08 ja o tratou. Parte da Task 3 que nao depende da DROP foi ENTREGUE nesta sessao (commit e58faf7, `test_suite_integrity.py`: anti-esqueleto em dois casos + contrato da CLI, os tres provados nominais plantando sonda). O que resta e SO: a DROP e a reescrita de `docs/SUPABASE-CATALOG.md` (adiada pelo mesmo motivo de 16/08 -- hoje ela ainda cita `uploadSihToSupabase` e `scrape:overnight`, ambos ja inexistentes).
 
 ## Session Continuity
 
-Last session: 2026-08-13T10:00:00.000Z
-Stopped at: 09-13 COMPLETO (2026-08-13): os 10 packs de Variaveis regerados a partir de sih_metric_uf/sih_collection_status via PostgREST (chave anon), catalog:build repontado, metricless-diseases.json vazio. Achado real corrigido: paginacao PostgREST sem order= explicito nao e estavel entre requisicoes -- corrigido no gerador, registrado como achado aberto para audit.py/upload.py (fora do file_scope). 09-04 fechado retroativamente na mesma sessao, sem trabalho novo de coleta. npm run gate verde em todos os commits. 09-14 e o unico plano pendente da fase. Ver 09-13-SUMMARY.md e 09-04-SUMMARY.md.
+Last session: 2026-08-17T19:45:00.000Z
+Stopped at: 09-16-PARIDADE CONCLUIDO (2026-08-17, ad-hoc sem PLAN.md formal). O criterio do operador ("quando user puxe dado tabnet e site lado a lado sejam iguais e se diferentes justificados") esta PROVADO nas duas metades, com as duas medidas SEPARADAMENTE. (1) Paridade bem-formada: 134 pares EXATOS com delta ZERO -- 98 de AC/2019 (site 11.211 = TabNet bem-formado 11.211) mais 36 da amostra vascular nivel 1 (AC/2015, AP/2019, DF/2022, PE/2019, PE/2024, RR/2019), sem NENHUM tuning. (2) Lacuna da consulta ingenua medida e distribuida: AC/2019 min 0,00% p25 0,00% MEDIANA 5,51% p75 13,68% p90 24,47% max 100%; site maior em 65 pares, igual em 33, MENOR EM NENHUM. A mediana conversa com a defasagem nacional medida na coleta (6,398% das AIH faturadas no ano seguinte, 35,4 mi de registros) -- duas fontes independentes, mesmo mecanismo. FERRAMENTA: oracle_scrape.py ganhou janela de competencia (janela=0 ingenua com 12 arquivos, janela=1 bem-formada com 24), retentativa (o TabNet devolve o formulario de forma intermitente) e zero-legitimo para UF pequena; modulo novo sih_pipeline.paridade emite justificativa legivel por maquina na chave EXATA de sih_collection_status (divergencia_pct/divergencia_razao ja existem -- nao foi preciso inventar schema). CORRECAO ao 09-15: a afirmacao de que a defasagem "nunca passou de 1 ano" e FALSA contra o dado real (1 registro em RO com defasagem 2, em 35.455.908); confirmados zero descarte de DT_INTER e amputacao_mmii AC/2019 = 66 = 66 (36/39 pares exatos em AC/RR/DF x 13 anos). cid-divergencias.json APOSENTADO (64 -> []) com tres medicoes: nenhuma e consultada, o delta alegado e zero medido direito, e correlacao de Pearson 0,777 entre o delta alegado e a lacuna ingenua. Commits d6156ce, 1fd523c, 77d0c9c, ea0da97, cc0a8b9, 4d2c964, 5673cbd, 81522f1, 0e13269, edc2e2f, 2b79fb5 -- gate verde em todos. BLOQUEIOS: (a) recoleta parada em 15/27 UFs por DISCO (372 MB livres contra 2.508 MB de pico em SP; o pico e IRREDUTIVEL porque agregar a UF em pedacos quebraria o DT_INTER; guarda NAO afrouxada e nenhum arquivo do operador apagado -- ver reports/recoleta-dt-inter.md para os ~2,7 GB de caches regeneraveis que destravariam, decisao do operador); (b) upload de producao BLOQUEADO POR DADO, nao por cautela: swap() e TRUNCATE+INSERT (substituicao total) e com 15/27 UFs apagaria 12 UFs incluindo SP/MG/BA/RS (207.664 -> 139.269 chaves, -32,9%); efeito real do DT_INTER isolado nas mesmas 15 UFs e +1.102.539 internacoes (+1,64%). Residuo aberto registrado sem arredondar: agregados ANO_CMPT das 27 UFs somam 207.667 chaves contra 207.664 em producao (diferenca de exatamente 3, NAO explicada). Ver 09-16-PARIDADE-SUMMARY.md.
+Stopped at (anterior): 09-15-DT-INTER EM ANDAMENTO (2026-08-17, ad-hoc sem PLAN.md formal): agregacao passou a chavear o ano por DT_INTER (data de internacao) em vez de ANO_CMPT (competencia de faturamento). ACHADO CENTRAL: o residuo do SC-7 nunca existiu -- era artefato de comparar agregado por competencia contra um oraculo por atendimento truncado a uma competencia (oracle_scrape.py submete so os 12 arquivos do ano). Alinhadas as pontas, o gate vai de exato=34/explicado=61/inexplicado=3 (ok=False) para exato=98/explicado=0/inexplicado=0 (ok=True), delta ZERO em 98/98 pares, sem nenhuma correcao nova. amputacao_mmii AC/2019 fecha 66=66 contra o oraculo qibr.def (era 50, -24,2%); serie 2013-2024 bate 24/24 exatos em DF e RR. Defasagem medida em ~2,2M registros reais nunca passa de 1 ano; zero DT_INTER malformado. Janela de competencia da coleta vai a 2026-05 (4.212 obrigatorios + 135 de cauda oportunista); D-11 NAO alargada -- passou a significar ano de internacao. Commits 2edf1c4, 5607324, 55dfdbb, gate verde nos tres. Recoleta nacional (4.347 arquivos) EM ANDAMENTO; producao NAO re-carregada (instrucao do brief). Bloqueio novo: disco (2,4 GB livres) recusa MG e SP pela guarda. Ver 09-15-DT-INTER-SUMMARY.md.
 Resume file: None
 
 ## Performance Metrics

@@ -25,8 +25,6 @@
     "catalog:sih-schema": "node scripts/catalog/generateSihSchemaMigration.mjs",
     "catalog:sih-swap-verify": "node scripts/catalog/generateSihSwapVerify.mjs",
     "catalog:sih-packs": "node scripts/catalog/generateSihPacks.mjs",
-    "scrape:sih-multi": "python3 \"trabalhos datasus/scripts/coleta_sih_multi_disease.py\" --skip-done",
-    "scrape:overnight": "python3 \"trabalhos datasus/scripts/launch_overnight.py\"",
     "pipeline:test": "cd pipeline/sih && uv run pytest -q",
     "pipeline:reconcile-gate": "cd pipeline/sih && uv run pytest tests/test_reconcile_gate.py -x -q",
     "pipeline:enumerate": "cd pipeline/sih && uv run python -m sih_pipeline.cli enumerate",

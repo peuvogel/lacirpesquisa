@@ -298,9 +298,14 @@ def test_main_composicao_sc7_para_ac_e_identica_ao_gate_congelado_apos_correcao_
     internação ocorreu (`MUNIC_MOV` nunca aponta para fora do arquivo que o produz) -- a correção
     de contaminação/subcontagem de RESIDÊNCIA não as afeta. Prova ao vivo contra a fixture
     congelada real (`rdac_2019.parquet`, mesma usada pelo gate permanente
-    `test_reconcile_gate.py`), via fallback bruto isolado de `main()`, reproduzindo
-    `exato=34/explicado=61/inexplicado=3` -- medido igual, byte a byte no texto de saída, antes E
-    depois desta correção (medição ao vivo registrada no SUMMARY desta correção)."""
+    `test_reconcile_gate.py`), via fallback bruto isolado de `main()`.
+
+    ATUALIZADO 2026-08-17 (09-15-DT-INTER): a composição esperada passou de
+    `exato=34/explicado=61/inexplicado=3` para `exato=98/explicado=0/inexplicado=0`, e o código
+    de saída de `main()` de 1 para 0. A propriedade que ESTE teste verifica não mudou (a seleção
+    por território continua não movendo a composição do SC-7) -- o que mudou é a composição
+    contra a qual ela é verificada, e a razão está inteiramente documentada na docstring de
+    `test_reconcile_gate.py`: o agregado e o oráculo passaram a medir a mesma população."""
     monkeypatch.setenv("SIH_PIPELINE_CACHE_DIR", str(tmp_path))
     destino = cache_path("parquet") / "RDAC1901.parquet"
     destino.parent.mkdir(parents=True, exist_ok=True)
@@ -309,8 +314,8 @@ def test_main_composicao_sc7_para_ac_e_identica_ao_gate_congelado_apos_correcao_
     resultado = main(["--uf", "AC"])
 
     saida = capsys.readouterr().out
-    assert "reconcile: 34 exato(s), 61 explicado(s), 3 inexplicado(s)" in saida
-    assert resultado == 1  # ok é False -- 3 inexplicados, mesmo estado do gate congelado
+    assert "reconcile: 98 exato(s), 0 explicado(s), 0 inexplicado(s)" in saida
+    assert resultado == 0  # ok é True -- zero inexplicados, mesmo estado do gate congelado
 
 
 def test_main_uf_com_so_residencia_contribuida_por_outra_uf_continua_sem_dado(

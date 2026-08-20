@@ -70,6 +70,7 @@ function readCommittedPack(packId: string): {
   metricKeys: string[];
   derivedAt: string;
   cidMapVersion: string;
+  divergenciaRazao: string | null;
   rows: Array<Record<string, string | number | null>>;
   raw: string;
 } {
@@ -128,6 +129,9 @@ function reconstructContext(packId: string) {
       frozenByUfAno: RAW_FIELDS[packId] ? frozenByUfAno : undefined,
       derivedAt: committed.derivedAt,
       cidMapVersion: committed.cidMapVersion,
+      // Reconstruído do pack commitado como derivedAt/cidMapVersion: é entrada do buildPack, não
+      // saída. Sem isto, a regeneração byte a byte compararia um pack COM razão contra um sem.
+      divergenciaRazao: committed.divergenciaRazao,
     },
   };
 }

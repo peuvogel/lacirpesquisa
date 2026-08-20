@@ -49,9 +49,16 @@ describe('assembleHandoffTable', () => {
     ]);
     const value = Number(result.rows[0]?.[2]);
     // 09-13/D-19: o pack vem de sih_metric_uf (microdado reconciliado) desde a fase 9, não mais
-    // do corpus TabNet legado -- 5709 é o valor medido pós-substituição (D-16), não 5660 (o
-    // valor TabNet-era que este teste travava antes da troca de fonte).
-    expect(value).toBe(5709);
+    // do corpus TabNet legado. 5660 é o valor medido na TERCEIRA substituição (2026-08-18, base
+    // de contagem por DT_INTER), conferido ponta a ponta: agregado local = produção lida pelo
+    // PostgREST anônimo = pack.
+    //
+    // ATENÇÃO (colisão registrada, não escondida): 5660 é EXATAMENTE o literal que este teste
+    // travava antes da fase 9 (commit a4356f2, valor TabNet-era), trocado para 5709 em 03ef66a
+    // quando a fonte virou microdado. Contado por DT_INTER o número voltou a 5660 por
+    // coincidência — então este literal, sozinho, NÃO distingue mais as duas fontes. Quem ainda
+    // distingue é o `not.toBe(898000)` (a fórmula didática UF_WEIGHT antiga).
+    expect(value).toBe(5660);
     expect(value).not.toBe(898000);
   });
 

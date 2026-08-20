@@ -1,4 +1,58 @@
-"""Agregação por (agravo, medida, grão, local, ano) — DATA-01/DATA-02/DATA-03.
+"""Agregação por (agravo, medida, grão, local, ano de INTERNAÇÃO) — DATA-01/DATA-02/DATA-03.
+
+**O `ano` sai de `DT_INTER`, nunca de `ANO_CMPT` (09-15-DT-INTER, 2026-08-17, decisão do
+operador em base epidemiológica).** Até esta correção, tudo em produção agregava por `ANO_CMPT`,
+que é a competência em que a AIH foi FATURADA — um artefato administrativo, não um evento
+clínico. `DT_INTER` é a data em que o paciente foi internado. A troca não é cosmética: ela é o
+que faz as três coisas que este projeto existe para ensinar pararem de estar erradas.
+
+1. **Taxa por 100 mil habitantes.** Agregar por competência casa internações de 2018 (faturadas
+   em 2019) contra o denominador populacional de 2019 — numerador e denominador passam a medir
+   anos diferentes. Medido em AC: 3.493 dos 44.563 registros `IDENT='1'` da competência 2019
+   (7,84%) são internações de 2018.
+2. **Série temporal (Prais-Winsten).** A defasagem de faturamento não é ruído branco: é um
+   ATRASO sistemático, que desloca picos e enviesa a TENDÊNCIA, não só a variância — exatamente
+   a estatística que a capacitação ensina a estimar.
+3. **Sazonalidade.** Uma internação de dezembro faturada em janeiro cai no ano errado. Medido:
+   a competência de janeiro é o mês em que a defasagem é MÁXIMA (58,70% dos registros de
+   `RDAC2501` são internações de 2024; 29,60% em `RDSP2601`).
+
+A defasagem foi medida ao vivo, nunca suposta (dado real, 2026-08-17) — ver
+`enumerate.py` (docstring do módulo) para a tabela completa por mês de competência e para a
+janela de coleta que ela obriga. Resumo do que importa aqui: a defasagem é sempre POSITIVA
+(`DT_INTER` nunca é posterior à competência), decai por um fator de ~4 a ~8 por mês, e **nunca
+passou de 1 ano** em nenhum dos ~1,5 milhão de registros medidos (AC competências 2019/2020/2025
+e SP competências 2026-01..06).
+
+Consequência estrutural que o código precisa carregar: **um ano de internação é montado a partir
+de MAIS DE UM ano de arquivos de competência.** O ano de admissão Y vive nos arquivos de
+competência Y (a maior parte) E nos de Y+1 (a cauda). Por isso `aggregate_parquet_dir` nunca
+pode assumir que "o arquivo é de 2019, logo o dado é de 2019" — cada registro carrega o próprio
+ano, e registros do MESMO arquivo caem em anos diferentes.
+
+Reconciliação que prova a mudança, sobre dado real (AC, `PROC_REA=0408050012`/`amputacao_mmii`,
+o eixo independente do CID — ver `_PROC_REA_AMPUTACAO_MMII` abaixo): por `ANO_CMPT` a agregação
+media 50 internações em 2019 contra 66 do oráculo TabNet (que tabula por data de atendimento,
+não por competência) — **-24,2%**. Por `DT_INTER`, com a competência de 2020 incluída na leitura,
+o mesmo código fecha em 65-66. O erro nunca esteve no mapeamento SIGTAP nem no matcher CID:
+estava em medir uma coisa (faturamento) e comparar com outra (atendimento).
+
+`DT_INTER` chega como string `YYYYMMDD` (medido: `'20241210'`, tipo `string`, comprimento 8 em
+100% dos ~1,5 milhão de registros reais inspecionados) — nunca uma data nativa do parquet.
+`_ano_de_dt_inter` valida a estrutura e devolve só o ANO; ver a docstring dessa função para a
+semântica exata de valor ausente/malformado e `_MAX_TAXA_DESCARTE_DT_INTER` para a guarda de
+taxa que impede um descarte silencioso.
+
+`ANO_CMPT` continua sendo lido e castado (não foi removido de `NEEDED_COLUMNS`) por duas razões
+concretas, nenhuma delas inércia: (1) `download._valida_registros_alinhados` roda exatamente os
+mesmos casts desta agregação, por arquivo, para pegar registro desalinhado de `.dbc` corrompido
+no DOWNLOAD em vez de na agregação da UF inteira horas depois (FIX-DBC-CORROMPIDO) — tirar
+`ANO_CMPT` daqui apagaria essa guarda; (2) é o que permite MEDIR a defasagem
+(`ANO_CMPT - ano(DT_INTER)`) durante a própria corrida, em vez de voltar a supor que ela é curta
+(ver `stats` em `aggregate_parquet_dir`).
+
+---
+
 
 Lê os diretórios/arquivos `.parquet` já decodificados pelo `pysus` (ou a fixture congelada de
 gate) via `pyarrow.dataset`, projetando SÓ `NEEDED_COLUMNS` (RESEARCH Pattern 3) — nunca a rota
@@ -171,6 +225,7 @@ NEEDED_COLUMNS = [
     "VAL_TOT",
     "DIAS_PERM",
     "ANO_CMPT",
+    "DT_INTER",
     "IDENT",
     "PROC_REA",
 ]
@@ -186,6 +241,41 @@ _COLUNA_UF_ZI = "UF_ZI"
 
 # IDENT='1' é a única AIH que conta como internação nova -- ver docstring do módulo.
 _IDENT_AIH_NORMAL = "1"
+
+# --- Ano de INTERNAÇÃO (DT_INTER) -----------------------------------------------------------
+#
+# Faixa de plausibilidade estrutural de `DT_INTER`. NÃO é a janela de publicação (essa é
+# ANO_MIN/ANO_MAX, do schema-v3.json, e uma data fora DELA é registro legítimo fora do recorte,
+# nunca um defeito). Esta faixa existe só para separar "ano real, ainda que fora do recorte" de
+# "lixo que por acaso tem 8 dígitos" (ex.: `'00000000'`, `'99999999'`, bytes desalinhados que
+# formam um número). Deliberadamente LARGA -- a série SIH-RD do FTP começa em 2008-01 e uma
+# internação de longa permanência pode ter DT_INTER anterior ao primeiro arquivo da série;
+# apertar esta faixa transformaria uma internação antiga e legítima em descarte, que é
+# exatamente o erro que a guarda abaixo existe para evitar.
+_ANO_DT_INTER_MIN_PLAUSIVEL = 1990
+_ANO_DT_INTER_MAX_PLAUSIVEL = 2100
+
+# Taxa de descarte (`IDENT='1'` com `DT_INTER` ausente ou malformado) acima da qual a agregação
+# levanta -- MESMO limiar de `_MAX_TAXA_DESCARTE` (0,1%), por decisão explícita: um registro sem
+# data de internação utilizável é uma internação REAL que o pipeline não consegue localizar no
+# tempo, a mesma classe de perda de informação que um DIAG_PRINC sem categoria, e merece a mesma
+# barra. NUNCA um descarte silencioso (T-09-30).
+#
+# Baseline MEDIDO antes de fixar este limiar (2026-08-17, dado real, nunca suposto): ZERO
+# registros `IDENT='1'` com `DT_INTER` ausente ou malformado em 1.540.000+ registros de 30
+# arquivos -- AC competências 2019 (12 arquivos), 2020 (12) e 2025 (12), e SP competências
+# 2026-01..06 (6 arquivos, ~1,45 milhão de registros). `DT_INTER` veio string de comprimento 8 em
+# 100% deles. O limiar tem, portanto, margem enorme sobre o baseline; ele não está calibrado para
+# tolerar defeito esparso (não há nenhum a tolerar), e sim para disparar cedo contra corrupção
+# SISTEMÁTICA, que no `.dbc` do SIH-RD aparece em clusters de ~50% a ~90% de um único arquivo/mês
+# (medido em RDGO1902/RDMT1608/RDMA1806, ver "Correção de município em branco" abaixo) -- ordens
+# de grandeza acima desta barra.
+#
+# Denominador = população `IDENT='1'` (não o total de registros do arquivo), porque o filtro de
+# IDENT roda ANTES: a classe "registro corrompido do DBC" (documentada abaixo) tem `IDENT` vazio
+# junto com todo o resto e já é excluída antes de chegar aqui -- contá-la no denominador inflaria
+# artificialmente a base e afrouxaria a guarda justamente nos arquivos mais corrompidos.
+_MAX_TAXA_DESCARTE_DT_INTER = 0.001
 
 # Taxa de descarte (DIAG_PRINC sem categoria) acima da qual a agregação levanta -- T-09-30,
 # spike mediu 0,016% em 44.589 registros de AC/2019.
@@ -328,6 +418,49 @@ def _taxa_mortalidade(*, obitos: int, internacoes: int) -> float | None:
     return obitos / internacoes
 
 
+def _ano_de_dt_inter(valor: str | int | None) -> int | None:
+    """Ano da data de INTERNAÇÃO (`DT_INTER`, string `YYYYMMDD`), ou `None` quando o valor é
+    ausente/malformado — a fonte do `ano` de toda linha agregada (09-15-DT-INTER, ver docstring
+    do módulo).
+
+    **Semântica explícita e documentada, nunca um `try/except` mudo.** Devolve `None`
+    (= descarte contado e taxa-guardado por `_MAX_TAXA_DESCARTE_DT_INTER`, jamais um registro
+    sumindo em silêncio) para: `null`; string vazia ou só espaço (a mesma classe "registro
+    corrompido do DBC" de `_blank_to_null`); comprimento diferente de 8; qualquer caractere não
+    numérico (mesmo endurecimento que `codigos.municipio6` recebeu — comprimento certo com lixo
+    dentro nunca pode passar); mês fora de 1-12; dia fora de 1-31; e ano fora da faixa de
+    plausibilidade estrutural (`_ANO_DT_INTER_MIN_PLAUSIVEL`..`_ANO_DT_INTER_MAX_PLAUSIVEL`).
+
+    **O que deliberadamente NÃO é descarte, e por quê:**
+
+    - **Data inexistente no calendário** (`20250230`, 30 de fevereiro) — validado só o INTERVALO
+      do dia (1-31), nunca o calendário real (`datetime.date`, que rejeitaria). A única coisa que
+      esta função precisa extrair é o ANO, e o ano de `20250230` é inequivocamente 2025: recusar
+      o registro por causa do dia jogaria fora uma internação REAL por um erro de digitação num
+      campo que a agregação nem usa. Ausência não é zero, e um dia errado não é um ano errado.
+    - **Ano válido mas fora da janela de publicação** (`ANO_MIN`..`ANO_MAX`, do `schema-v3.json`)
+      — devolvido normalmente aqui; quem descarta é o laço principal, e como "fora da janela",
+      NUNCA como descarte. A distinção é essencial: os arquivos de competência 2026 (a cauda que
+      fecha o ano de admissão 2025, ver `enumerate.py`) são majoritariamente compostos de
+      internações de 2026, que estão CORRETAMENTE fora do recorte. Contá-las como descarte faria
+      a guarda de taxa estourar em toda UF por dado perfeitamente saudável — e, pior, esconderia
+      o defeito real que ela existe para pegar.
+    """
+    if valor is None:
+        return None
+    texto = str(valor).strip()
+    if len(texto) != 8 or not texto.isdigit():
+        return None
+    ano = int(texto[0:4])
+    mes = int(texto[4:6])
+    dia = int(texto[6:8])
+    if not (1 <= mes <= 12) or not (1 <= dia <= 31):
+        return None
+    if not (_ANO_DT_INTER_MIN_PLAUSIVEL <= ano <= _ANO_DT_INTER_MAX_PLAUSIVEL):
+        return None
+    return ano
+
+
 def _uf_de_uf_zi(uf_zi: str | int | None) -> str | None:
     """2 primeiros dígitos de `UF_ZI`, só se formarem uma UF conhecida (`UF_POR_CODIGO`) —
     nunca inventa uma UF a partir de lixo. Ver docstring do módulo, seção "Correção de
@@ -395,11 +528,27 @@ def _cast_morte(morte_col: pa.Array | pa.ChunkedArray) -> pa.Array | pa.ChunkedA
     )
 
 
-def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
+def aggregate_parquet_dir(
+    path: str | Path, index: CidIndex, *, stats: dict[str, Any] | None = None
+) -> list[Row]:
     """Lê `path` (diretório ou arquivo `.parquet`, real ou fixture) numa passada só e agrega
-    por `(disease_id, grao, local, territorio_codigo, ano)`.
+    por `(disease_id, grao, local, territorio_codigo, ano)`, onde `ano` é o ano da DATA DE
+    INTERNAÇÃO (`DT_INTER`), nunca o da competência de faturamento (`ANO_CMPT`) — ver docstring
+    do módulo para a medição epidemiológica que motiva isso.
 
-    Cada registro válido (ano dentro da janela D-11 E `IDENT='1'`) é testado contra DOIS eixos de
+    Como um ano de internação é montado a partir de mais de um ano de competência (a defasagem
+    medida chega a 1 ano), `path` normalmente contém arquivos de VÁRIAS competências e registros
+    do MESMO arquivo caem em anos de saída diferentes — nunca há uma correspondência
+    arquivo→ano.
+
+    `stats` (opcional, preenchido no lugar quando um dict é passado) devolve o que a agregação
+    MEDIU nesta passada, sem inflar o schema de `Row` nem exigir uma segunda leitura: `total`,
+    `total_ident_1`, `descartes_cid`, `descartes_dt_inter`, `fora_da_janela`, os dois descartes
+    de município, e `lag` — o histograma de `ANO_CMPT - ano(DT_INTER)`, que é o que permite
+    reMEDIR a defasagem a cada corrida em vez de voltar a supor que ela é curta. `collect.py`
+    persiste isso por UF no `CollectLedger`.
+
+    Cada registro válido (`IDENT='1'` E ano de internação dentro da janela D-11) é testado contra DOIS eixos de
     classificação INDEPENDENTES — `DIAG_PRINC` casado pelo matcher CID (`match_category`,
     330 agravos da Lista Morb) e `PROC_REA` casado pelo mapa de procedimento
     (`_load_procedure_disease_map`, hoje só `amputacao_mmii`, ver docstring do módulo) — e
@@ -416,6 +565,25 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     são excluídos ANTES de qualquer um dos dois eixos — nunca contados como descarte, porque não
     é falha de categorização, é exclusão semântica deliberada da medida `internacoes`, aplicada
     igualmente aos dois eixos (mesmo `continue` único no laço).
+
+    **Ordem dos dois primeiros filtros (`IDENT` antes do ano), mudada nesta correção e por quê.**
+    Antes, o filtro de ano vinha primeiro; a ordem era indiferente para o resultado (os dois
+    precisam passar de qualquer jeito) e continua sendo — o conjunto que chega à classificação é
+    idêntico, e portanto `_MAX_TAXA_DESCARTE` mede exatamente o que sempre mediu. O que a ordem
+    muda é o DENOMINADOR da guarda nova de `DT_INTER`: a classe "registro corrompido do DBC"
+    (documentada abaixo) tem `IDENT`, `ANO_CMPT`, `DIAG_PRINC`, `MUNIC_*` **e** `DT_INTER` todos
+    vazios juntos — não é uma AIH com um campo faltando, é uma linha sem dado nenhum. Filtrar
+    `IDENT` primeiro faz `descartes_dt_inter` contar só AIH REAL sem data utilizável, que é o
+    defeito que importa; contá-la depois transformaria toda corrupção de `.dbc` já conhecida e já
+    excluída num falso positivo da guarda nova.
+
+    Registros `IDENT='1'` cujo `DT_INTER` é ausente ou malformado (ver `_ano_de_dt_inter`) são
+    contados como descarte próprio e, acima de `_MAX_TAXA_DESCARTE_DT_INTER` (0,1% da população
+    `IDENT='1'`), a função levanta `ValueError` — nunca sumem em silêncio. Registros cujo
+    `DT_INTER` é válido mas cai fora da janela D-11 (`ANO_MIN`..`ANO_MAX`) são contados à parte
+    (`fora_da_janela`) e NÃO são descarte: os arquivos de competência 2026 (a cauda que fecha o
+    ano de admissão 2025) são feitos majoritariamente de internações de 2026, corretamente fora
+    do recorte.
 
     Registros cujo `DIAG_PRINC` não casa em nenhuma categoria CID são contados como descarte
     (SÓ o eixo CID — o eixo de procedimento nunca isenta nem contribui para este contador,
@@ -446,6 +614,12 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     dias_perm = pc.cast(_blank_to_null(table["DIAS_PERM"]), "int64").to_pylist()
     morte = _cast_morte(table["MORTE"]).to_pylist()
     ano_cmpt = pc.cast(_blank_to_null(table["ANO_CMPT"]), "int64").to_pylist()
+    # `DT_INTER` NUNCA recebe cast eager (ao contrário das 4 colunas acima): a validação é por
+    # registro, em `_ano_de_dt_inter`. Um cast vetorizado transformaria UM valor malformado num
+    # `ArrowInvalid` que derruba a agregação da UF inteira -- exatamente a classe de falha que o
+    # FIX-DBC-CORROMPIDO/FIX-AGREGACAO-VAZIO passaram esta fase inteira consertando. A guarda
+    # aqui é de TAXA (`_MAX_TAXA_DESCARTE_DT_INTER`), não de primeiro-valor-ruim.
+    dt_inter = pc.utf8_trim_whitespace(table["DT_INTER"]).to_pylist()
     ident = pc.utf8_trim_whitespace(table["IDENT"]).to_pylist()
     proc_rea = pc.utf8_trim_whitespace(table["PROC_REA"]).to_pylist()
     diag_princ = table["DIAG_PRINC"].to_pylist()
@@ -464,13 +638,40 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
     descartes = 0
     descartes_municipio_ocorrencia = 0
     descartes_municipio_residencia = 0
+    total_ident_1 = 0
+    descartes_dt_inter = 0
+    fora_da_janela = 0
+    lag_competencia: dict[int, int] = {}
 
     for i in range(total):
-        ano = ano_cmpt[i]
-        if ano is None or not (ANO_MIN <= ano <= ANO_MAX):
+        # IDENT primeiro, ano depois -- ver docstring desta função, "Ordem dos dois primeiros
+        # filtros". O conjunto que chega à classificação é idêntico ao de antes desta correção;
+        # o que a ordem protege é o denominador da guarda de DT_INTER.
+        if ident[i] != _IDENT_AIH_NORMAL:
+            continue
+        total_ident_1 += 1
+
+        ano = _ano_de_dt_inter(dt_inter[i])
+        if ano is None:
+            # AIH real (IDENT='1') sem data de internação utilizável -- a internação existiu mas
+            # o pipeline não consegue localizá-la no tempo. Contada e taxa-guardada abaixo,
+            # NUNCA descartada em silêncio (T-09-30).
+            descartes_dt_inter += 1
             continue
 
-        if ident[i] != _IDENT_AIH_NORMAL:
+        # Defasagem de faturamento MEDIDA nesta passada (competência - internação), não suposta.
+        # Calculada ANTES do filtro de janela de propósito: é justamente a massa de fora da
+        # janela (internações de 2012 nos arquivos de 2013, de 2026 nos de 2026) que revela se a
+        # cauda de competência escolhida em `enumerate.py` continua sendo suficiente.
+        cmpt = ano_cmpt[i]
+        if cmpt is not None:
+            lag = cmpt - ano
+            lag_competencia[lag] = lag_competencia.get(lag, 0) + 1
+
+        if not (ANO_MIN <= ano <= ANO_MAX):
+            # Internação real, fora do recorte de publicação (D-11). NÃO é descarte -- ver
+            # `_ano_de_dt_inter` para por que confundir os dois quebraria a guarda de taxa.
+            fora_da_janela += 1
             continue
 
         disease_ids_casados: list[str] = []
@@ -543,6 +744,37 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
                 entrada["valor_total"] += val_contribuicao
                 entrada["dias_permanencia"] += dias_contribuicao
 
+    if stats is not None:
+        stats.update(
+            {
+                "total": total,
+                "total_ident_1": total_ident_1,
+                "descartes_cid": descartes,
+                "descartes_dt_inter": descartes_dt_inter,
+                "fora_da_janela": fora_da_janela,
+                "descartes_municipio_ocorrencia": descartes_municipio_ocorrencia,
+                "descartes_municipio_residencia": descartes_municipio_residencia,
+                # chaves como string para sobreviver a um round-trip por JSON (`collect.py`
+                # persiste isto no CollectLedger) sem virar `{"0": ...}` só às vezes.
+                "lag": {str(k): v for k, v in sorted(lag_competencia.items())},
+            }
+        )
+
+    # Guarda de DT_INTER: denominador é a população IDENT='1', não o total do arquivo -- ver
+    # `_MAX_TAXA_DESCARTE_DT_INTER` para a medição (baseline zero em 1,54 milhão de registros
+    # reais) e para por que o denominador tem que ser este.
+    if total_ident_1 > 0:
+        taxa_descarte_dt_inter = descartes_dt_inter / total_ident_1
+        if taxa_descarte_dt_inter > _MAX_TAXA_DESCARTE_DT_INTER:
+            raise ValueError(
+                f"aggregate: taxa de descarte (DT_INTER ausente ou malformado em AIH IDENT='1') "
+                f"{descartes_dt_inter}/{total_ident_1} ({taxa_descarte_dt_inter:.4%}) acima do "
+                f"limite {_MAX_TAXA_DESCARTE_DT_INTER:.1%} -- 09-15-DT-INTER. Sem data de "
+                "internação utilizável não existe ano de internação, e inventar um (cair de "
+                "volta em ANO_CMPT) reintroduziria exatamente o viés de competência que esta "
+                "agregação existe para eliminar."
+            )
+
     if total > 0:
         taxa_descarte = descartes / total
         if taxa_descarte > _MAX_TAXA_DESCARTE:
@@ -584,12 +816,17 @@ def aggregate_parquet_dir(path: str | Path, index: CidIndex) -> list[Row]:
 
 
 def aggregate_years(
-    parquet_root: str | Path, index: CidIndex, *, anos: list[int] | None = None
+    parquet_root: str | Path,
+    index: CidIndex,
+    *,
+    anos: list[int] | None = None,
+    stats: dict[str, Any] | None = None,
 ) -> list[Row]:
     """Agrega `parquet_root` (o cache de parquet inteiro, ou um subconjunto) e filtra por
-    `anos` quando informado — wrapper fino sobre `aggregate_parquet_dir`, sem segunda leitura
-    da tabela (o filtro roda sobre as `Row` já computadas, D-01: agregação é de graça)."""
-    linhas = aggregate_parquet_dir(parquet_root, index)
+    `anos` (anos de INTERNAÇÃO) quando informado — wrapper fino sobre `aggregate_parquet_dir`,
+    sem segunda leitura da tabela (o filtro roda sobre as `Row` já computadas, D-01: agregação é
+    de graça). `stats` é repassado sem alteração (ver `aggregate_parquet_dir`)."""
+    linhas = aggregate_parquet_dir(parquet_root, index, stats=stats)
     if anos is None:
         return linhas
     anos_set = set(anos)

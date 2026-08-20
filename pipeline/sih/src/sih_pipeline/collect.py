@@ -137,7 +137,13 @@ RAZAO_LINHAS_VS_AC: dict[str, float] = {
 # (29,20×) dá ~66,6 MB/unidade — deliberadamente ACIMA da extrapolação direta do AC (14
 # arquivos já em cache, ~40 MB/unidade projetada): esta constante alimenta uma GUARDA de disco,
 # então superestimar é seguro e subestimar é o único resultado que não pode acontecer.
-BYTES_PER_RATIO_UNIT_SEED: int = int(1.9 * 1024**3 / 29.20)
+#
+# 09-15-DT-INTER: a janela de competência cresceu de 156 para 161 arquivos por UF (os 5 meses de
+# cauda de 2026 que fecham o ano de admissão 2025 -- ver `enumerate.cauda_file_names`). A semente
+# é escalada na mesma proporção (161/156, +3,2%) em vez de ficar como estava: uma guarda de disco
+# que ignora arquivos que ela mesma vai mandar baixar projeta por baixo, que é o único resultado
+# que não pode acontecer.
+BYTES_PER_RATIO_UNIT_SEED: int = int(1.9 * 1024**3 * (161 / 156) / 29.20)
 
 # Achado real da primeira corrida (2026-08-10/11, UF=DF): 163,45 MB brutos medidos contra uma
 # projeção de ~13,3 MB (semente) -- ~12x acima. DF é capital federal e polo de referência: volume
@@ -242,8 +248,23 @@ class CollectLedger:
         )
 
     def mark_agregado_reciclado(
-        self, uf: str, *, linhas: int, bytes_persistidos: int, bytes_reciclados: int
+        self,
+        uf: str,
+        *,
+        linhas: int,
+        bytes_persistidos: int,
+        bytes_reciclados: int,
+        estatisticas: dict[str, Any] | None = None,
     ) -> None:
+        """Marca `uf` como concluída.
+
+        `estatisticas` (09-15-DT-INTER) guarda o que a agregação MEDIU sobre o parquet bruto
+        desta UF -- histograma de defasagem `ANO_CMPT - ano(DT_INTER)`, descartes de `DT_INTER`,
+        registros fora da janela. Precisa ser persistido AQUI porque este é o último momento em
+        que esse dado existe: a linha seguinte de `collect_uf` recicla o parquet bruto, e o
+        agregado que sobrevive não carrega `DT_INTER` nem `ANO_CMPT`. Sem isto, verificar se a
+        cauda de competência escolhida em `enumerate.py` foi suficiente exigiria re-baixar os
+        ~8,8 GB -- exatamente o custo que o 09-10 pagou por não ter preservado `PROC_REA`."""
         entry = self._ufs.setdefault(uf, {})
         entry.update(
             {
@@ -254,6 +275,8 @@ class CollectLedger:
                 "updated_at": _now_iso(),
             }
         )
+        if estatisticas is not None:
+            entry["estatisticas"] = estatisticas
 
     def mark_falhou(self, uf: str, *, reason: str) -> None:
         """Marca `uf` como `falhou`, com o motivo. Não regride uma UF já `agregado_reciclado`
@@ -437,13 +460,31 @@ def _self_heal_ghost_entries(
     return len(fantasmas)
 
 
-def _aggregate_uf(uf: str, uf_files: frozenset[str], file_ledger: FileLedger, index: CidIndex) -> list[Row]:
+def _aggregate_uf(
+    uf: str,
+    uf_files: frozenset[str],
+    file_ledger: FileLedger,
+    index: CidIndex,
+    *,
+    stats: dict[str, Any] | None = None,
+) -> list[Row]:
     """Agrega só os arquivos de `uf` — NUNCA `cache_path("parquet")` inteira, que pode conter
     sobras de outras UFs (ex.: AC/2019 e SP/2019 já estavam em cache antes deste módulo existir
     e não podem ser tratadas como lixo nem apagadas por engano). Um diretório temporário de
     symlinks, montado só com o caminho exato gravado em `parquet_dir` de cada arquivo desta UF
     no `FileLedger`, dá a `aggregate_years` uma visão isolada sem duplicar bytes e sem tocar em
-    nada fora do escopo desta UF."""
+    nada fora do escopo desta UF.
+
+    **A visão isolada precisa conter TODAS as competências da UF, não uma por vez**
+    (09-15-DT-INTER). Com o `ano` vindo de `DT_INTER`, um ano de internação é montado a partir de
+    mais de um ano de competência: a cauda de dezembro/2019 vive nos arquivos de 2020. Agregar
+    competência a competência somaria cada ano em pedaços e nunca fecharia -- este diretório de
+    symlinks já reunia os 156 (agora 161) arquivos da UF de uma vez, então a propriedade que a
+    correção precisa já estava aqui por construção; está documentada agora para que ninguém a
+    "otimize" para um laço por arquivo sem perceber o que quebra.
+
+    `stats` é repassado a `aggregate_years` (ver `aggregate.py`) e devolve o que a passada
+    MEDIU -- defasagem de competência e descartes -- para `collect_uf` persistir por UF."""
     with tempfile.TemporaryDirectory(prefix=f"sih-collect-{uf}-") as tmp:
         tmp_path = Path(tmp)
         for nome in sorted(uf_files):
@@ -458,7 +499,7 @@ def _aggregate_uf(uf: str, uf_files: frozenset[str], file_ledger: FileLedger, in
                 )
             (tmp_path / origem.name).symlink_to(origem)
 
-        return aggregate_years(tmp_path, index)
+        return aggregate_years(tmp_path, index, stats=stats)
 
 
 def _persist_rows(uf: str, linhas: list[Row]) -> Path:
@@ -543,7 +584,8 @@ def collect_uf(
     collect_ledger.mark_baixado_pendente_agregacao(uf, arquivos=len(uf_files))
     collect_ledger.save()
 
-    linhas = _aggregate_uf(uf, uf_files, file_ledger, index)
+    estatisticas: dict[str, Any] = {}
+    linhas = _aggregate_uf(uf, uf_files, file_ledger, index, stats=estatisticas)
     destino = _persist_rows(uf, linhas)
     bytes_persistidos = destino.stat().st_size
 
@@ -554,6 +596,7 @@ def collect_uf(
         linhas=len(linhas),
         bytes_persistidos=bytes_persistidos,
         bytes_reciclados=bytes_reciclados,
+        estatisticas=estatisticas,
     )
     collect_ledger.save()
 

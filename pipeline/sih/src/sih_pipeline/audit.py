@@ -272,19 +272,43 @@ def anos_incompletos_no_ledger(
 
 
 def _fetch_all_paginated(
-    tabela: str, *, select: str = "*", filtros: Mapping[str, str] | None = None
+    tabela: str,
+    *,
+    select: str = "*",
+    order: str,
+    chave: tuple[str, ...],
+    filtros: Mapping[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     """Lê TODAS as linhas de `tabela` via PostgREST, paginando pelo cabeçalho `Range` -- segue
     lendo página a página até cobrir o total anunciado em `content-range`; se a soma do que foi
     lido não bater com o total anunciado, levanta `RuntimeError` (MAPA-06/Pitfall 13: falhar alto
-    em vez de reportar cobertura que não foi de fato lida)."""
+    em vez de reportar cobertura que não foi de fato lida).
+
+    `order` é OBRIGATÓRIO e `chave` é a tupla de colunas que identifica unicamente uma linha.
+
+    Achado real (09-13, `generateSihPacks.mjs` commit `e631e2f`, reproduzido deterministicamente):
+    sem `order=` explícito, o Postgres/PostgREST **não garante o mesmo corte de página entre duas
+    requisições `Range` da MESMA leitura**. Uma linha pode sumir de uma página e reaparecer
+    duplicada em outra enquanto o total anunciado em `content-range` permanece idêntico -- ou seja,
+    a checagem de total sozinha (que este módulo já fazia) NÃO pega o problema: ela vê o número
+    certo de linhas e conclui, erradamente, que leu o conjunto certo.
+
+    Isto era grave aqui em particular: `audit.py` é o que produz a cobertura do PIPE-05, aprovada
+    pelo operador, paginando dezenas a centenas de milhares de linhas. Uma leitura instável
+    reportaria cobertura confiante sobre um conjunto que nunca existiu como um todo.
+
+    As colunas de `order` devem formar ordem TOTAL (sem empate) -- na prática, a chave primária da
+    tabela com o que estiver fixado por filtro. A guarda de duplicata abaixo falha alto em vez de
+    deduplicar em silêncio: uma chave repetida significa que a paginação escorregou, e engolir isso
+    devolveria uma cobertura errada com cara de certa."""
     supabase_url = os.environ["SUPABASE_URL"].rstrip("/")
     service_role = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 
-    params = {"select": select, **dict(filtros or {})}
+    params = {"select": select, "order": order, **dict(filtros or {})}
     query = urllib.parse.urlencode(params)
 
     linhas: list[dict[str, Any]] = []
+    vistas: set[tuple[Any, ...]] = set()
     total_anunciado: int | None = None
     offset = 0
 
@@ -314,6 +338,17 @@ def _fetch_all_paginated(
                 "vez de reportar um total que pode estar errado."
             )
 
+        for linha in pagina:
+            identidade = tuple(linha.get(coluna) for coluna in chave)
+            if identidade in vistas:
+                raise RuntimeError(
+                    f"audit: linha duplicada entre páginas de {tabela!r} -- chave "
+                    f"{dict(zip(chave, identidade))} apareceu duas vezes. A paginação escorregou "
+                    "(o `order` não está dando ordem total, ou o dado mudou sob a leitura). "
+                    "Abortando em vez de deduplicar: uma chave repetida significa que alguma OUTRA "
+                    "linha foi pulada, e o total de content-range continuaria batendo."
+                )
+            vistas.add(identidade)
         linhas.extend(pagina)
 
         if len(pagina) < _PAGE_SIZE or len(linhas) >= total_anunciado:
@@ -388,10 +423,20 @@ def main(argv: list[str]) -> int:
     disease_ids = carregar_disease_ids()
     cartesiano = cartesiano_completo(disease_ids=disease_ids)
 
+    # `order`/`chave` são a chave primária de cada tabela -- ordem total, sem empate, para que o
+    # corte de página seja estável entre requisições (ver docstring de `_fetch_all_paginated`).
     status_rows = _fetch_all_paginated(
-        "sih_collection_status", select="disease_id,medida,grao,local,ano,status"
+        "sih_collection_status",
+        select="disease_id,medida,grao,local,ano,status",
+        order="disease_id.asc,medida.asc,grao.asc,local.asc,ano.asc",
+        chave=("disease_id", "medida", "grao", "local", "ano"),
     )
-    linhas_metric_uf = _fetch_all_paginated("sih_metric_uf", select="disease_id,local,ano")
+    linhas_metric_uf = _fetch_all_paginated(
+        "sih_metric_uf",
+        select="disease_id,local,ano,uf_codigo",
+        order="disease_id.asc,local.asc,uf_codigo.asc,ano.asc",
+        chave=("disease_id", "local", "uf_codigo", "ano"),
+    )
     metric_keys_uf = _metric_keys_grao_uf(linhas_metric_uf)
     metric_keys_municipio = _metric_keys_grao_municipio(_linhas_grao_municipio())
     metric_keys = metric_keys_uf | metric_keys_municipio

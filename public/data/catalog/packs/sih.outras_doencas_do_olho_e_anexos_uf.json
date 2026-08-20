@@ -13,18 +13,19 @@
     "dias_permanencia",
     "taxa_mortalidade"
   ],
-  "derivedAt": "2026-08-13T02:55:41+00:00",
+  "derivedAt": "2026-08-19T15:52:21+00:00",
   "cidMapVersion": "5395d9513343b9e14b3303341b0b20fc44c7e1ffe77615dd60f43ff7e778963f",
+  "divergenciaRazao": "Contado pela data de internação. O TabNet, por padrão, conta pela competência de faturamento e mostra menos — a diferença são as internações faturadas no ano seguinte.",
   "rows": [
     {
       "uf_codigo": "11",
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2013,
-      "internacoes": 46,
+      "internacoes": 42,
       "obitos": 0,
-      "valor_total": 32646.960000000003,
-      "dias_permanencia": 171,
+      "valor_total": 27051.049999999996,
+      "dias_permanencia": 179,
       "taxa_mortalidade": 0
     },
     {
@@ -32,10 +33,10 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2014,
-      "internacoes": 34,
+      "internacoes": 35,
       "obitos": 0,
-      "valor_total": 22275.460000000003,
-      "dias_permanencia": 156,
+      "valor_total": 20854.729999999992,
+      "dias_permanencia": 131,
       "taxa_mortalidade": 0
     },
     {
@@ -43,10 +44,10 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2015,
-      "internacoes": 35,
+      "internacoes": 33,
       "obitos": 0,
-      "valor_total": 17831.16,
-      "dias_permanencia": 162,
+      "valor_total": 17142.53,
+      "dias_permanencia": 154,
       "taxa_mortalidade": 0
     },
     {
@@ -54,10 +55,10 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2016,
-      "internacoes": 70,
+      "internacoes": 75,
       "obitos": 0,
-      "valor_total": 40569.63,
-      "dias_permanencia": 222,
+      "valor_total": 41995.609999999986,
+      "dias_permanencia": 228,
       "taxa_mortalidade": 0
     },
     {
@@ -65,10 +66,10 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2017,
-      "internacoes": 104,
+      "internacoes": 99,
       "obitos": 0,
-      "valor_total": 107000.12000000001,
-      "dias_permanencia": 469,
+      "valor_total": 105397.23000000001,
+      "dias_permanencia": 463,
       "taxa_mortalidade": 0
     },
     {
@@ -76,32 +77,32 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2018,
-      "internacoes": 111,
+      "internacoes": 123,
       "obitos": 1,
-      "valor_total": 88255.09000000001,
-      "dias_permanencia": 309,
-      "taxa_mortalidade": 0.900901
+      "valor_total": 99131.71,
+      "dias_permanencia": 364,
+      "taxa_mortalidade": 0.813008
     },
     {
       "uf_codigo": "11",
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2019,
-      "internacoes": 133,
+      "internacoes": 124,
       "obitos": 1,
-      "valor_total": 162347.50999999992,
-      "dias_permanencia": 486,
-      "taxa_mortalidade": 0.75188
+      "valor_total": 182520.47999999998,
+      "dias_permanencia": 548,
+      "taxa_mortalidade": 0.806452
     },
     {
       "uf_codigo": "11",
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2020,
-      "internacoes": 55,
+      "internacoes": 54,
       "obitos": 0,
-      "valor_total": 108478.36999999998,
-      "dias_permanencia": 406,
+      "valor_total": 79770.93000000001,
+      "dias_permanencia": 303,
       "taxa_mortalidade": 0
     },
     {
@@ -109,32 +110,32 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2021,
-      "internacoes": 56,
-      "obitos": 1,
-      "valor_total": 62280.979999999996,
-      "dias_permanencia": 289,
-      "taxa_mortalidade": 1.785714
-    },
-    {
-      "uf_codigo": "11",
-      "uf": "RO",
-      "uf_nome": "Rondônia",
-      "ano": 2022,
       "internacoes": 64,
       "obitos": 1,
-      "valor_total": 64156.95000000002,
-      "dias_permanencia": 226,
+      "valor_total": 64373.41999999999,
+      "dias_permanencia": 281,
       "taxa_mortalidade": 1.5625
     },
     {
       "uf_codigo": "11",
       "uf": "RO",
       "uf_nome": "Rondônia",
+      "ano": 2022,
+      "internacoes": 59,
+      "obitos": 1,
+      "valor_total": 64654.35000000001,
+      "dias_permanencia": 262,
+      "taxa_mortalidade": 1.694915
+    },
+    {
+      "uf_codigo": "11",
+      "uf": "RO",
+      "uf_nome": "Rondônia",
       "ano": 2023,
-      "internacoes": 86,
+      "internacoes": 93,
       "obitos": 0,
-      "valor_total": 59446.86999999998,
-      "dias_permanencia": 241,
+      "valor_total": 76463.51999999997,
+      "dias_permanencia": 311,
       "taxa_mortalidade": 0
     },
     {
@@ -142,10 +143,10 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2024,
-      "internacoes": 114,
+      "internacoes": 118,
       "obitos": 0,
-      "valor_total": 89106.02999999996,
-      "dias_permanencia": 460,
+      "valor_total": 98309.63000000008,
+      "dias_permanencia": 462,
       "taxa_mortalidade": 0
     },
     {
@@ -153,10 +154,10 @@
       "uf": "RO",
       "uf_nome": "Rondônia",
       "ano": 2025,
-      "internacoes": 285,
+      "internacoes": 307,
       "obitos": 0,
-      "valor_total": 165076.4199999996,
-      "dias_permanencia": 380,
+      "valor_total": 195877.17000000016,
+      "dias_permanencia": 440,
       "taxa_mortalidade": 0
     },
     {
@@ -166,8 +167,8 @@
       "ano": 2013,
       "internacoes": 9,
       "obitos": 0,
-      "valor_total": 7349.570000000001,
-      "dias_permanencia": 107,
+      "valor_total": 6920.000000000001,
+      "dias_permanencia": 75,
       "taxa_mortalidade": 0
     },
     {
@@ -175,10 +176,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2014,
-      "internacoes": 9,
+      "internacoes": 8,
       "obitos": 0,
-      "valor_total": 3245.6,
-      "dias_permanencia": 43,
+      "valor_total": 2535.4200000000005,
+      "dias_permanencia": 38,
       "taxa_mortalidade": 0
     },
     {
@@ -208,10 +209,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2017,
-      "internacoes": 34,
+      "internacoes": 36,
       "obitos": 0,
-      "valor_total": 11764.820000000002,
-      "dias_permanencia": 91,
+      "valor_total": 12565.400000000001,
+      "dias_permanencia": 100,
       "taxa_mortalidade": 0
     },
     {
@@ -219,10 +220,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2018,
-      "internacoes": 55,
+      "internacoes": 58,
       "obitos": 0,
-      "valor_total": 27964.58999999999,
-      "dias_permanencia": 179,
+      "valor_total": 30942.849999999988,
+      "dias_permanencia": 194,
       "taxa_mortalidade": 0
     },
     {
@@ -230,10 +231,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2019,
-      "internacoes": 40,
+      "internacoes": 37,
       "obitos": 0,
-      "valor_total": 23111.88,
-      "dias_permanencia": 151,
+      "valor_total": 20610.830000000005,
+      "dias_permanencia": 130,
       "taxa_mortalidade": 0
     },
     {
@@ -241,10 +242,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2020,
-      "internacoes": 32,
+      "internacoes": 36,
       "obitos": 0,
-      "valor_total": 17164.67,
-      "dias_permanencia": 112,
+      "valor_total": 19418.969999999998,
+      "dias_permanencia": 124,
       "taxa_mortalidade": 0
     },
     {
@@ -252,10 +253,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2021,
-      "internacoes": 18,
+      "internacoes": 14,
       "obitos": 0,
-      "valor_total": 8417.609999999999,
-      "dias_permanencia": 57,
+      "valor_total": 5549.66,
+      "dias_permanencia": 46,
       "taxa_mortalidade": 0
     },
     {
@@ -263,10 +264,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2022,
-      "internacoes": 34,
+      "internacoes": 37,
       "obitos": 0,
-      "valor_total": 17668.670000000006,
-      "dias_permanencia": 202,
+      "valor_total": 23400.129999999997,
+      "dias_permanencia": 225,
       "taxa_mortalidade": 0
     },
     {
@@ -274,10 +275,10 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2023,
-      "internacoes": 35,
+      "internacoes": 34,
       "obitos": 0,
-      "valor_total": 24437.450000000004,
-      "dias_permanencia": 198,
+      "valor_total": 20330.880000000005,
+      "dias_permanencia": 209,
       "taxa_mortalidade": 0
     },
     {
@@ -285,21 +286,21 @@
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2024,
-      "internacoes": 64,
+      "internacoes": 61,
       "obitos": 1,
-      "valor_total": 49843.01999999998,
-      "dias_permanencia": 409,
-      "taxa_mortalidade": 1.5625
+      "valor_total": 48593.06999999998,
+      "dias_permanencia": 375,
+      "taxa_mortalidade": 1.639344
     },
     {
       "uf_codigo": "12",
       "uf": "AC",
       "uf_nome": "Acre",
       "ano": 2025,
-      "internacoes": 37,
+      "internacoes": 38,
       "obitos": 0,
-      "valor_total": 21548.350000000002,
-      "dias_permanencia": 178,
+      "valor_total": 22687.469999999998,
+      "dias_permanencia": 202,
       "taxa_mortalidade": 0
     },
     {
@@ -307,10 +308,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2013,
-      "internacoes": 18,
+      "internacoes": 17,
       "obitos": 0,
-      "valor_total": 17355.75,
-      "dias_permanencia": 60,
+      "valor_total": 17035.69,
+      "dias_permanencia": 41,
       "taxa_mortalidade": 0
     },
     {
@@ -318,10 +319,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2014,
-      "internacoes": 48,
+      "internacoes": 49,
       "obitos": 0,
-      "valor_total": 52948.009999999966,
-      "dias_permanencia": 82,
+      "valor_total": 53279.34999999996,
+      "dias_permanencia": 84,
       "taxa_mortalidade": 0
     },
     {
@@ -329,10 +330,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2015,
-      "internacoes": 90,
+      "internacoes": 92,
       "obitos": 0,
-      "valor_total": 79632.87999999998,
-      "dias_permanencia": 178,
+      "valor_total": 80450.24999999999,
+      "dias_permanencia": 193,
       "taxa_mortalidade": 0
     },
     {
@@ -340,10 +341,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2016,
-      "internacoes": 175,
+      "internacoes": 188,
       "obitos": 0,
-      "valor_total": 197795.24000000014,
-      "dias_permanencia": 340,
+      "valor_total": 201149.43000000008,
+      "dias_permanencia": 398,
       "taxa_mortalidade": 0
     },
     {
@@ -353,8 +354,8 @@
       "ano": 2017,
       "internacoes": 316,
       "obitos": 0,
-      "valor_total": 322958.5100000003,
-      "dias_permanencia": 575,
+      "valor_total": 323180.75000000064,
+      "dias_permanencia": 587,
       "taxa_mortalidade": 0
     },
     {
@@ -362,21 +363,21 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2018,
-      "internacoes": 280,
+      "internacoes": 266,
       "obitos": 1,
-      "valor_total": 320973.78000000055,
-      "dias_permanencia": 533,
-      "taxa_mortalidade": 0.357143
+      "valor_total": 317620.96000000054,
+      "dias_permanencia": 449,
+      "taxa_mortalidade": 0.37594
     },
     {
       "uf_codigo": "13",
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2019,
-      "internacoes": 220,
+      "internacoes": 229,
       "obitos": 0,
-      "valor_total": 294904.0600000003,
-      "dias_permanencia": 327,
+      "valor_total": 305636.86000000034,
+      "dias_permanencia": 347,
       "taxa_mortalidade": 0
     },
     {
@@ -384,10 +385,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2020,
-      "internacoes": 92,
+      "internacoes": 86,
       "obitos": 0,
-      "valor_total": 125892.0600000001,
-      "dias_permanencia": 235,
+      "valor_total": 115855.2300000001,
+      "dias_permanencia": 229,
       "taxa_mortalidade": 0
     },
     {
@@ -395,10 +396,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2021,
-      "internacoes": 117,
+      "internacoes": 113,
       "obitos": 0,
-      "valor_total": 148907.85000000003,
-      "dias_permanencia": 250,
+      "valor_total": 147164.18000000002,
+      "dias_permanencia": 237,
       "taxa_mortalidade": 0
     },
     {
@@ -406,10 +407,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2022,
-      "internacoes": 126,
+      "internacoes": 130,
       "obitos": 0,
-      "valor_total": 212772.20000000007,
-      "dias_permanencia": 261,
+      "valor_total": 215216.90000000005,
+      "dias_permanencia": 266,
       "taxa_mortalidade": 0
     },
     {
@@ -417,10 +418,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2023,
-      "internacoes": 167,
+      "internacoes": 168,
       "obitos": 0,
-      "valor_total": 272754.0900000001,
-      "dias_permanencia": 368,
+      "valor_total": 273234.25000000006,
+      "dias_permanencia": 382,
       "taxa_mortalidade": 0
     },
     {
@@ -428,10 +429,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2024,
-      "internacoes": 196,
+      "internacoes": 217,
       "obitos": 0,
-      "valor_total": 326639.81,
-      "dias_permanencia": 407,
+      "valor_total": 369181.8499999998,
+      "dias_permanencia": 441,
       "taxa_mortalidade": 0
     },
     {
@@ -439,10 +440,10 @@
       "uf": "AM",
       "uf_nome": "Amazonas",
       "ano": 2025,
-      "internacoes": 201,
+      "internacoes": 292,
       "obitos": 0,
-      "valor_total": 303728.52999999985,
-      "dias_permanencia": 367,
+      "valor_total": 419755.7899999998,
+      "dias_permanencia": 547,
       "taxa_mortalidade": 0
     },
     {
@@ -461,10 +462,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2014,
-      "internacoes": 9,
+      "internacoes": 10,
       "obitos": 0,
-      "valor_total": 3692.55,
-      "dias_permanencia": 48,
+      "valor_total": 4107.88,
+      "dias_permanencia": 49,
       "taxa_mortalidade": 0
     },
     {
@@ -474,8 +475,8 @@
       "ano": 2015,
       "internacoes": 20,
       "obitos": 0,
-      "valor_total": 8258.439999999999,
-      "dias_permanencia": 50,
+      "valor_total": 8229.009999999998,
+      "dias_permanencia": 58,
       "taxa_mortalidade": 0
     },
     {
@@ -485,7 +486,7 @@
       "ano": 2016,
       "internacoes": 26,
       "obitos": 0,
-      "valor_total": 8178.450000000002,
+      "valor_total": 8094.450000000002,
       "dias_permanencia": 100,
       "taxa_mortalidade": 0
     },
@@ -494,10 +495,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2017,
-      "internacoes": 29,
+      "internacoes": 32,
       "obitos": 0,
-      "valor_total": 20389.249999999996,
-      "dias_permanencia": 52,
+      "valor_total": 22710.230000000003,
+      "dias_permanencia": 96,
       "taxa_mortalidade": 0
     },
     {
@@ -505,10 +506,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2018,
-      "internacoes": 21,
+      "internacoes": 24,
       "obitos": 0,
-      "valor_total": 12857.220000000001,
-      "dias_permanencia": 151,
+      "valor_total": 13759.480000000005,
+      "dias_permanencia": 124,
       "taxa_mortalidade": 0
     },
     {
@@ -516,10 +517,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2019,
-      "internacoes": 24,
+      "internacoes": 30,
       "obitos": 0,
-      "valor_total": 11667.909999999998,
-      "dias_permanencia": 89,
+      "valor_total": 15098.169999999998,
+      "dias_permanencia": 117,
       "taxa_mortalidade": 0
     },
     {
@@ -527,10 +528,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2020,
-      "internacoes": 33,
+      "internacoes": 32,
       "obitos": 0,
-      "valor_total": 14901.619999999999,
-      "dias_permanencia": 177,
+      "valor_total": 14669.72,
+      "dias_permanencia": 176,
       "taxa_mortalidade": 0
     },
     {
@@ -538,10 +539,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2021,
-      "internacoes": 30,
+      "internacoes": 29,
       "obitos": 0,
-      "valor_total": 12703.509999999997,
-      "dias_permanencia": 268,
+      "valor_total": 12271.239999999996,
+      "dias_permanencia": 247,
       "taxa_mortalidade": 0
     },
     {
@@ -549,10 +550,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2022,
-      "internacoes": 24,
+      "internacoes": 38,
       "obitos": 0,
-      "valor_total": 15254.009999999997,
-      "dias_permanencia": 199,
+      "valor_total": 22564.25000000001,
+      "dias_permanencia": 258,
       "taxa_mortalidade": 0
     },
     {
@@ -560,10 +561,10 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2023,
-      "internacoes": 34,
+      "internacoes": 33,
       "obitos": 0,
-      "valor_total": 19754.539999999997,
-      "dias_permanencia": 171,
+      "valor_total": 19517.250000000004,
+      "dias_permanencia": 185,
       "taxa_mortalidade": 0
     },
     {
@@ -571,21 +572,21 @@
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2024,
-      "internacoes": 42,
+      "internacoes": 39,
       "obitos": 2,
-      "valor_total": 26601.420000000006,
-      "dias_permanencia": 347,
-      "taxa_mortalidade": 4.761905
+      "valor_total": 30742.100000000006,
+      "dias_permanencia": 342,
+      "taxa_mortalidade": 5.128205
     },
     {
       "uf_codigo": "14",
       "uf": "RR",
       "uf_nome": "Roraima",
       "ano": 2025,
-      "internacoes": 19,
+      "internacoes": 22,
       "obitos": 0,
-      "valor_total": 12181.73,
-      "dias_permanencia": 189,
+      "valor_total": 18670.38,
+      "dias_permanencia": 207,
       "taxa_mortalidade": 0
     },
     {
@@ -593,21 +594,21 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2013,
-      "internacoes": 421,
+      "internacoes": 417,
       "obitos": 1,
-      "valor_total": 951825.0600000033,
-      "dias_permanencia": 876,
-      "taxa_mortalidade": 0.23753
+      "valor_total": 945203.6700000027,
+      "dias_permanencia": 850,
+      "taxa_mortalidade": 0.239808
     },
     {
       "uf_codigo": "15",
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2014,
-      "internacoes": 405,
+      "internacoes": 409,
       "obitos": 0,
-      "valor_total": 1302017.0599999991,
-      "dias_permanencia": 754,
+      "valor_total": 1303064.5799999991,
+      "dias_permanencia": 842,
       "taxa_mortalidade": 0
     },
     {
@@ -615,10 +616,10 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2015,
-      "internacoes": 218,
+      "internacoes": 219,
       "obitos": 0,
-      "valor_total": 149718.3800000001,
-      "dias_permanencia": 862,
+      "valor_total": 150820.74,
+      "dias_permanencia": 773,
       "taxa_mortalidade": 0
     },
     {
@@ -626,10 +627,10 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2016,
-      "internacoes": 265,
+      "internacoes": 304,
       "obitos": 0,
-      "valor_total": 256402.51000000082,
-      "dias_permanencia": 683,
+      "valor_total": 295698.73000000056,
+      "dias_permanencia": 708,
       "taxa_mortalidade": 0
     },
     {
@@ -637,32 +638,32 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2017,
-      "internacoes": 255,
+      "internacoes": 249,
       "obitos": 1,
-      "valor_total": 158022.34000000003,
-      "dias_permanencia": 810,
-      "taxa_mortalidade": 0.392157
+      "valor_total": 156130.02000000002,
+      "dias_permanencia": 754,
+      "taxa_mortalidade": 0.401606
     },
     {
       "uf_codigo": "15",
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2018,
-      "internacoes": 253,
+      "internacoes": 275,
       "obitos": 1,
-      "valor_total": 193857.9200000006,
-      "dias_permanencia": 596,
-      "taxa_mortalidade": 0.395257
+      "valor_total": 214765.71000000072,
+      "dias_permanencia": 664,
+      "taxa_mortalidade": 0.363636
     },
     {
       "uf_codigo": "15",
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2019,
-      "internacoes": 363,
+      "internacoes": 399,
       "obitos": 0,
-      "valor_total": 339847.78000000044,
-      "dias_permanencia": 747,
+      "valor_total": 376594.04000000074,
+      "dias_permanencia": 733,
       "taxa_mortalidade": 0
     },
     {
@@ -670,10 +671,10 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2020,
-      "internacoes": 348,
+      "internacoes": 416,
       "obitos": 0,
-      "valor_total": 261082.60000000114,
-      "dias_permanencia": 448,
+      "valor_total": 342248.0800000011,
+      "dias_permanencia": 492,
       "taxa_mortalidade": 0
     },
     {
@@ -681,10 +682,10 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2021,
-      "internacoes": 265,
+      "internacoes": 313,
       "obitos": 0,
-      "valor_total": 270451.7400000004,
-      "dias_permanencia": 414,
+      "valor_total": 324925.57000000076,
+      "dias_permanencia": 458,
       "taxa_mortalidade": 0
     },
     {
@@ -692,32 +693,32 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2022,
-      "internacoes": 602,
+      "internacoes": 577,
       "obitos": 1,
-      "valor_total": 409230.1000000004,
-      "dias_permanencia": 761,
-      "taxa_mortalidade": 0.166113
+      "valor_total": 385186.30000000045,
+      "dias_permanencia": 707,
+      "taxa_mortalidade": 0.17331
     },
     {
       "uf_codigo": "15",
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2023,
-      "internacoes": 372,
+      "internacoes": 388,
       "obitos": 1,
-      "valor_total": 635971.9100000005,
-      "dias_permanencia": 607,
-      "taxa_mortalidade": 0.268817
+      "valor_total": 647517.4900000005,
+      "dias_permanencia": 645,
+      "taxa_mortalidade": 0.257732
     },
     {
       "uf_codigo": "15",
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2024,
-      "internacoes": 358,
+      "internacoes": 352,
       "obitos": 0,
-      "valor_total": 313212.05000000075,
-      "dias_permanencia": 504,
+      "valor_total": 315344.9500000008,
+      "dias_permanencia": 493,
       "taxa_mortalidade": 0
     },
     {
@@ -725,21 +726,21 @@
       "uf": "PA",
       "uf_nome": "Pará",
       "ano": 2025,
-      "internacoes": 250,
+      "internacoes": 262,
       "obitos": 1,
-      "valor_total": 240198.39999999994,
-      "dias_permanencia": 899,
-      "taxa_mortalidade": 0.4
+      "valor_total": 247448.9600000001,
+      "dias_permanencia": 912,
+      "taxa_mortalidade": 0.381679
     },
     {
       "uf_codigo": "16",
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2013,
-      "internacoes": 7,
+      "internacoes": 9,
       "obitos": 0,
-      "valor_total": 2437.4300000000003,
-      "dias_permanencia": 26,
+      "valor_total": 3065.7700000000004,
+      "dias_permanencia": 37,
       "taxa_mortalidade": 0
     },
     {
@@ -747,10 +748,10 @@
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2014,
-      "internacoes": 11,
+      "internacoes": 9,
       "obitos": 0,
-      "valor_total": 3659.4599999999996,
-      "dias_permanencia": 52,
+      "valor_total": 3031.1200000000003,
+      "dias_permanencia": 41,
       "taxa_mortalidade": 0
     },
     {
@@ -769,21 +770,21 @@
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2016,
-      "internacoes": 12,
+      "internacoes": 14,
       "obitos": 1,
-      "valor_total": 5210.16,
-      "dias_permanencia": 38,
-      "taxa_mortalidade": 8.333333
+      "valor_total": 5841.2,
+      "dias_permanencia": 44,
+      "taxa_mortalidade": 7.142857
     },
     {
       "uf_codigo": "16",
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2017,
-      "internacoes": 19,
+      "internacoes": 17,
       "obitos": 0,
-      "valor_total": 6332.89,
-      "dias_permanencia": 69,
+      "valor_total": 5701.850000000001,
+      "dias_permanencia": 63,
       "taxa_mortalidade": 0
     },
     {
@@ -824,10 +825,10 @@
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2021,
-      "internacoes": 82,
+      "internacoes": 83,
       "obitos": 0,
-      "valor_total": 140212.69000000006,
-      "dias_permanencia": 39,
+      "valor_total": 140816.21000000005,
+      "dias_permanencia": 41,
       "taxa_mortalidade": 0
     },
     {
@@ -835,10 +836,10 @@
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2022,
-      "internacoes": 112,
+      "internacoes": 129,
       "obitos": 0,
-      "valor_total": 236050.81000000026,
-      "dias_permanencia": 17,
+      "valor_total": 275129.0400000002,
+      "dias_permanencia": 19,
       "taxa_mortalidade": 0
     },
     {
@@ -846,10 +847,10 @@
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2023,
-      "internacoes": 85,
+      "internacoes": 67,
       "obitos": 0,
-      "valor_total": 185238.2900000001,
-      "dias_permanencia": 55,
+      "valor_total": 145556.53999999995,
+      "dias_permanencia": 51,
       "taxa_mortalidade": 0
     },
     {
@@ -857,9 +858,9 @@
       "uf": "AP",
       "uf_nome": "Amapá",
       "ano": 2024,
-      "internacoes": 22,
+      "internacoes": 24,
       "obitos": 0,
-      "valor_total": 15153.610000000004,
+      "valor_total": 16430.330000000005,
       "dias_permanencia": 41,
       "taxa_mortalidade": 0
     },
@@ -870,8 +871,8 @@
       "ano": 2025,
       "internacoes": 35,
       "obitos": 0,
-      "valor_total": 58143.780000000006,
-      "dias_permanencia": 79,
+      "valor_total": 58216.08,
+      "dias_permanencia": 110,
       "taxa_mortalidade": 0
     },
     {
@@ -879,10 +880,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2013,
-      "internacoes": 76,
+      "internacoes": 70,
       "obitos": 0,
-      "valor_total": 69847.08999999997,
-      "dias_permanencia": 205,
+      "valor_total": 64767.649999999994,
+      "dias_permanencia": 183,
       "taxa_mortalidade": 0
     },
     {
@@ -890,10 +891,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2014,
-      "internacoes": 56,
+      "internacoes": 61,
       "obitos": 0,
-      "valor_total": 32677.050000000007,
-      "dias_permanencia": 127,
+      "valor_total": 35349.030000000006,
+      "dias_permanencia": 143,
       "taxa_mortalidade": 0
     },
     {
@@ -901,10 +902,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2015,
-      "internacoes": 53,
+      "internacoes": 47,
       "obitos": 0,
-      "valor_total": 29915.43999999999,
-      "dias_permanencia": 229,
+      "valor_total": 26988.65999999999,
+      "dias_permanencia": 213,
       "taxa_mortalidade": 0
     },
     {
@@ -912,10 +913,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2016,
-      "internacoes": 23,
+      "internacoes": 26,
       "obitos": 0,
-      "valor_total": 9268.829999999998,
-      "dias_permanencia": 109,
+      "valor_total": 16453.88,
+      "dias_permanencia": 177,
       "taxa_mortalidade": 0
     },
     {
@@ -923,10 +924,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2017,
-      "internacoes": 50,
+      "internacoes": 48,
       "obitos": 0,
-      "valor_total": 24456.59000000001,
-      "dias_permanencia": 199,
+      "valor_total": 18159.28,
+      "dias_permanencia": 133,
       "taxa_mortalidade": 0
     },
     {
@@ -934,10 +935,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2018,
-      "internacoes": 24,
+      "internacoes": 31,
       "obitos": 0,
-      "valor_total": 9235.98,
-      "dias_permanencia": 63,
+      "valor_total": 16123.309999999998,
+      "dias_permanencia": 95,
       "taxa_mortalidade": 0
     },
     {
@@ -945,10 +946,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2019,
-      "internacoes": 42,
+      "internacoes": 40,
       "obitos": 0,
-      "valor_total": 25413.440000000002,
-      "dias_permanencia": 195,
+      "valor_total": 22233.82,
+      "dias_permanencia": 234,
       "taxa_mortalidade": 0
     },
     {
@@ -958,8 +959,8 @@
       "ano": 2020,
       "internacoes": 51,
       "obitos": 2,
-      "valor_total": 32071.620000000003,
-      "dias_permanencia": 323,
+      "valor_total": 29384.900000000005,
+      "dias_permanencia": 281,
       "taxa_mortalidade": 3.921569
     },
     {
@@ -967,10 +968,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2021,
-      "internacoes": 44,
+      "internacoes": 40,
       "obitos": 0,
-      "valor_total": 19369.97,
-      "dias_permanencia": 280,
+      "valor_total": 18683.310000000005,
+      "dias_permanencia": 261,
       "taxa_mortalidade": 0
     },
     {
@@ -978,10 +979,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2022,
-      "internacoes": 46,
+      "internacoes": 54,
       "obitos": 0,
-      "valor_total": 23479.530000000002,
-      "dias_permanencia": 259,
+      "valor_total": 29364.540000000008,
+      "dias_permanencia": 302,
       "taxa_mortalidade": 0
     },
     {
@@ -989,10 +990,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2023,
-      "internacoes": 62,
+      "internacoes": 58,
       "obitos": 0,
-      "valor_total": 44140.47,
-      "dias_permanencia": 451,
+      "valor_total": 40791.81000000003,
+      "dias_permanencia": 492,
       "taxa_mortalidade": 0
     },
     {
@@ -1000,10 +1001,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2024,
-      "internacoes": 119,
+      "internacoes": 123,
       "obitos": 0,
-      "valor_total": 257757.55999999988,
-      "dias_permanencia": 1132,
+      "valor_total": 258203.1399999998,
+      "dias_permanencia": 1066,
       "taxa_mortalidade": 0
     },
     {
@@ -1011,10 +1012,10 @@
       "uf": "TO",
       "uf_nome": "Tocantins",
       "ano": 2025,
-      "internacoes": 185,
+      "internacoes": 183,
       "obitos": 0,
-      "valor_total": 625844.7300000004,
-      "dias_permanencia": 2746,
+      "valor_total": 624735.9500000003,
+      "dias_permanencia": 2771,
       "taxa_mortalidade": 0
     },
     {
@@ -1022,10 +1023,10 @@
       "uf": "MA",
       "uf_nome": "Maranhão",
       "ano": 2013,
-      "internacoes": 127,
+      "internacoes": 141,
       "obitos": 0,
-      "valor_total": 85139.76999999999,
-      "dias_permanencia": 72,
+      "valor_total": 95956.80999999998,
+      "dias_permanencia": 77,
       "taxa_mortalidade": 0
     },
     {
@@ -1033,10 +1034,10 @@
       "uf": "MA",
       "uf_nome": "Maranhão",
       "ano": 2014,
-      "internacoes": 581,
+      "internacoes": 594,
       "obitos": 0,
-      "valor_total": 289382.82999999804,
-      "dias_permanencia": 104,
+      "valor_total": 307714.039999998,
+      "dias_permanencia": 191,
       "taxa_mortalidade": 0
     },
     {
@@ -1044,10 +1045,10 @@
       "uf": "MA",
       "uf_nome": "Maranhão",
       "ano": 2015,
-      "internacoes": 220,
+      "internacoes": 234,
       "obitos": 0,
-      "valor_total": 235136.6300000009,
-      "dias_permanencia": 237,
+      "valor_total": 244885.32000000097,
+      "dias_permanencia": 278,
       "taxa_mortalidade": 0
     },
     {
@@ -1055,10 +1056,10 @@
       "uf": "MA",
       "uf_nome": "Maranhão",
       "ano": 2016,
-      "internacoes": 220,
+      "internacoes": 213,
       "obitos": 0,
-      "valor_total": 169790.85000000015,
-      "dias_permanencia": 399,
+      "valor_total": 163963.4100000001,
+      "dias_permanencia": 412,
       "taxa_mortalidade": 0
     },
     {
@@ -1066,31 +1067,9 @@
       "uf": "MA",
       "uf_nome": "Maranhão",
       "ano": 2017,
-      "internacoes": 288,
+      "internacoes": 289,
       "obitos": 0,
-      "valor_total": 231712.3300000003,
-      "dias_permanencia": 348,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2018,
-      "internacoes": 150,
-      "obitos": 0,
-      "valor_total": 138554.23000000004,
-      "dias_permanencia": 240,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2019,
-      "internacoes": 229,
-      "obitos": 0,
-      "valor_total": 269190.47000000067,
+      "valor_total": 233773.73000000033,
       "dias_permanencia": 330,
       "taxa_mortalidade": 0
     },
@@ -1098,484 +1077,506 @@
       "uf_codigo": "21",
       "uf": "MA",
       "uf_nome": "Maranhão",
-      "ano": 2020,
-      "internacoes": 203,
-      "obitos": 1,
-      "valor_total": 218543.98000000036,
-      "dias_permanencia": 368,
-      "taxa_mortalidade": 0.492611
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2021,
-      "internacoes": 511,
-      "obitos": 0,
-      "valor_total": 522530.7299999998,
-      "dias_permanencia": 182,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2022,
-      "internacoes": 789,
-      "obitos": 1,
-      "valor_total": 859142.199999999,
-      "dias_permanencia": 353,
-      "taxa_mortalidade": 0.126743
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2023,
-      "internacoes": 866,
-      "obitos": 0,
-      "valor_total": 886320.1399999978,
-      "dias_permanencia": 398,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2024,
-      "internacoes": 746,
-      "obitos": 0,
-      "valor_total": 926914.6299999935,
-      "dias_permanencia": 529,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "21",
-      "uf": "MA",
-      "uf_nome": "Maranhão",
-      "ano": 2025,
-      "internacoes": 658,
-      "obitos": 0,
-      "valor_total": 1064654.3799999952,
-      "dias_permanencia": 717,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2013,
-      "internacoes": 260,
-      "obitos": 0,
-      "valor_total": 116911.85999999986,
-      "dias_permanencia": 536,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2014,
-      "internacoes": 232,
-      "obitos": 0,
-      "valor_total": 139078.42,
-      "dias_permanencia": 391,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2015,
-      "internacoes": 231,
-      "obitos": 0,
-      "valor_total": 140462.37999999992,
-      "dias_permanencia": 449,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2016,
-      "internacoes": 305,
-      "obitos": 0,
-      "valor_total": 146227.93999999992,
-      "dias_permanencia": 535,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2017,
-      "internacoes": 383,
-      "obitos": 1,
-      "valor_total": 214561.51000000007,
-      "dias_permanencia": 674,
-      "taxa_mortalidade": 0.261097
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
       "ano": 2018,
-      "internacoes": 364,
-      "obitos": 1,
-      "valor_total": 235635.1599999993,
-      "dias_permanencia": 778,
-      "taxa_mortalidade": 0.274725
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2019,
-      "internacoes": 316,
+      "internacoes": 194,
       "obitos": 0,
-      "valor_total": 241910.95999999947,
-      "dias_permanencia": 668,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2020,
-      "internacoes": 255,
-      "obitos": 1,
-      "valor_total": 198697.66999999984,
-      "dias_permanencia": 624,
-      "taxa_mortalidade": 0.392157
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2021,
-      "internacoes": 329,
-      "obitos": 1,
-      "valor_total": 259558.67999999953,
-      "dias_permanencia": 704,
-      "taxa_mortalidade": 0.303951
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2022,
-      "internacoes": 383,
-      "obitos": 1,
-      "valor_total": 298138.85,
-      "dias_permanencia": 922,
-      "taxa_mortalidade": 0.261097
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2023,
-      "internacoes": 471,
-      "obitos": 1,
-      "valor_total": 414405.54000000044,
-      "dias_permanencia": 1127,
-      "taxa_mortalidade": 0.212314
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2024,
-      "internacoes": 444,
-      "obitos": 0,
-      "valor_total": 385479.26000000065,
-      "dias_permanencia": 1051,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "22",
-      "uf": "PI",
-      "uf_nome": "Piauí",
-      "ano": 2025,
-      "internacoes": 363,
-      "obitos": 0,
-      "valor_total": 357224.5700000003,
-      "dias_permanencia": 789,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2013,
-      "internacoes": 591,
-      "obitos": 0,
-      "valor_total": 498608.4900000013,
-      "dias_permanencia": 1034,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2014,
-      "internacoes": 772,
-      "obitos": 0,
-      "valor_total": 653808.3700000015,
-      "dias_permanencia": 1212,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2015,
-      "internacoes": 416,
-      "obitos": 1,
-      "valor_total": 336693.9500000005,
-      "dias_permanencia": 931,
-      "taxa_mortalidade": 0.240385
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2016,
-      "internacoes": 690,
-      "obitos": 1,
-      "valor_total": 628355.7600000007,
-      "dias_permanencia": 1283,
-      "taxa_mortalidade": 0.144928
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2017,
-      "internacoes": 362,
-      "obitos": 0,
-      "valor_total": 334016.450000001,
-      "dias_permanencia": 1017,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2018,
-      "internacoes": 414,
-      "obitos": 0,
-      "valor_total": 446731.2200000023,
-      "dias_permanencia": 1242,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2019,
-      "internacoes": 387,
-      "obitos": 0,
-      "valor_total": 421481.9500000006,
-      "dias_permanencia": 1101,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2020,
-      "internacoes": 317,
-      "obitos": 0,
-      "valor_total": 349254.2199999999,
-      "dias_permanencia": 1022,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2021,
-      "internacoes": 327,
-      "obitos": 0,
-      "valor_total": 437922.70000000024,
-      "dias_permanencia": 979,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2022,
-      "internacoes": 493,
-      "obitos": 3,
-      "valor_total": 572970.1899999994,
-      "dias_permanencia": 1519,
-      "taxa_mortalidade": 0.608519
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2023,
-      "internacoes": 197,
-      "obitos": 1,
-      "valor_total": 278031.3000000001,
-      "dias_permanencia": 720,
-      "taxa_mortalidade": 0.507614
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2024,
-      "internacoes": 311,
-      "obitos": 0,
-      "valor_total": 484278.17000000045,
-      "dias_permanencia": 832,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "23",
-      "uf": "CE",
-      "uf_nome": "Ceará",
-      "ano": 2025,
-      "internacoes": 445,
-      "obitos": 2,
-      "valor_total": 630511.7299999994,
-      "dias_permanencia": 1587,
-      "taxa_mortalidade": 0.449438
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2013,
-      "internacoes": 132,
-      "obitos": 0,
-      "valor_total": 91463.05999999998,
-      "dias_permanencia": 389,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2014,
-      "internacoes": 141,
-      "obitos": 0,
-      "valor_total": 103265.89,
-      "dias_permanencia": 597,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2015,
-      "internacoes": 161,
-      "obitos": 0,
-      "valor_total": 119982.92999999993,
-      "dias_permanencia": 532,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2016,
-      "internacoes": 182,
-      "obitos": 0,
-      "valor_total": 233645.89000000045,
-      "dias_permanencia": 430,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2017,
-      "internacoes": 197,
-      "obitos": 2,
-      "valor_total": 327580.60000000073,
-      "dias_permanencia": 421,
-      "taxa_mortalidade": 1.015228
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2018,
-      "internacoes": 288,
-      "obitos": 0,
-      "valor_total": 585121.8899999997,
-      "dias_permanencia": 550,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2019,
-      "internacoes": 305,
-      "obitos": 2,
-      "valor_total": 644587.1800000006,
-      "dias_permanencia": 666,
-      "taxa_mortalidade": 0.655738
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2020,
-      "internacoes": 133,
-      "obitos": 0,
-      "valor_total": 182436.0299999998,
-      "dias_permanencia": 488,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2021,
-      "internacoes": 71,
-      "obitos": 1,
-      "valor_total": 87167.95999999999,
-      "dias_permanencia": 239,
-      "taxa_mortalidade": 1.408451
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2022,
-      "internacoes": 74,
-      "obitos": 0,
-      "valor_total": 90653.16999999994,
-      "dias_permanencia": 182,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "24",
-      "uf": "RN",
-      "uf_nome": "Rio Grande do Norte",
-      "ano": 2023,
-      "internacoes": 102,
-      "obitos": 0,
-      "valor_total": 91172.48999999998,
+      "valor_total": 179143.33000000016,
       "dias_permanencia": 298,
       "taxa_mortalidade": 0
     },
     {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2019,
+      "internacoes": 227,
+      "obitos": 0,
+      "valor_total": 273002.4200000005,
+      "dias_permanencia": 357,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2020,
+      "internacoes": 212,
+      "obitos": 1,
+      "valor_total": 226903.1400000004,
+      "dias_permanencia": 444,
+      "taxa_mortalidade": 0.471698
+    },
+    {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2021,
+      "internacoes": 622,
+      "obitos": 1,
+      "valor_total": 659647.4899999993,
+      "dias_permanencia": 171,
+      "taxa_mortalidade": 0.160772
+    },
+    {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2022,
+      "internacoes": 766,
+      "obitos": 0,
+      "valor_total": 835585.2599999999,
+      "dias_permanencia": 365,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2023,
+      "internacoes": 887,
+      "obitos": 0,
+      "valor_total": 898692.3399999967,
+      "dias_permanencia": 388,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2024,
+      "internacoes": 817,
+      "obitos": 0,
+      "valor_total": 1058981.019999993,
+      "dias_permanencia": 620,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "21",
+      "uf": "MA",
+      "uf_nome": "Maranhão",
+      "ano": 2025,
+      "internacoes": 726,
+      "obitos": 0,
+      "valor_total": 1167905.8699999938,
+      "dias_permanencia": 706,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2013,
+      "internacoes": 280,
+      "obitos": 0,
+      "valor_total": 121060.1299999998,
+      "dias_permanencia": 546,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2014,
+      "internacoes": 227,
+      "obitos": 0,
+      "valor_total": 141347.56,
+      "dias_permanencia": 383,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2015,
+      "internacoes": 242,
+      "obitos": 0,
+      "valor_total": 146594.85,
+      "dias_permanencia": 467,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2016,
+      "internacoes": 292,
+      "obitos": 0,
+      "valor_total": 137731.19999999978,
+      "dias_permanencia": 517,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2017,
+      "internacoes": 378,
+      "obitos": 1,
+      "valor_total": 219221.58000000002,
+      "dias_permanencia": 672,
+      "taxa_mortalidade": 0.26455
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2018,
+      "internacoes": 351,
+      "obitos": 1,
+      "valor_total": 230458.0399999994,
+      "dias_permanencia": 759,
+      "taxa_mortalidade": 0.2849
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2019,
+      "internacoes": 329,
+      "obitos": 0,
+      "valor_total": 265386.6099999994,
+      "dias_permanencia": 695,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2020,
+      "internacoes": 273,
+      "obitos": 1,
+      "valor_total": 190677.65999999997,
+      "dias_permanencia": 679,
+      "taxa_mortalidade": 0.3663
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2021,
+      "internacoes": 303,
+      "obitos": 1,
+      "valor_total": 240367.93999999954,
+      "dias_permanencia": 649,
+      "taxa_mortalidade": 0.330033
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2022,
+      "internacoes": 387,
+      "obitos": 1,
+      "valor_total": 300489.33,
+      "dias_permanencia": 946,
+      "taxa_mortalidade": 0.258398
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2023,
+      "internacoes": 501,
+      "obitos": 1,
+      "valor_total": 423253.4700000007,
+      "dias_permanencia": 1119,
+      "taxa_mortalidade": 0.199601
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2024,
+      "internacoes": 430,
+      "obitos": 0,
+      "valor_total": 393798.59000000014,
+      "dias_permanencia": 1052,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "22",
+      "uf": "PI",
+      "uf_nome": "Piauí",
+      "ano": 2025,
+      "internacoes": 379,
+      "obitos": 0,
+      "valor_total": 376795.3300000004,
+      "dias_permanencia": 779,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2013,
+      "internacoes": 571,
+      "obitos": 0,
+      "valor_total": 497766.2400000012,
+      "dias_permanencia": 1059,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2014,
+      "internacoes": 773,
+      "obitos": 0,
+      "valor_total": 629963.4000000019,
+      "dias_permanencia": 1162,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2015,
+      "internacoes": 475,
+      "obitos": 1,
+      "valor_total": 367088.470000001,
+      "dias_permanencia": 945,
+      "taxa_mortalidade": 0.210526
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2016,
+      "internacoes": 623,
+      "obitos": 1,
+      "valor_total": 593020.3100000013,
+      "dias_permanencia": 1226,
+      "taxa_mortalidade": 0.160514
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2017,
+      "internacoes": 349,
+      "obitos": 0,
+      "valor_total": 341620.03000000055,
+      "dias_permanencia": 1179,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2018,
+      "internacoes": 441,
+      "obitos": 0,
+      "valor_total": 446267.580000002,
+      "dias_permanencia": 1172,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2019,
+      "internacoes": 377,
+      "obitos": 0,
+      "valor_total": 414359.2700000005,
+      "dias_permanencia": 1189,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2020,
+      "internacoes": 314,
+      "obitos": 0,
+      "valor_total": 357437.3100000004,
+      "dias_permanencia": 941,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2021,
+      "internacoes": 315,
+      "obitos": 0,
+      "valor_total": 417899.4300000003,
+      "dias_permanencia": 977,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2022,
+      "internacoes": 501,
+      "obitos": 3,
+      "valor_total": 671894.0800000001,
+      "dias_permanencia": 1670,
+      "taxa_mortalidade": 0.598802
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2023,
+      "internacoes": 524,
+      "obitos": 2,
+      "valor_total": 483916.2000000007,
+      "dias_permanencia": 1594,
+      "taxa_mortalidade": 0.381679
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2024,
+      "internacoes": 534,
+      "obitos": 1,
+      "valor_total": 747786.7300000009,
+      "dias_permanencia": 1477,
+      "taxa_mortalidade": 0.187266
+    },
+    {
+      "uf_codigo": "23",
+      "uf": "CE",
+      "uf_nome": "Ceará",
+      "ano": 2025,
+      "internacoes": 446,
+      "obitos": 2,
+      "valor_total": 635980.2899999999,
+      "dias_permanencia": 1566,
+      "taxa_mortalidade": 0.44843
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2013,
+      "internacoes": 146,
+      "obitos": 0,
+      "valor_total": 102503.97999999998,
+      "dias_permanencia": 463,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2014,
+      "internacoes": 146,
+      "obitos": 0,
+      "valor_total": 104952.75999999997,
+      "dias_permanencia": 602,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2015,
+      "internacoes": 147,
+      "obitos": 0,
+      "valor_total": 113415.6,
+      "dias_permanencia": 546,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2016,
+      "internacoes": 177,
+      "obitos": 0,
+      "valor_total": 230331.42000000036,
+      "dias_permanencia": 386,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2017,
+      "internacoes": 202,
+      "obitos": 2,
+      "valor_total": 335278.16000000085,
+      "dias_permanencia": 473,
+      "taxa_mortalidade": 0.990099
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2018,
+      "internacoes": 301,
+      "obitos": 1,
+      "valor_total": 590005.9299999995,
+      "dias_permanencia": 544,
+      "taxa_mortalidade": 0.332226
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2019,
+      "internacoes": 307,
+      "obitos": 1,
+      "valor_total": 651663.7400000006,
+      "dias_permanencia": 714,
+      "taxa_mortalidade": 0.325733
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2020,
+      "internacoes": 114,
+      "obitos": 0,
+      "valor_total": 163109.6399999998,
+      "dias_permanencia": 335,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2021,
+      "internacoes": 77,
+      "obitos": 1,
+      "valor_total": 89131.25,
+      "dias_permanencia": 264,
+      "taxa_mortalidade": 1.298701
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2022,
+      "internacoes": 75,
+      "obitos": 0,
+      "valor_total": 91080.90999999996,
+      "dias_permanencia": 199,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "24",
+      "uf": "RN",
+      "uf_nome": "Rio Grande do Norte",
+      "ano": 2023,
+      "internacoes": 99,
+      "obitos": 0,
+      "valor_total": 91335.24,
+      "dias_permanencia": 284,
+      "taxa_mortalidade": 0
+    },
+    {
       "uf_codigo": "24",
       "uf": "RN",
       "uf_nome": "Rio Grande do Norte",
       "ano": 2024,
-      "internacoes": 163,
+      "internacoes": 180,
       "obitos": 0,
-      "valor_total": 286406.04000000015,
-      "dias_permanencia": 273,
+      "valor_total": 304288.1100000003,
+      "dias_permanencia": 388,
       "taxa_mortalidade": 0
     },
     {
@@ -1583,21 +1584,21 @@
       "uf": "RN",
       "uf_nome": "Rio Grande do Norte",
       "ano": 2025,
-      "internacoes": 208,
+      "internacoes": 200,
       "obitos": 1,
-      "valor_total": 215796.83999999985,
-      "dias_permanencia": 634,
-      "taxa_mortalidade": 0.480769
+      "valor_total": 202892.04999999976,
+      "dias_permanencia": 532,
+      "taxa_mortalidade": 0.5
     },
     {
       "uf_codigo": "25",
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2013,
-      "internacoes": 96,
+      "internacoes": 93,
       "obitos": 0,
-      "valor_total": 71984.66,
-      "dias_permanencia": 250,
+      "valor_total": 70004.64000000001,
+      "dias_permanencia": 234,
       "taxa_mortalidade": 0
     },
     {
@@ -1605,10 +1606,10 @@
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2014,
-      "internacoes": 71,
+      "internacoes": 70,
       "obitos": 0,
-      "valor_total": 50723.69999999999,
-      "dias_permanencia": 179,
+      "valor_total": 49841.63999999999,
+      "dias_permanencia": 178,
       "taxa_mortalidade": 0
     },
     {
@@ -1616,10 +1617,10 @@
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2015,
-      "internacoes": 89,
+      "internacoes": 93,
       "obitos": 0,
-      "valor_total": 91451.78999999996,
-      "dias_permanencia": 189,
+      "valor_total": 93058.08999999997,
+      "dias_permanencia": 212,
       "taxa_mortalidade": 0
     },
     {
@@ -1627,21 +1628,21 @@
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2016,
-      "internacoes": 56,
+      "internacoes": 55,
       "obitos": 1,
-      "valor_total": 36481.65000000001,
-      "dias_permanencia": 172,
-      "taxa_mortalidade": 1.785714
+      "valor_total": 36163.63000000002,
+      "dias_permanencia": 152,
+      "taxa_mortalidade": 1.818182
     },
     {
       "uf_codigo": "25",
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2017,
-      "internacoes": 72,
+      "internacoes": 67,
       "obitos": 0,
-      "valor_total": 65196.60999999998,
-      "dias_permanencia": 161,
+      "valor_total": 62788.02999999997,
+      "dias_permanencia": 153,
       "taxa_mortalidade": 0
     },
     {
@@ -1649,21 +1650,21 @@
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2018,
-      "internacoes": 46,
+      "internacoes": 49,
       "obitos": 2,
-      "valor_total": 32131.129999999997,
-      "dias_permanencia": 145,
-      "taxa_mortalidade": 4.347826
+      "valor_total": 34762.34,
+      "dias_permanencia": 150,
+      "taxa_mortalidade": 4.081633
     },
     {
       "uf_codigo": "25",
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2019,
-      "internacoes": 93,
+      "internacoes": 96,
       "obitos": 0,
-      "valor_total": 128110.44000000002,
-      "dias_permanencia": 246,
+      "valor_total": 131120.48000000004,
+      "dias_permanencia": 253,
       "taxa_mortalidade": 0
     },
     {
@@ -1673,8 +1674,8 @@
       "ano": 2020,
       "internacoes": 55,
       "obitos": 0,
-      "valor_total": 51533.11999999999,
-      "dias_permanencia": 143,
+      "valor_total": 49706.959999999985,
+      "dias_permanencia": 171,
       "taxa_mortalidade": 0
     },
     {
@@ -1682,32 +1683,32 @@
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2021,
-      "internacoes": 60,
-      "obitos": 0,
-      "valor_total": 74588.93000000001,
-      "dias_permanencia": 143,
-      "taxa_mortalidade": 0
+      "internacoes": 58,
+      "obitos": 1,
+      "valor_total": 117615.36000000002,
+      "dias_permanencia": 192,
+      "taxa_mortalidade": 1.724138
     },
     {
       "uf_codigo": "25",
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2022,
-      "internacoes": 77,
-      "obitos": 1,
-      "valor_total": 137586.58,
-      "dias_permanencia": 422,
-      "taxa_mortalidade": 1.298701
+      "internacoes": 79,
+      "obitos": 0,
+      "valor_total": 94070.03999999992,
+      "dias_permanencia": 361,
+      "taxa_mortalidade": 0
     },
     {
       "uf_codigo": "25",
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2023,
-      "internacoes": 101,
+      "internacoes": 100,
       "obitos": 0,
-      "valor_total": 119324.02999999997,
-      "dias_permanencia": 415,
+      "valor_total": 120411.06999999996,
+      "dias_permanencia": 410,
       "taxa_mortalidade": 0
     },
     {
@@ -1715,10 +1716,10 @@
       "uf": "PB",
       "uf_nome": "Paraíba",
       "ano": 2024,
-      "internacoes": 168,
+      "internacoes": 179,
       "obitos": 0,
-      "valor_total": 245240.51999999993,
-      "dias_permanencia": 553,
+      "valor_total": 251653.14,
+      "dias_permanencia": 565,
       "taxa_mortalidade": 0
     },
     {
@@ -1728,8 +1729,8 @@
       "ano": 2025,
       "internacoes": 266,
       "obitos": 1,
-      "valor_total": 715090.3700000005,
-      "dias_permanencia": 724,
+      "valor_total": 752491.4400000005,
+      "dias_permanencia": 715,
       "taxa_mortalidade": 0.37594
     },
     {
@@ -1737,21 +1738,21 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2013,
-      "internacoes": 1055,
+      "internacoes": 1082,
       "obitos": 1,
-      "valor_total": 1033538.3699999986,
-      "dias_permanencia": 570,
-      "taxa_mortalidade": 0.094787
+      "valor_total": 1054325.0799999987,
+      "dias_permanencia": 517,
+      "taxa_mortalidade": 0.092421
     },
     {
       "uf_codigo": "26",
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2014,
-      "internacoes": 840,
+      "internacoes": 979,
       "obitos": 0,
-      "valor_total": 829898.1600000007,
-      "dias_permanencia": 467,
+      "valor_total": 1069548.7800000026,
+      "dias_permanencia": 561,
       "taxa_mortalidade": 0
     },
     {
@@ -1759,10 +1760,10 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2015,
-      "internacoes": 975,
+      "internacoes": 930,
       "obitos": 0,
-      "valor_total": 1362911.859999988,
-      "dias_permanencia": 825,
+      "valor_total": 1244891.359999993,
+      "dias_permanencia": 822,
       "taxa_mortalidade": 0
     },
     {
@@ -1770,21 +1771,21 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2016,
-      "internacoes": 772,
+      "internacoes": 784,
       "obitos": 2,
-      "valor_total": 779883.630000002,
-      "dias_permanencia": 710,
-      "taxa_mortalidade": 0.259067
+      "valor_total": 802632.4900000019,
+      "dias_permanencia": 698,
+      "taxa_mortalidade": 0.255102
     },
     {
       "uf_codigo": "26",
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2017,
-      "internacoes": 920,
+      "internacoes": 941,
       "obitos": 0,
-      "valor_total": 843591.2400000073,
-      "dias_permanencia": 627,
+      "valor_total": 884232.4000000078,
+      "dias_permanencia": 630,
       "taxa_mortalidade": 0
     },
     {
@@ -1792,10 +1793,10 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2018,
-      "internacoes": 1028,
+      "internacoes": 999,
       "obitos": 0,
-      "valor_total": 1086433.7200000077,
-      "dias_permanencia": 537,
+      "valor_total": 1022975.8700000073,
+      "dias_permanencia": 564,
       "taxa_mortalidade": 0
     },
     {
@@ -1803,10 +1804,10 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2019,
-      "internacoes": 1022,
+      "internacoes": 1034,
       "obitos": 0,
-      "valor_total": 1055880.2200000058,
-      "dias_permanencia": 468,
+      "valor_total": 1077867.1300000045,
+      "dias_permanencia": 482,
       "taxa_mortalidade": 0
     },
     {
@@ -1814,10 +1815,10 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2020,
-      "internacoes": 635,
+      "internacoes": 639,
       "obitos": 0,
-      "valor_total": 888908.9200000035,
-      "dias_permanencia": 362,
+      "valor_total": 898594.830000003,
+      "dias_permanencia": 360,
       "taxa_mortalidade": 0
     },
     {
@@ -1825,10 +1826,10 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2021,
-      "internacoes": 1039,
+      "internacoes": 1044,
       "obitos": 0,
-      "valor_total": 1034655.2200000102,
-      "dias_permanencia": 397,
+      "valor_total": 1033670.5000000102,
+      "dias_permanencia": 443,
       "taxa_mortalidade": 0
     },
     {
@@ -1836,10 +1837,10 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2022,
-      "internacoes": 1255,
+      "internacoes": 1268,
       "obitos": 0,
-      "valor_total": 1215332.6900000002,
-      "dias_permanencia": 537,
+      "valor_total": 1247728.850000001,
+      "dias_permanencia": 499,
       "taxa_mortalidade": 0
     },
     {
@@ -1847,33 +1848,33 @@
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2023,
-      "internacoes": 1041,
+      "internacoes": 1063,
       "obitos": 1,
-      "valor_total": 1470290.3799999899,
-      "dias_permanencia": 454,
-      "taxa_mortalidade": 0.096061
+      "valor_total": 1457347.7599999874,
+      "dias_permanencia": 438,
+      "taxa_mortalidade": 0.094073
     },
     {
       "uf_codigo": "26",
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2024,
-      "internacoes": 1119,
+      "internacoes": 1209,
       "obitos": 1,
-      "valor_total": 1203903.8199999984,
-      "dias_permanencia": 453,
-      "taxa_mortalidade": 0.089366
+      "valor_total": 1284591.4199999913,
+      "dias_permanencia": 475,
+      "taxa_mortalidade": 0.082713
     },
     {
       "uf_codigo": "26",
       "uf": "PE",
       "uf_nome": "Pernambuco",
       "ano": 2025,
-      "internacoes": 1729,
+      "internacoes": 1712,
       "obitos": 1,
-      "valor_total": 1988278.4899999762,
-      "dias_permanencia": 454,
-      "taxa_mortalidade": 0.057837
+      "valor_total": 1950682.2199999793,
+      "dias_permanencia": 440,
+      "taxa_mortalidade": 0.058411
     },
     {
       "uf_codigo": "27",
@@ -1882,8 +1883,8 @@
       "ano": 2013,
       "internacoes": 224,
       "obitos": 0,
-      "valor_total": 272796.5200000007,
-      "dias_permanencia": 290,
+      "valor_total": 270010.0700000006,
+      "dias_permanencia": 273,
       "taxa_mortalidade": 0
     },
     {
@@ -1893,8 +1894,8 @@
       "ano": 2014,
       "internacoes": 161,
       "obitos": 3,
-      "valor_total": 189441.52000000037,
-      "dias_permanencia": 78,
+      "valor_total": 193338.7300000004,
+      "dias_permanencia": 75,
       "taxa_mortalidade": 1.863354
     },
     {
@@ -1902,10 +1903,10 @@
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2015,
-      "internacoes": 233,
+      "internacoes": 237,
       "obitos": 0,
-      "valor_total": 367094.7400000004,
-      "dias_permanencia": 112,
+      "valor_total": 365010.0200000004,
+      "dias_permanencia": 140,
       "taxa_mortalidade": 0
     },
     {
@@ -1913,54 +1914,54 @@
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2016,
-      "internacoes": 294,
+      "internacoes": 291,
       "obitos": 1,
-      "valor_total": 465975.1499999996,
-      "dias_permanencia": 279,
-      "taxa_mortalidade": 0.340136
+      "valor_total": 464470.43999999954,
+      "dias_permanencia": 267,
+      "taxa_mortalidade": 0.343643
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2017,
-      "internacoes": 404,
+      "internacoes": 406,
       "obitos": 2,
-      "valor_total": 488964.62999999995,
-      "dias_permanencia": 270,
-      "taxa_mortalidade": 0.49505
+      "valor_total": 519034.01,
+      "dias_permanencia": 351,
+      "taxa_mortalidade": 0.492611
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2018,
-      "internacoes": 616,
-      "obitos": 0,
-      "valor_total": 945363.0099999957,
-      "dias_permanencia": 428,
-      "taxa_mortalidade": 0
+      "internacoes": 615,
+      "obitos": 1,
+      "valor_total": 919903.8899999964,
+      "dias_permanencia": 389,
+      "taxa_mortalidade": 0.162602
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2019,
-      "internacoes": 418,
-      "obitos": 2,
-      "valor_total": 632227.2099999975,
-      "dias_permanencia": 451,
-      "taxa_mortalidade": 0.478469
+      "internacoes": 415,
+      "obitos": 1,
+      "valor_total": 630476.9299999975,
+      "dias_permanencia": 400,
+      "taxa_mortalidade": 0.240964
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2020,
-      "internacoes": 61,
+      "internacoes": 64,
       "obitos": 0,
-      "valor_total": 75155.27,
-      "dias_permanencia": 110,
+      "valor_total": 75064.14000000003,
+      "dias_permanencia": 120,
       "taxa_mortalidade": 0
     },
     {
@@ -1968,21 +1969,21 @@
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2021,
-      "internacoes": 68,
+      "internacoes": 75,
       "obitos": 3,
-      "valor_total": 124122.8700000001,
-      "dias_permanencia": 125,
-      "taxa_mortalidade": 4.411765
+      "valor_total": 160850.1400000001,
+      "dias_permanencia": 162,
+      "taxa_mortalidade": 4
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2022,
-      "internacoes": 68,
+      "internacoes": 59,
       "obitos": 0,
-      "valor_total": 143300.34000000005,
-      "dias_permanencia": 234,
+      "valor_total": 108571.84000000003,
+      "dias_permanencia": 197,
       "taxa_mortalidade": 0
     },
     {
@@ -1991,31 +1992,31 @@
       "uf_nome": "Alagoas",
       "ano": 2023,
       "internacoes": 55,
-      "obitos": 0,
-      "valor_total": 59214.019999999975,
-      "dias_permanencia": 200,
-      "taxa_mortalidade": 0
+      "obitos": 1,
+      "valor_total": 63724.140000000014,
+      "dias_permanencia": 207,
+      "taxa_mortalidade": 1.818182
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2024,
-      "internacoes": 56,
-      "obitos": 1,
-      "valor_total": 41957.119999999995,
-      "dias_permanencia": 306,
-      "taxa_mortalidade": 1.785714
+      "internacoes": 58,
+      "obitos": 0,
+      "valor_total": 36871.37,
+      "dias_permanencia": 297,
+      "taxa_mortalidade": 0
     },
     {
       "uf_codigo": "27",
       "uf": "AL",
       "uf_nome": "Alagoas",
       "ano": 2025,
-      "internacoes": 58,
+      "internacoes": 59,
       "obitos": 0,
-      "valor_total": 33232.320000000014,
-      "dias_permanencia": 286,
+      "valor_total": 33446.09000000001,
+      "dias_permanencia": 303,
       "taxa_mortalidade": 0
     },
     {
@@ -2023,21 +2024,21 @@
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2013,
-      "internacoes": 65,
+      "internacoes": 66,
       "obitos": 1,
-      "valor_total": 64371.72999999997,
-      "dias_permanencia": 55,
-      "taxa_mortalidade": 1.538462
+      "valor_total": 65157.05999999997,
+      "dias_permanencia": 53,
+      "taxa_mortalidade": 1.515152
     },
     {
       "uf_codigo": "28",
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2014,
-      "internacoes": 135,
+      "internacoes": 137,
       "obitos": 0,
-      "valor_total": 453094.36000000074,
-      "dias_permanencia": 53,
+      "valor_total": 452993.5500000007,
+      "dias_permanencia": 56,
       "taxa_mortalidade": 0
     },
     {
@@ -2047,8 +2048,8 @@
       "ano": 2015,
       "internacoes": 148,
       "obitos": 0,
-      "valor_total": 506063.12000000133,
-      "dias_permanencia": 281,
+      "valor_total": 506982.8500000014,
+      "dias_permanencia": 280,
       "taxa_mortalidade": 0
     },
     {
@@ -2058,8 +2059,8 @@
       "ano": 2016,
       "internacoes": 55,
       "obitos": 0,
-      "valor_total": 52035.9,
-      "dias_permanencia": 120,
+      "valor_total": 52441.15000000001,
+      "dias_permanencia": 122,
       "taxa_mortalidade": 0
     },
     {
@@ -2069,8 +2070,8 @@
       "ano": 2017,
       "internacoes": 41,
       "obitos": 0,
-      "valor_total": 63737.84,
-      "dias_permanencia": 258,
+      "valor_total": 62765.549999999996,
+      "dias_permanencia": 300,
       "taxa_mortalidade": 0
     },
     {
@@ -2078,10 +2079,10 @@
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2018,
-      "internacoes": 40,
+      "internacoes": 39,
       "obitos": 0,
-      "valor_total": 59654.639999999985,
-      "dias_permanencia": 159,
+      "valor_total": 61647.47999999999,
+      "dias_permanencia": 151,
       "taxa_mortalidade": 0
     },
     {
@@ -2089,21 +2090,21 @@
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2019,
-      "internacoes": 60,
+      "internacoes": 70,
       "obitos": 1,
-      "valor_total": 76243.65999999997,
-      "dias_permanencia": 208,
-      "taxa_mortalidade": 1.666667
+      "valor_total": 79209.70999999998,
+      "dias_permanencia": 207,
+      "taxa_mortalidade": 1.428571
     },
     {
       "uf_codigo": "28",
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2020,
-      "internacoes": 64,
+      "internacoes": 55,
       "obitos": 0,
-      "valor_total": 73504.62,
-      "dias_permanencia": 188,
+      "valor_total": 68223.61,
+      "dias_permanencia": 165,
       "taxa_mortalidade": 0
     },
     {
@@ -2111,10 +2112,10 @@
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2021,
-      "internacoes": 74,
+      "internacoes": 78,
       "obitos": 0,
-      "valor_total": 120362.04999999994,
-      "dias_permanencia": 103,
+      "valor_total": 123592.34999999995,
+      "dias_permanencia": 153,
       "taxa_mortalidade": 0
     },
     {
@@ -2122,65 +2123,65 @@
       "uf": "SE",
       "uf_nome": "Sergipe",
       "ano": 2022,
+      "internacoes": 76,
+      "obitos": 0,
+      "valor_total": 101033.59999999998,
+      "dias_permanencia": 237,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "28",
+      "uf": "SE",
+      "uf_nome": "Sergipe",
+      "ano": 2023,
+      "internacoes": 79,
+      "obitos": 0,
+      "valor_total": 135259.78999999992,
+      "dias_permanencia": 229,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "28",
+      "uf": "SE",
+      "uf_nome": "Sergipe",
+      "ano": 2024,
+      "internacoes": 104,
+      "obitos": 1,
+      "valor_total": 89003.15,
+      "dias_permanencia": 394,
+      "taxa_mortalidade": 0.961538
+    },
+    {
+      "uf_codigo": "28",
+      "uf": "SE",
+      "uf_nome": "Sergipe",
+      "ano": 2025,
       "internacoes": 75,
-      "obitos": 0,
-      "valor_total": 96818.16999999997,
-      "dias_permanencia": 264,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "28",
-      "uf": "SE",
-      "uf_nome": "Sergipe",
-      "ano": 2023,
-      "internacoes": 77,
-      "obitos": 0,
-      "valor_total": 139383.61999999994,
-      "dias_permanencia": 232,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "28",
-      "uf": "SE",
-      "uf_nome": "Sergipe",
-      "ano": 2024,
-      "internacoes": 95,
-      "obitos": 0,
-      "valor_total": 86165.47999999997,
-      "dias_permanencia": 341,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "28",
-      "uf": "SE",
-      "uf_nome": "Sergipe",
-      "ano": 2025,
-      "internacoes": 92,
-      "obitos": 4,
-      "valor_total": 69307.91999999998,
-      "dias_permanencia": 431,
-      "taxa_mortalidade": 4.347826
+      "obitos": 3,
+      "valor_total": 63858.30999999998,
+      "dias_permanencia": 352,
+      "taxa_mortalidade": 4
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2013,
-      "internacoes": 963,
-      "obitos": 3,
-      "valor_total": 588515.2300000013,
-      "dias_permanencia": 1128,
-      "taxa_mortalidade": 0.311526
+      "internacoes": 945,
+      "obitos": 2,
+      "valor_total": 583169.7900000019,
+      "dias_permanencia": 1060,
+      "taxa_mortalidade": 0.21164
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2014,
-      "internacoes": 678,
+      "internacoes": 873,
       "obitos": 0,
-      "valor_total": 332025.52000000054,
-      "dias_permanencia": 1281,
+      "valor_total": 458872.09000000055,
+      "dias_permanencia": 1416,
       "taxa_mortalidade": 0
     },
     {
@@ -2188,164 +2189,164 @@
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2015,
-      "internacoes": 959,
+      "internacoes": 916,
       "obitos": 2,
-      "valor_total": 819677.1099999982,
-      "dias_permanencia": 1184,
-      "taxa_mortalidade": 0.208551
+      "valor_total": 786849.2699999987,
+      "dias_permanencia": 1168,
+      "taxa_mortalidade": 0.218341
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2016,
-      "internacoes": 993,
+      "internacoes": 1101,
       "obitos": 1,
-      "valor_total": 734087.3300000012,
-      "dias_permanencia": 1505,
-      "taxa_mortalidade": 0.100705
-    },
-    {
-      "uf_codigo": "29",
-      "uf": "BA",
-      "uf_nome": "Bahia",
-      "ano": 2017,
-      "internacoes": 1202,
-      "obitos": 1,
-      "valor_total": 1089311.770000003,
-      "dias_permanencia": 1375,
-      "taxa_mortalidade": 0.083195
-    },
-    {
-      "uf_codigo": "29",
-      "uf": "BA",
-      "uf_nome": "Bahia",
-      "ano": 2018,
-      "internacoes": 1186,
-      "obitos": 3,
-      "valor_total": 1318565.3299999917,
-      "dias_permanencia": 1494,
-      "taxa_mortalidade": 0.252951
-    },
-    {
-      "uf_codigo": "29",
-      "uf": "BA",
-      "uf_nome": "Bahia",
-      "ano": 2019,
-      "internacoes": 1324,
-      "obitos": 3,
-      "valor_total": 1484745.2199999823,
+      "valor_total": 823187.939999999,
       "dias_permanencia": 1551,
-      "taxa_mortalidade": 0.226586
+      "taxa_mortalidade": 0.090827
+    },
+    {
+      "uf_codigo": "29",
+      "uf": "BA",
+      "uf_nome": "Bahia",
+      "ano": 2017,
+      "internacoes": 1215,
+      "obitos": 1,
+      "valor_total": 1116922.4000000015,
+      "dias_permanencia": 1347,
+      "taxa_mortalidade": 0.082305
+    },
+    {
+      "uf_codigo": "29",
+      "uf": "BA",
+      "uf_nome": "Bahia",
+      "ano": 2018,
+      "internacoes": 1201,
+      "obitos": 3,
+      "valor_total": 1353225.5399999884,
+      "dias_permanencia": 1532,
+      "taxa_mortalidade": 0.249792
+    },
+    {
+      "uf_codigo": "29",
+      "uf": "BA",
+      "uf_nome": "Bahia",
+      "ano": 2019,
+      "internacoes": 1396,
+      "obitos": 3,
+      "valor_total": 1586721.4799999811,
+      "dias_permanencia": 1709,
+      "taxa_mortalidade": 0.2149
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2020,
-      "internacoes": 1093,
+      "internacoes": 980,
       "obitos": 2,
-      "valor_total": 1312252.299999991,
-      "dias_permanencia": 1419,
-      "taxa_mortalidade": 0.182983
+      "valor_total": 1166007.4599999997,
+      "dias_permanencia": 1279,
+      "taxa_mortalidade": 0.204082
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2021,
-      "internacoes": 1265,
-      "obitos": 0,
-      "valor_total": 1454995.0599999842,
-      "dias_permanencia": 1523,
-      "taxa_mortalidade": 0
+      "internacoes": 1300,
+      "obitos": 1,
+      "valor_total": 1485463.8499999836,
+      "dias_permanencia": 1587,
+      "taxa_mortalidade": 0.076923
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2022,
-      "internacoes": 1254,
-      "obitos": 4,
-      "valor_total": 1408901.3499999994,
-      "dias_permanencia": 1563,
-      "taxa_mortalidade": 0.318979
+      "internacoes": 1419,
+      "obitos": 3,
+      "valor_total": 1624518.7399999946,
+      "dias_permanencia": 1782,
+      "taxa_mortalidade": 0.211416
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2023,
-      "internacoes": 1511,
-      "obitos": 3,
-      "valor_total": 1781278.8699999878,
-      "dias_permanencia": 2254,
-      "taxa_mortalidade": 0.198544
+      "internacoes": 1578,
+      "obitos": 4,
+      "valor_total": 1824596.4699999888,
+      "dias_permanencia": 2322,
+      "taxa_mortalidade": 0.253485
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2024,
-      "internacoes": 1470,
-      "obitos": 5,
-      "valor_total": 1763783.5899999922,
-      "dias_permanencia": 2494,
-      "taxa_mortalidade": 0.340136
+      "internacoes": 1812,
+      "obitos": 4,
+      "valor_total": 2166150.96999998,
+      "dias_permanencia": 2802,
+      "taxa_mortalidade": 0.220751
     },
     {
       "uf_codigo": "29",
       "uf": "BA",
       "uf_nome": "Bahia",
       "ano": 2025,
-      "internacoes": 1887,
-      "obitos": 0,
-      "valor_total": 2120486.559999978,
-      "dias_permanencia": 2505,
-      "taxa_mortalidade": 0
+      "internacoes": 2129,
+      "obitos": 1,
+      "valor_total": 2362685.539999973,
+      "dias_permanencia": 3014,
+      "taxa_mortalidade": 0.04697
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2013,
-      "internacoes": 1886,
+      "internacoes": 1871,
       "obitos": 3,
-      "valor_total": 1645050.399999989,
-      "dias_permanencia": 5485,
-      "taxa_mortalidade": 0.159067
+      "valor_total": 1590556.6499999897,
+      "dias_permanencia": 5374,
+      "taxa_mortalidade": 0.160342
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2014,
-      "internacoes": 1916,
+      "internacoes": 1950,
       "obitos": 3,
-      "valor_total": 2155338.929999989,
-      "dias_permanencia": 5472,
-      "taxa_mortalidade": 0.156576
+      "valor_total": 2169632.3399999924,
+      "dias_permanencia": 5534,
+      "taxa_mortalidade": 0.153846
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2015,
-      "internacoes": 1842,
+      "internacoes": 1812,
       "obitos": 1,
-      "valor_total": 1780541.1699999925,
-      "dias_permanencia": 5119,
-      "taxa_mortalidade": 0.054289
+      "valor_total": 1790419.2599999902,
+      "dias_permanencia": 5081,
+      "taxa_mortalidade": 0.055188
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2016,
-      "internacoes": 1661,
+      "internacoes": 1634,
       "obitos": 0,
-      "valor_total": 1583251.6599999974,
-      "dias_permanencia": 4587,
+      "valor_total": 1585637.359999995,
+      "dias_permanencia": 4764,
       "taxa_mortalidade": 0
     },
     {
@@ -2353,10 +2354,10 @@
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2017,
-      "internacoes": 1623,
+      "internacoes": 1630,
       "obitos": 0,
-      "valor_total": 1552253.5599999882,
-      "dias_permanencia": 4430,
+      "valor_total": 1560917.7599999874,
+      "dias_permanencia": 4152,
       "taxa_mortalidade": 0
     },
     {
@@ -2364,43 +2365,43 @@
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2018,
-      "internacoes": 1600,
+      "internacoes": 1614,
       "obitos": 1,
-      "valor_total": 1784770.7899999912,
-      "dias_permanencia": 3619,
-      "taxa_mortalidade": 0.0625
+      "valor_total": 1851690.8099999903,
+      "dias_permanencia": 3618,
+      "taxa_mortalidade": 0.061958
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2019,
-      "internacoes": 2022,
+      "internacoes": 2004,
       "obitos": 2,
-      "valor_total": 2486150.2499999763,
-      "dias_permanencia": 3443,
-      "taxa_mortalidade": 0.098912
+      "valor_total": 2459969.679999978,
+      "dias_permanencia": 3199,
+      "taxa_mortalidade": 0.0998
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2020,
-      "internacoes": 1222,
+      "internacoes": 1190,
       "obitos": 1,
-      "valor_total": 1582829.5799999936,
-      "dias_permanencia": 2582,
-      "taxa_mortalidade": 0.081833
+      "valor_total": 1517500.1499999908,
+      "dias_permanencia": 2558,
+      "taxa_mortalidade": 0.084034
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2021,
-      "internacoes": 1345,
+      "internacoes": 1367,
       "obitos": 0,
-      "valor_total": 1871252.849999989,
-      "dias_permanencia": 2859,
+      "valor_total": 1870098.55999999,
+      "dias_permanencia": 2895,
       "taxa_mortalidade": 0
     },
     {
@@ -2408,44 +2409,44 @@
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2022,
-      "internacoes": 2827,
+      "internacoes": 2870,
       "obitos": 1,
-      "valor_total": 4092421.5899999603,
-      "dias_permanencia": 3398,
-      "taxa_mortalidade": 0.035373
+      "valor_total": 4200960.739999953,
+      "dias_permanencia": 3461,
+      "taxa_mortalidade": 0.034843
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2023,
-      "internacoes": 4634,
+      "internacoes": 4715,
       "obitos": 1,
-      "valor_total": 7827841.590000051,
-      "dias_permanencia": 4520,
-      "taxa_mortalidade": 0.02158
+      "valor_total": 7887048.230000051,
+      "dias_permanencia": 4870,
+      "taxa_mortalidade": 0.021209
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2024,
-      "internacoes": 6799,
+      "internacoes": 7096,
       "obitos": 1,
-      "valor_total": 13331312.310000263,
-      "dias_permanencia": 5396,
-      "taxa_mortalidade": 0.014708
+      "valor_total": 14319021.140000332,
+      "dias_permanencia": 5369,
+      "taxa_mortalidade": 0.014092
     },
     {
       "uf_codigo": "31",
       "uf": "MG",
       "uf_nome": "Minas Gerais",
       "ano": 2025,
-      "internacoes": 8709,
+      "internacoes": 8499,
       "obitos": 3,
-      "valor_total": 15598214.700000802,
-      "dias_permanencia": 6086,
-      "taxa_mortalidade": 0.034447
+      "valor_total": 14944477.760000654,
+      "dias_permanencia": 5785,
+      "taxa_mortalidade": 0.035298
     },
     {
       "uf_codigo": "32",
@@ -2454,8 +2455,8 @@
       "ano": 2013,
       "internacoes": 125,
       "obitos": 0,
-      "valor_total": 141246.51000000004,
-      "dias_permanencia": 230,
+      "valor_total": 141182.47,
+      "dias_permanencia": 200,
       "taxa_mortalidade": 0
     },
     {
@@ -2463,10 +2464,10 @@
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2014,
-      "internacoes": 110,
+      "internacoes": 143,
       "obitos": 0,
-      "valor_total": 129641.67999999995,
-      "dias_permanencia": 224,
+      "valor_total": 163413.88,
+      "dias_permanencia": 286,
       "taxa_mortalidade": 0
     },
     {
@@ -2474,54 +2475,54 @@
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2015,
-      "internacoes": 226,
-      "obitos": 0,
-      "valor_total": 241315.47000000067,
-      "dias_permanencia": 437,
-      "taxa_mortalidade": 0
+      "internacoes": 227,
+      "obitos": 1,
+      "valor_total": 246075.09000000064,
+      "dias_permanencia": 444,
+      "taxa_mortalidade": 0.440529
     },
     {
       "uf_codigo": "32",
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2016,
-      "internacoes": 219,
+      "internacoes": 232,
       "obitos": 2,
-      "valor_total": 206749.04000000036,
-      "dias_permanencia": 378,
-      "taxa_mortalidade": 0.913242
+      "valor_total": 215264.34000000046,
+      "dias_permanencia": 427,
+      "taxa_mortalidade": 0.862069
     },
     {
       "uf_codigo": "32",
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2017,
-      "internacoes": 242,
-      "obitos": 2,
-      "valor_total": 301596.3600000003,
-      "dias_permanencia": 486,
-      "taxa_mortalidade": 0.826446
+      "internacoes": 237,
+      "obitos": 1,
+      "valor_total": 296179.09000000026,
+      "dias_permanencia": 489,
+      "taxa_mortalidade": 0.421941
     },
     {
       "uf_codigo": "32",
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2018,
-      "internacoes": 270,
+      "internacoes": 313,
       "obitos": 1,
-      "valor_total": 434394.4000000001,
-      "dias_permanencia": 516,
-      "taxa_mortalidade": 0.37037
+      "valor_total": 542034.4200000002,
+      "dias_permanencia": 507,
+      "taxa_mortalidade": 0.319489
     },
     {
       "uf_codigo": "32",
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2019,
-      "internacoes": 637,
+      "internacoes": 620,
       "obitos": 0,
-      "valor_total": 1499996.499999995,
-      "dias_permanencia": 819,
+      "valor_total": 1479274.659999996,
+      "dias_permanencia": 810,
       "taxa_mortalidade": 0
     },
     {
@@ -2529,10 +2530,10 @@
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2020,
-      "internacoes": 421,
+      "internacoes": 386,
       "obitos": 0,
-      "valor_total": 992980.6900000037,
-      "dias_permanencia": 502,
+      "valor_total": 904100.8700000027,
+      "dias_permanencia": 465,
       "taxa_mortalidade": 0
     },
     {
@@ -2540,10 +2541,10 @@
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2021,
-      "internacoes": 520,
+      "internacoes": 626,
       "obitos": 0,
-      "valor_total": 917641.1800000007,
-      "dias_permanencia": 590,
+      "valor_total": 1117719.87,
+      "dias_permanencia": 812,
       "taxa_mortalidade": 0
     },
     {
@@ -2551,87 +2552,87 @@
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2022,
-      "internacoes": 1120,
-      "obitos": 2,
-      "valor_total": 2457917.569999999,
-      "dias_permanencia": 1539,
-      "taxa_mortalidade": 0.178571
-    },
-    {
-      "uf_codigo": "32",
-      "uf": "ES",
-      "uf_nome": "Espírito Santo",
-      "ano": 2023,
-      "internacoes": 1067,
+      "internacoes": 1058,
       "obitos": 4,
-      "valor_total": 2289306.9900000067,
-      "dias_permanencia": 1531,
-      "taxa_mortalidade": 0.374883
+      "valor_total": 2335710.270000002,
+      "dias_permanencia": 1401,
+      "taxa_mortalidade": 0.378072
+    },
+    {
+      "uf_codigo": "32",
+      "uf": "ES",
+      "uf_nome": "Espírito Santo",
+      "ano": 2023,
+      "internacoes": 1073,
+      "obitos": 2,
+      "valor_total": 2297063.3500000075,
+      "dias_permanencia": 1486,
+      "taxa_mortalidade": 0.186393
     },
     {
       "uf_codigo": "32",
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2024,
-      "internacoes": 1289,
+      "internacoes": 1286,
       "obitos": 1,
-      "valor_total": 3175400.3500000257,
-      "dias_permanencia": 1098,
-      "taxa_mortalidade": 0.07758
+      "valor_total": 3196011.0400000247,
+      "dias_permanencia": 1169,
+      "taxa_mortalidade": 0.07776
     },
     {
       "uf_codigo": "32",
       "uf": "ES",
       "uf_nome": "Espírito Santo",
       "ano": 2025,
-      "internacoes": 1308,
+      "internacoes": 1306,
       "obitos": 1,
-      "valor_total": 3355614.850000033,
-      "dias_permanencia": 912,
-      "taxa_mortalidade": 0.076453
+      "valor_total": 3332133.0500000333,
+      "dias_permanencia": 850,
+      "taxa_mortalidade": 0.07657
     },
     {
       "uf_codigo": "33",
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2013,
-      "internacoes": 875,
-      "obitos": 1,
-      "valor_total": 395577.55000000173,
-      "dias_permanencia": 3221,
-      "taxa_mortalidade": 0.114286
+      "internacoes": 894,
+      "obitos": 2,
+      "valor_total": 409538.1900000019,
+      "dias_permanencia": 3549,
+      "taxa_mortalidade": 0.223714
     },
     {
       "uf_codigo": "33",
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2014,
-      "internacoes": 910,
-      "obitos": 2,
-      "valor_total": 465963.0600000021,
-      "dias_permanencia": 3681,
-      "taxa_mortalidade": 0.21978
+      "internacoes": 926,
+      "obitos": 1,
+      "valor_total": 468823.4300000024,
+      "dias_permanencia": 3250,
+      "taxa_mortalidade": 0.107991
     },
     {
       "uf_codigo": "33",
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2015,
-      "internacoes": 857,
+      "internacoes": 898,
       "obitos": 3,
-      "valor_total": 416225.0400000022,
-      "dias_permanencia": 2724,
-      "taxa_mortalidade": 0.350058
+      "valor_total": 439236.270000002,
+      "dias_permanencia": 2923,
+      "taxa_mortalidade": 0.334076
     },
     {
       "uf_codigo": "33",
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2016,
-      "internacoes": 816,
+      "internacoes": 871,
       "obitos": 0,
-      "valor_total": 365247.35000000143,
-      "dias_permanencia": 2820,
+      "valor_total": 395906.69000000163,
+      "dias_permanencia": 3169,
       "taxa_mortalidade": 0
     },
     {
@@ -2639,21 +2640,21 @@
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2017,
-      "internacoes": 947,
+      "internacoes": 962,
       "obitos": 2,
-      "valor_total": 582837.8300000031,
-      "dias_permanencia": 3347,
-      "taxa_mortalidade": 0.211193
+      "valor_total": 591101.9900000023,
+      "dias_permanencia": 3338,
+      "taxa_mortalidade": 0.2079
     },
     {
       "uf_codigo": "33",
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2018,
-      "internacoes": 1508,
+      "internacoes": 1537,
       "obitos": 0,
-      "valor_total": 1437825.579999998,
-      "dias_permanencia": 3016,
+      "valor_total": 1506050.1399999962,
+      "dias_permanencia": 2975,
       "taxa_mortalidade": 0
     },
     {
@@ -2661,285 +2662,285 @@
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2019,
-      "internacoes": 1954,
+      "internacoes": 1967,
       "obitos": 5,
-      "valor_total": 2673309.649999961,
-      "dias_permanencia": 3924,
-      "taxa_mortalidade": 0.255885
+      "valor_total": 2630349.9599999553,
+      "dias_permanencia": 4120,
+      "taxa_mortalidade": 0.254194
     },
     {
       "uf_codigo": "33",
       "uf": "RJ",
       "uf_nome": "Rio de Janeiro",
       "ano": 2020,
-      "internacoes": 1268,
-      "obitos": 0,
-      "valor_total": 1573771.6999999755,
-      "dias_permanencia": 2263,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "33",
-      "uf": "RJ",
-      "uf_nome": "Rio de Janeiro",
-      "ano": 2021,
-      "internacoes": 1582,
-      "obitos": 5,
-      "valor_total": 1979477.9399999562,
-      "dias_permanencia": 2611,
-      "taxa_mortalidade": 0.316056
-    },
-    {
-      "uf_codigo": "33",
-      "uf": "RJ",
-      "uf_nome": "Rio de Janeiro",
-      "ano": 2022,
-      "internacoes": 2131,
-      "obitos": 3,
-      "valor_total": 3405031.539999994,
-      "dias_permanencia": 3437,
-      "taxa_mortalidade": 0.140779
-    },
-    {
-      "uf_codigo": "33",
-      "uf": "RJ",
-      "uf_nome": "Rio de Janeiro",
-      "ano": 2023,
-      "internacoes": 2751,
-      "obitos": 4,
-      "valor_total": 4635636.920000022,
-      "dias_permanencia": 3918,
-      "taxa_mortalidade": 0.145402
-    },
-    {
-      "uf_codigo": "33",
-      "uf": "RJ",
-      "uf_nome": "Rio de Janeiro",
-      "ano": 2024,
-      "internacoes": 2948,
-      "obitos": 0,
-      "valor_total": 7981506.4200001,
-      "dias_permanencia": 3658,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "33",
-      "uf": "RJ",
-      "uf_nome": "Rio de Janeiro",
-      "ano": 2025,
-      "internacoes": 3206,
-      "obitos": 2,
-      "valor_total": 4421471.680000008,
-      "dias_permanencia": 4906,
-      "taxa_mortalidade": 0.062383
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2013,
-      "internacoes": 6996,
-      "obitos": 3,
-      "valor_total": 5088169.249999929,
-      "dias_permanencia": 11469,
-      "taxa_mortalidade": 0.042882
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2014,
-      "internacoes": 7019,
-      "obitos": 3,
-      "valor_total": 5544671.639999871,
-      "dias_permanencia": 11286,
-      "taxa_mortalidade": 0.042741
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2015,
-      "internacoes": 6706,
-      "obitos": 6,
-      "valor_total": 6577802.469999827,
-      "dias_permanencia": 11142,
-      "taxa_mortalidade": 0.089472
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2016,
-      "internacoes": 6724,
-      "obitos": 5,
-      "valor_total": 4817749.7199999,
-      "dias_permanencia": 9649,
-      "taxa_mortalidade": 0.07436
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2017,
-      "internacoes": 7349,
-      "obitos": 3,
-      "valor_total": 5415650.989999911,
-      "dias_permanencia": 10046,
-      "taxa_mortalidade": 0.040822
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2018,
-      "internacoes": 6535,
-      "obitos": 8,
-      "valor_total": 6407569.99999999,
-      "dias_permanencia": 10073,
-      "taxa_mortalidade": 0.122418
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2019,
-      "internacoes": 7165,
-      "obitos": 5,
-      "valor_total": 6579530.350000045,
-      "dias_permanencia": 10178,
-      "taxa_mortalidade": 0.069784
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2020,
-      "internacoes": 4734,
-      "obitos": 3,
-      "valor_total": 4552604.689999976,
-      "dias_permanencia": 7522,
-      "taxa_mortalidade": 0.063371
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2021,
-      "internacoes": 4974,
-      "obitos": 1,
-      "valor_total": 5085789.219999961,
-      "dias_permanencia": 7010,
-      "taxa_mortalidade": 0.020105
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2022,
-      "internacoes": 7697,
-      "obitos": 7,
-      "valor_total": 8329844.930000164,
-      "dias_permanencia": 9000,
-      "taxa_mortalidade": 0.090945
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2023,
-      "internacoes": 9041,
-      "obitos": 12,
-      "valor_total": 10934359.089999788,
-      "dias_permanencia": 11047,
-      "taxa_mortalidade": 0.132729
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2024,
-      "internacoes": 10978,
-      "obitos": 7,
-      "valor_total": 19123473.029999066,
-      "dias_permanencia": 13302,
-      "taxa_mortalidade": 0.063764
-    },
-    {
-      "uf_codigo": "35",
-      "uf": "SP",
-      "uf_nome": "São Paulo",
-      "ano": 2025,
-      "internacoes": 12782,
-      "obitos": 8,
-      "valor_total": 15581856.209999196,
-      "dias_permanencia": 13124,
-      "taxa_mortalidade": 0.062588
-    },
-    {
-      "uf_codigo": "41",
-      "uf": "PR",
-      "uf_nome": "Paraná",
-      "ano": 2013,
-      "internacoes": 1353,
-      "obitos": 2,
-      "valor_total": 794832.300000002,
-      "dias_permanencia": 1603,
-      "taxa_mortalidade": 0.14782
-    },
-    {
-      "uf_codigo": "41",
-      "uf": "PR",
-      "uf_nome": "Paraná",
-      "ano": 2014,
       "internacoes": 1217,
       "obitos": 0,
-      "valor_total": 976985.3699999931,
-      "dias_permanencia": 2076,
+      "valor_total": 1537875.8499999796,
+      "dias_permanencia": 1995,
       "taxa_mortalidade": 0
     },
     {
-      "uf_codigo": "41",
-      "uf": "PR",
-      "uf_nome": "Paraná",
-      "ano": 2015,
-      "internacoes": 1099,
+      "uf_codigo": "33",
+      "uf": "RJ",
+      "uf_nome": "Rio de Janeiro",
+      "ano": 2021,
+      "internacoes": 1606,
       "obitos": 6,
-      "valor_total": 773578.33,
-      "dias_permanencia": 1929,
-      "taxa_mortalidade": 0.545951
+      "valor_total": 1990520.1099999566,
+      "dias_permanencia": 2634,
+      "taxa_mortalidade": 0.373599
+    },
+    {
+      "uf_codigo": "33",
+      "uf": "RJ",
+      "uf_nome": "Rio de Janeiro",
+      "ano": 2022,
+      "internacoes": 2159,
+      "obitos": 2,
+      "valor_total": 3438026.629999994,
+      "dias_permanencia": 3454,
+      "taxa_mortalidade": 0.092635
+    },
+    {
+      "uf_codigo": "33",
+      "uf": "RJ",
+      "uf_nome": "Rio de Janeiro",
+      "ano": 2023,
+      "internacoes": 2767,
+      "obitos": 4,
+      "valor_total": 4673742.300000014,
+      "dias_permanencia": 4151,
+      "taxa_mortalidade": 0.144561
+    },
+    {
+      "uf_codigo": "33",
+      "uf": "RJ",
+      "uf_nome": "Rio de Janeiro",
+      "ano": 2024,
+      "internacoes": 3073,
+      "obitos": 0,
+      "valor_total": 8112642.550000101,
+      "dias_permanencia": 3966,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "33",
+      "uf": "RJ",
+      "uf_nome": "Rio de Janeiro",
+      "ano": 2025,
+      "internacoes": 3238,
+      "obitos": 2,
+      "valor_total": 4447869.750000004,
+      "dias_permanencia": 5019,
+      "taxa_mortalidade": 0.061767
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2013,
+      "internacoes": 6987,
+      "obitos": 3,
+      "valor_total": 5122052.639999943,
+      "dias_permanencia": 11358,
+      "taxa_mortalidade": 0.042937
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2014,
+      "internacoes": 7021,
+      "obitos": 5,
+      "valor_total": 5598114.959999864,
+      "dias_permanencia": 11387,
+      "taxa_mortalidade": 0.071215
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2015,
+      "internacoes": 6634,
+      "obitos": 4,
+      "valor_total": 6483400.929999852,
+      "dias_permanencia": 10947,
+      "taxa_mortalidade": 0.060295
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2016,
+      "internacoes": 6863,
+      "obitos": 5,
+      "valor_total": 4943920.9599999,
+      "dias_permanencia": 9683,
+      "taxa_mortalidade": 0.072854
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2017,
+      "internacoes": 7284,
+      "obitos": 5,
+      "valor_total": 5411216.099999922,
+      "dias_permanencia": 10086,
+      "taxa_mortalidade": 0.068644
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2018,
+      "internacoes": 6553,
+      "obitos": 9,
+      "valor_total": 6451921.359999987,
+      "dias_permanencia": 10444,
+      "taxa_mortalidade": 0.137342
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2019,
+      "internacoes": 7207,
+      "obitos": 3,
+      "valor_total": 6613960.500000051,
+      "dias_permanencia": 9898,
+      "taxa_mortalidade": 0.041626
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2020,
+      "internacoes": 4611,
+      "obitos": 2,
+      "valor_total": 4431180.449999976,
+      "dias_permanencia": 7195,
+      "taxa_mortalidade": 0.043375
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2021,
+      "internacoes": 5004,
+      "obitos": 2,
+      "valor_total": 5122542.769999964,
+      "dias_permanencia": 7195,
+      "taxa_mortalidade": 0.039968
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2022,
+      "internacoes": 7680,
+      "obitos": 8,
+      "valor_total": 8219904.610000174,
+      "dias_permanencia": 8901,
+      "taxa_mortalidade": 0.104167
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2023,
+      "internacoes": 9172,
+      "obitos": 10,
+      "valor_total": 11081207.989999752,
+      "dias_permanencia": 11476,
+      "taxa_mortalidade": 0.109027
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2024,
+      "internacoes": 10992,
+      "obitos": 7,
+      "valor_total": 19195816.269998986,
+      "dias_permanencia": 13095,
+      "taxa_mortalidade": 0.063683
+    },
+    {
+      "uf_codigo": "35",
+      "uf": "SP",
+      "uf_nome": "São Paulo",
+      "ano": 2025,
+      "internacoes": 12731,
+      "obitos": 8,
+      "valor_total": 15504115.189999279,
+      "dias_permanencia": 13186,
+      "taxa_mortalidade": 0.062839
+    },
+    {
+      "uf_codigo": "41",
+      "uf": "PR",
+      "uf_nome": "Paraná",
+      "ano": 2013,
+      "internacoes": 1342,
+      "obitos": 2,
+      "valor_total": 783803.1600000022,
+      "dias_permanencia": 1608,
+      "taxa_mortalidade": 0.149031
+    },
+    {
+      "uf_codigo": "41",
+      "uf": "PR",
+      "uf_nome": "Paraná",
+      "ano": 2014,
+      "internacoes": 1181,
+      "obitos": 1,
+      "valor_total": 958610.4499999945,
+      "dias_permanencia": 2171,
+      "taxa_mortalidade": 0.084674
+    },
+    {
+      "uf_codigo": "41",
+      "uf": "PR",
+      "uf_nome": "Paraná",
+      "ano": 2015,
+      "internacoes": 1167,
+      "obitos": 5,
+      "valor_total": 811162.7900000003,
+      "dias_permanencia": 1960,
+      "taxa_mortalidade": 0.428449
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2016,
-      "internacoes": 1413,
-      "obitos": 3,
-      "valor_total": 1070225.3200000033,
-      "dias_permanencia": 1974,
-      "taxa_mortalidade": 0.212314
+      "internacoes": 1419,
+      "obitos": 4,
+      "valor_total": 1129413.4300000023,
+      "dias_permanencia": 2224,
+      "taxa_mortalidade": 0.281889
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2017,
-      "internacoes": 1392,
-      "obitos": 2,
-      "valor_total": 1114225.089999998,
-      "dias_permanencia": 2656,
-      "taxa_mortalidade": 0.143678
+      "internacoes": 1426,
+      "obitos": 1,
+      "valor_total": 1119730.2199999997,
+      "dias_permanencia": 2555,
+      "taxa_mortalidade": 0.070126
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2018,
-      "internacoes": 1690,
+      "internacoes": 1692,
       "obitos": 0,
-      "valor_total": 1494462.9799999858,
-      "dias_permanencia": 2248,
+      "valor_total": 1484629.1699999843,
+      "dias_permanencia": 2232,
       "taxa_mortalidade": 0
     },
     {
@@ -2947,21 +2948,21 @@
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2019,
-      "internacoes": 1569,
+      "internacoes": 1701,
       "obitos": 1,
-      "valor_total": 1368107.9899999895,
-      "dias_permanencia": 1935,
-      "taxa_mortalidade": 0.063735
+      "valor_total": 1445402.189999984,
+      "dias_permanencia": 2058,
+      "taxa_mortalidade": 0.058789
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2020,
-      "internacoes": 852,
+      "internacoes": 862,
       "obitos": 0,
-      "valor_total": 795480.790000002,
-      "dias_permanencia": 1583,
+      "valor_total": 844671.7100000015,
+      "dias_permanencia": 1769,
       "taxa_mortalidade": 0
     },
     {
@@ -2969,32 +2970,32 @@
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2021,
-      "internacoes": 1036,
-      "obitos": 2,
-      "valor_total": 1158666.8899999964,
-      "dias_permanencia": 2179,
-      "taxa_mortalidade": 0.19305
+      "internacoes": 1076,
+      "obitos": 3,
+      "valor_total": 1230383.4499999974,
+      "dias_permanencia": 2238,
+      "taxa_mortalidade": 0.27881
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2022,
-      "internacoes": 1347,
-      "obitos": 4,
-      "valor_total": 1511446.9499999937,
-      "dias_permanencia": 2276,
-      "taxa_mortalidade": 0.296956
+      "internacoes": 1495,
+      "obitos": 3,
+      "valor_total": 1711830.3199999875,
+      "dias_permanencia": 2859,
+      "taxa_mortalidade": 0.200669
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2023,
-      "internacoes": 1920,
+      "internacoes": 1921,
       "obitos": 0,
-      "valor_total": 2202764.1099999817,
-      "dias_permanencia": 3455,
+      "valor_total": 2056288.8199999803,
+      "dias_permanencia": 3080,
       "taxa_mortalidade": 0
     },
     {
@@ -3002,142 +3003,142 @@
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2024,
-      "internacoes": 2170,
-      "obitos": 1,
-      "valor_total": 2844679.349999989,
-      "dias_permanencia": 3404,
-      "taxa_mortalidade": 0.046083
+      "internacoes": 2201,
+      "obitos": 2,
+      "valor_total": 2976750.8599999896,
+      "dias_permanencia": 3666,
+      "taxa_mortalidade": 0.090868
     },
     {
       "uf_codigo": "41",
       "uf": "PR",
       "uf_nome": "Paraná",
       "ano": 2025,
-      "internacoes": 3020,
-      "obitos": 4,
-      "valor_total": 3981312.0399999814,
-      "dias_permanencia": 5029,
-      "taxa_mortalidade": 0.13245
+      "internacoes": 3057,
+      "obitos": 3,
+      "valor_total": 4070366.7899999893,
+      "dias_permanencia": 4890,
+      "taxa_mortalidade": 0.098135
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2013,
-      "internacoes": 1090,
-      "obitos": 3,
-      "valor_total": 715872.8099999976,
-      "dias_permanencia": 1288,
-      "taxa_mortalidade": 0.275229
+      "internacoes": 1087,
+      "obitos": 4,
+      "valor_total": 720169.1400000002,
+      "dias_permanencia": 1237,
+      "taxa_mortalidade": 0.367985
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2014,
-      "internacoes": 758,
-      "obitos": 2,
-      "valor_total": 632126.5600000008,
-      "dias_permanencia": 1678,
-      "taxa_mortalidade": 0.263852
+      "internacoes": 733,
+      "obitos": 1,
+      "valor_total": 633173.0600000012,
+      "dias_permanencia": 1748,
+      "taxa_mortalidade": 0.136426
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2015,
-      "internacoes": 810,
+      "internacoes": 833,
       "obitos": 1,
-      "valor_total": 663804.4499999988,
-      "dias_permanencia": 1537,
-      "taxa_mortalidade": 0.123457
+      "valor_total": 680033.7399999987,
+      "dias_permanencia": 1530,
+      "taxa_mortalidade": 0.120048
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2016,
-      "internacoes": 800,
+      "internacoes": 802,
       "obitos": 3,
-      "valor_total": 686541.9900000008,
-      "dias_permanencia": 1944,
-      "taxa_mortalidade": 0.375
+      "valor_total": 717808.7000000007,
+      "dias_permanencia": 1962,
+      "taxa_mortalidade": 0.374065
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2017,
-      "internacoes": 780,
+      "internacoes": 804,
       "obitos": 1,
-      "valor_total": 652613.2699999998,
-      "dias_permanencia": 1643,
-      "taxa_mortalidade": 0.128205
+      "valor_total": 654619.6900000008,
+      "dias_permanencia": 1757,
+      "taxa_mortalidade": 0.124378
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2018,
-      "internacoes": 778,
+      "internacoes": 864,
       "obitos": 1,
-      "valor_total": 719840.3100000009,
-      "dias_permanencia": 1508,
-      "taxa_mortalidade": 0.128535
+      "valor_total": 786576.4100000011,
+      "dias_permanencia": 1535,
+      "taxa_mortalidade": 0.115741
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2019,
-      "internacoes": 1045,
+      "internacoes": 1021,
       "obitos": 2,
-      "valor_total": 1141930.0300000014,
-      "dias_permanencia": 1728,
-      "taxa_mortalidade": 0.191388
+      "valor_total": 1112350.280000002,
+      "dias_permanencia": 1668,
+      "taxa_mortalidade": 0.195886
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2020,
-      "internacoes": 674,
+      "internacoes": 656,
       "obitos": 1,
-      "valor_total": 775564.1200000028,
-      "dias_permanencia": 1472,
-      "taxa_mortalidade": 0.148368
+      "valor_total": 773198.6700000024,
+      "dias_permanencia": 1636,
+      "taxa_mortalidade": 0.152439
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2021,
-      "internacoes": 790,
+      "internacoes": 786,
       "obitos": 1,
-      "valor_total": 916438.3600000031,
-      "dias_permanencia": 2539,
-      "taxa_mortalidade": 0.126582
+      "valor_total": 898834.3600000034,
+      "dias_permanencia": 2399,
+      "taxa_mortalidade": 0.127226
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2022,
-      "internacoes": 973,
+      "internacoes": 956,
       "obitos": 1,
-      "valor_total": 1194289.4000000034,
-      "dias_permanencia": 1867,
-      "taxa_mortalidade": 0.102775
+      "valor_total": 1183386.6200000024,
+      "dias_permanencia": 1984,
+      "taxa_mortalidade": 0.104603
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2023,
-      "internacoes": 1244,
+      "internacoes": 1303,
       "obitos": 0,
-      "valor_total": 1824851.199999994,
-      "dias_permanencia": 2425,
+      "valor_total": 2023431.9099999939,
+      "dias_permanencia": 2384,
       "taxa_mortalidade": 0
     },
     {
@@ -3145,44 +3146,44 @@
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2024,
-      "internacoes": 1488,
-      "obitos": 0,
-      "valor_total": 4036638.499999991,
-      "dias_permanencia": 2733,
-      "taxa_mortalidade": 0
+      "internacoes": 1496,
+      "obitos": 1,
+      "valor_total": 4106146.919999991,
+      "dias_permanencia": 3031,
+      "taxa_mortalidade": 0.066845
     },
     {
       "uf_codigo": "42",
       "uf": "SC",
       "uf_nome": "Santa Catarina",
       "ano": 2025,
-      "internacoes": 1726,
+      "internacoes": 1857,
       "obitos": 3,
-      "valor_total": 3507661.6599999936,
-      "dias_permanencia": 3116,
-      "taxa_mortalidade": 0.173812
+      "valor_total": 3550793.539999984,
+      "dias_permanencia": 3147,
+      "taxa_mortalidade": 0.161551
     },
     {
       "uf_codigo": "43",
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2013,
-      "internacoes": 520,
-      "obitos": 1,
-      "valor_total": 480848.97000000026,
-      "dias_permanencia": 1333,
-      "taxa_mortalidade": 0.192308
+      "internacoes": 545,
+      "obitos": 2,
+      "valor_total": 495049.5900000003,
+      "dias_permanencia": 1341,
+      "taxa_mortalidade": 0.366972
     },
     {
       "uf_codigo": "43",
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2014,
-      "internacoes": 598,
-      "obitos": 1,
-      "valor_total": 654938.8400000011,
-      "dias_permanencia": 1496,
-      "taxa_mortalidade": 0.167224
+      "internacoes": 612,
+      "obitos": 0,
+      "valor_total": 667761.2600000005,
+      "dias_permanencia": 1502,
+      "taxa_mortalidade": 0
     },
     {
       "uf_codigo": "43",
@@ -3191,8 +3192,8 @@
       "ano": 2015,
       "internacoes": 773,
       "obitos": 1,
-      "valor_total": 902804.3200000031,
-      "dias_permanencia": 1835,
+      "valor_total": 903847.9000000022,
+      "dias_permanencia": 1763,
       "taxa_mortalidade": 0.129366
     },
     {
@@ -3200,22 +3201,22 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2016,
-      "internacoes": 859,
+      "internacoes": 886,
       "obitos": 1,
-      "valor_total": 851330.3400000047,
-      "dias_permanencia": 1984,
-      "taxa_mortalidade": 0.116414
+      "valor_total": 913072.8700000055,
+      "dias_permanencia": 2094,
+      "taxa_mortalidade": 0.112867
     },
     {
       "uf_codigo": "43",
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2017,
-      "internacoes": 959,
+      "internacoes": 941,
       "obitos": 1,
-      "valor_total": 871861.7700000007,
-      "dias_permanencia": 1805,
-      "taxa_mortalidade": 0.104275
+      "valor_total": 862560.0000000016,
+      "dias_permanencia": 1743,
+      "taxa_mortalidade": 0.10627
     },
     {
       "uf_codigo": "43",
@@ -3224,8 +3225,8 @@
       "ano": 2018,
       "internacoes": 963,
       "obitos": 2,
-      "valor_total": 1004802.4700000016,
-      "dias_permanencia": 1751,
+      "valor_total": 1001983.6700000016,
+      "dias_permanencia": 1692,
       "taxa_mortalidade": 0.207684
     },
     {
@@ -3233,10 +3234,10 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2019,
-      "internacoes": 1109,
+      "internacoes": 1100,
       "obitos": 0,
-      "valor_total": 1159195.7299999984,
-      "dias_permanencia": 1666,
+      "valor_total": 1138345.54,
+      "dias_permanencia": 1695,
       "taxa_mortalidade": 0
     },
     {
@@ -3244,10 +3245,10 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2020,
-      "internacoes": 766,
+      "internacoes": 752,
       "obitos": 0,
-      "valor_total": 1118185.9500000023,
-      "dias_permanencia": 1257,
+      "valor_total": 1117062.0500000021,
+      "dias_permanencia": 1235,
       "taxa_mortalidade": 0
     },
     {
@@ -3255,10 +3256,10 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2021,
-      "internacoes": 828,
+      "internacoes": 857,
       "obitos": 0,
-      "valor_total": 1294142.4699999974,
-      "dias_permanencia": 1776,
+      "valor_total": 1341069.6899999965,
+      "dias_permanencia": 1839,
       "taxa_mortalidade": 0
     },
     {
@@ -3266,10 +3267,10 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2022,
-      "internacoes": 906,
+      "internacoes": 922,
       "obitos": 0,
-      "valor_total": 1245943.2800000014,
-      "dias_permanencia": 1413,
+      "valor_total": 1260144.4200000004,
+      "dias_permanencia": 1350,
       "taxa_mortalidade": 0
     },
     {
@@ -3277,10 +3278,10 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2023,
-      "internacoes": 746,
+      "internacoes": 734,
       "obitos": 0,
-      "valor_total": 1217051.8000000017,
-      "dias_permanencia": 1469,
+      "valor_total": 1204779.0300000014,
+      "dias_permanencia": 1596,
       "taxa_mortalidade": 0
     },
     {
@@ -3290,8 +3291,8 @@
       "ano": 2024,
       "internacoes": 900,
       "obitos": 0,
-      "valor_total": 1563251.999999999,
-      "dias_permanencia": 1835,
+      "valor_total": 1572795.7199999988,
+      "dias_permanencia": 1846,
       "taxa_mortalidade": 0
     },
     {
@@ -3299,21 +3300,21 @@
       "uf": "RS",
       "uf_nome": "Rio Grande do Sul",
       "ano": 2025,
-      "internacoes": 894,
-      "obitos": 1,
-      "valor_total": 1340774.859999998,
-      "dias_permanencia": 1832,
-      "taxa_mortalidade": 0.111857
+      "internacoes": 908,
+      "obitos": 2,
+      "valor_total": 1330350.0399999968,
+      "dias_permanencia": 1779,
+      "taxa_mortalidade": 0.220264
     },
     {
       "uf_codigo": "50",
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2013,
-      "internacoes": 116,
+      "internacoes": 189,
       "obitos": 0,
-      "valor_total": 114424.93999999997,
-      "dias_permanencia": 375,
+      "valor_total": 151337.50999999998,
+      "dias_permanencia": 563,
       "taxa_mortalidade": 0
     },
     {
@@ -3321,10 +3322,10 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2014,
-      "internacoes": 189,
+      "internacoes": 196,
       "obitos": 0,
-      "valor_total": 136436.4799999999,
-      "dias_permanencia": 991,
+      "valor_total": 145806.84,
+      "dias_permanencia": 1077,
       "taxa_mortalidade": 0
     },
     {
@@ -3332,10 +3333,10 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2015,
-      "internacoes": 205,
+      "internacoes": 207,
       "obitos": 0,
-      "valor_total": 164702.50999999998,
-      "dias_permanencia": 960,
+      "valor_total": 170358.24999999997,
+      "dias_permanencia": 976,
       "taxa_mortalidade": 0
     },
     {
@@ -3343,21 +3344,21 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2016,
-      "internacoes": 264,
+      "internacoes": 261,
       "obitos": 1,
-      "valor_total": 221733.33000000025,
-      "dias_permanencia": 833,
-      "taxa_mortalidade": 0.378788
+      "valor_total": 217588.06000000032,
+      "dias_permanencia": 772,
+      "taxa_mortalidade": 0.383142
     },
     {
       "uf_codigo": "50",
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2017,
-      "internacoes": 254,
+      "internacoes": 259,
       "obitos": 0,
-      "valor_total": 207075.33000000013,
-      "dias_permanencia": 509,
+      "valor_total": 212973.1300000001,
+      "dias_permanencia": 483,
       "taxa_mortalidade": 0
     },
     {
@@ -3365,32 +3366,32 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2018,
-      "internacoes": 297,
+      "internacoes": 292,
       "obitos": 2,
-      "valor_total": 256981.04999999993,
-      "dias_permanencia": 751,
-      "taxa_mortalidade": 0.673401
+      "valor_total": 257684.25999999978,
+      "dias_permanencia": 755,
+      "taxa_mortalidade": 0.684932
     },
     {
       "uf_codigo": "50",
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2019,
-      "internacoes": 313,
+      "internacoes": 309,
       "obitos": 1,
-      "valor_total": 269649.2300000003,
-      "dias_permanencia": 1026,
-      "taxa_mortalidade": 0.319489
+      "valor_total": 261805.30000000022,
+      "dias_permanencia": 1114,
+      "taxa_mortalidade": 0.323625
     },
     {
       "uf_codigo": "50",
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2020,
-      "internacoes": 282,
+      "internacoes": 283,
       "obitos": 0,
-      "valor_total": 253672.92000000013,
-      "dias_permanencia": 845,
+      "valor_total": 251341.77000000008,
+      "dias_permanencia": 746,
       "taxa_mortalidade": 0
     },
     {
@@ -3398,10 +3399,10 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2021,
-      "internacoes": 294,
+      "internacoes": 322,
       "obitos": 0,
-      "valor_total": 219235.7000000001,
-      "dias_permanencia": 714,
+      "valor_total": 227565.65000000005,
+      "dias_permanencia": 724,
       "taxa_mortalidade": 0
     },
     {
@@ -3409,10 +3410,10 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2022,
-      "internacoes": 440,
+      "internacoes": 447,
       "obitos": 0,
-      "valor_total": 341346.37000000157,
-      "dias_permanencia": 971,
+      "valor_total": 350760.3100000015,
+      "dias_permanencia": 1028,
       "taxa_mortalidade": 0
     },
     {
@@ -3420,21 +3421,21 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2023,
-      "internacoes": 528,
+      "internacoes": 533,
       "obitos": 3,
-      "valor_total": 513477.97000000195,
-      "dias_permanencia": 1037,
-      "taxa_mortalidade": 0.568182
+      "valor_total": 508136.75000000244,
+      "dias_permanencia": 1082,
+      "taxa_mortalidade": 0.562852
     },
     {
       "uf_codigo": "50",
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2024,
-      "internacoes": 706,
+      "internacoes": 724,
       "obitos": 0,
-      "valor_total": 1151773.6599999985,
-      "dias_permanencia": 999,
+      "valor_total": 1183572.5599999956,
+      "dias_permanencia": 987,
       "taxa_mortalidade": 0
     },
     {
@@ -3442,21 +3443,21 @@
       "uf": "MS",
       "uf_nome": "Mato Grosso do Sul",
       "ano": 2025,
-      "internacoes": 843,
+      "internacoes": 820,
       "obitos": 2,
-      "valor_total": 1156189.8199999973,
-      "dias_permanencia": 1161,
-      "taxa_mortalidade": 0.237248
+      "valor_total": 1146570.7399999965,
+      "dias_permanencia": 1109,
+      "taxa_mortalidade": 0.243902
     },
     {
       "uf_codigo": "51",
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2013,
-      "internacoes": 78,
+      "internacoes": 79,
       "obitos": 0,
-      "valor_total": 50198.049999999996,
-      "dias_permanencia": 338,
+      "valor_total": 51017.539999999986,
+      "dias_permanencia": 378,
       "taxa_mortalidade": 0
     },
     {
@@ -3464,10 +3465,10 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2014,
-      "internacoes": 66,
+      "internacoes": 81,
       "obitos": 0,
-      "valor_total": 29596.58,
-      "dias_permanencia": 167,
+      "valor_total": 41028.92999999998,
+      "dias_permanencia": 160,
       "taxa_mortalidade": 0
     },
     {
@@ -3475,10 +3476,10 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2015,
-      "internacoes": 51,
+      "internacoes": 52,
       "obitos": 0,
-      "valor_total": 21615.700000000008,
-      "dias_permanencia": 200,
+      "valor_total": 21837.800000000003,
+      "dias_permanencia": 224,
       "taxa_mortalidade": 0
     },
     {
@@ -3486,10 +3487,10 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2016,
-      "internacoes": 69,
+      "internacoes": 91,
       "obitos": 0,
-      "valor_total": 41820.640000000014,
-      "dias_permanencia": 184,
+      "valor_total": 51129.74000000001,
+      "dias_permanencia": 256,
       "taxa_mortalidade": 0
     },
     {
@@ -3497,21 +3498,21 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2017,
-      "internacoes": 76,
+      "internacoes": 83,
       "obitos": 1,
-      "valor_total": 44799.49000000001,
-      "dias_permanencia": 252,
-      "taxa_mortalidade": 1.315789
+      "valor_total": 50497.470000000016,
+      "dias_permanencia": 269,
+      "taxa_mortalidade": 1.204819
     },
     {
       "uf_codigo": "51",
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2018,
-      "internacoes": 80,
+      "internacoes": 82,
       "obitos": 0,
-      "valor_total": 47268.82,
-      "dias_permanencia": 293,
+      "valor_total": 45885.31,
+      "dias_permanencia": 286,
       "taxa_mortalidade": 0
     },
     {
@@ -3519,21 +3520,21 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2019,
-      "internacoes": 81,
+      "internacoes": 83,
       "obitos": 1,
-      "valor_total": 53292.939999999995,
-      "dias_permanencia": 288,
-      "taxa_mortalidade": 1.234568
+      "valor_total": 54085.82,
+      "dias_permanencia": 294,
+      "taxa_mortalidade": 1.204819
     },
     {
       "uf_codigo": "51",
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2020,
-      "internacoes": 59,
+      "internacoes": 68,
       "obitos": 0,
-      "valor_total": 28595.519999999997,
-      "dias_permanencia": 118,
+      "valor_total": 33733.47999999999,
+      "dias_permanencia": 143,
       "taxa_mortalidade": 0
     },
     {
@@ -3541,32 +3542,32 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2021,
-      "internacoes": 88,
+      "internacoes": 92,
       "obitos": 1,
-      "valor_total": 50752.05000000002,
-      "dias_permanencia": 245,
-      "taxa_mortalidade": 1.136364
+      "valor_total": 61583.54,
+      "dias_permanencia": 284,
+      "taxa_mortalidade": 1.086957
     },
     {
       "uf_codigo": "51",
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2022,
-      "internacoes": 89,
+      "internacoes": 91,
       "obitos": 1,
-      "valor_total": 69176.87999999995,
-      "dias_permanencia": 314,
-      "taxa_mortalidade": 1.123596
+      "valor_total": 60382.33999999999,
+      "dias_permanencia": 297,
+      "taxa_mortalidade": 1.098901
     },
     {
       "uf_codigo": "51",
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2023,
-      "internacoes": 113,
+      "internacoes": 116,
       "obitos": 0,
-      "valor_total": 98572.30999999995,
-      "dias_permanencia": 347,
+      "valor_total": 115304.24999999991,
+      "dias_permanencia": 365,
       "taxa_mortalidade": 0
     },
     {
@@ -3574,10 +3575,10 @@
       "uf": "MT",
       "uf_nome": "Mato Grosso",
       "ano": 2024,
-      "internacoes": 197,
+      "internacoes": 198,
       "obitos": 0,
-      "valor_total": 208839.46999999994,
-      "dias_permanencia": 518,
+      "valor_total": 196391.54999999996,
+      "dias_permanencia": 538,
       "taxa_mortalidade": 0
     },
     {
@@ -3587,8 +3588,8 @@
       "ano": 2025,
       "internacoes": 200,
       "obitos": 0,
-      "valor_total": 275967.9199999998,
-      "dias_permanencia": 697,
+      "valor_total": 273677.42000000004,
+      "dias_permanencia": 701,
       "taxa_mortalidade": 0
     },
     {
@@ -3596,10 +3597,10 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2013,
-      "internacoes": 883,
+      "internacoes": 922,
       "obitos": 0,
-      "valor_total": 1434910.789999998,
-      "dias_permanencia": 628,
+      "valor_total": 1469768.969999997,
+      "dias_permanencia": 700,
       "taxa_mortalidade": 0
     },
     {
@@ -3607,21 +3608,21 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2014,
-      "internacoes": 1328,
+      "internacoes": 1327,
       "obitos": 1,
-      "valor_total": 2437492.3599999934,
-      "dias_permanencia": 699,
-      "taxa_mortalidade": 0.075301
+      "valor_total": 2436564.9899999984,
+      "dias_permanencia": 659,
+      "taxa_mortalidade": 0.075358
     },
     {
       "uf_codigo": "52",
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2015,
-      "internacoes": 1408,
+      "internacoes": 1464,
       "obitos": 0,
-      "valor_total": 2472148.1699999976,
-      "dias_permanencia": 503,
+      "valor_total": 2598346.0599999977,
+      "dias_permanencia": 504,
       "taxa_mortalidade": 0
     },
     {
@@ -3629,10 +3630,10 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2016,
-      "internacoes": 949,
+      "internacoes": 969,
       "obitos": 0,
-      "valor_total": 935713.9199999975,
-      "dias_permanencia": 495,
+      "valor_total": 916029.5699999976,
+      "dias_permanencia": 554,
       "taxa_mortalidade": 0
     },
     {
@@ -3640,21 +3641,21 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2017,
-      "internacoes": 943,
+      "internacoes": 928,
       "obitos": 1,
-      "valor_total": 859143.9500000025,
-      "dias_permanencia": 704,
-      "taxa_mortalidade": 0.106045
+      "valor_total": 854103.7400000028,
+      "dias_permanencia": 700,
+      "taxa_mortalidade": 0.107759
     },
     {
       "uf_codigo": "52",
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2018,
-      "internacoes": 922,
+      "internacoes": 1066,
       "obitos": 0,
-      "valor_total": 1081988.1300000034,
-      "dias_permanencia": 482,
+      "valor_total": 1221436.750000001,
+      "dias_permanencia": 542,
       "taxa_mortalidade": 0
     },
     {
@@ -3662,10 +3663,10 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2019,
-      "internacoes": 1426,
+      "internacoes": 1429,
       "obitos": 0,
-      "valor_total": 2268233.499999978,
-      "dias_permanencia": 712,
+      "valor_total": 2279213.1499999785,
+      "dias_permanencia": 691,
       "taxa_mortalidade": 0
     },
     {
@@ -3673,10 +3674,10 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2020,
-      "internacoes": 835,
+      "internacoes": 959,
       "obitos": 0,
-      "valor_total": 1176934.1099999973,
-      "dias_permanencia": 303,
+      "valor_total": 1345204.749999993,
+      "dias_permanencia": 423,
       "taxa_mortalidade": 0
     },
     {
@@ -3684,10 +3685,10 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2021,
-      "internacoes": 1138,
+      "internacoes": 1221,
       "obitos": 0,
-      "valor_total": 1664102.429999995,
-      "dias_permanencia": 162,
+      "valor_total": 1740811.8199999942,
+      "dias_permanencia": 124,
       "taxa_mortalidade": 0
     },
     {
@@ -3695,32 +3696,32 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2022,
-      "internacoes": 1020,
+      "internacoes": 1338,
       "obitos": 2,
-      "valor_total": 1429861.9200000018,
-      "dias_permanencia": 356,
-      "taxa_mortalidade": 0.196078
+      "valor_total": 1767859.279999998,
+      "dias_permanencia": 455,
+      "taxa_mortalidade": 0.149477
     },
     {
       "uf_codigo": "52",
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2023,
-      "internacoes": 1568,
+      "internacoes": 1780,
       "obitos": 1,
-      "valor_total": 2379526.949999999,
-      "dias_permanencia": 467,
-      "taxa_mortalidade": 0.063776
+      "valor_total": 2746452.1199999917,
+      "dias_permanencia": 536,
+      "taxa_mortalidade": 0.05618
     },
     {
       "uf_codigo": "52",
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2024,
-      "internacoes": 2280,
+      "internacoes": 2130,
       "obitos": 0,
-      "valor_total": 4323436.270000025,
-      "dias_permanencia": 383,
+      "valor_total": 4130620.1800000207,
+      "dias_permanencia": 311,
       "taxa_mortalidade": 0
     },
     {
@@ -3728,10 +3729,10 @@
       "uf": "GO",
       "uf_nome": "Goiás",
       "ano": 2025,
-      "internacoes": 2068,
+      "internacoes": 2085,
       "obitos": 0,
-      "valor_total": 3566077.5000000107,
-      "dias_permanencia": 324,
+      "valor_total": 3618527.1000000136,
+      "dias_permanencia": 300,
       "taxa_mortalidade": 0
     },
     {
@@ -3739,10 +3740,10 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2013,
-      "internacoes": 206,
+      "internacoes": 220,
       "obitos": 0,
-      "valor_total": 77369.13000000003,
-      "dias_permanencia": 408,
+      "valor_total": 82151.34000000001,
+      "dias_permanencia": 443,
       "taxa_mortalidade": 0
     },
     {
@@ -3750,10 +3751,10 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2014,
-      "internacoes": 209,
+      "internacoes": 198,
       "obitos": 0,
-      "valor_total": 89077.16,
-      "dias_permanencia": 578,
+      "valor_total": 82922.18999999996,
+      "dias_permanencia": 556,
       "taxa_mortalidade": 0
     },
     {
@@ -3761,10 +3762,10 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2015,
-      "internacoes": 230,
+      "internacoes": 266,
       "obitos": 0,
-      "valor_total": 77319.29000000002,
-      "dias_permanencia": 637,
+      "valor_total": 91258.25999999998,
+      "dias_permanencia": 808,
       "taxa_mortalidade": 0
     },
     {
@@ -3772,10 +3773,10 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2016,
-      "internacoes": 452,
+      "internacoes": 439,
       "obitos": 0,
-      "valor_total": 132211.7800000001,
-      "dias_permanencia": 974,
+      "valor_total": 121543.36000000015,
+      "dias_permanencia": 891,
       "taxa_mortalidade": 0
     },
     {
@@ -3783,10 +3784,10 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2017,
-      "internacoes": 353,
+      "internacoes": 378,
       "obitos": 0,
-      "valor_total": 123708.77999999994,
-      "dias_permanencia": 838,
+      "valor_total": 138937.3799999999,
+      "dias_permanencia": 831,
       "taxa_mortalidade": 0
     },
     {
@@ -3794,9 +3795,64 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2018,
-      "internacoes": 362,
+      "internacoes": 339,
       "obitos": 0,
-      "valor_total": 154815.46999999977,
+      "valor_total": 145792.7199999999,
+      "dias_permanencia": 914,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "53",
+      "uf": "DF",
+      "uf_nome": "Distrito Federal",
+      "ano": 2019,
+      "internacoes": 403,
+      "obitos": 0,
+      "valor_total": 233353.92999999976,
+      "dias_permanencia": 1062,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "53",
+      "uf": "DF",
+      "uf_nome": "Distrito Federal",
+      "ano": 2020,
+      "internacoes": 195,
+      "obitos": 0,
+      "valor_total": 109815.35999999996,
+      "dias_permanencia": 553,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "53",
+      "uf": "DF",
+      "uf_nome": "Distrito Federal",
+      "ano": 2021,
+      "internacoes": 229,
+      "obitos": 0,
+      "valor_total": 126917.49000000006,
+      "dias_permanencia": 601,
+      "taxa_mortalidade": 0
+    },
+    {
+      "uf_codigo": "53",
+      "uf": "DF",
+      "uf_nome": "Distrito Federal",
+      "ano": 2022,
+      "internacoes": 254,
+      "obitos": 1,
+      "valor_total": 152827.44,
+      "dias_permanencia": 683,
+      "taxa_mortalidade": 0.393701
+    },
+    {
+      "uf_codigo": "53",
+      "uf": "DF",
+      "uf_nome": "Distrito Federal",
+      "ano": 2023,
+      "internacoes": 350,
+      "obitos": 0,
+      "valor_total": 199974.9299999999,
       "dias_permanencia": 962,
       "taxa_mortalidade": 0
     },
@@ -3804,66 +3860,11 @@
       "uf_codigo": "53",
       "uf": "DF",
       "uf_nome": "Distrito Federal",
-      "ano": 2019,
-      "internacoes": 396,
-      "obitos": 0,
-      "valor_total": 226026.75999999972,
-      "dias_permanencia": 984,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "53",
-      "uf": "DF",
-      "uf_nome": "Distrito Federal",
-      "ano": 2020,
-      "internacoes": 211,
-      "obitos": 0,
-      "valor_total": 119538.58999999998,
-      "dias_permanencia": 624,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "53",
-      "uf": "DF",
-      "uf_nome": "Distrito Federal",
-      "ano": 2021,
-      "internacoes": 226,
-      "obitos": 0,
-      "valor_total": 127317.35000000008,
-      "dias_permanencia": 627,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "53",
-      "uf": "DF",
-      "uf_nome": "Distrito Federal",
-      "ano": 2022,
-      "internacoes": 253,
-      "obitos": 1,
-      "valor_total": 153339.57999999996,
-      "dias_permanencia": 684,
-      "taxa_mortalidade": 0.395257
-    },
-    {
-      "uf_codigo": "53",
-      "uf": "DF",
-      "uf_nome": "Distrito Federal",
-      "ano": 2023,
-      "internacoes": 343,
-      "obitos": 0,
-      "valor_total": 193082.1999999999,
-      "dias_permanencia": 919,
-      "taxa_mortalidade": 0
-    },
-    {
-      "uf_codigo": "53",
-      "uf": "DF",
-      "uf_nome": "Distrito Federal",
       "ano": 2024,
-      "internacoes": 381,
+      "internacoes": 384,
       "obitos": 0,
-      "valor_total": 326454.63999999996,
-      "dias_permanencia": 1127,
+      "valor_total": 324170.7299999999,
+      "dias_permanencia": 1153,
       "taxa_mortalidade": 0
     },
     {
@@ -3871,10 +3872,10 @@
       "uf": "DF",
       "uf_nome": "Distrito Federal",
       "ano": 2025,
-      "internacoes": 442,
+      "internacoes": 443,
       "obitos": 0,
-      "valor_total": 365884.77000000037,
-      "dias_permanencia": 1337,
+      "valor_total": 374365.3900000004,
+      "dias_permanencia": 1302,
       "taxa_mortalidade": 0
     }
   ]

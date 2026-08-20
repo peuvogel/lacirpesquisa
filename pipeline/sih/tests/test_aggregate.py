@@ -11,12 +11,15 @@ import json
 from pathlib import Path
 
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 import pytest
 
 from sih_pipeline.aggregate import (
     NEEDED_COLUMNS,
     Row,
+    _ano_de_dt_inter,
+    _MAX_TAXA_DESCARTE_DT_INTER,
     _MAX_TAXA_DESCARTE_MUNICIPIO,
     _taxa_mortalidade,
     aggregate_parquet_dir,
@@ -25,7 +28,20 @@ from sih_pipeline.corrections import apply_corrections, load_corrections
 from sih_pipeline.matcher import build_index, load_cid_map, match_category
 from sih_pipeline.paths import repo_root
 
+# AC, COMPETÊNCIA 2019 inteira (RDAC1901..RDAC1912, 44.589 registros) -- a mesma fixture de
+# sempre, regenerada em 09-15-DT-INTER para incluir DT_INTER. Continua sendo um recorte por
+# COMPETÊNCIA, e é exatamente por isso que ela é a fixture certa para o gate SC-7: o oráculo
+# (`oracle_scrape.py`) submete ao TabNet só os 12 arquivos `nibr19MM.dbf` da competência 2019 e
+# lê a coluna `Ano_atendimento` -- ou seja, mede "internações de 2019 que foram faturadas na
+# competência 2019", que é precisamente a população desta fixture no ano 2019. Ver
+# test_reconcile_gate.py para a medição que estabeleceu isso.
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "rdac_2019.parquet"
+# AC, competências 2019 E 2020 (RDAC1901..RDAC2012, 87.816 registros) -- a fixture que permite
+# montar um ano de ADMISSÃO completo, que nenhum recorte de competência única consegue: 2019 só
+# fecha quando a cauda faturada em 2020 entra na conta. É sobre ela que roda a prova de
+# reconciliação de `amputacao_mmii` contra o oráculo `qibr.def` (que, ao contrário do oráculo
+# CID, submete os 156 arquivos dos 13 anos -- ver test_amputacao_mmii_ano_de_admissao_2019...).
+FIXTURE_ADMISSAO_PATH = Path(__file__).parent / "fixtures" / "rdac_admissao_2019.parquet"
 # DF real, competência 2017-08 (RDDF1708.parquet, projetado a NEEDED_COLUMNS), 2.292 registros
 # -- reproduz ao vivo o crash "Failed to parse string: '' as a scalar of type double" relatado
 # na recoleta nacional (09-04-FIX-AGREGACAO-VAZIO). Contém 46 registros com TODOS os campos
@@ -44,6 +60,42 @@ FIXTURE_DF_VAZIO_PATH = Path(__file__).parent / "fixtures" / "rddf_1708_vazio.pa
 FIXTURE_PR_MUNICIPIO_VAZIO_PATH = Path(__file__).parent / "fixtures" / "rdpr_2004_municipio_vazio.parquet"
 
 
+def _com_dt_inter_derivado(fixture_path: Path, destino: Path) -> Path:
+    """Devolve uma cópia de `fixture_path` com a coluna `DT_INTER` acrescentada, derivada de
+    `ANO_CMPT`.
+
+    **Por que esta função existe, e por que a alternativa honesta não estava disponível**
+    (09-15-DT-INTER, 2026-08-17). As duas fixtures que passam por aqui
+    (`rddf_1708_vazio.parquet`, `rdpr_2004_municipio_vazio.parquet`) são bytes REAIS de arquivos
+    que quebraram a recoleta nacional em produção — são a evidência arquivada de duas classes de
+    defeito (registro corrompido do DBC com todos os campos vazios; `MUNIC_MOV` em branco). Elas
+    foram gravadas ANTES de `DT_INTER` entrar em `NEEDED_COLUMNS`, então não têm a coluna.
+
+    O caminho óbvio seria regerá-las do arquivo original, como foi feito com `rdac_2019.parquet`.
+    **Medido em 2026-08-17: não dá mais.** `RDDF1708` e `RDPR2004` foram RE-PUBLICADOS pelo
+    DATASUS desde 2026-08-12 — os arquivos que o FTP serve hoje têm contagem diferente (16.292 em
+    vez de 2.292 na fatia arquivada; 56.146 em vez de 25.493) e, sobretudo, **zero** dos defeitos
+    que estas fixtures capturam (0 registros com `IDENT` vazio, 0 com `MUNIC_MOV` inválido, 0 com
+    `VAL_TOT` vazio). Regerar destruiria a única cópia sobrevivente da evidência.
+
+    Então a fixture no disco fica INTOCADA (bytes reais, nunca reescritos) e a coluna que falta é
+    derivada aqui, à vista, no código de teste — nunca gravada dentro do binário, onde viraria
+    "dado real" indistinguível do resto. A derivação é fiel ao que cada registro é: `ANO_CMPT`
+    preenchido vira uma data plausível daquele ano; `ANO_CMPT` vazio (a classe "registro
+    corrompido do DBC", em que TODOS os campos vêm vazios juntos, `IDENT` inclusive) vira
+    `DT_INTER` vazio, que é o que esses registros de fato tinham.
+
+    Nenhum dos dois testes que usam estas fixtures mede `DT_INTER` — eles medem as guardas de
+    valor vazio e de município. A coluna derivada existe só para o arquivo continuar carregável.
+    """
+    tabela = pq.read_table(fixture_path)
+    ano_cmpt = pc.utf8_trim_whitespace(tabela["ANO_CMPT"]).to_pylist()
+    dt_inter = [f"{a}0315" if a and a.isdigit() and len(a) == 4 else "" for a in ano_cmpt]
+    tabela = tabela.append_column("DT_INTER", pa.array(dt_inter, type=pa.string()))
+    pq.write_table(tabela, destino)
+    return destino
+
+
 def _schema_v3() -> dict:
     path = repo_root() / "scripts" / "catalog" / "schema-v3.json"
     with path.open("r", encoding="utf-8") as fh:
@@ -59,6 +111,11 @@ def index():
 @pytest.fixture(scope="module")
 def fixture_rows(index) -> list[Row]:
     return aggregate_parquet_dir(FIXTURE_PATH, index)
+
+
+@pytest.fixture(scope="module")
+def fixture_admissao_rows(index) -> list[Row]:
+    return aggregate_parquet_dir(FIXTURE_ADMISSAO_PATH, index)
 
 
 def test_needed_columns_contem_as_colunas_obrigatorias():
@@ -150,12 +207,16 @@ def test_total_ocorrencia_igual_total_residencia_brasil_inteiro(fixture_rows):
     assert total_ocorrencia > 0
 
 
-def test_ano_sai_de_ano_cmpt_e_e_filtrado_a_janela_schema(fixture_rows):
+def test_ano_sai_de_dt_inter_e_e_filtrado_a_janela_schema(fixture_rows):
     schema = _schema_v3()
     for row in fixture_rows:
         assert schema["anoMin"] <= row.ano <= schema["anoMax"]
-    # a fixture é inteiramente AC/2019 -- todo registro casado cai em ano=2019
-    assert {row.ano for row in fixture_rows} == {2019}
+    # A fixture é a COMPETÊNCIA 2019 inteira do AC -- e produz DOIS anos de internação, não um.
+    # É a prova mais direta de que o ano vem de DT_INTER e não do arquivo: 3.493 registros
+    # IDENT='1' desses mesmos 12 arquivos são internações de 2018 faturadas em 2019 (7,84% da
+    # competência). Sob ANO_CMPT eles apareciam como 2019, contra o denominador populacional
+    # errado.
+    assert {row.ano for row in fixture_rows} == {2018, 2019}
 
 
 def test_grao_local_e_medidas_usam_valores_do_schema_v3(fixture_rows):
@@ -185,6 +246,7 @@ def test_registros_sem_categoria_sao_contados_e_acima_de_01_por_cento_levanta(in
             "VAL_TOT": ["  100.00"] * 5,
             "DIAS_PERM": ["  1"] * 5,
             "ANO_CMPT": ["2019"] * 5,
+            "DT_INTER": ["20190315"] * 5,
             "IDENT": ["1"] * 5,
             "PROC_REA": ["0000000000"] * 5,
             "UF_ZI": ["120040"] * 5,
@@ -209,6 +271,7 @@ def test_registros_sem_categoria_abaixo_do_limite_nao_levanta(index, tmp_path):
             "VAL_TOT": ["  100.00"] * (n_ok + 1),
             "DIAS_PERM": ["  1"] * (n_ok + 1),
             "ANO_CMPT": ["2019"] * (n_ok + 1),
+            "DT_INTER": ["20190315"] * (n_ok + 1),
             "IDENT": ["1"] * (n_ok + 1),
             "PROC_REA": ["0000000000"] * (n_ok + 1),
             "UF_ZI": ["120040"] * (n_ok + 1),
@@ -222,8 +285,8 @@ def test_registros_sem_categoria_abaixo_do_limite_nao_levanta(index, tmp_path):
 
 
 def test_ano_fora_da_janela_e_excluido(index, tmp_path):
-    # ANO_CMPT=2010 está fora da janela D-11 (2013-2025, schema-v3.json anoMin/anoMax) -- a
-    # linha correspondente nunca aparece na saída, mesmo tendo DIAG_PRINC casável.
+    # Uma internação de 2010 está fora da janela D-11 (2013-2025, schema-v3.json anoMin/anoMax)
+    # -- a linha correspondente nunca aparece na saída, mesmo tendo DIAG_PRINC casável.
     table = pa.table(
         {
             "DIAG_PRINC": ["A00", "A00"],
@@ -233,6 +296,7 @@ def test_ano_fora_da_janela_e_excluido(index, tmp_path):
             "VAL_TOT": ["  100.00", "  100.00"],
             "DIAS_PERM": ["  1", "  1"],
             "ANO_CMPT": ["2010", "2019"],
+            "DT_INTER": ["20100315", "20190315"],
             "IDENT": ["1", "1"],
             "PROC_REA": ["0000000000", "0000000000"],
             "UF_ZI": ["120040", "120040"],
@@ -243,6 +307,179 @@ def test_ano_fora_da_janela_e_excluido(index, tmp_path):
 
     rows = aggregate_parquet_dir(caminho, index)
     assert {row.ano for row in rows} == {2019}
+
+
+# --- 09-15-DT-INTER: o ano vem da DATA DE INTERNAÇÃO, não da competência de faturamento -------
+#
+# Ver aggregate.py (docstring do módulo) para o motivo epidemiológico e para a medição de
+# defasagem que fundamenta a janela de coleta em enumerate.py.
+
+
+def _tabela_datas(*, ano_cmpt, dt_inter, ident=None, diag_princ=None):
+    n = len(dt_inter)
+    assert len(ano_cmpt) == n
+    return pa.table(
+        {
+            "DIAG_PRINC": diag_princ or ["A00"] * n,
+            "MUNIC_MOV": ["120040"] * n,
+            "MUNIC_RES": ["120040"] * n,
+            "MORTE": ["0"] * n,
+            "VAL_TOT": ["  100.00"] * n,
+            "DIAS_PERM": ["  1"] * n,
+            "ANO_CMPT": ano_cmpt,
+            "DT_INTER": dt_inter,
+            "IDENT": ident or ["1"] * n,
+            "PROC_REA": ["0000000000"] * n,
+            "UF_ZI": ["120040"] * n,
+        }
+    )
+
+
+def test_ano_sai_de_dt_inter_e_nao_de_ano_cmpt(index, tmp_path):
+    # O teste central desta correção: competência (ANO_CMPT) e internação (DT_INTER) discordam de
+    # propósito. A internação aconteceu em 2019; a AIH só foi faturada na competência de 2020.
+    # O ano da linha agregada tem que ser 2019 -- se fosse 2020, a contagem de 2019 estaria
+    # sendo comparada contra o denominador populacional do ano errado (ver docstring do módulo).
+    table = _tabela_datas(ano_cmpt=["2020"], dt_inter=["20191228"])
+    caminho = tmp_path / "ano_de_dt_inter.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    assert {row.ano for row in rows} == {2019}
+
+
+def test_registro_da_competencia_seguinte_conta_no_ano_da_internacao(index, tmp_path):
+    # Reproduz a estrutura real medida: uma internação de dezembro/2019 aparece no arquivo de
+    # competência 2020-01 (58,70% dos registros de RDAC2501 são internações do ano anterior --
+    # janeiro é o mês de defasagem máxima). Dois ARQUIVOS distintos no mesmo diretório, como a
+    # agregação real recebe: os dois registros de DT_INTER 2019 têm que somar no MESMO ano, ainda
+    # que venham de anos de competência diferentes.
+    dir_ufs = tmp_path / "uf"
+    dir_ufs.mkdir()
+    pq.write_table(
+        _tabela_datas(ano_cmpt=["2019"], dt_inter=["20190610"]),
+        dir_ufs / "RDXX1906.parquet",
+    )
+    pq.write_table(
+        _tabela_datas(ano_cmpt=["2020", "2020"], dt_inter=["20191228", "20200104"]),
+        dir_ufs / "RDXX2001.parquet",
+    )
+
+    rows = aggregate_parquet_dir(dir_ufs, index)
+    por_ano = {
+        r.ano: r.internacoes for r in rows if r.grao == "uf" and r.local == "ocorrencia"
+    }
+    assert por_ano == {2019: 2, 2020: 1}
+
+
+def test_dt_inter_malformado_e_descartado_contado_e_guardado_por_taxa(index, tmp_path):
+    # DT_INTER ausente/malformado em AIH REAL (IDENT='1') é perda de informação: a internação
+    # existiu mas o pipeline não sabe localizá-la no tempo. Nunca some em silêncio -- é contado
+    # e, acima de _MAX_TAXA_DESCARTE_DT_INTER (0,1% da população IDENT='1'), levanta. Aqui:
+    # 2 descartes em 4 = 50%.
+    table = _tabela_datas(
+        ano_cmpt=["2019"] * 4,
+        dt_inter=["20190315", "", "2019031", "2019ab15"],
+    )
+    caminho = tmp_path / "dt_inter_ruim_alto.parquet"
+    pq.write_table(table, caminho)
+
+    with pytest.raises(ValueError, match="DT_INTER"):
+        aggregate_parquet_dir(caminho, index)
+
+
+def test_dt_inter_malformado_abaixo_do_limite_e_contado_sem_levantar(index, tmp_path):
+    # 1 malformado em 2.000 = 0,05% < 0,1% -- não levanta, mas o descarte continua CONTADO e
+    # visível em `stats` (é o que a corrida nacional persiste por UF no CollectLedger). Uma
+    # guarda que não registrasse o que tolerou seria um catch-and-ignore com outro nome.
+    n_ok = 1999
+    table = _tabela_datas(
+        ano_cmpt=["2019"] * (n_ok + 1),
+        dt_inter=["20190315"] * n_ok + ["00000000"],
+    )
+    caminho = tmp_path / "dt_inter_ruim_baixo.parquet"
+    pq.write_table(table, caminho)
+
+    stats: dict = {}
+    rows = aggregate_parquet_dir(caminho, index, stats=stats)
+    assert rows
+    assert stats["descartes_dt_inter"] == 1
+    assert stats["total_ident_1"] == n_ok + 1
+
+
+def test_dt_inter_fora_da_janela_nunca_conta_como_descarte(index, tmp_path):
+    # Distinção que a guarda depende para funcionar: uma internação de 2026 (nos arquivos de
+    # competência de cauda, que são feitos majoritariamente dela) é dado SAUDÁVEL fora do
+    # recorte, não defeito. Se contasse como descarte, a guarda estouraria em toda UF por dado
+    # perfeitamente bom -- e deixaria de pegar o defeito que existe para pegar.
+    table = _tabela_datas(
+        ano_cmpt=["2026"] * 10,
+        dt_inter=["20260115"] * 9 + ["20251228"],
+    )
+    caminho = tmp_path / "dt_inter_fora_janela.parquet"
+    pq.write_table(table, caminho)
+
+    stats: dict = {}
+    rows = aggregate_parquet_dir(caminho, index, stats=stats)
+    assert stats["fora_da_janela"] == 9
+    assert stats["descartes_dt_inter"] == 0
+    assert {r.ano for r in rows} == {2025}
+
+
+def test_dt_inter_com_dia_impossivel_conta_pelo_ano_em_vez_de_ser_descartado(index, tmp_path):
+    # 30 de fevereiro não existe no calendário, mas o ANO de '20250230' é inequivocamente 2025 --
+    # e o ano é a única coisa que a agregação extrai. Recusar o registro jogaria fora uma
+    # internação REAL por um erro de digitação num campo que nem é usado. Semântica explícita e
+    # documentada em _ano_de_dt_inter, nunca um acidente.
+    assert _ano_de_dt_inter("20250230") == 2025
+    # o que NÃO passa: mês/dia fora de intervalo, comprimento errado, não numérico, ano
+    # estruturalmente implausível (lixo que por acaso tem 8 dígitos)
+    assert _ano_de_dt_inter("20251301") is None
+    assert _ano_de_dt_inter("20250100") is None
+    assert _ano_de_dt_inter("00000000") is None
+    assert _ano_de_dt_inter("99999999") is None
+    assert _ano_de_dt_inter("") is None
+    assert _ano_de_dt_inter(None) is None
+    assert _ano_de_dt_inter("  20190315  ") == 2019
+
+
+def test_stats_mede_a_defasagem_de_competencia_da_propria_passada(index, tmp_path):
+    # A defasagem deixa de ser suposição e passa a ser medida a cada corrida: `lag` é o
+    # histograma de (ANO_CMPT - ano(DT_INTER)). É isso que permite verificar, com o dado da
+    # corrida, se a cauda de competência escolhida em enumerate.py continua suficiente.
+    table = _tabela_datas(
+        ano_cmpt=["2019", "2020", "2020", "2021"],
+        dt_inter=["20190610", "20191228", "20200104", "20191115"],
+    )
+    caminho = tmp_path / "stats_lag.parquet"
+    pq.write_table(table, caminho)
+
+    stats: dict = {}
+    aggregate_parquet_dir(caminho, index, stats=stats)
+    assert stats["lag"] == {"0": 2, "1": 1, "2": 1}
+    assert stats["total"] == 4
+    assert stats["total_ident_1"] == 4
+
+
+def test_ident_5_continua_excluido_com_o_ano_vindo_de_dt_inter(index, tmp_path):
+    # Regressão do achado 09-08-INVESTIGACAO/09-07-IDENT-FIX (53b7323): renovação de AIH de longa
+    # permanência é faturamento continuado da MESMA internação, não uma nova admissão. A troca de
+    # ANO_CMPT por DT_INTER não pode reabrir isso -- e o filtro de IDENT agora roda ANTES da
+    # leitura de data, então precisa continuar valendo para os DOIS eixos de classificação.
+    table = _tabela_datas(
+        ano_cmpt=["2020"] * 4,
+        dt_inter=["20191228"] * 4,
+        ident=["1", "1", "5", "9"],
+    )
+    caminho = tmp_path / "ident_com_dt_inter.parquet"
+    pq.write_table(table, caminho)
+
+    stats: dict = {}
+    rows = aggregate_parquet_dir(caminho, index, stats=stats)
+    total = sum(r.internacoes for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert total == 2
+    assert stats["total_ident_1"] == 2  # IDENT != '1' nunca entra no denominador da guarda
+    assert stats["total"] == 4
 
 
 def test_morte_tipo_inesperado_levanta_tyoe_error(index, tmp_path):
@@ -258,6 +495,7 @@ def test_morte_tipo_inesperado_levanta_tyoe_error(index, tmp_path):
             "VAL_TOT": ["  100.00"],
             "DIAS_PERM": ["  1"],
             "ANO_CMPT": ["2019"],
+            "DT_INTER": ["20190315"],
             "IDENT": ["1"],
             "PROC_REA": ["0000000000"],
             "UF_ZI": ["120040"],
@@ -298,6 +536,7 @@ def test_ident_diferente_de_1_e_excluido_da_contagem(index, tmp_path):
             "VAL_TOT": ["  100.00"] * 4,
             "DIAS_PERM": ["  1"] * 4,
             "ANO_CMPT": ["2019"] * 4,
+            "DT_INTER": ["20190315"] * 4,
             "IDENT": ["1", "1", "5", "9"],
             "PROC_REA": ["0000000000"] * 4,
             "UF_ZI": ["120040"] * 4,
@@ -353,6 +592,7 @@ def _tabela_com_proc_rea(*, diag_princ, proc_rea, ident):
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ident,
             "PROC_REA": proc_rea,
             "UF_ZI": ["120040"] * n,
@@ -479,22 +719,34 @@ def test_proc_rea_nao_isenta_descarte_cid(index, tmp_path):
 # de semântica por medida.
 
 
-def test_val_tot_vazio_real_df_nao_quebra_a_agregacao_da_uf():
+def test_val_tot_vazio_real_df_nao_quebra_a_agregacao_da_uf(tmp_path):
     # Prova de ponta a ponta sobre dado REAL (não sintético) -- reproduz o crash relatado antes
     # da correção (RED) e prova que ele desaparece depois (GREEN), sem trocar o gate de descarte
     # por um coerce cego: os 46 registros com todos os campos vazios (IDENT='') continuam sendo
     # excluídos pelo filtro de IDENT, nunca contados nem como internação nem como descarte.
+    # `DT_INTER` é derivado de ANO_CMPT na carga -- ver `_com_dt_inter_derivado` para por que a
+    # fixture não pode ser regerada (o DATASUS republicou RDDF1708 limpo).
     cid_map = apply_corrections(load_cid_map(), load_corrections())
     index = build_index(cid_map)
-    rows = aggregate_parquet_dir(FIXTURE_DF_VAZIO_PATH, index)
+    caminho = _com_dt_inter_derivado(FIXTURE_DF_VAZIO_PATH, tmp_path / "df_vazio.parquet")
+    stats: dict = {}
+    rows = aggregate_parquet_dir(caminho, index, stats=stats)
     assert rows, "aggregate_parquet_dir nao produziu nenhuma linha para RDDF1708.parquet"
+    # Os 46 registros corrompidos nunca chegam à leitura de data: o filtro de IDENT roda antes.
+    # É isso que mantém `descartes_dt_inter` medindo só AIH real sem data utilizável.
+    assert stats["total"] == 2292
+    assert stats["total_ident_1"] == 2292 - 46
+    assert stats["descartes_dt_inter"] == 0
 
 
-def _tabela_valor_vazio(*, val_tot, dias_perm, morte, diag_princ=None, ident=None, ano_cmpt=None):
+def _tabela_valor_vazio(
+    *, val_tot, dias_perm, morte, diag_princ=None, ident=None, ano_cmpt=None, dt_inter=None
+):
     n = len(val_tot)
     diag_princ = diag_princ or ["A00"] * n
     ident = ident or ["1"] * n
     ano_cmpt = ano_cmpt or ["2019"] * n
+    dt_inter = dt_inter or ["20190315"] * n
     return pa.table(
         {
             "DIAG_PRINC": diag_princ,
@@ -504,6 +756,7 @@ def _tabela_valor_vazio(*, val_tot, dias_perm, morte, diag_princ=None, ident=Non
             "VAL_TOT": val_tot,
             "DIAS_PERM": dias_perm,
             "ANO_CMPT": ano_cmpt,
+            "DT_INTER": dt_inter,
             "IDENT": ident,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": ["120040"] * n,
@@ -568,23 +821,53 @@ def test_morte_vazio_conta_internacao_mas_nao_conta_como_obito(index, tmp_path):
     assert linha.taxa_mortalidade == pytest.approx(0.5)
 
 
-def test_ano_cmpt_vazio_e_excluido_sem_quebrar(index, tmp_path):
-    # ANO_CMPT vazio (a mesma classe de registro corrompido medida em DF/RDDF1708.parquet: 46
-    # linhas com TODOS os campos vazios, IDENT='' junto) precisa cair no mesmo caminho de "fora
-    # da janela" que já existe para ANO_CMPT numérico fora de anoMin/anoMax -- nunca quebrar o
-    # cast eager que roda ANTES do filtro por registro.
+def test_registro_corrompido_do_dbc_tudo_vazio_continua_excluido_sem_quebrar(index, tmp_path):
+    # A classe "registro corrompido do DBC" medida em DF/RDDF1708.parquet (46 de 2.292 linhas com
+    # TODOS os campos vazios juntos -- IDENT, ANO_CMPT, DT_INTER, DIAG_PRINC, MUNIC_*) continua
+    # excluída pelo filtro de IDENT, que roda ANTES de qualquer leitura de data. O cast eager de
+    # ANO_CMPT (que download._valida_registros_alinhados replica por arquivo) continua sem
+    # quebrar sobre o vazio, via _blank_to_null.
+    table = _tabela_valor_vazio(
+        val_tot=["  50.00", ""],
+        dias_perm=["  1", ""],
+        morte=["0", ""],
+        ano_cmpt=["2019", ""],
+        dt_inter=["20190315", ""],
+        ident=["1", ""],
+    )
+    caminho = tmp_path / "registro_corrompido.parquet"
+    pq.write_table(table, caminho)
+
+    rows = aggregate_parquet_dir(caminho, index)
+    linha = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
+    assert linha.internacoes == 1  # só a AIH real conta; a linha corrompida nunca chega à data
+
+
+def test_ano_cmpt_vazio_nao_derruba_aih_real_com_dt_inter_valido(index, tmp_path):
+    # MUDANÇA DE COMPORTAMENTO deliberada de 09-15-DT-INTER, registrada aqui em vez de escondida:
+    # antes, ANO_CMPT vazio excluía o registro (era ele quem dava o ano). Agora o ano vem de
+    # DT_INTER, então uma AIH REAL (IDENT='1', DT_INTER válido) cuja competência veio em branco
+    # CONTA -- a internação aconteceu e sabemos exatamente quando. Descartá-la seria perder um
+    # evento clínico por causa de um campo administrativo ausente.
     table = _tabela_valor_vazio(
         val_tot=["  50.00", "  50.00"],
         dias_perm=["  1", "  1"],
         morte=["0", "0"],
         ano_cmpt=["2019", ""],
+        dt_inter=["20190315", "20190720"],
     )
-    caminho = tmp_path / "ano_cmpt_vazio.parquet"
+    caminho = tmp_path / "ano_cmpt_vazio_dt_inter_ok.parquet"
     pq.write_table(table, caminho)
 
-    rows = aggregate_parquet_dir(caminho, index)
+    stats: dict = {}
+    rows = aggregate_parquet_dir(caminho, index, stats=stats)
     linha = next(r for r in rows if r.grao == "uf" and r.local == "ocorrencia")
-    assert linha.internacoes == 1  # só o registro com ANO_CMPT preenchido e válido conta
+    assert linha.internacoes == 2
+    assert linha.ano == 2019
+    # o registro sem ANO_CMPT simplesmente não entra no histograma de defasagem (não há
+    # competência com que comparar) -- nunca é inventado um lag 0 para ele
+    assert stats["lag"] == {"0": 1}
+    assert stats["descartes_dt_inter"] == 0
 
 
 def test_valor_nao_vazio_e_nao_numerico_continua_estourando(index, tmp_path):
@@ -604,13 +887,20 @@ def test_valor_nao_vazio_e_nao_numerico_continua_estourando(index, tmp_path):
         aggregate_parquet_dir(caminho, index)
 
 
-def test_cid_output_identico_byte_a_byte_apos_correcao_de_vazio(fixture_rows):
-    # rdac_2019.parquet não tem NENHUM campo vazio em VAL_TOT/DIAS_PERM/MORTE/ANO_CMPT (medido:
-    # 0/44.589 em cada uma das 4 colunas) -- a correção desta plan (tratar vazio como ausência,
-    # não zero) NUNCA deveria tocar esta fixture. Hash SHA-256 de todas as linhas (canonicalizadas
-    # e ordenadas) trava byte a byte que a saída do caminho CID (o mesmo que produziu
-    # sih_metric_uf = 207.131 linhas / 330 agravos em produção) continua idêntica antes e depois
-    # desta correção -- medido diretamente sobre o código ANTES da correção, não assumido.
+def test_saida_congelada_byte_a_byte(fixture_rows):
+    # Trava byte a byte a saída inteira sobre a fixture real, para que nenhuma mudança futura
+    # desloque um número sem que alguém decida deslocá-lo.
+    #
+    # ATUALIZADO em 09-15-DT-INTER (2026-08-17): o hash MUDOU, e mudar era o objetivo. A chave
+    # `ano` de cada linha passou a vir de DT_INTER; os mesmos 44.563 registros IDENT='1' desta
+    # competência agora se repartem em 2018 (3.493) e 2019 (41.070) em vez de irem todos para
+    # 2019. O número de linhas cresce de 5.551 para 7.213 pela mesma razão: cada (agravo, grão,
+    # local, território) que tem registro nos dois anos passa a ocupar duas linhas.
+    #
+    # O que NÃO mudou, e é o que prova que a correção não mexeu em nada além da atribuição no
+    # tempo: o total de internações agregado continua exatamente 44.613 (44.563 CID + 50
+    # amputacao_mmii) -- ver test_ident_5_excluido_da_contagem_real_ac_2019. Nenhum registro
+    # entrou, nenhum saiu; só foram para o ano certo.
     linhas_canonicas = sorted(
         (
             r.disease_id,
@@ -628,8 +918,8 @@ def test_cid_output_identico_byte_a_byte_apos_correcao_de_vazio(fixture_rows):
     )
     payload = json.dumps(linhas_canonicas, sort_keys=False).encode("utf-8")
     digest = hashlib.sha256(payload).hexdigest()
-    assert len(fixture_rows) == 5_551  # medido ANTES da correção -- ver SUMMARY
-    assert digest == "25c2f4e2b65bcd6c3bbb6cb8de59e0bdedc959cc16109d67ef002a920554a104"
+    assert len(fixture_rows) == 7_213  # medido sobre a fixture regerada -- ver comentário acima
+    assert digest == "0c9f8ffeca3a90861563141ff1071ef0d7345f19358887c0bc281eee74b8a49f"
 
 
 def test_amputacao_mmii_presente_apos_reconstrucao_do_procedimento(fixture_rows):
@@ -641,22 +931,44 @@ def test_amputacao_mmii_presente_apos_reconstrucao_do_procedimento(fixture_rows)
 
 
 def test_amputacao_mmii_contagem_real_ac_2019_medida(fixture_rows):
-    # Medido ao vivo, 2026-08-12: PROC_REA=="0408050012" AND IDENT='1' AND ANO_CMPT=2019 no
-    # dataset real de AC/2019 (44.589 registros) dá EXATAMENTE 50 internações. O oráculo TabNet
-    # (Ano_atendimento=2019, coluna por DT_INTER) mede 66 -- a divergência é reconciliada por
-    # competência de processamento (o MESMO mecanismo ANO_CMPT vs DT_INTER já documentado em todo
-    # o SC-7): medido que 45/50 destes registros têm DT_INTER em 2019 e que só os 2 primeiros
-    # meses de 2020 (RDAC2001+RDAC2002) já somam 20 registros adicionais com PROC_REA casado,
-    # IDENT='1' e DT_INTER=2019 -- 45+20=65, a 1 unidade do oráculo. Ver o SUMMARY desta plan
-    # para o relato completo. Este teste protege o número MEDIDO sobre a fixture congelada, não o
-    # oráculo (D-02: nunca tunar para bater).
-    amputacao_uf_ocorrencia = [
+    # Sobre a fixture de COMPETÊNCIA 2019 (12 arquivos): os mesmos 50 registros de sempre
+    # (PROC_REA=="0408050012" AND IDENT='1'), agora repartidos pelo ano em que a internação
+    # ACONTECEU -- 45 em 2019 e 5 em 2018. O total 50 não muda (é o mesmo conjunto de registros);
+    # o que muda é a atribuição no tempo, que era justamente o defeito.
+    amputacao = [
         r
         for r in fixture_rows
         if r.disease_id == "amputacao_mmii" and r.grao == "uf" and r.local == "ocorrencia"
     ]
-    total = sum(r.internacoes for r in amputacao_uf_ocorrencia)
-    assert total == 50
+    por_ano = {r.ano: r.internacoes for r in amputacao}
+    assert por_ano == {2018: 5, 2019: 45}
+    assert sum(por_ano.values()) == 50
+
+
+def test_amputacao_mmii_ano_de_admissao_2019_fecha_exato_com_o_oraculo_qibr(
+    fixture_admissao_rows,
+):
+    # A PROVA da correção 09-15-DT-INTER contra dado real e oráculo externo independente.
+    #
+    # O oráculo aqui NÃO é o do gate CID: é `trabalhos datasus/scripts/coleta_vascular_amputacao.py`
+    # (`sih/cnv/qibr.def`, Coluna=Ano_atendimento), que submete ao TabNet os 156 arquivos dos 13
+    # anos -- portanto mede o ano de ADMISSÃO COMPLETO. Ele reporta 66 internações para AC/2019
+    # (valor re-confirmado ao vivo em 2026-08-12, byte a byte igual ao scrape de 2026-06-17).
+    #
+    # Medições, todas sobre este MESMO código, mudando só a chave de ano:
+    #   - por ANO_CMPT (produção até esta correção) ......... 50  → -24,2% contra o oráculo
+    #   - por DT_INTER, só a competência 2019 ............... 45  → -31,8%
+    #   - por DT_INTER, competências 2019 + 2020 (aqui) ..... 66  → EXATO
+    #
+    # Zero ajuste de código, zero tuning: a única mudança é a chave de ano e a inclusão da
+    # competência seguinte na leitura. É o que prova que a defasagem de faturamento cruza o
+    # arquivo e que a janela de coleta de enumerate.py precisa da cauda.
+    amputacao = {
+        r.ano: r.internacoes
+        for r in fixture_admissao_rows
+        if r.disease_id == "amputacao_mmii" and r.grao == "uf" and r.local == "ocorrencia"
+    }
+    assert amputacao[2019] == 66
 
 
 def test_cid_nao_muda_com_adicao_do_procedimento_regressao(fixture_rows):
@@ -736,6 +1048,7 @@ def test_municipio_mov_vazio_e_excluido_do_grao_municipio_mas_uf_e_resgatada_via
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ["1"] * n,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": ["120000"] * n,
@@ -770,6 +1083,7 @@ def test_municipio_mov_malformado_recebe_o_mesmo_tratamento_do_vazio(index, tmp_
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ["1"] * n,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": ["120000"] * n,
@@ -800,6 +1114,7 @@ def test_municipio_res_vazio_exclui_os_dois_graos_de_residencia_sem_fallback(ind
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ["1"] * n,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": ["120040"] * n,
@@ -833,6 +1148,7 @@ def test_uf_zi_tambem_invalido_exclui_todo_o_eixo_ocorrencia(index, tmp_path):
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ["1"] * n,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": [""] + ["120040"] * (n - 1),  # também vazio no mesmo registro -- sem resgate
@@ -867,6 +1183,7 @@ def test_uf_zi_nunca_sobrepoe_municipio_mov_valido(index, tmp_path):
             "VAL_TOT": ["  100.00"],
             "DIAS_PERM": ["  1"],
             "ANO_CMPT": ["2019"],
+            "DT_INTER": ["20190315"],
             "IDENT": ["1"],
             "PROC_REA": ["0000000000"],
             "UF_ZI": ["350000"],  # SP -- propositalmente divergente
@@ -895,6 +1212,7 @@ def test_taxa_descarte_municipio_acima_do_limite_levanta(index, tmp_path):
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ["1"] * n,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": [""] * n_ruim + ["120040"] * (n - n_ruim),
@@ -921,6 +1239,7 @@ def test_taxa_descarte_municipio_abaixo_do_limite_nao_levanta(index, tmp_path):
             "VAL_TOT": ["  100.00"] * n,
             "DIAS_PERM": ["  1"] * n,
             "ANO_CMPT": ["2019"] * n,
+            "DT_INTER": ["20190315"] * n,
             "IDENT": ["1"] * n,
             "PROC_REA": ["0000000000"] * n,
             "UF_ZI": ["120000"] * n,
@@ -936,20 +1255,23 @@ def test_taxa_descarte_municipio_abaixo_do_limite_nao_levanta(index, tmp_path):
     assert municipio_ocorrencia.internacoes == n - 1  # 1 ausente do grão município
 
 
-def test_municipio_vazio_real_pr_nao_quebra_a_agregacao_da_uf():
+def test_municipio_vazio_real_pr_nao_quebra_a_agregacao_da_uf(tmp_path):
     # Prova de ponta a ponta sobre dado REAL (não sintético) -- reproduz ao vivo o crash relatado
     # na recoleta nacional de PR ("municipio6: comprimento inválido (esperado 6 ou 7 dígitos):
     # ''") e prova que ele desaparece depois da correção, sem desativar o gate de taxa de
-    # descarte (1/25.493 = 0,00392% < 0,01%, medido -- a fixture é o arquivo REAL completo, não
-    # uma amostra recortada, para que a taxa reflita a mesma escala do limiar de produção).
-    # Contagem independente sobre a fixture (via match_category, sem depender dos contadores
-    # internos de aggregate_parquet_dir): medido diretamente que, dos 279 registros do arquivo
-    # que casam a categoria 260 (DIAG_PRINC 'O008'/'O021', "outras_gravidezes_que_terminam_em_
-    # aborto") com IDENT='1' e ANO_CMPT=2020, exatamente 1 (a última linha do arquivo) tem
-    # MUNIC_MOV inválido -- e todos os 279 têm MUNIC_RES válido.
+    # descarte (1/25.493 = 0,00392% < 0,01%, medido). Contagem independente sobre a fixture (via
+    # match_category, sem depender dos contadores internos de aggregate_parquet_dir): medido
+    # diretamente que, dos 279 registros do arquivo que casam a categoria 260 (DIAG_PRINC
+    # 'O008'/'O021', "outras_gravidezes_que_terminam_em_aborto") com IDENT='1' e ANO_CMPT=2020,
+    # exatamente 1 (a última linha do arquivo) tem MUNIC_MOV inválido -- e todos os 279 têm
+    # MUNIC_RES válido. `DT_INTER` derivado de ANO_CMPT na carga (ver `_com_dt_inter_derivado`),
+    # o que mantém os 279 no MESMO ano e portanto preserva exatamente esta medição.
     cid_map = apply_corrections(load_cid_map(), load_corrections())
     index = build_index(cid_map)
-    rows = aggregate_parquet_dir(FIXTURE_PR_MUNICIPIO_VAZIO_PATH, index)
+    caminho = _com_dt_inter_derivado(
+        FIXTURE_PR_MUNICIPIO_VAZIO_PATH, tmp_path / "pr_municipio_vazio.parquet"
+    )
+    rows = aggregate_parquet_dir(caminho, index)
     assert rows, "aggregate_parquet_dir nao produziu nenhuma linha para RDPR2004.parquet"
 
     table = pq.read_table(FIXTURE_PR_MUNICIPIO_VAZIO_PATH)

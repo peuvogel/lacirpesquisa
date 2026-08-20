@@ -63,5 +63,16 @@ export interface PackFile {
   grain: string;
   keys: string[];
   metricKeys: string[];
+  /** Quando o dado deste pack foi derivado do microdado (proveniência, DATA-04). */
+  derivedAt?: string;
+  /** Hash do mapa CID usado na derivação (DATA-04). */
+  cidMapVersion?: string;
+  /**
+   * Por que este número difere de uma consulta padrão do TabNet — em uma frase, pronta para a
+   * tela. Vem de `sih_collection_status.divergencia_razao`, gravado por `upload.py` a partir de
+   * `paridade.RAZAO_DIVERGENCIA_JANELA_CURTA`; nunca digitado aqui, para não existirem duas
+   * fontes do mesmo texto. `null`/ausente quando não há divergência a explicar.
+   */
+  divergenciaRazao?: string | null;
   rows: PackRow[];
 }

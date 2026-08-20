@@ -32,26 +32,71 @@ extremo_sp` tem `bloqueiaUpload: false` em `cid-divergencias.json`.
 **A composição do gate AC/2019 (`exato=34, explicado=61, inexplicado=3`) fica BYTE-IDÊNTICA antes
 e depois deste fix** — medido diretamente (não assumido): os 3 inexplicados restantes
 (`doenca_de_alzheimer`, `tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar`) têm 0% de
-`IDENT='5'` em AC/2019 nestas 3 categorias especificamente (os 26 registros `IDENT='5'` do
-dataset inteiro de AC/2019 pertencem 100% a `esquizofrenia_transt_esquizotipicos_e_delirantes`
-(24) e `outros_transtornos_mentais_e_comportamentais` (2), nenhuma das quais tem par no oráculo
-AC/2019) — por isso o fix não move nenhum valor agregado desta fixture pequena. O resíduo AC
-destas 3 categorias (deltas +12,12%/+50%/+50%, denominadores de 33/2/4 -- ruído de amostra
-pequena) é genuíno, mas de mecanismo DIFERENTE do delta extremo de SP (que era IDENT) — a mesma
-classe de ruído da divergência de lote já aceita para as outras 53 categorias, mas que a decisão
-4 do checkpoint clínico do 09-11 excluiu deliberadamente dessa aceitação em lote, pendente de
-investigação individual. Este teste NÃO inventa essa investigação — mantém os 3 pares
-honestamente `inexplicado`. `ReconciliationResult.ok` é `False` sobre esta fixture HOJE, DE
-PROPÓSITO: o gate não pode fingir sucesso sobre um resíduo que segue sem razão escrita própria
-(D-02 proíbe inventar mecanismo tanto quanto proíbe banda de tolerância). Ver
-`pipeline/sih/reports/reconciliacao-sc7.md` §"Remedição pós-fix IDENT, 2026-08-10" para a
-medição completa (SP/2019, código real, não script ad-hoc).
+`IDENT='5'` em AC/2019 nestas 3 categorias especificamente.
 
-O que este gate protege não é "zero inexplicado" — é a COMPOSIÇÃO EXATA do conjunto inexplicado.
-Se o conjunto mudar (para mais OU para menos entradas), o matcher, `cid-corrections.json` ou
-`cid-divergencias.json` mudaram desde o checkpoint de 2026-08-10, e alguém precisa decidir — com
-o mesmo cuidado do checkpoint clínico — se é uma correção legítima (que atualiza este teste
-deliberadamente) ou uma regressão silenciosa (que precisa ser revertida).
+---
+
+## ATUALIZADO em 2026-08-17 (09-15-DT-INTER): `exato=98, explicado=0, inexplicado=0`, `ok=True`
+
+**O resíduo do SC-7 nunca existiu. Ele era uma comparação entre duas coisas diferentes.**
+
+Este gate carregava, desde o spike de 2026-08-04, um viés residual **sempre positivo** (mediana
++4,14% → +3,45% → +5,10% → +7,90% conforme a metodologia foi refinada), atribuído a "divergência
+de lote por competência de processamento" e formalizado em 61 entradas de
+`scripts/catalog/cid-divergencias.json`. A troca da chave de ano de `ANO_CMPT` para `DT_INTER`
+(09-15-DT-INTER) foi feita por motivo epidemiológico independente — e, ao medir o gate depois
+dela, o resíduo **aumentou** (mediana +4,31% → +5,51%; exatos 34 → 33). Em vez de aceitar ou
+ajustar, foi medido o mecanismo. O achado:
+
+**O oráculo do eixo CID estava truncado a UM ano de competência.** `oracle_scrape.py` submete ao
+TabNet apenas os 12 arquivos `nibr{AA}MM.dbf` do ano pedido e lê a coluna `Ano_atendimento`.
+Isso NÃO mede o ano de atendimento completo: mede "internações do ano Y **que foram faturadas na
+competência Y**" — toda internação de Y faturada em Y+1 fica de fora do próprio oráculo.
+(Contraste medido: `coleta_vascular_amputacao.py`, o oráculo do eixo de PROCEDIMENTO, submete os
+156 arquivos dos 13 anos e portanto mede o ano de atendimento de verdade — por isso
+`amputacao_mmii` fecha EXATO em 66 contra o agregado por `DT_INTER` completo, ver
+`test_aggregate.py::test_amputacao_mmii_ano_de_admissao_2019_fecha_exato_com_o_oraculo_qibr`.)
+
+Alinhadas as duas pontas para medirem a MESMA população — agregado por `DT_INTER`, restrito à
+competência 2019, que é exatamente o que o oráculo enxerga — o resultado, sem tunar nada:
+
+| Cenário (mesmo código, só muda a chave de ano / o recorte) | Exatos | Delta mediano |
+|---|---|---|
+| `ANO_CMPT=2019` (produção até esta correção) | 34/98 | +4,31% |
+| `DT_INTER=2019` completo (competências 2019+2020) | 33/98 | +5,51% |
+| **`DT_INTER=2019` na competência 2019 (o que o oráculo mede)** | **98/98** | **+0,00%** |
+
+**98 de 98 pares batem exato, com delta zero.** Nenhuma correção de faixa CID foi adicionada,
+alterada ou removida por esta plan; as correções existentes continuam load-bearing (sem elas o
+gate cai para 96/2 — provado em `test_gate_falha_se_cid_corrections_mudar`).
+
+**O que isso significa, dito sem suavizar:** o viés positivo sistemático que este projeto
+carregou por duas semanas, que motivou 61 entradas de divergência, um checkpoint clínico e dois
+bloqueios de upload, era inteiramente artefato de comparar um agregado por competência de
+faturamento contra um oráculo por data de atendimento truncado a uma competência. O matcher CID,
+o mapa da Lista Morb, o filtro `IDENT='1'` e a atribuição territorial estavam corretos o tempo
+todo — e agora isso está PROVADO em 98 categorias independentes, com valores de 1 a mais de
+3.000, em vez de apenas plausível.
+
+**Consequência para `cid-divergencias.json`:** as ~61 entradas de "divergência de lote por
+competência de processamento" descrevem um fenômeno que, medido corretamente, não existe. Elas
+ficaram INERTES (nenhuma é consultada, porque nenhum par tem delta não-zero). Esta plan não as
+remove — mexer no catálogo está fora do seu escopo de arquivo, e a decisão é do operador — mas
+registra aqui, e no SUMMARY, que uma explicação que não explica mais nada não pode continuar de
+pé como se explicasse.
+
+**Por que a fixture continua sendo a competência 2019 (e não o ano de admissão completo):** para
+este gate ser um teste e não uma coincidência, os dois lados precisam medir a mesma população. O
+oráculo congelado (`oracle_ac_2019.json`) mede a competência 2019; a fixture, portanto, é a
+competência 2019. A cobertura do ano de ADMISSÃO completo — que é o que a produção passa a
+publicar — é provada separadamente, contra um oráculo construído corretamente, em
+`test_aggregate.py` (`amputacao_mmii` = 66 = oráculo `qibr.def`). Os dois testes juntos cobrem as
+duas propriedades; nenhum sozinho cobre as duas.
+
+O que este gate protege não é mais "a composição do conjunto inexplicado" — é algo bem mais
+forte: **que o conjunto inexplicado seja VAZIO e todos os 98 pares batam exato.** Qualquer
+mudança no matcher, em `cid-corrections.json` ou na agregação que desloque um único par derruba
+a suíte.
 """
 
 from __future__ import annotations
@@ -68,6 +113,12 @@ from sih_pipeline.reconcile import compare, load_divergencias
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 PARQUET_FIXTURE = FIXTURES_DIR / "rdac_2019.parquet"
 ORACLE_AC_2019_PATH = FIXTURES_DIR / "oracle_ac_2019.json"
+
+# 09-16: a ponta BEM-FORMADA. `rdac_admissao_2019.parquet` são as competências 2019+2020 (o ano
+# de ADMISSÃO 2019 fechado), e `oracle_ac_2019_bem_formado.json` é o TabNet raspado com
+# `janela=1` (24 arquivos de competência submetidos, coluna Ano_atendimento=2019).
+PARQUET_ADMISSAO_FIXTURE = FIXTURES_DIR / "rdac_admissao_2019.parquet"
+ORACLE_AC_2019_BEM_FORMADO_PATH = FIXTURES_DIR / "oracle_ac_2019_bem_formado.json"
 
 _MEDIDAS = ("internacoes", "obitos", "valor_total", "dias_permanencia")
 
@@ -88,15 +139,12 @@ _MEDIDAS = ("internacoes", "obitos", "valor_total", "dias_permanencia")
 # resíduo pequeno e específico do AC (+12,12%/+50%/+50%, ruído de amostra pequena, denominadores
 # 33/2/4) é um mecanismo DIFERENTE, sem razão escrita própria, que a decisão 4 do checkpoint do
 # 09-11 excluiu deliberadamente da aceitação em lote. Ver docstring do módulo.
-_INEXPLICADOS_CONHECIDOS = frozenset(
-    {
-        "doenca_de_alzheimer",  # tabnetCode 146 -- delta extremo em SP RESOLVIDO (IDENT='1' só);
-        # resíduo de AC (+50%, agregado=6/tabnet=4) inalterado pelo fix, 0% IDENT='5' nesta
-        # categoria em AC/2019 -- ruído de amostra pequena, sem razão escrita própria
-        "tuberculose_do_sistema_nervoso",  # tabnetCode 10 -- mesma situação (+50%, agregado=3/tabnet=2)
-        "tuberculose_pulmonar",  # tabnetCode 7 -- mesma situação (+12,12%, agregado=37/tabnet=33)
-    }
-)
+# ATUALIZADO 2026-08-17 (09-15-DT-INTER): VAZIO. Os 3 que restavam (`doenca_de_alzheimer`,
+# `tuberculose_do_sistema_nervoso`, `tuberculose_pulmonar`) batem EXATO agora, junto com os
+# outros 95 -- ver docstring do módulo. Não foi tunado nada: os deltas que eles tinham
+# (+50%/+50%/+12,12%, denominadores 4/2/33) eram a mesma diferença de população que afetava todo
+# o resto, só mais visível em contagem pequena.
+_INEXPLICADOS_CONHECIDOS: frozenset[str] = frozenset()
 
 
 def _load_oracle_ac_2019() -> list[dict]:
@@ -104,9 +152,9 @@ def _load_oracle_ac_2019() -> list[dict]:
         return json.load(fh)
 
 
-def _agregar(cid_map_corrigido) -> dict[tuple[str, str, int, str], float]:
+def _agregar(cid_map_corrigido, parquet=PARQUET_FIXTURE) -> dict[tuple[str, str, int, str], float]:
     index = build_index(cid_map_corrigido)
-    linhas = aggregate_parquet_dir(PARQUET_FIXTURE, index)
+    linhas = aggregate_parquet_dir(parquet, index)
 
     agregado: dict[tuple[str, str, int, str], float] = {}
     for linha in linhas:
@@ -155,15 +203,88 @@ def test_gate_agrega_fixture_pequena_e_compara_com_oraculo_congelado():
         "STATE.md) ou regressão silenciosa (reverta a mudança).\n"
         + resultado.render_markdown()
     )
-    assert len(resultado.exato) == 34
-    assert len(resultado.explicado) == 61
-    assert len(resultado.inexplicado) == 3
-    # result.ok é False hoje, DE PROPÓSITO -- ver docstring do módulo: 34/61/3 é a composição
-    # TRUE medida DEPOIS do fix de IDENT='1' em aggregate.py (09-07, 2026-08-10) -- byte-idêntica
-    # à composição pré-fix, porque AC/2019 tem 0% de IDENT='5' nas 3 categorias que permanecem
-    # inexplicado. O gate não finge sucesso sobre um resíduo pequeno de AC que segue sem razão
-    # escrita própria (mecanismo diferente do delta extremo de SP, já resolvido).
-    assert resultado.ok is False
+    # 98/0/0 é a composição TRUE medida em 2026-08-17 depois de alinhar o agregado e o oráculo
+    # para medirem a MESMA população (ver docstring do módulo) -- não é uma barra afrouxada, é a
+    # barra máxima possível: todos os 98 pares com delta EXATAMENTE zero.
+    assert len(resultado.exato) == 98
+    assert len(resultado.explicado) == 0
+    assert len(resultado.inexplicado) == 0
+    # `ok` passa a True pela primeira vez desde que este gate existe -- e sem que nenhuma
+    # correção de faixa CID tenha sido adicionada ou alterada por 09-15-DT-INTER.
+    assert resultado.ok is True
+
+
+# ---------------------------------------------------------------------------
+# 09-16 -- O GATE DE PARIDADE BEM-FORMADA.
+#
+# O gate acima compara duas pontas restritas à COMPETÊNCIA 2019. Ele prova que o matcher está
+# certo, mas não é o que o operador vai ver: a produção publica o ano de ADMISSÃO. Este gate
+# fecha essa lacuna comparando o ano de admissão 2019 completo contra um oráculo TabNet que
+# submete as competências necessárias para medir a mesma população (`janela=1`).
+#
+# Medido ao vivo em 2026-08-17 (196 requisições): site 11.211 = TabNet bem-formado 11.211, 98 de
+# 98 pares com delta ZERO. A fixture de admissão reproduz o agregado REAL da recoleta (AC.parquet,
+# 161 competências) agravo a agravo, sem uma única divergência -- verificado antes de congelar.
+# ---------------------------------------------------------------------------
+
+
+def _load_oracle_bem_formado() -> list[dict]:
+    with ORACLE_AC_2019_BEM_FORMADO_PATH.open("r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def test_gate_paridade_bem_formada_ano_de_admissao_2019_bate_exato_com_o_tabnet():
+    """**O critério de aceitação do operador, como teste.**
+
+    "quando user puxe dado tabnet e site lado a lado sejam iguais" -- aqui os dois lados medem a
+    MESMA população (ano de internação 2019) e precisam bater ao registro. Qualquer mudança na
+    agregação, no matcher ou nas correções que desloque um único par derruba isto.
+    """
+    agregado = _agregar(
+        apply_corrections(load_cid_map(), load_corrections()), parquet=PARQUET_ADMISSAO_FIXTURE
+    )
+    resultado = compare(agregado, _load_oracle_bem_formado(), load_divergencias())
+
+    assert {p.disease_id for p in resultado.inexplicado} == frozenset(), resultado.render_markdown()
+    assert len(resultado.exato) == 98
+    assert len(resultado.explicado) == 0
+    assert len(resultado.inexplicado) == 0
+    assert resultado.ok is True
+
+
+def test_gate_paridade_bem_formada_nao_depende_de_nenhuma_divergencia_de_lote():
+    """As ~64 entradas de `cid-divergencias.json` são INERTES nesta comparação: com a lista
+    VAZIA, o resultado é byte-idêntico. É isso que autoriza aposentá-las -- não uma opinião sobre
+    elas, mas a medição de que nenhuma é consultada porque nenhum par tem delta não-zero."""
+    agregado = _agregar(
+        apply_corrections(load_cid_map(), load_corrections()), parquet=PARQUET_ADMISSAO_FIXTURE
+    )
+
+    com = compare(agregado, _load_oracle_bem_formado(), load_divergencias())
+    sem = compare(agregado, _load_oracle_bem_formado(), [])
+
+    assert len(sem.exato) == len(com.exato) == 98
+    assert len(sem.explicado) == len(com.explicado) == 0
+    assert len(sem.inexplicado) == len(com.inexplicado) == 0
+    assert sem.ok is com.ok is True
+
+
+def test_gate_consulta_ingenua_do_tabnet_fica_ABAIXO_e_isso_e_a_justificativa():
+    """A segunda metade do critério: "e se diferentes justificados".
+
+    Contra a consulta INGÊNUA (12 arquivos do ano, a seleção padrão do TabNet), o site fica
+    sistematicamente MAIOR -- nunca menor. A direção é a justificativa que o app precisa mostrar:
+    o site conta internações que o TabNet ingênuo não enxerga porque foram faturadas depois.
+    """
+    entradas = _load_oracle_bem_formado()
+
+    maiores = sum(1 for e in entradas if e["valorTabnet"] > e["valorTabnetIngenuo"])
+    menores = sum(1 for e in entradas if e["valorTabnet"] < e["valorTabnetIngenuo"])
+
+    assert menores == 0, "o site nunca pode ficar ABAIXO da consulta ingênua -- inverteria a razão"
+    assert maiores == 65
+    assert sum(e["valorTabnet"] for e in entradas) == 11211
+    assert sum(e["valorTabnetIngenuo"] for e in entradas) == 10265
 
 
 def test_gate_falha_se_cid_corrections_mudar():
