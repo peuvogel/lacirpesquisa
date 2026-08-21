@@ -7,6 +7,7 @@ import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import { useSession } from '@/shared/session/SessionProvider';
 import {
   GuidedResearchFlow,
+  type TestSelectorRenderer,
   type VariableSelectorRenderer,
 } from './GuidedResearchFlow';
 import { GuidedResultsSection } from './GuidedResultsSection';
@@ -33,6 +34,7 @@ export interface GuidedAnalysisWorkspaceProps {
   embedded?: boolean;
   initialGoal?: ResearchGoal | null;
   renderVariableSelector?: VariableSelectorRenderer;
+  renderTestSelector?: TestSelectorRenderer;
 }
 
 export function GuidedAnalysisWorkspace({
@@ -40,6 +42,7 @@ export function GuidedAnalysisWorkspace({
   embedded = false,
   initialGoal = null,
   renderVariableSelector,
+  renderTestSelector,
 }: GuidedAnalysisWorkspaceProps) {
   const reduceMotion = useReducedMotion();
   const { setGuidedAnalysis } = useSession();
@@ -321,6 +324,7 @@ export function GuidedAnalysisWorkspace({
       summaryHeadingLevel={embedded ? 2 : 1}
       initialGoal={initialGoal}
       {...(renderVariableSelector ? { renderVariableSelector } : {})}
+      {...(renderTestSelector ? { renderTestSelector } : {})}
     />
   );
 

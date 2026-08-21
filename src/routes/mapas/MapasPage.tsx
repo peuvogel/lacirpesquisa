@@ -26,6 +26,7 @@ import { GuidedAnalysisWorkspace } from '@/routes/variaveis/GuidedAnalysisWorksp
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
 import { MapQuestionBuilder } from './MapQuestionBuilder';
+import { MapTestRecommendation } from './MapTestRecommendation';
 import { MapVariableList } from './MapVariableList';
 import {
   buildPresetMapState,
@@ -671,6 +672,12 @@ export function MapasPage() {
             embedded
             initialGoal={visibleConfirmedDesign.goal ?? null}
             renderVariableSelector={(props) => <MapVariableList {...props} />}
+            renderTestSelector={(props) => (
+              <MapTestRecommendation
+                {...props}
+                comparisonAxis={questionDraft.comparisonAxis}
+              />
+            )}
           />
         </section>
       ) : null}

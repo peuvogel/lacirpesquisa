@@ -2,7 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { MapPinned } from 'lucide-react';
 import type { ResearchDesign, ResearchGoal } from '@/features/research/types';
 import { DataProfileSection } from './DataProfileSection';
-import { EligibleTestsSection } from './EligibleTestsSection';
+import {
+  EligibleTestsSection,
+  type EligibleTestsSectionProps,
+} from './EligibleTestsSection';
 import {
   GuidedVariableSelector,
   type GuidedVariableSelectorProps,
@@ -33,9 +36,19 @@ export interface GuidedResearchFlowProps {
   summaryHeadingLevel?: 1 | 2;
   initialGoal?: ResearchGoal | null;
   renderVariableSelector?: VariableSelectorRenderer;
+  renderTestSelector?: TestSelectorRenderer;
 }
 
 export type VariableSelectorRenderer = (props: GuidedVariableSelectorProps) => ReactNode;
+export interface GuidedTestSelectorProps extends EligibleTestsSectionProps {
+  profiles: DataProfileViewModel[];
+  goal: Exclude<ResearchGoal, 'describe'>;
+  onRecommendedSelectionChange: (selection: {
+    testIds: string[];
+    primaryTestId: string | null;
+  }) => void;
+}
+export type TestSelectorRenderer = (props: GuidedTestSelectorProps) => ReactNode;
 
 export function GuidedResearchFlow({
   design,
@@ -53,6 +66,7 @@ export function GuidedResearchFlow({
   summaryHeadingLevel = 1,
   initialGoal = null,
   renderVariableSelector,
+  renderTestSelector,
 }: GuidedResearchFlowProps) {
   const [goal, setGoal] = useState<ResearchGoal | null>(initialGoal);
   const [variableIds, setVariableIds] = useState<string[]>([]);
@@ -99,6 +113,19 @@ export function GuidedResearchFlow({
   function changePrimary(nextPrimaryTestId: string) {
     setPrimaryTestId(nextPrimaryTestId);
     notify({ goal, variableIds, trendTestIds, testIds, primaryTestId: nextPrimaryTestId, roleAssignments });
+  }
+
+  function applyRecommendedSelection(next: { testIds: string[]; primaryTestId: string | null }) {
+    setTestIds(next.testIds);
+    setPrimaryTestId(next.primaryTestId);
+    notify({
+      goal,
+      variableIds,
+      trendTestIds,
+      testIds: next.testIds,
+      primaryTestId: next.primaryTestId,
+      roleAssignments,
+    });
   }
 
   function changeRoles(nextRoles: Record<string, string>) {
@@ -190,20 +217,35 @@ export function GuidedResearchFlow({
         </FlowStep>
       ) : null}
 
-      {goal !== 'describe' && hasAllProfiles && reviewsResolved ? (
+      {goal && goal !== 'describe' && hasAllProfiles && reviewsResolved ? (
         eligibility ? (
           <FlowStep>
-            <EligibleTestsSection
-              design={design}
-              tests={eligibility}
-              selectedTestIds={testIds}
-              primaryTestId={primaryTestId}
-              onSelectedTestIdsChange={changeTests}
-              onPrimaryTestIdChange={changePrimary}
-              roleOptions={variables?.filter((variable) => variableIds.includes(variable.id)).map((variable) => ({ id: variable.id, label: variable.label }))}
-              roleAssignments={roleAssignments}
-              onRoleAssignmentsChange={changeRoles}
-            />
+            {renderTestSelector
+              ? renderTestSelector({
+                  design,
+                  tests: eligibility,
+                  profiles,
+                  goal,
+                  selectedTestIds: testIds,
+                  primaryTestId,
+                  onSelectedTestIdsChange: changeTests,
+                  onPrimaryTestIdChange: changePrimary,
+                  onRecommendedSelectionChange: applyRecommendedSelection,
+                  roleOptions: variables?.filter((variable) => variableIds.includes(variable.id)).map((variable) => ({ id: variable.id, label: variable.label })),
+                  roleAssignments,
+                  onRoleAssignmentsChange: changeRoles,
+                })
+              : <EligibleTestsSection
+                  design={design}
+                  tests={eligibility}
+                  selectedTestIds={testIds}
+                  primaryTestId={primaryTestId}
+                  onSelectedTestIdsChange={changeTests}
+                  onPrimaryTestIdChange={changePrimary}
+                  roleOptions={variables?.filter((variable) => variableIds.includes(variable.id)).map((variable) => ({ id: variable.id, label: variable.label }))}
+                  roleAssignments={roleAssignments}
+                  onRoleAssignmentsChange={changeRoles}
+                />}
           </FlowStep>
         ) : (
           <LoadingStep

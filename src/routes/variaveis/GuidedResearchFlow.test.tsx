@@ -194,6 +194,55 @@ describe('GuidedResearchFlow', () => {
     }));
   });
 
+  it('offers an opt-in automatic test renderer with an atomic principal selection for Mapas only', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+    const mapOnlyExtension = {
+      renderTestSelector: (props: {
+        tests: EligibleTestViewModel[];
+        profiles: DataProfileViewModel[];
+        onRecommendedSelectionChange: (selection: { testIds: string[]; primaryTestId: string | null }) => void;
+      }) => (
+        <section aria-label="Recomendação automática de Mapas">
+          <p>{props.profiles[0]?.diagnosticLabel}</p>
+          <button
+            type="button"
+            onClick={() => props.onRecommendedSelectionChange({
+              testIds: [props.tests[0]!.id],
+              primaryTestId: props.tests[0]!.id,
+            })}
+          >
+            Aplicar recomendação
+          </button>
+        </section>
+      ),
+    };
+
+    render(
+      <GuidedResearchFlow
+        design={comparisonDesign}
+        summary={summary}
+        variables={variables}
+        profilesByVariableId={{ internacoes: countProfile }}
+        eligibility={eligibleTests}
+        reviewsResolved
+        initialGoal="compare"
+        onSelectionChange={onSelectionChange}
+        {...mapOnlyExtension}
+      />,
+    );
+
+    await user.click(screen.getByRole('checkbox', { name: /Internações, Contagem/i }));
+    const recommendation = screen.getByRole('region', { name: 'Recomendação automática de Mapas' });
+    expect(within(recommendation).getByText('Normalidade não se aplica')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Aplicar recomendação' }));
+
+    expect(onSelectionChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      testIds: ['mann-whitney'],
+      primaryTestId: 'mann-whitney',
+    }));
+  });
+
   it('shows disease, period, basis and every map group before variable checkboxes', async () => {
     const user = userEvent.setup();
     render(
