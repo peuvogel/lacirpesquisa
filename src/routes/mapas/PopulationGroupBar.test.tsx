@@ -53,6 +53,11 @@ describe('PopulationGroupBar', () => {
   it('creates and activates an empty comparator while keeping the active color named in text', () => {
     render(<Harness initialState={stateWithPopulation()} />);
 
+    const populationTab = screen.getByRole('tab', { name: /População selecionada/i });
+    expect(populationTab.closest('[role="tablist"]')).toHaveAccessibleName(
+      'Populações selecionadas',
+    );
+
     const activeInstruction = screen.getByText(
       'Clique no mapa para adicionar à População selecionada',
     );

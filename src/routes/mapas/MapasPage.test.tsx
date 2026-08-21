@@ -73,7 +73,7 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
 
     expect(pathname).toBe('/mapas');
-    expect(await screen.findByRole('region', { name: 'Análise do recorte' })).toBeInTheDocument();
+    expect(await screen.findByRole('group', { name: 'Análise do recorte' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: '1. Qual é o objetivo?' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('review-analysis-dialog')).not.toBeInTheDocument();
     expect(sessionRef.current?.researchDesign?.groups[0]?.territories).toEqual([
@@ -98,9 +98,9 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
 
-    const region = await screen.findByRole('region', { name: 'Análise do recorte' });
-    await waitFor(() => expect(document.activeElement).toBe(region));
-    expect(region).toHaveAttribute('tabindex', '-1');
+    const analysisStep = await screen.findByRole('group', { name: 'Análise do recorte' });
+    await waitFor(() => expect(document.activeElement).toBe(analysisStep));
+    expect(analysisStep).toHaveAttribute('tabindex', '-1');
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(
       screen.getByRole('heading', {
@@ -128,11 +128,11 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
 
-    await screen.findByRole('region', { name: 'Análise do recorte' });
+    await screen.findByRole('group', { name: 'Análise do recorte' });
     fireEvent.click(screen.getByRole('button', { name: /Valem para todos os grupos/i }));
     fireEvent.click(screen.getByRole('checkbox', { name: /Infarto cerebral/i }));
 
-    expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Análise do recorte' })).not.toBeInTheDocument();
     expect(sessionRef.current?.researchDesign).toBeNull();
     act(() => navigate?.('/variaveis'));
     expect(pathname).toBe('/variaveis');
@@ -150,14 +150,14 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
-    await screen.findByRole('region', { name: 'Análise do recorte' });
+    await screen.findByRole('group', { name: 'Análise do recorte' });
     expect(sessionRef.current?.researchDesign).not.toBeNull();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Limpar mapa' })
       .find((button) => button.textContent === 'Limpar mapa')!);
     fireEvent.click(screen.getByRole('button', { name: 'Sim, apagar' }));
 
-    expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Análise do recorte' })).not.toBeInTheDocument();
     expect(sessionRef.current?.researchDesign).toBeNull();
   });
 
@@ -187,6 +187,59 @@ describe('MapasPage group workspace', () => {
     expect(screen.getByText(/Na Bahia, como se comportaram os dados/i)).toBeInTheDocument();
   });
 
+  it('moves focus to the newly unlocked question with smooth scrolling', async () => {
+    const scrollSpy = vi.fn();
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollSpy,
+    });
+    renderMapasPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+
+    const questionStep = screen.getByTestId('map-question-step');
+    await waitFor(() => expect(document.activeElement).toBe(questionStep));
+    expect(questionStep).toHaveAttribute('tabindex', '-1');
+    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+  });
+
+  it('keeps one h1 and never skips a heading level in the progressive question', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+
+    const headings = screen.getAllByRole('heading');
+    const levels = headings.map((heading) => Number(heading.tagName.slice(1)));
+    expect(levels.filter((level) => level === 1)).toHaveLength(1);
+    expect(levels[0]).toBe(1);
+    levels.slice(1).forEach((level, index) => {
+      expect(level).toBeLessThanOrEqual(levels[index]! + 1);
+    });
+  });
+
+  it('keeps the essential question outside a complementary landmark', () => {
+    renderMapasPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+
+    const question = screen.getByRole('region', { name: 'O que você quer descobrir?' });
+    expect(question.closest('aside')).toBeNull();
+  });
+
+  it('places the question below the map on narrow screens without forcing a side dialog', () => {
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 768 });
+    try {
+      renderMapasPage();
+      fireEvent.click(screen.getByRole('button', { name: 'Bahia' }));
+
+      const map = screen.getByRole('region', { name: 'Mapa do Brasil' });
+      const question = screen.getByRole('region', { name: 'O que você quer descobrir?' });
+      expect(map.compareDocumentPosition(question) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalWidth });
+    }
+  });
+
   it('invalidates the unlocked analysis when the comparison axis changes', async () => {
     const sessionRef: { current: ReturnType<typeof useSession> | null } = { current: null };
     renderMapasPage(['/mapas'], (session) => {
@@ -198,11 +251,11 @@ describe('MapasPage group workspace', () => {
     fireEvent.click(screen.getByRole('button', { name: /Mesmo intervalo em todos os grupos/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Descrever' }));
     fireEvent.click(screen.getByRole('button', { name: 'Começar análise' }));
-    await screen.findByRole('region', { name: 'Análise do recorte' });
+    await screen.findByRole('group', { name: 'Análise do recorte' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Lugar' }));
 
-    expect(screen.queryByRole('region', { name: 'Análise do recorte' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Análise do recorte' })).not.toBeInTheDocument();
     expect(sessionRef.current?.researchDesign).toBeNull();
   });
 

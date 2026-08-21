@@ -6,13 +6,6 @@ import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import {
   findUfBySiglaOrCode,
   municipalityIdsForHealthMacro,
   resolvePresetTerritories,
@@ -151,14 +144,16 @@ export function MapasPage() {
     createInitialMapQuestionDraft,
   );
   const [confirmedQuestionKey, setConfirmedQuestionKey] = useState<string | null>(null);
-  const [groupSheetOpen, setGroupSheetOpen] = useState(false);
 
-  const analysisRef = useRef<HTMLElement>(null);
+  const analysisRef = useRef<HTMLDivElement>(null);
+  const questionRef = useRef<HTMLDivElement>(null);
+  const questionWasVisibleRef = useRef(false);
 
   const activeGroup = useMemo(
     () => state.groups.find((group) => group.id === state.activeGroupId) ?? null,
     [state.activeGroupId, state.groups],
   );
+  const hasPopulation = state.groups.some((group) => group.territoryIds.length > 0);
 
   const activeGroupIndex = state.groups.findIndex((group) => group.id === state.activeGroupId);
   const activeSelectedUFs = useMemo(
@@ -249,9 +244,8 @@ export function MapasPage() {
       }
       setPreviewUFs([]);
       setContextPanelMode('group');
-      if (isTablet) setGroupSheetOpen(true);
     },
-    [dispatch, isTablet, markInteracted, state],
+    [dispatch, markInteracted, state],
   );
 
   const applyTerritoriesToActive = useCallback(
@@ -322,9 +316,8 @@ export function MapasPage() {
         dispatch({ type: 'ASSIGN_TERRITORIES_TO_ACTIVE', territories });
       }
       setContextPanelMode('group');
-      if (isTablet) setGroupSheetOpen(true);
     },
-    [dispatch, isTablet, markInteracted, state],
+    [dispatch, markInteracted, state],
   );
 
   const isDrillFeatureSelected = useCallback(
@@ -383,7 +376,6 @@ export function MapasPage() {
     setHoveredUF(null);
     setContextPanelMode('explore');
     setClearAllOpen(false);
-    setGroupSheetOpen(false);
     setConfirmedDesign(null);
     setConfirmedQuestionKey(null);
     setQuestionDraft(createInitialMapQuestionDraft());
@@ -393,8 +385,7 @@ export function MapasPage() {
 
   const openPasteMode = useCallback(() => {
     setContextPanelMode('paste');
-    if (isTablet) setGroupSheetOpen(true);
-  }, [isTablet]);
+  }, []);
 
   const startAnalysis = useCallback(() => {
     if (!researchDesign) return;
@@ -419,14 +410,31 @@ export function MapasPage() {
       dispatch({ type: 'REPLACE_STATE', state: buildPresetMapState(presetId) });
       setPreviewUFs([]);
       setContextPanelMode('group');
-      if (isTablet) setGroupSheetOpen(true);
     },
-    [dispatch, isTablet, markInteracted],
+    [dispatch, markInteracted],
   );
 
   useEffect(() => {
     setMapAnalysis(state);
   }, [state, setMapAnalysis]);
+
+  useEffect(() => {
+    if (!hasPopulation) {
+      questionWasVisibleRef.current = false;
+      return;
+    }
+    if (questionWasVisibleRef.current) return;
+    questionWasVisibleRef.current = true;
+    requestAnimationFrame(() => {
+      const step = questionRef.current;
+      if (typeof step?.scrollIntoView !== 'function') return;
+      step.focus({ preventScroll: true });
+      step.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+  }, [hasPopulation, reduceMotion]);
 
   useEffect(() => {
     const navState = location.state as MapasLocationState | null;
@@ -447,12 +455,6 @@ export function MapasPage() {
       setContextPanelMode('group');
     }
   }, [state.activeGroupId, contextPanelMode]);
-
-  useEffect(() => {
-    if (isTablet && state.activeGroupId && contextPanelMode === 'group') {
-      setGroupSheetOpen(true);
-    }
-  }, [contextPanelMode, isTablet, state.activeGroupId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -478,8 +480,14 @@ export function MapasPage() {
   );
 
   const renderQuestionBuilder = () =>
-    state.groups.length > 0 ? (
-      <div className="h-full min-h-0 overflow-y-auto pr-1">
+    hasPopulation ? (
+      <div
+        ref={questionRef}
+        data-testid="map-question-step"
+        id="pergunta-do-recorte"
+        tabIndex={-1}
+        className="h-full min-h-0 scroll-mt-6 overflow-y-auto pr-1 focus:outline-none"
+      >
         <MapQuestionBuilder
           state={state}
           draft={questionDraft}
@@ -614,7 +622,7 @@ export function MapasPage() {
         </section>
 
         {!isTablet ? (
-          <aside
+          <div
             className="lacir-mapas-panel flex w-full shrink-0 flex-col overflow-hidden lg:h-[min(90vh,980px)] lg:w-[42%] lg:max-h-[min(90vh,980px)]"
             aria-label="Variáveis e configuração"
           >
@@ -622,47 +630,26 @@ export function MapasPage() {
               {renderContextBody()}
             </div>
             <div className="mt-3 shrink-0 pt-1">{actionBar}</div>
-          </aside>
+          </div>
         ) : (
-          <>
-            <div className="sticky bottom-0 z-20 rounded-xl border border-border bg-surface/90 p-4 backdrop-blur-md lg:hidden">
+          <div
+            className="w-full min-w-0 space-y-4 lg:hidden"
+            aria-label="Pergunta e configuração"
+          >
+            <div className="min-h-0">{renderContextBody()}</div>
+            <div className="sticky bottom-0 z-20 rounded-xl border border-border bg-surface/90 p-4 backdrop-blur-md">
               {actionBar}
             </div>
-            <Sheet open={groupSheetOpen} onOpenChange={setGroupSheetOpen}>
-              <SheetContent side="right" className="w-full max-w-[480px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>
-                    {activeGroup ? activeGroup.name : 'Configurar grupo'}
-                  </SheetTitle>
-                  <SheetDescription>
-                    Doença e período compartilhados no topo; as variáveis vêm na próxima etapa.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="flex min-h-[70vh] flex-col gap-2 px-4 pb-6">
-                  {contextPanelMode === 'paste' ? (
-                    <TerritoryPastePanel
-                      onMatched={handlePasteMatched}
-                      onMatchedTerritories={handlePasteTerritories}
-                      activeUfScope={
-                        state.mapView.level !== 'uf' ? state.mapView.parentCode : undefined
-                      }
-                    />
-                  ) : (
-                    <>
-                      {renderQuestionBuilder() ?? renderExplorePanel()}
-                    </>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-          </>
+          </div>
         )}
       </div>
 
       {visibleConfirmedDesign ? (
-        <section
+        <div
           ref={analysisRef}
           id="analise-do-recorte"
+          data-testid="map-analysis-step"
+          role="group"
           aria-label="Análise do recorte"
           tabIndex={-1}
           className="mt-10 scroll-mt-6"
@@ -679,7 +666,7 @@ export function MapasPage() {
               />
             )}
           />
-        </section>
+        </div>
       ) : null}
     </motion.div>
   );

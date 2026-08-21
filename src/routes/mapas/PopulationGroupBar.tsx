@@ -103,17 +103,26 @@ export function PopulationGroupBar({
 
         {onApplySelectionPreset ? <PresetMenu onApply={onApplySelectionPreset} /> : null}
 
-        {state.groups.map((group, index) => (
-          <GroupChip
-            key={group.id}
-            group={group}
-            index={index}
-            isActive={state.activeGroupId === group.id}
-            onSelect={(groupId) => dispatch({ type: 'SET_ACTIVE_GROUP', groupId })}
-            onRename={(groupId, name) => dispatch({ type: 'RENAME_GROUP', groupId, name })}
-            onDelete={(groupId) => dispatch({ type: 'DELETE_GROUP', groupId })}
-          />
-        ))}
+        {state.groups.length > 0 ? (
+          <div
+            role="tablist"
+            aria-label="Populações selecionadas"
+            aria-orientation="horizontal"
+            className="contents"
+          >
+            {state.groups.map((group, index) => (
+              <GroupChip
+                key={group.id}
+                group={group}
+                index={index}
+                isActive={state.activeGroupId === group.id}
+                onSelect={(groupId) => dispatch({ type: 'SET_ACTIVE_GROUP', groupId })}
+                onRename={(groupId, name) => dispatch({ type: 'RENAME_GROUP', groupId, name })}
+                onDelete={(groupId) => dispatch({ type: 'DELETE_GROUP', groupId })}
+              />
+            ))}
+          </div>
+        ) : null}
 
         {state.groups.length > 0 && state.groups.length < MAX_GROUPS ? (
           <button
