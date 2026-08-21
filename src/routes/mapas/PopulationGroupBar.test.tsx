@@ -96,4 +96,45 @@ describe('PopulationGroupBar', () => {
     expect(screen.getByRole('tab', { name: /Norte/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Sudeste/i })).toBeInTheDocument();
   });
+
+  it('moves focus into presets and restores it when Escape closes the menu', () => {
+    render(<Harness initialState={stateWithPopulation()} />);
+    const trigger = screen.getByRole('button', { name: /Presets/i });
+
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    const firstPreset = screen.getAllByRole('menuitem')[0]!;
+    expect(firstPreset).toHaveFocus();
+
+    fireEvent.keyDown(firstPreset, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it('navigates presets with menu keys and restores focus after selection', () => {
+    render(<Harness initialState={stateWithPopulation()} />);
+    const trigger = screen.getByRole('button', { name: /Presets/i });
+
+    fireEvent.click(trigger);
+    const presets = screen.getAllByRole('menuitem');
+
+    fireEvent.keyDown(presets[0]!, { key: 'ArrowDown' });
+    expect(presets[1]).toHaveFocus();
+
+    fireEvent.keyDown(presets[1]!, { key: 'End' });
+    expect(presets.at(-1)).toHaveFocus();
+
+    fireEvent.keyDown(presets.at(-1)!, { key: 'Home' });
+    expect(presets[0]).toHaveFocus();
+
+    fireEvent.keyDown(presets[0]!, { key: 'ArrowUp' });
+    expect(presets.at(-1)).toHaveFocus();
+
+    fireEvent.click(presets.at(-1)!);
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
 });

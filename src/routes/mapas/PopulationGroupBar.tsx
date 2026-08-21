@@ -1,4 +1,11 @@
-import { useState, type CSSProperties, type Dispatch } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type Dispatch,
+  type KeyboardEvent,
+} from 'react';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GroupChip } from './GroupChip';
@@ -26,10 +33,63 @@ function PresetMenu({
   onApply: (presetId: GroupSelectionPresetId) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const shouldRestoreFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (open) {
+      menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+      return;
+    }
+
+    if (shouldRestoreFocusRef.current) {
+      shouldRestoreFocusRef.current = false;
+      triggerRef.current?.focus();
+    }
+  }, [open]);
+
+  const closeAndRestoreFocus = () => {
+    shouldRestoreFocusRef.current = true;
+    setOpen(false);
+  };
+
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [],
+    );
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeAndRestoreFocus();
+      return;
+    }
+
+    if (items.length === 0) return;
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+    let nextIndex: number | null = null;
+
+    if (event.key === 'ArrowDown') {
+      nextIndex = (currentIndex + 1) % items.length;
+    } else if (event.key === 'ArrowUp') {
+      nextIndex = (currentIndex - 1 + items.length) % items.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = items.length - 1;
+    }
+
+    if (nextIndex !== null) {
+      event.preventDefault();
+      items[nextIndex]?.focus();
+    }
+  };
 
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
@@ -40,8 +100,10 @@ function PresetMenu({
       </button>
       {open ? (
         <div
+          ref={menuRef}
           role="menu"
           aria-label="Presets de populações"
+          onKeyDown={handleMenuKeyDown}
           className="absolute left-0 top-full z-30 mt-1.5 w-[15.5rem] rounded-xl border border-white/12 bg-elevated/98 p-1.5 shadow-xl backdrop-blur-md"
         >
           <p className="px-2 pb-1 pt-0.5 font-sans text-[10px] text-text-muted">
@@ -54,7 +116,7 @@ function PresetMenu({
               role="menuitem"
               onClick={() => {
                 onApply(preset.id);
-                setOpen(false);
+                closeAndRestoreFocus();
               }}
               className="flex w-full flex-col rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent-soft/70"
             >
