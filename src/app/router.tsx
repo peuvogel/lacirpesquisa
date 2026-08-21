@@ -6,6 +6,13 @@ import { MetaAnalisePage } from '../routes/meta-analise/MetaAnalisePage';
 import { VariaveisPage } from '../routes/variaveis/VariaveisPage';
 import { MapasPage } from '../routes/mapas/MapasPage';
 
+export function resolveRouterBasename(baseUrl: string): string {
+  const trimmed = baseUrl.trim();
+  if (!trimmed || trimmed === '/' || trimmed === './') return '/';
+  const rooted = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return rooted.replace(/\/+$/, '') || '/';
+}
+
 export const router = createBrowserRouter([
   {
     element: <AppShell />,
@@ -17,4 +24,6 @@ export const router = createBrowserRouter([
       { path: '/mapas', element: <MapasPage /> },
     ],
   },
-]);
+], {
+  basename: resolveRouterBasename(import.meta.env.BASE_URL),
+});

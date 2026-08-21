@@ -8,8 +8,9 @@ import { EstatisticaPage } from '../routes/estatistica/EstatisticaPage';
 import { MetaAnalisePage } from '../routes/meta-analise/MetaAnalisePage';
 import { VariaveisPage } from '../routes/variaveis/VariaveisPage';
 import { MapasPage } from '../routes/mapas/MapasPage';
+import { resolveRouterBasename } from './router';
 
-function buildRouter(initialPath: string) {
+function buildRouter(initialPath: string, baseUrl = '/') {
   return createMemoryRouter(
     [
       {
@@ -23,7 +24,10 @@ function buildRouter(initialPath: string) {
         ],
       },
     ],
-    { initialEntries: [initialPath] },
+    {
+      basename: resolveRouterBasename(baseUrl),
+      initialEntries: [initialPath],
+    },
   );
 }
 
@@ -37,6 +41,22 @@ function renderAt(initialPath: string) {
 }
 
 describe('router', () => {
+  it('derives a React Router basename from Vite BASE_URL for local and project Pages builds', () => {
+    expect(resolveRouterBasename('/')).toBe('/');
+    expect(resolveRouterBasename('/lacirpesquisa/')).toBe('/lacirpesquisa');
+  });
+
+  it('renders Mapas from a direct project Pages URL', () => {
+    const router = buildRouter('/lacirpesquisa/mapas', '/lacirpesquisa/');
+    render(
+      <SessionProvider>
+        <RouterProvider router={router} />
+      </SessionProvider>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Mapas' })).toBeInTheDocument();
+  });
+
   it('renders the Estatística page at / (landing route, D-04)', () => {
     const { container } = renderAt('/');
     expect(container.querySelector('#lacir-test-module-mount')).not.toBeNull();
