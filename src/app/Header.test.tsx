@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Header } from './Header';
+import { resolvePublicAssetUrl } from './LogoLockup';
 
 function renderHeader() {
   return render(
@@ -32,6 +33,13 @@ describe('Header', () => {
   it('renders the logo with alt text Logo LACIR', () => {
     renderHeader();
     expect(screen.getByAltText('Logo LACIR')).toBeInTheDocument();
+  });
+
+  it('scopes the logo to the configured application base path', () => {
+    expect(resolvePublicAssetUrl('/', 'logo-lacir.png')).toBe('/logo-lacir.png');
+    expect(resolvePublicAssetUrl('/lacirpesquisa/', 'logo-lacir.png')).toBe(
+      '/lacirpesquisa/logo-lacir.png',
+    );
   });
 
   it('never renders a version/beta badge (D-02)', () => {
