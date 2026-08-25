@@ -12,6 +12,8 @@ import {
   kruskalEpsilonSquared,
   runGuidedTests,
 } from './runGuidedTests';
+import { runPairedT } from '@/features/tests/t-student/tStudentEngine';
+import { fmtP } from '@/shared/format';
 
 const design: ResearchDesign = {
   groups: [
@@ -78,6 +80,55 @@ describe('runGuidedTests', () => {
     expect(kruskalEpsilonSquared(10, 3, 12)).toBeCloseTo(8 / 9, 10);
     expect(kruskalEpsilonSquared(1, 3, 12)).toBe(0);
     expect(kruskalEpsilonSquared(2, 3, 3)).toBeNull();
+  });
+
+  it('aligns paired t values by territory instead of scenario order', () => {
+    const pairedDesign: ResearchDesign = {
+      ...design,
+      comparisonKind: 'paired_period',
+      groups: [
+        { id: 'nordeste', name: 'Antes', territories: ['29', '28', '27'].map((id) => ({ id, label: id })) },
+        { id: 'sudeste', name: 'Depois', territories: ['29', '28', '27'].map((id) => ({ id, label: id })) },
+      ],
+      period: {
+        scope: 'per_group',
+        timesByGroupId: {
+          nordeste: { mode: 'range', start: '2015', end: '2019' },
+          sudeste: { mode: 'range', start: '2020', end: '2024' },
+        },
+      },
+    };
+    const values = new Map([
+      ['29', [10, 12]],
+      ['28', [20, 25]],
+      ['27', [35, 39]],
+    ]);
+    const scenario = createRecommendedScenario([
+      ...['27', '28', '29'].map((territoryId) => ({
+        groupId: 'nordeste', territoryId, periodKey: '2015', variableId: 'taxa',
+        rawValue: values.get(territoryId)![0], sourceStatus: 'observed' as const, analyticStatus: 'include' as const,
+      })),
+      ...['29', '28', '27'].map((territoryId) => ({
+        groupId: 'sudeste', territoryId, periodKey: '2020', variableId: 'taxa',
+        rawValue: values.get(territoryId)![1], sourceStatus: 'observed' as const, analyticStatus: 'include' as const,
+      })),
+    ]);
+    const eligibility = evaluateTests({
+      design: pairedDesign,
+      scenario,
+      profiles: [rateProfile],
+      roleAssignments: { outcome: 'taxa' },
+    });
+
+    const run = runGuidedTests({
+      design: pairedDesign, scenario, profiles: [rateProfile], eligibility,
+      selectedTestIds: ['t-student'], primaryTestId: 't-student', roleAssignments: { outcome: 'taxa' },
+    });
+    const expected = runPairedT([10, 20, 35], [12, 25, 39]);
+
+    expect(run.results[0]?.metrics).toContainEqual(
+      expect.objectContaining({ label: 'Evidência estatística', value: fmtP(expected.p) }),
+    );
   });
 
   it('keeps common-coverage results explicitly separated from the main analysis', () => {

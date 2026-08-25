@@ -3,11 +3,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MapPrimaryActionBar } from './MapPrimaryActionBar';
 
-function renderActionBar(canReview = false) {
+function renderActionBar(
+  canReview = false,
+  analysisMode: 'descriptive' | 'comparison' = 'comparison',
+) {
   const onReview = vi.fn();
   render(
     <MapPrimaryActionBar
       canReview={canReview}
+      analysisMode={analysisMode}
       onReview={onReview}
       onPasteTerritories={vi.fn()}
       onClearMap={vi.fn()}
@@ -24,7 +28,16 @@ describe('MapPrimaryActionBar', () => {
     const user = userEvent.setup();
     const { onReview } = renderActionBar(true);
 
-    await user.click(screen.getByRole('button', { name: 'Começar análise' }));
+    await user.click(screen.getByRole('button', { name: 'Revisar e analisar' }));
+
+    expect(onReview).toHaveBeenCalledOnce();
+  });
+
+  it('mantém a descrição acessível quando a inferência foi bloqueada', async () => {
+    const user = userEvent.setup();
+    const { onReview } = renderActionBar(true, 'descriptive');
+
+    await user.click(screen.getByRole('button', { name: 'Abrir análise descritiva' }));
 
     expect(onReview).toHaveBeenCalledOnce();
   });

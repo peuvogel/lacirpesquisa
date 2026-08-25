@@ -59,6 +59,7 @@ export const exampleText = `desfecho;grupo
 `;
 
 export const CHART_PRESET_LABELS = {
+  rawData: 'Dados individuais por grupo',
   means: 'Médias por grupo (IC95%)',
   heatmap: 'Mapa de p ajustado (Tukey)',
 } as const;

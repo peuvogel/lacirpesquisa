@@ -78,6 +78,12 @@ describe('anovaCharts presets', () => {
     const presets = buildAnovaChartPresetsForOutput(output);
 
     expect(presets.some((preset) => preset.id === 'heatmap')).toBe(true);
+    expect(presets.some((preset) => preset.id === 'raw-data')).toBe(true);
+    expect(presets.find((preset) => preset.id === 'raw-data')?.buildChart(output).type).toBe(
+      'scatter',
+    );
+    const { getDefaultAnovaChartPreset } = await import('./anovaCharts');
+    expect(getDefaultAnovaChartPreset()).toBe('raw-data');
   });
 
   it('omits heatmap preset when k > 6', async () => {
@@ -85,5 +91,6 @@ describe('anovaCharts presets', () => {
     const presets = buildAnovaChartPresets(7);
     expect(presets.some((preset) => preset.id === 'heatmap')).toBe(false);
     expect(presets.some((preset) => preset.id === 'means')).toBe(true);
+    expect(presets.some((preset) => preset.id === 'raw-data')).toBe(true);
   });
 });

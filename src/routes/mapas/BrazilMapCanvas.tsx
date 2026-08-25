@@ -39,7 +39,7 @@ import { MapGeoPath } from './MapGeoPath';
 import { UfHoverDrillLupa } from './UfHoverDrillLupa';
 import { paddedViewBoxFromBBox, useAnimatedViewBox } from './useAnimatedViewBox';
 import { useFadingSelection } from './useFadingSelection';
-import type { BrazilMockMapProps } from './BrazilMockMap';
+import type { BrazilMockMapProps, MapGroupMembership } from './BrazilMockMap';
 
 const UF_DESELECT_FADE_MS = 420;
 
@@ -54,7 +54,7 @@ export interface BrazilMapCanvasProps extends BrazilMockMapProps {
   /** Municípios selected (drill click, mesorregião / macrorregião presets). */
   selectedMunicipioIds?: readonly string[];
   /** Municípios already assigned to analysis groups (paint with group colors). */
-  groupMunicipioMembership?: Record<string, { groupIndex: number; groupName: string }>;
+  groupMunicipioMembership?: Record<string, MapGroupMembership[]>;
   /** Toggle a feature on the drilled map (município / meso / macrorregião). */
   onToggleDrillFeature?: (featureId: string) => void;
   /** Whether a drilled feature is fully selected. */
@@ -66,24 +66,37 @@ export interface BrazilMapCanvasProps extends BrazilMockMapProps {
   pendingGroupIndex?: number;
 }
 
-const EMPTY_MUNI_MEMBERSHIP: Record<string, { groupIndex: number; groupName: string }> = {};
+const EMPTY_MUNI_MEMBERSHIP: Record<string, MapGroupMembership[]> = {};
+
+const MULTI_GROUP_FILL = 'rgba(161, 161, 170, 0.24)';
+
+function membershipBadge(memberships: MapGroupMembership[] | undefined): string | undefined {
+  if (!memberships?.length) return undefined;
+  if (memberships.length === 1) {
+    return `Grupo ${memberships[0]!.groupIndex + 1}: ${memberships[0]!.groupName}`;
+  }
+  return `Grupos: ${memberships.map((membership) => membership.groupName).join(', ')}`;
+}
 
 function drillFeatureGroupMembership(
   featureId: string,
   level: GeoLevel,
-  membership: Record<string, { groupIndex: number; groupName: string }>,
-): { groupIndex: number; groupName: string } | null {
-  if (level === 'municipio') return membership[featureId] ?? null;
+  membership: Record<string, MapGroupMembership[]>,
+): MapGroupMembership[] {
+  if (level === 'municipio') return membership[featureId] ?? [];
   const ids =
     level === 'meso'
       ? municipalityIdsForMeso(featureId)
       : level === 'health-macro'
         ? municipalityIdsForHealthMacro(featureId)
         : [];
-  if (ids.length === 0) return null;
-  const first = membership[ids[0]!];
-  if (!first) return null;
-  return ids.every((id) => membership[id]?.groupIndex === first.groupIndex) ? first : null;
+  if (ids.length === 0) return [];
+  const first = membership[ids[0]!] ?? [];
+  return first.filter((candidate) =>
+    ids.every((id) =>
+      membership[id]?.some((value) => value.groupIndex === candidate.groupIndex),
+    ),
+  );
 }
 
 const SURFACE_FILL = '#18181b';
@@ -446,7 +459,7 @@ export function BrazilMapCanvas({
   }, [isDrilled, mapView.level, mapView.ufIbge]);
 
   const ungroupedSelected = useMemo(
-    () => selectedUFs.filter((sigla) => !groupMembership[sigla]),
+    () => selectedUFs.filter((sigla) => !groupMembership[sigla]?.length),
     [groupMembership, selectedUFs],
   );
 
@@ -458,10 +471,12 @@ export function BrazilMapCanvas({
 
   const groupsByIndex = useMemo(() => {
     const map = new Map<number, string[]>();
-    for (const [sigla, membership] of Object.entries(groupMembership)) {
-      const list = map.get(membership.groupIndex) ?? [];
-      list.push(sigla);
-      map.set(membership.groupIndex, list);
+    for (const [sigla, memberships] of Object.entries(groupMembership)) {
+      for (const membership of memberships) {
+        const list = map.get(membership.groupIndex) ?? [];
+        list.push(sigla);
+        map.set(membership.groupIndex, list);
+      }
     }
     return [...map.entries()].sort((a, b) => a[0] - b[0]);
   }, [groupMembership]);
@@ -557,7 +572,8 @@ export function BrazilMapCanvas({
           }`}
         >
           {BRAZIL_UF_PATHS.map(({ sigla, d }) => {
-            const membership = groupMembership[sigla];
+            const memberships = groupMembership[sigla] ?? [];
+            const primaryMembership = memberships[0];
             const isUngroupedSelected = ungroupedSelected.includes(sigla);
             const isFadingOut = fadingSelection.has(sigla) && !isUngroupedSelected;
             const isFocus = focusSigla === sigla;
@@ -571,14 +587,17 @@ export function BrazilMapCanvas({
               fill = '#151518';
             } else if (metric) {
               fill = metric.fill;
-            } else if (membership) {
-              fill = groupColor(membership.groupIndex).fill;
+            } else if (memberships.length > 1) {
+              fill = MULTI_GROUP_FILL;
+            } else if (primaryMembership) {
+              fill = groupColor(primaryMembership.groupIndex).fill;
             } else if (isUngroupedSelected) {
               fill = selectionFill;
             } else if (isHovered) {
               fill = hoverFill;
             }
-            const inComposite = !isDrilled && Boolean(membership || isUngroupedSelected);
+            const inComposite =
+              !isDrilled && Boolean(memberships.length > 0 || isUngroupedSelected);
             return (
               <path
                 key={`paint-${sigla}`}
@@ -655,13 +674,33 @@ export function BrazilMapCanvas({
                   {siglas.map((sigla) => {
                     const d = pathBySigla[sigla];
                     if (!d) return null;
-                    const membership = groupMembership[sigla]!;
+                    const memberships = groupMembership[sigla] ?? [];
+                    const membership = memberships.find(
+                      (candidate) => candidate.groupIndex === groupIndex,
+                    );
+                    if (!membership) return null;
+                    const overlapRank = memberships.findIndex(
+                      (candidate) => candidate.groupIndex === groupIndex,
+                    );
                     return (
                       <path
-                        key={`go-${sigla}`}
+                        key={`go-${groupIndex}-${sigla}`}
+                        data-group-outline={groupIndex}
+                        data-overlap-rank={overlapRank}
+                        data-uf={sigla}
                         d={d}
-                        fill={groupColor(membership.groupIndex).fill}
-                        className="[stroke-width:0px] stroke-transparent"
+                        fill="transparent"
+                        stroke={groupColor(membership.groupIndex).stroke}
+                        strokeWidth={memberships.length > 1 ? 2.2 + overlapRank * 1.35 : 1.65}
+                        strokeDasharray={
+                          memberships.length > 1
+                            ? overlapRank % 2 === 0
+                              ? '5 2.5'
+                              : '2 3'
+                            : undefined
+                        }
+                        vectorEffect="non-scaling-stroke"
+                        opacity={memberships.length > 1 ? 0.95 : 0.82}
                       />
                     );
                   })}
@@ -717,19 +756,23 @@ export function BrazilMapCanvas({
                 const metric = activeVariableId
                   ? mapMetricPaint(choroplethValues[path.id], scale)
                   : null;
-                const membership = drillFeatureGroupMembership(
+                const memberships = drillFeatureGroupMembership(
                   path.id,
                   mapView.level,
                   groupMunicipioMembership,
                 );
+                const primaryMembership = memberships[0];
                 const isSelected =
-                  Boolean(membership) ||
+                  memberships.length > 0 ||
                   (isDrillFeatureSelected?.(path.id) ??
                     (mapView.level === 'municipio' && selectedMuniSet.has(path.id)));
                 const isHovered = hoveredUF === path.id;
                 let fill = 'rgba(255,255,255,0.04)';
                 if (metric) fill = metric.fill;
-                else if (membership) fill = groupMuniSelectionFill(membership.groupIndex);
+                else if (memberships.length > 1) fill = MULTI_GROUP_FILL;
+                else if (primaryMembership) {
+                  fill = groupMuniSelectionFill(primaryMembership.groupIndex);
+                }
                 else if (isSelected) fill = muniSelectedFill;
                 else if (isHovered) fill = hoverFill;
                 const pathKey = String(path.properties.muniId ?? path.id);
@@ -744,20 +787,16 @@ export function BrazilMapCanvas({
                     isSelected={isSelected}
                     fill={fill}
                     accentStroke={
-                      membership
-                        ? groupColor(membership.groupIndex).stroke
+                      primaryMembership
+                        ? groupColor(primaryMembership.groupIndex).stroke
                         : metric?.stroke ?? pendingColor.stroke
                     }
-                    stroke={membership ? undefined : metric?.stroke}
+                    stroke={primaryMembership ? undefined : metric?.stroke}
                     hideStroke={false}
                     glowClass="stroke-white/25 [stroke-width:0.55px]"
                     onHover={onHoverUF}
                     onToggle={onToggleDrillFeature ?? onToggleUF}
-                    groupBadge={
-                      membership
-                        ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
-                        : undefined
-                    }
+                    groupBadge={membershipBadge(memberships)}
                     description={metric?.description}
                   />
                 );
@@ -768,11 +807,13 @@ export function BrazilMapCanvas({
           {/* UF hit targets — only when not drilled (neighbors stay non-interactive) */}
           {!isDrilled
             ? BRAZIL_UF_PATHS.map(({ sigla, d }) => {
-                const membership = groupMembership[sigla];
+                const memberships = groupMembership[sigla] ?? [];
                 const isUngroupedSelected = ungroupedSelected.includes(sigla);
-                const isSelected = isUngroupedSelected || Boolean(membership);
+                const isSelected = isUngroupedSelected || memberships.length > 0;
                 const isPreview =
-                  highlightedUFs.includes(sigla) && !isUngroupedSelected && !membership;
+                  highlightedUFs.includes(sigla) &&
+                  !isUngroupedSelected &&
+                  memberships.length === 0;
                 const shapeProps = {
                   d,
                   territoryId: sigla,
@@ -783,9 +824,7 @@ export function BrazilMapCanvas({
                   hideStroke: true as const,
                   fill: 'transparent',
                   accentStroke: pendingColor.stroke,
-                  groupBadge: membership
-                    ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
-                    : undefined,
+                  groupBadge: membershipBadge(memberships),
                   description: activeVariableId
                     ? mapMetricPaint(choroplethValues[sigla], scale).description
                     : undefined,
@@ -817,7 +856,8 @@ export function BrazilMapCanvas({
             <g data-layer="selected-munis-hit">
               {selectedMuniPaths.map((path) => {
                 const name = String(path.properties.nome ?? path.id);
-                const membership = groupMunicipioMembership[path.id];
+                const memberships = groupMunicipioMembership[path.id] ?? [];
+                const primaryMembership = memberships[0];
                 return (
                   <MapGeoPath
                     key={`sel-muni-hit-${path.id}`}
@@ -827,24 +867,22 @@ export function BrazilMapCanvas({
                     isHovered={false}
                     isSelected
                     fill={
-                      membership
-                        ? groupMuniSelectionFill(membership.groupIndex)
+                      memberships.length > 1
+                        ? MULTI_GROUP_FILL
+                        : primaryMembership
+                          ? groupMuniSelectionFill(primaryMembership.groupIndex)
                         : muniSelectedFill
                     }
                     accentStroke={
-                      membership
-                        ? groupColor(membership.groupIndex).stroke
+                      primaryMembership
+                        ? groupColor(primaryMembership.groupIndex).stroke
                         : pendingColor.stroke
                     }
                     hideStroke={false}
                     glowClass="stroke-white/40 [stroke-width:0.7px]"
                     onHover={() => {}}
                     onToggle={onToggleDrillFeature}
-                    groupBadge={
-                      membership
-                        ? `Grupo ${membership.groupIndex + 1}: ${membership.groupName}`
-                        : undefined
-                    }
+                    groupBadge={membershipBadge(memberships)}
                   />
                 );
               })}
@@ -852,14 +890,17 @@ export function BrazilMapCanvas({
           ) : !isDrilled && selectedMuniPaths.length > 0 ? (
             <g className="pointer-events-none" aria-hidden>
               {selectedMuniPaths.map((path) => {
-                const membership = groupMunicipioMembership[path.id];
+                const memberships = groupMunicipioMembership[path.id] ?? [];
+                const primaryMembership = memberships[0];
                 return (
                   <path
                     key={`sel-muni-${path.id}`}
                     d={path.d}
                     fill={
-                      membership
-                        ? groupMuniSelectionFill(membership.groupIndex)
+                      memberships.length > 1
+                        ? MULTI_GROUP_FILL
+                        : primaryMembership
+                          ? groupMuniSelectionFill(primaryMembership.groupIndex)
                         : muniSelectedFill
                     }
                     stroke="rgba(255,255,255,0.35)"

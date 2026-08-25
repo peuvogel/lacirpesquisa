@@ -78,6 +78,30 @@ function renderList(
 }
 
 describe('MapVariableList', () => {
+  it('keeps the measure explicitly assigned inside the group', () => {
+    render(
+      <MapVariableList
+        design={{
+          ...design,
+          groupOutcomes: {
+            populacao: {
+              diseaseId: 'embolia_e_trombose_arteriais',
+              variableId: 'taxa_mortalidade',
+            },
+          },
+        }}
+        variables={variables}
+        selectedVariableIds={[]}
+        onSelectionChange={vi.fn()}
+      />,
+    );
+
+    expect(within(screen.getByRole('list', { name: 'Variáveis para análise' }))
+      .getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.getByText('Taxa de mortalidade')).toBeInTheDocument();
+    expect(screen.queryByText('Internações')).not.toBeInTheDocument();
+  });
+
   it('shows one compact searchable list instead of type columns', async () => {
     const user = userEvent.setup();
     renderList();

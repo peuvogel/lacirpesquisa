@@ -220,6 +220,37 @@ describe('evaluateTests', () => {
       .toContainEqual(expect.objectContaining({ code: 'overlapping_independent_units' }));
   });
 
+  it('allows only paired t when the declared comparison aligns the same territories', () => {
+    const pairedDesign: ResearchDesign = {
+      ...design,
+      comparisonKind: 'paired_period',
+      groups: [
+        { id: 'a', name: 'Antes', territories: ['BA', 'SE', 'AL'].map((id) => ({ id, label: id })) },
+        { id: 'b', name: 'Depois', territories: ['BA', 'SE', 'AL'].map((id) => ({ id, label: id })) },
+      ],
+      period: {
+        scope: 'per_group',
+        timesByGroupId: {
+          a: { mode: 'range', start: '2015', end: '2019' },
+          b: { mode: 'range', start: '2020', end: '2024' },
+        },
+      },
+    };
+    const scenario = createRecommendedScenario([
+      cell('a', 'BA', 1, { periodKey: '2015' }),
+      cell('a', 'SE', 2, { periodKey: '2015' }),
+      cell('a', 'AL', 4, { periodKey: '2015' }),
+      cell('b', 'BA', 3, { periodKey: '2020' }),
+      cell('b', 'SE', 5, { periodKey: '2020' }),
+      cell('b', 'AL', 8, { periodKey: '2020' }),
+    ]);
+
+    expect(decision({ design: pairedDesign, scenario, profiles: [numeric] }, 't-student').status)
+      .not.toBe('ineligible');
+    expect(decision({ design: pairedDesign, scenario, profiles: [numeric] }, 'mann-whitney').status)
+      .toBe('ineligible');
+  });
+
   it('requires explicit pair roles and variation for correlation', () => {
     const scenario = createRecommendedScenario([
       cell('a', 'BA', 1), cell('a', 'SE', 2), cell('a', 'AL', 3),

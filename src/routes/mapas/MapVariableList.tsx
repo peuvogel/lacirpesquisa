@@ -58,17 +58,28 @@ export function MapVariableList({
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('all');
 
+  const configuredVariableIds = useMemo(
+    () => new Set(Object.values(design.groupOutcomes ?? {}).map((outcome) => outcome.variableId)),
+    [design.groupOutcomes],
+  );
+  const relevantVariables = useMemo(
+    () => configuredVariableIds.size === 0
+      ? variables
+      : variables.filter((variable) => configuredVariableIds.has(variable.id)),
+    [configuredVariableIds, variables],
+  );
+
   const filtered = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR');
-    return variables.filter((variable) =>
+    return relevantVariables.filter((variable) =>
       (!normalizedSearch || variable.label.toLocaleLowerCase('pt-BR').includes(normalizedSearch))
       && matchesRole(variable.id, roleFilter)
       && matchesType(variable.type, typeFilter)
       && (availabilityFilter === 'all' || variable.availability === availabilityFilter));
-  }, [availabilityFilter, roleFilter, search, typeFilter, variables]);
+  }, [availabilityFilter, relevantVariables, roleFilter, search, typeFilter]);
 
   const filteredIds = new Set(filtered.map((variable) => variable.id));
-  const selectedOutsideFilters = variables.filter((variable) =>
+  const selectedOutsideFilters = relevantVariables.filter((variable) =>
     selectedVariableIds.includes(variable.id) && !filteredIds.has(variable.id));
 
   function toggle(id: string) {

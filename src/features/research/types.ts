@@ -4,6 +4,20 @@ export type ResearchGeography = 'uf' | 'municipio' | 'mesorregiao' | 'macro_saud
 export type VariableType = 'count' | 'rate' | 'numeric' | 'categorical' | 'ordinal';
 export type TemporalAggregation = 'sum' | 'recompute_rate' | 'weighted_mean' | 'point_only';
 
+export type ResearchComparisonKind =
+  | 'descriptive'
+  | 'independent_place'
+  | 'paired_period'
+  | 'paired_disease'
+  | 'time_series'
+  | 'confounded'
+  | 'unsupported';
+
+export interface ResearchGroupOutcome {
+  diseaseId: string;
+  variableId: string;
+}
+
 export type SourceCellStatus =
   | 'observed'
   | 'collection_zero'
@@ -45,8 +59,12 @@ export interface ResearchDesign {
   geography: ResearchGeography;
   locationBasis: LocationBasis;
   diseaseIds: string[];
+  /** Desfecho escolhido dentro de cada grupo. Ausente em desenhos legados. */
+  groupOutcomes?: Record<string, ResearchGroupOutcome>;
   period: SharedOrPerGroupPeriod;
   goal?: ResearchGoal;
+  /** Contraste validado na montagem dos grupos. */
+  comparisonKind?: ResearchComparisonKind;
 }
 
 export interface VariableProfile {

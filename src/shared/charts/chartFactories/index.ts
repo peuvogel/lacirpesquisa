@@ -5,6 +5,7 @@ export {
   type WelchResult,
   type GroupStats,
 } from './tStudentCharts';
+export { buildGroupedRawDotChartData } from './groupedRawDotChart';
 
 export {
   buildScatterChartData,

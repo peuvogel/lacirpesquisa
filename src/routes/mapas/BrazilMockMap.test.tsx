@@ -236,7 +236,7 @@ describe('BrazilMapCanvas', () => {
         activeVariableId={null}
         pendingGroupIndex={1}
         groupMembership={{
-          SP: { groupIndex: 0, groupName: 'Grupo 1' },
+          SP: [{ groupIndex: 0, groupName: 'Grupo 1' }],
         }}
       />,
     );
@@ -244,6 +244,35 @@ describe('BrazilMapCanvas', () => {
     expect(container.querySelector('[data-selection-filter="lacir-group-outer-1"]')).toBeTruthy();
     const baPaint = container.querySelector('[data-uf="BA"][data-layer="paint"]');
     expect(baPaint?.getAttribute('fill')).toContain('59, 130, 246');
+  });
+
+  it('lists every group and paints separate outlines for overlapping membership', () => {
+    const { container } = render(
+      <BrazilMapCanvas
+        hoveredUF={null}
+        selectedUFs={[]}
+        onHoverUF={() => {}}
+        onToggleUF={() => {}}
+        choroplethValues={{}}
+        activeVariableId={null}
+        groupMembership={{
+          BA: [
+            { groupIndex: 0, groupName: 'Grupo Bahia' },
+            { groupIndex: 1, groupName: 'Grupo Nordeste' },
+          ],
+        }}
+      />,
+    );
+
+    const bahia = screen.getByRole('button', { name: 'Bahia' });
+    expect(bahia).toHaveAttribute(
+      'aria-description',
+      'Grupos: Grupo Bahia, Grupo Nordeste',
+    );
+    expect(container.querySelectorAll('[data-group-outline][data-uf="BA"]')).toHaveLength(2);
+    expect(
+      container.querySelector('[data-uf="BA"][data-layer="paint"]')?.getAttribute('fill'),
+    ).toBe('rgba(161, 161, 170, 0.24)');
   });
 
   it('zooms into BA with municipality paths while Brazil SVG stays mounted', async () => {

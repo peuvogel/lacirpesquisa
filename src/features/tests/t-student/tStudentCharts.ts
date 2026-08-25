@@ -133,13 +133,12 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
     {
       id: 'distribution',
       label: CHART_PRESET_LABELS.distribution,
-      visualType: 'grouped-columns',
+      visualType: 'dot',
       buildChart: ({ g1, g2, labels, result }) => {
         const { data, options } = buildTStudentDistChartData(g1, g2, labels[0], labels[1]);
-        const means = [result.m1, result.m2];
-        const peak = Math.max(...means, 0);
+        const peak = Math.max(...g1, ...g2, 0);
         return {
-          type: 'bar',
+          type: 'scatter',
           data,
           options: mergeChartOptions(options, {
             layout: { padding: { top: 36, right: 18, bottom: 10, left: 10 } },
@@ -153,10 +152,9 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
               },
               annotation: {
                 annotations: {
-                  ...meanValueAnnotations(means, [labels[0], labels[1]]),
                   showPValue: pValueAnnotation(
                     `p = ${fmtP(result.p)}`,
-                    labels[1],
+                    0.5,
                     peak,
                   ),
                 },
@@ -164,16 +162,15 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
             },
             scales: {
               y: {
-                beginAtZero: true,
-                grace: '22%',
+                grace: '12%',
               },
             },
           } as Parameters<typeof mergeChartOptions>[1]),
           ariaLabel: CHART_PRESET_LABELS.distribution,
         };
       },
-      defaultAxisLabels: { x: 'Grupo', y: 'Valor médio' },
-      annotationKeys: ['showMeanValues', 'showPValue'],
+      defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
+      annotationKeys: ['showPValue'],
     },
     {
       id: 'means-bar',
@@ -228,7 +225,7 @@ export function getDefaultTStudentChartPreset(
   _result: TStudentEngineOutput['result'],
   _labels: [string, string],
 ): string {
-  return 'diff';
+  return 'distribution';
 }
 
 export const tStudentChartPresets = buildTStudentChartPresets();

@@ -31,7 +31,12 @@ export function VariaveisPage() {
   const { researchDesign } = useSession();
 
   return researchDesign
-    ? <GuidedAnalysisWorkspace design={researchDesign} />
+    ? (
+        <GuidedAnalysisWorkspace
+          design={researchDesign}
+          initialGoal={researchDesign.goal ?? null}
+        />
+      )
     : <DirectCatalogPage />;
 }
 

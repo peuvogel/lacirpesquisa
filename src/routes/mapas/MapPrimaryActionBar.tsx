@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 
 export interface MapPrimaryActionBarProps {
   canReview: boolean;
+  analysisMode?: 'descriptive' | 'comparison';
+  blockedMessage?: string;
   analysisUnlocked?: boolean;
   onReview: () => void;
   onPasteTerritories: () => void;
@@ -24,6 +26,8 @@ export interface MapPrimaryActionBarProps {
 
 export function MapPrimaryActionBar({
   canReview,
+  analysisMode = 'comparison',
+  blockedMessage = 'Complete todos os grupos: território, doença, medida e período.',
   analysisUnlocked = false,
   onReview,
   onPasteTerritories,
@@ -42,7 +46,7 @@ export function MapPrimaryActionBar({
           data-testid="review-blocked-hint"
         >
           <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
-          Complete grupos, doença e período antes de continuar.
+          {blockedMessage}
         </p>
       ) : null}
 
@@ -53,7 +57,11 @@ export function MapPrimaryActionBar({
         onClick={onReview}
         data-testid="review-analyze-button"
       >
-        {analysisUnlocked ? 'Recomeçar análise' : 'Começar análise'}
+        {analysisUnlocked
+          ? 'Reabrir análise'
+          : analysisMode === 'descriptive'
+            ? 'Abrir análise descritiva'
+            : 'Revisar e analisar'}
       </Button>
 
       <div className="flex flex-wrap gap-2">

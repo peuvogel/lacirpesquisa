@@ -94,6 +94,12 @@ describe('kruskalCharts presets', () => {
     const presets = buildKruskalChartPresetsForOutput(output);
 
     expect(presets.some((preset) => preset.id === 'heatmap')).toBe(true);
+    expect(presets.some((preset) => preset.id === 'raw-data')).toBe(true);
+    expect(presets.find((preset) => preset.id === 'raw-data')?.buildChart(output).type).toBe(
+      'scatter',
+    );
+    const { getDefaultKruskalChartPreset } = await import('./kruskalCharts');
+    expect(getDefaultKruskalChartPreset()).toBe('raw-data');
   });
 
   it('omits heatmap preset when k > 6', async () => {
@@ -101,5 +107,6 @@ describe('kruskalCharts presets', () => {
     const presets = buildKruskalChartPresets(7);
     expect(presets.some((preset) => preset.id === 'heatmap')).toBe(false);
     expect(presets.some((preset) => preset.id === 'medians')).toBe(true);
+    expect(presets.some((preset) => preset.id === 'raw-data')).toBe(true);
   });
 });

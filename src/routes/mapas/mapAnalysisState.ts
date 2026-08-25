@@ -12,6 +12,7 @@ import { DISEASES, MEASURES, catalogIdFor, parseCatalogId } from '@/features/cat
 import { adaptGroup, adaptPeriods, validateResearchDesign } from '@/features/research/researchDesign';
 import type { LocationBasis, ResearchDesign, ResearchGeography } from '@/features/research/types';
 import type { ResearchDesignValidation } from '@/features/research/researchDesign';
+import { variableProfileIdForMapMeasure } from '@/features/research/variableProfiles';
 
 export type MapProvenance = 'catalog' | 'paste' | 'hybrid';
 
@@ -71,6 +72,7 @@ export type MapAnalysisAction =
   | { type: 'DELETE_GROUP'; groupId: string }
   | { type: 'MERGE_TERRITORIES_TO_GROUP'; groupId: string; territories: TerritoryRef[] }
   | { type: 'REMOVE_TERRITORIES_FROM_GROUP'; groupId: string; territories: TerritoryRef[] }
+  | { type: 'SET_GROUP_TERRITORIES'; groupId: string; territories: TerritoryRef[] }
   | { type: 'SET_ACTIVE_GROUP'; groupId: string | null }
   | { type: 'SET_GROUP_TIME'; groupId: string; time: GroupTimeConfig }
   | { type: 'SET_SHARED_TIME'; time: GroupTimeConfig }
@@ -113,14 +115,6 @@ export function preferredCatalogIdForDisease(diseaseId: string): string {
     if (getCatalogVariableById(id)?.loadable) return id;
   }
   return catalogIdFor('internacoes', diseaseId);
-}
-
-/** Disease×measure catalog ids from a reference group (for seeding new groups). */
-function sharedDiseaseCatalogIds(state: MapAnalysisState): string[] {
-  const ref =
-    state.groups.find((g) => g.id === state.activeGroupId) ?? state.groups[0] ?? null;
-  if (!ref) return [];
-  return ref.variableIds.filter((id) => Boolean(parseCatalogId(id)));
 }
 
 /**
@@ -213,7 +207,7 @@ export function createInitialMapAnalysisState(): MapAnalysisState {
     mapView: { level: 'uf' as GeoLevel },
     provenance: 'catalog',
     sharedTime: { mode: 'point' },
-    periodScope: 'shared',
+    periodScope: 'per-group',
     locationBasis: 'ocorrencia',
   };
 }
@@ -309,6 +303,17 @@ export function territoryOwner(
   );
 }
 
+/** All groups that explicitly contain a territory; overlap is a supported design. */
+export function groupsForTerritory(
+  state: MapAnalysisState,
+  territory: TerritoryRef,
+): MapAnalysisGroup[] {
+  const key = territoryKey(territory);
+  return state.groups.filter((group) =>
+    group.territoryIds.some((candidate) => territoryKey(candidate) === key),
+  );
+}
+
 function territoryLabel(t: TerritoryRef): string {
   if (t.level === 'municipio') return t.name || t.ibgeCode;
   return t.sigla ?? t.name;
@@ -319,13 +324,7 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
   switch (action.type) {
     case 'CREATE_GROUP': {
       if (state.groups.length >= MAX_GROUPS) return state;
-      const seedDiseases = sharedDiseaseCatalogIds(state);
-      const base = createEmptyGroup(action.name, action.territories ?? []);
-      const group = {
-        ...base,
-        time: cloneTime(state.sharedTime),
-        variableIds: seedDiseases.length > 0 ? [...seedDiseases] : base.variableIds,
-      };
+      const group = createEmptyGroup(action.name, action.territories ?? []);
       return {
         ...state,
         groups: [...state.groups, group],
@@ -342,26 +341,21 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
         );
         return {
           ...state,
-          groups: [{ ...group, time: cloneTime(state.sharedTime) }],
+          groups: [group],
           activeGroupId: group.id,
         };
       }
 
       const active = state.groups.find((group) => group.id === state.activeGroupId);
       if (!active) return state;
-      const available = action.territories.filter((territory) => {
-        const key = territoryKey(territory);
-        return !state.groups.some(
-          (group) =>
-            group.id !== active.id &&
-            group.territoryIds.some((candidate) => territoryKey(candidate) === key),
-        );
-      });
       return {
         ...state,
         groups: state.groups.map((group) =>
           group.id === active.id
-            ? { ...group, territoryIds: mergeTerritories(group.territoryIds, available) }
+            ? {
+                ...group,
+                territoryIds: mergeTerritories(group.territoryIds, action.territories),
+              }
             : group,
         ),
       };
@@ -408,6 +402,16 @@ export function mapAnalysisReducer(state: MapAnalysisState, action: MapAnalysisA
         ),
       };
     }
+
+    case 'SET_GROUP_TERRITORIES':
+      return {
+        ...state,
+        groups: state.groups.map((group) =>
+          group.id === action.groupId
+            ? { ...group, territoryIds: mergeTerritories([], action.territories) }
+            : group,
+        ),
+      };
 
     case 'SET_ACTIVE_GROUP':
       return { ...state, activeGroupId: action.groupId };
@@ -786,10 +790,7 @@ function geographyForTerritoryLevel(level: GeoLevel): ResearchGeography {
   }
 }
 
-/**
- * Transitional boundary for the legacy Mapas state. Disease ids remain shared
- * in legacy catalog selections; measures intentionally do not cross this boundary.
- */
+/** Preserva no desenho analítico o desfecho configurado dentro de cada grupo. */
 export function createResearchDesignFromMapState(state: MapAnalysisState): ResearchDesignValidation {
   const territoryLevels = [
     ...new Set(state.groups.flatMap((group) => group.territoryIds.map((territory) => territory.level))),
@@ -821,6 +822,19 @@ export function createResearchDesignFromMapState(state: MapAnalysisState): Resea
       ),
     ),
   ];
+  const groupOutcomes = Object.fromEntries(
+    state.groups.flatMap((group) => {
+      const outcome = group.variableIds
+        .map(parseCatalogId)
+        .find((value) => value !== null);
+      return outcome
+        ? [[group.id, {
+            diseaseId: outcome.diseaseId,
+            variableId: variableProfileIdForMapMeasure(outcome.measureId),
+          }]]
+        : [];
+    }),
+  );
   const period = adaptPeriods(state.periodScope, state.sharedTime, state.groups);
 
   if (!period) {
@@ -835,6 +849,7 @@ export function createResearchDesignFromMapState(state: MapAnalysisState): Resea
     geography: geographyForTerritoryLevel(territoryLevels[0]!),
     locationBasis: state.locationBasis,
     diseaseIds,
+    groupOutcomes,
     period,
   };
   return validateResearchDesign(design);

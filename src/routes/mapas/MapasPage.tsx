@@ -18,7 +18,6 @@ import { useSession } from '@/shared/session/SessionProvider';
 import { GuidedAnalysisWorkspace } from '@/routes/variaveis/GuidedAnalysisWorkspace';
 import { BrazilMapCanvas } from './BrazilMapCanvas';
 import { ChoroplethLegend } from './ChoroplethLegend';
-import { MapQuestionBuilder } from './MapQuestionBuilder';
 import { MapTestRecommendation } from './MapTestRecommendation';
 import { MapVariableList } from './MapVariableList';
 import {
@@ -38,15 +37,35 @@ import {
   createInitialMapAnalysisState,
   createResearchDesignFromMapState,
   resolveCatalogHandoffIds,
-  territoryOwner,
   useMapAnalysis,
 } from './mapAnalysisState';
 import { TerritoryPastePanel } from './TerritoryPastePanel';
-import {
-  createInitialMapQuestionDraft,
-  validateMapQuestion,
-  type MapQuestionDraft,
-} from './mapQuestionDraft';
+import { TerritoryDraftBar } from './TerritoryDraftBar';
+import { GroupConfigPanel } from './GroupConfigPanel';
+import { GroupComparisonReview } from './GroupComparisonReview';
+import { assessGroupComparison } from './comparisonAssessment';
+import type { ComparisonAxis } from './mapQuestionDraft';
+
+function territoryKey(territory: TerritoryRef): string {
+  return `${territory.level}:${territory.ibgeCode}`;
+}
+
+function mergeTerritories(existing: TerritoryRef[], incoming: TerritoryRef[]): TerritoryRef[] {
+  const merged = [...existing];
+  const seen = new Set(existing.map(territoryKey));
+  for (const territory of incoming) {
+    const key = territoryKey(territory);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(territory);
+  }
+  return merged;
+}
+
+function withoutTerritories(existing: TerritoryRef[], removed: TerritoryRef[]): TerritoryRef[] {
+  const keys = new Set(removed.map(territoryKey));
+  return existing.filter((territory) => !keys.has(territoryKey(territory)));
+}
 
 function siglasToTerritories(siglas: string[]): TerritoryRef[] {
   return siglas.map((sigla) => {
@@ -71,7 +90,7 @@ export interface MapasLocationState {
   catalogVariableIds?: string[];
 }
 
-type ContextPanelMode = 'explore' | 'paste' | 'group';
+type ContextPanelMode = 'draft' | 'paste' | 'group';
 
 const TABLET_BREAKPOINT = 1024;
 
@@ -92,14 +111,21 @@ function useIsTabletViewport(): boolean {
   return isTablet;
 }
 
+interface GroupMembership {
+  groupIndex: number;
+  groupName: string;
+}
+
 function collectGroupMembership(
   groups: ReturnType<typeof useMapAnalysis>['state']['groups'],
-): Record<string, { groupIndex: number; groupName: string }> {
-  const membership: Record<string, { groupIndex: number; groupName: string }> = {};
+): Record<string, GroupMembership[]> {
+  const membership: Record<string, GroupMembership[]> = {};
   groups.forEach((group, index) => {
-    for (const t of group.territoryIds) {
-      if (t.level === 'uf' && t.sigla) {
-        membership[t.sigla] = { groupIndex: index, groupName: group.name };
+    for (const territory of group.territoryIds) {
+      if (territory.level === 'uf' && territory.sigla) {
+        const current = membership[territory.sigla] ?? [];
+        current.push({ groupIndex: index, groupName: group.name });
+        membership[territory.sigla] = current;
       }
     }
   });
@@ -108,16 +134,27 @@ function collectGroupMembership(
 
 function collectGroupMunicipioMembership(
   groups: ReturnType<typeof useMapAnalysis>['state']['groups'],
-): Record<string, { groupIndex: number; groupName: string }> {
-  const membership: Record<string, { groupIndex: number; groupName: string }> = {};
+): Record<string, GroupMembership[]> {
+  const membership: Record<string, GroupMembership[]> = {};
   groups.forEach((group, index) => {
-    for (const t of group.territoryIds) {
-      if (t.level === 'municipio' && t.ibgeCode) {
-        membership[t.ibgeCode] = { groupIndex: index, groupName: group.name };
+    for (const territory of group.territoryIds) {
+      if (territory.level === 'municipio') {
+        const current = membership[territory.ibgeCode] ?? [];
+        current.push({ groupIndex: index, groupName: group.name });
+        membership[territory.ibgeCode] = current;
       }
     }
   });
   return membership;
+}
+
+function comparisonAxisForDesign(
+  assessment: ReturnType<typeof assessGroupComparison>,
+): ComparisonAxis {
+  if (assessment.differingDimensions.includes('territory')) return 'place';
+  if (assessment.differingDimensions.includes('period')) return 'period';
+  if (assessment.differingDimensions.includes('disease')) return 'disease';
+  return 'none';
 }
 
 export function MapasPage() {
@@ -130,82 +167,104 @@ export function MapasPage() {
     setResearchDesign,
     mapAnalysis,
   } = useSession();
-  const { state, dispatch, derived } = useMapAnalysis(mapAnalysis ?? undefined);
+  const { state, dispatch } = useMapAnalysis(mapAnalysis ?? undefined);
   const isTablet = useIsTabletViewport();
   const reduceMotion = useReducedMotion();
 
+  const [territoryDraft, setTerritoryDraft] = useState<TerritoryRef[]>([]);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [pendingCatalogIds, setPendingCatalogIds] = useState<string[]>([]);
   const [hoveredUF, setHoveredUF] = useState<string | null>(null);
   const [previewUFs, setPreviewUFs] = useState<string[]>([]);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [contextPanelMode, setContextPanelMode] = useState<ContextPanelMode>('explore');
+  const [contextPanelMode, setContextPanelMode] = useState<ContextPanelMode>(
+    state.activeGroupId ? 'group' : 'draft',
+  );
+  const [groupPanelOpen, setGroupPanelOpen] = useState(true);
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const [confirmedDesign, setConfirmedDesign] = useState<ResearchDesign | null>(null);
-  const [questionDraft, setQuestionDraft] = useState<MapQuestionDraft>(
-    createInitialMapQuestionDraft,
-  );
-  const [confirmedQuestionKey, setConfirmedQuestionKey] = useState<string | null>(null);
+  const [confirmedConfigurationKey, setConfirmedConfigurationKey] = useState<string | null>(null);
 
   const analysisRef = useRef<HTMLDivElement>(null);
-  const questionRef = useRef<HTMLDivElement>(null);
-  const questionWasVisibleRef = useRef(false);
+  const configRef = useRef<HTMLDivElement>(null);
 
   const activeGroup = useMemo(
     () => state.groups.find((group) => group.id === state.activeGroupId) ?? null,
     [state.activeGroupId, state.groups],
   );
-  const hasPopulation = state.groups.some((group) => group.territoryIds.length > 0);
-
   const activeGroupIndex = state.groups.findIndex((group) => group.id === state.activeGroupId);
-  const activeSelectedUFs = useMemo(
+  const editingGroup = useMemo(
+    () => state.groups.find((group) => group.id === editingGroupId) ?? null,
+    [editingGroupId, state.groups],
+  );
+  const draftSelectedUFs = useMemo(
     () =>
-      activeGroup?.territoryIds
+      territoryDraft
         .filter((territory) => territory.level === 'uf' && territory.sigla)
-        .map((territory) => territory.sigla!) ?? [],
-    [activeGroup],
+        .map((territory) => territory.sigla!),
+    [territoryDraft],
   );
-  const activeSelectedMunicipios = useMemo(
+  const draftSelectedMunicipios = useMemo(
     () =>
-      activeGroup?.territoryIds
+      territoryDraft
         .filter((territory) => territory.level === 'municipio')
-        .map((territory) => territory.ibgeCode) ?? [],
-    [activeGroup],
+        .map((territory) => territory.ibgeCode),
+    [territoryDraft],
   );
+  const draftKeys = useMemo(() => new Set(territoryDraft.map(territoryKey)), [territoryDraft]);
 
-  const questionValidation = useMemo(
-    () => validateMapQuestion(state, questionDraft),
-    [questionDraft, state],
-  );
-  const questionKey = `${questionDraft.comparisonAxis}:${questionDraft.objective ?? 'unset'}`;
+  const assessment = useMemo(() => assessGroupComparison(state.groups), [state.groups]);
   const researchDesignResult = useMemo(
-    () => (derived.canReview ? createResearchDesignFromMapState(state) : null),
-    [derived.canReview, state],
+    () => (assessment.canDescribe ? createResearchDesignFromMapState(state) : null),
+    [assessment.canDescribe, state],
   );
-  const researchDesign =
-    researchDesignResult?.ok && questionValidation.safeToStart && questionDraft.objective
-      ? { ...researchDesignResult.value, goal: questionDraft.objective }
-      : null;
+  const researchDesign = useMemo(() => {
+    if (!researchDesignResult?.ok) return null;
+    return {
+      ...researchDesignResult.value,
+      comparisonKind: assessment.designKind,
+      goal:
+        state.groups.length > 1 && assessment.canInfer
+          ? ('describe_and_compare' as const)
+          : ('describe' as const),
+    };
+  }, [assessment.canInfer, assessment.designKind, researchDesignResult, state.groups.length]);
   const currentDesignFingerprint = researchDesign ? fingerprintResearchDesign(researchDesign) : null;
+  const currentConfigurationKey = useMemo(
+    () =>
+      JSON.stringify(
+        state.groups.map((group) => ({
+          id: group.id,
+          territories: group.territoryIds.map(territoryKey).sort(),
+          time: group.time,
+          variableIds: [...group.variableIds].sort(),
+        })),
+      ),
+    [state.groups],
+  );
   const confirmedFingerprint = confirmedDesign ? fingerprintResearchDesign(confirmedDesign) : null;
   const visibleConfirmedDesign =
-    confirmedFingerprint === currentDesignFingerprint && confirmedQuestionKey === questionKey
+    confirmedFingerprint === currentDesignFingerprint &&
+    confirmedConfigurationKey === currentConfigurationKey
       ? confirmedDesign
       : null;
 
   useEffect(() => {
     if (
       confirmedFingerprint &&
-      (confirmedFingerprint !== currentDesignFingerprint || confirmedQuestionKey !== questionKey)
+      (confirmedFingerprint !== currentDesignFingerprint ||
+        confirmedConfigurationKey !== currentConfigurationKey)
     ) {
       setConfirmedDesign(null);
-      setConfirmedQuestionKey(null);
+      setConfirmedConfigurationKey(null);
       setGuidedAnalysis(null);
       setResearchDesign(null);
     }
   }, [
     confirmedFingerprint,
-    confirmedQuestionKey,
+    confirmedConfigurationKey,
+    currentConfigurationKey,
     currentDesignFingerprint,
-    questionKey,
     setGuidedAnalysis,
     setResearchDesign,
   ]);
@@ -216,73 +275,55 @@ export function MapasPage() {
     [state.groups],
   );
 
-  const markInteracted = useCallback(() => {
-    setHasInteracted(true);
-  }, []);
+  const markInteracted = useCallback(() => setHasInteracted(true), []);
 
-  const handleHoverUF = useCallback(
-    (uf: string | null) => {
-      if (uf !== null) markInteracted();
-      setHoveredUF(uf);
+  const toggleDraftTerritories = useCallback(
+    (territories: TerritoryRef[], checked?: boolean) => {
+      if (territories.length === 0) return;
+      setTerritoryDraft((current) => {
+        const allSelected = territories.every((territory) =>
+          current.some((candidate) => territoryKey(candidate) === territoryKey(territory)),
+        );
+        const shouldAdd = checked ?? !allSelected;
+        return shouldAdd
+          ? mergeTerritories(current, territories)
+          : withoutTerritories(current, territories);
+      });
     },
-    [markInteracted],
+    [],
   );
 
   const handleToggleUF = useCallback(
     (uf: string) => {
       markInteracted();
-      const territory = siglasToTerritories([uf])[0]!;
-      const owner = territoryOwner(state, territory);
-      if (owner) {
-        dispatch(
-          owner.id === state.activeGroupId
-            ? { type: 'REMOVE_TERRITORIES_FROM_GROUP', groupId: owner.id, territories: [territory] }
-            : { type: 'SET_ACTIVE_GROUP', groupId: owner.id },
-        );
-      } else {
-        dispatch({ type: 'ASSIGN_TERRITORIES_TO_ACTIVE', territories: [territory] });
-      }
+      toggleDraftTerritories(siglasToTerritories([uf]));
+      setContextPanelMode('draft');
       setPreviewUFs([]);
-      setContextPanelMode('group');
     },
-    [dispatch, markInteracted, state],
-  );
-
-  const applyTerritoriesToActive = useCallback(
-    (territories: TerritoryRef[], checked: boolean) => {
-      if (territories.length === 0) return;
-      if (checked) {
-        dispatch({ type: 'ASSIGN_TERRITORIES_TO_ACTIVE', territories });
-      } else if (state.activeGroupId) {
-        dispatch({
-          type: 'REMOVE_TERRITORIES_FROM_GROUP',
-          groupId: state.activeGroupId,
-          territories,
-        });
-      }
-    },
-    [dispatch, state.activeGroupId],
+    [markInteracted, toggleDraftTerritories],
   );
 
   const handleToggleRegion = useCallback(
     (presetId: RegionPresetId, checked: boolean) => {
       markInteracted();
-      applyTerritoriesToActive(resolvePresetTerritories(presetId), checked);
+      toggleDraftTerritories(resolvePresetTerritories(presetId), checked);
+      setContextPanelMode('draft');
       setPreviewUFs([]);
     },
-    [applyTerritoriesToActive, markInteracted],
+    [markInteracted, toggleDraftTerritories],
   );
 
   const handleToggleMeso = useCallback(
     (_mesoId: string, mesoCode: string, checked: boolean) => {
       markInteracted();
-      applyTerritoriesToActive(
+      toggleDraftTerritories(
         municipioIdsToTerritories(municipalityIdsForMeso(mesoCode)),
         checked,
       );
+      setContextPanelMode('draft');
       setPreviewUFs([]);
     },
-    [applyTerritoriesToActive, markInteracted],
+    [markInteracted, toggleDraftTerritories],
   );
 
   const handleToggleDrillFeature = useCallback(
@@ -295,104 +336,121 @@ export function MapasPage() {
           : state.mapView.level === 'health-macro'
             ? municipalityIdsForHealthMacro(featureId)
             : [];
-      const territories = municipioIdsToTerritories(ids);
-      if (territories.length === 0) return;
-
-      const owners = territories.map((territory) => territoryOwner(state, territory));
-      const firstOwner = owners[0];
-      const allOwnedBySame =
-        Boolean(firstOwner) && owners.every((owner) => owner?.id === firstOwner?.id);
-      if (allOwnedBySame && firstOwner) {
-        dispatch(
-          firstOwner.id === state.activeGroupId
-            ? {
-                type: 'REMOVE_TERRITORIES_FROM_GROUP',
-                groupId: firstOwner.id,
-                territories,
-              }
-            : { type: 'SET_ACTIVE_GROUP', groupId: firstOwner.id },
-        );
-      } else {
-        dispatch({ type: 'ASSIGN_TERRITORIES_TO_ACTIVE', territories });
-      }
-      setContextPanelMode('group');
+      toggleDraftTerritories(municipioIdsToTerritories(ids));
+      setContextPanelMode('draft');
     },
-    [dispatch, markInteracted, state],
+    [markInteracted, state.mapView.level, toggleDraftTerritories],
   );
 
   const isDrillFeatureSelected = useCallback(
     (featureId: string) => {
-      const level = state.mapView.level;
-      const ids = level === 'municipio'
-        ? [featureId]
-        : level === 'meso'
-          ? municipalityIdsForMeso(featureId)
-          : level === 'health-macro'
-            ? municipalityIdsForHealthMacro(featureId)
-            : [];
-      const first = ids.length > 0 ? groupMunicipioMembership[ids[0]!] : undefined;
-      return Boolean(
-        first && ids.every((id) => groupMunicipioMembership[id]?.groupIndex === first.groupIndex),
-      );
+      const ids =
+        state.mapView.level === 'municipio'
+          ? [featureId]
+          : state.mapView.level === 'meso'
+            ? municipalityIdsForMeso(featureId)
+            : state.mapView.level === 'health-macro'
+              ? municipalityIdsForHealthMacro(featureId)
+              : [];
+      return ids.length > 0 && ids.every((id) => draftKeys.has(`municipio:${id}`));
     },
-    [groupMunicipioMembership, state.mapView.level],
+    [draftKeys, state.mapView.level],
   );
 
-  const handlePreviewRegion = useCallback((siglas: string[] | null) => {
-    setPreviewUFs(siglas ?? []);
+  const createDraftGroup = useCallback(() => {
+    if (territoryDraft.length === 0) return;
+    if (editingGroupId) {
+      dispatch({
+        type: 'SET_GROUP_TERRITORIES',
+        groupId: editingGroupId,
+        territories: territoryDraft,
+      });
+      dispatch({ type: 'SET_ACTIVE_GROUP', groupId: editingGroupId });
+      setEditingGroupId(null);
+      setTerritoryDraft([]);
+      setContextPanelMode('group');
+      setGroupPanelOpen(true);
+      return;
+    }
+    const groupNumber = state.groups.length + 1;
+    dispatch({
+      type: 'CREATE_GROUP',
+      name: `Grupo ${groupNumber}`,
+      territories: territoryDraft,
+    });
+    if (pendingCatalogIds.length > 0) {
+      dispatch({ type: 'APPLY_CATALOG_VARIABLE_IDS', variableIds: pendingCatalogIds });
+      setPendingCatalogIds([]);
+    }
+    setTerritoryDraft([]);
+    setContextPanelMode('group');
+    setGroupPanelOpen(true);
+    requestAnimationFrame(() => {
+      configRef.current?.focus({ preventScroll: true });
+      configRef.current?.scrollIntoView?.({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+  }, [dispatch, editingGroupId, pendingCatalogIds, reduceMotion, state.groups.length, territoryDraft]);
+
+  const editGroupTerritories = useCallback((groupId: string) => {
+    const group = state.groups.find((candidate) => candidate.id === groupId);
+    if (!group) return;
+    dispatch({ type: 'SET_ACTIVE_GROUP', groupId });
+    setEditingGroupId(groupId);
+    setTerritoryDraft(group.territoryIds);
+    setContextPanelMode('draft');
+    setPreviewUFs([]);
+  }, [dispatch, state.groups]);
+
+  const cancelTerritoryEdit = useCallback(() => {
+    setEditingGroupId(null);
+    setTerritoryDraft([]);
+    setContextPanelMode('group');
+    setGroupPanelOpen(true);
   }, []);
 
-  const handlePasteMatched = useCallback(
-    (siglas: string[]) => {
-      markInteracted();
-      applyTerritoriesToActive(siglasToTerritories(siglas), true);
-    },
-    [applyTerritoriesToActive, markInteracted],
-  );
+  const startNewGroup = useCallback(() => {
+    setTerritoryDraft([]);
+    setEditingGroupId(null);
+    setContextPanelMode('draft');
+    setPreviewUFs([]);
+  }, []);
 
-  const handlePasteTerritories = useCallback(
-    (territories: TerritoryRef[]) => {
-      markInteracted();
-      applyTerritoriesToActive(territories, true);
-    },
-    [applyTerritoriesToActive, markInteracted],
-  );
+  const selectConfirmedGroup = useCallback((groupId: string) => {
+    dispatch({ type: 'SET_ACTIVE_GROUP', groupId });
+    setEditingGroupId(null);
+    setContextPanelMode('group');
+    setGroupPanelOpen(true);
+  }, [dispatch]);
 
   const handleSetMapView = useCallback(
-    (mapView: typeof state.mapView) => {
-      dispatch({ type: 'SET_MAP_VIEW', mapView });
-    },
+    (mapView: typeof state.mapView) => dispatch({ type: 'SET_MAP_VIEW', mapView }),
     [dispatch],
   );
 
-  const clearTransientMapState = useCallback(() => {
-    setHoveredUF(null);
-    setPreviewUFs([]);
-  }, []);
-
   const clearAllWork = useCallback(() => {
     dispatch({ type: 'REPLACE_STATE', state: createInitialMapAnalysisState() });
+    setTerritoryDraft([]);
+    setEditingGroupId(null);
+    setPendingCatalogIds([]);
     setPreviewUFs([]);
     setHoveredUF(null);
-    setContextPanelMode('explore');
+    setContextPanelMode('draft');
     setClearAllOpen(false);
     setConfirmedDesign(null);
-    setConfirmedQuestionKey(null);
-    setQuestionDraft(createInitialMapQuestionDraft());
+    setConfirmedConfigurationKey(null);
     setGuidedAnalysis(null);
     setResearchDesign(null);
   }, [dispatch, setGuidedAnalysis, setResearchDesign]);
-
-  const openPasteMode = useCallback(() => {
-    setContextPanelMode('paste');
-  }, []);
 
   const startAnalysis = useCallback(() => {
     if (!researchDesign) return;
     setDataset(null);
     setResearchDesign(researchDesign);
     setConfirmedDesign(researchDesign);
-    setConfirmedQuestionKey(questionKey);
+    setConfirmedConfigurationKey(currentConfigurationKey);
     requestAnimationFrame(() => {
       const section = analysisRef.current;
       if (typeof section?.scrollIntoView !== 'function') return;
@@ -402,14 +460,17 @@ export function MapasPage() {
         block: 'start',
       });
     });
-  }, [questionKey, reduceMotion, researchDesign, setDataset, setResearchDesign]);
+  }, [currentConfigurationKey, reduceMotion, researchDesign, setDataset, setResearchDesign]);
 
   const applySelectionPreset = useCallback(
     (presetId: GroupSelectionPresetId) => {
       markInteracted();
       dispatch({ type: 'REPLACE_STATE', state: buildPresetMapState(presetId) });
+      setTerritoryDraft([]);
+      setEditingGroupId(null);
       setPreviewUFs([]);
       setContextPanelMode('group');
+      setGroupPanelOpen(true);
     },
     [dispatch, markInteracted],
   );
@@ -419,113 +480,104 @@ export function MapasPage() {
   }, [state, setMapAnalysis]);
 
   useEffect(() => {
-    if (!hasPopulation) {
-      questionWasVisibleRef.current = false;
-      return;
-    }
-    if (questionWasVisibleRef.current) return;
-    questionWasVisibleRef.current = true;
-    requestAnimationFrame(() => {
-      const step = questionRef.current;
-      if (typeof step?.scrollIntoView !== 'function') return;
-      step.focus({ preventScroll: true });
-      step.scrollIntoView({
-        behavior: reduceMotion ? 'auto' : 'smooth',
-        block: 'start',
-      });
-    });
-  }, [hasPopulation, reduceMotion]);
-
-  useEffect(() => {
     const navState = location.state as MapasLocationState | null;
     const rawIds = navState?.catalogVariableIds;
     if (!Array.isArray(rawIds) || rawIds.length === 0) return;
-
     const resolved = resolveCatalogHandoffIds(rawIds);
     if (resolved.length > 0) {
-      dispatch({ type: 'APPLY_CATALOG_VARIABLE_IDS', variableIds: resolved });
+      if (state.activeGroupId) {
+        dispatch({ type: 'APPLY_CATALOG_VARIABLE_IDS', variableIds: resolved });
+        setContextPanelMode('group');
+      } else {
+        setPendingCatalogIds(resolved);
+        setContextPanelMode('draft');
+      }
       setHasInteracted(true);
-      setContextPanelMode('group');
     }
     navigate(location.pathname, { replace: true, state: null });
-  }, [dispatch, location.pathname, location.state, navigate]);
+  }, [dispatch, location.pathname, location.state, navigate, state.activeGroupId]);
 
   useEffect(() => {
-    if (state.activeGroupId && contextPanelMode !== 'paste') {
-      setContextPanelMode('group');
-    }
-  }, [state.activeGroupId, contextPanelMode]);
+    if (state.activeGroupId && contextPanelMode === 'group') setGroupPanelOpen(true);
+  }, [contextPanelMode, state.activeGroupId]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      if (event.shiftKey && state.groups.length > 0) {
+      if (event.shiftKey && (state.groups.length > 0 || territoryDraft.length > 0)) {
         event.preventDefault();
         setClearAllOpen(true);
         return;
       }
-      clearTransientMapState();
+      setHoveredUF(null);
+      setPreviewUFs([]);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [clearTransientMapState, state.groups.length]);
-
-  const renderExplorePanel = () => (
-    <div className="flex h-full min-h-0 items-center justify-center rounded-2xl border border-white/10 bg-surface/60 p-6 backdrop-blur-md">
-      <EmptyState
-        heading="Explore o mapa do Brasil"
-        body="Clique em estados ou municípios para definir a População selecionada. Doença e período ficam nos painéis de cima; as variáveis serão escolhidas na próxima etapa."
-      />
-    </div>
-  );
-
-  const renderQuestionBuilder = () =>
-    hasPopulation ? (
-      <div
-        ref={questionRef}
-        data-testid="map-question-step"
-        id="pergunta-do-recorte"
-        tabIndex={-1}
-        className="h-full min-h-0 scroll-mt-6 overflow-y-auto pr-1 focus:outline-none"
-      >
-        <MapQuestionBuilder
-          state={state}
-          draft={questionDraft}
-          dispatch={dispatch}
-          onDraftChange={setQuestionDraft}
-        />
-      </div>
-    ) : null;
+  }, [state.groups.length, territoryDraft.length]);
 
   const renderContextBody = () => {
     if (contextPanelMode === 'paste') {
       return (
         <TerritoryPastePanel
-          onMatched={handlePasteMatched}
-          onMatchedTerritories={handlePasteTerritories}
+          onMatched={(siglas) => toggleDraftTerritories(siglasToTerritories(siglas), true)}
+          onMatchedTerritories={(territories) => toggleDraftTerritories(territories, true)}
           activeUfScope={state.mapView.level !== 'uf' ? state.mapView.parentCode : undefined}
         />
       );
     }
 
-    const questionBuilder = renderQuestionBuilder();
-    if (questionBuilder) return questionBuilder;
+    if (contextPanelMode === 'group' && activeGroup) {
+      return (
+        <div
+          ref={configRef}
+          data-testid="map-group-config-step"
+          tabIndex={-1}
+          className="scroll-mt-6 focus:outline-none"
+        >
+          <GroupConfigPanel
+            group={activeGroup}
+            groupIndex={Math.max(0, activeGroupIndex)}
+            dispatch={dispatch}
+            open={groupPanelOpen}
+            onOpenChange={setGroupPanelOpen}
+            onEditTerritories={() => editGroupTerritories(activeGroup.id)}
+          />
+        </div>
+      );
+    }
 
-    return renderExplorePanel();
+    return (
+      <div className="flex min-h-[18rem] items-center justify-center rounded-2xl border border-white/10 bg-surface/60 p-6 backdrop-blur-md">
+        <EmptyState
+          heading="Primeiro, delimite um grupo"
+          body={
+            pendingCatalogIds.length > 0
+              ? 'A variável escolhida no catálogo está reservada. Selecione os territórios no mapa e confirme o grupo.'
+              : 'Clique nos territórios no mapa. Revise a cesta Seleção atual e confirme em Criar Grupo.'
+          }
+        />
+      </div>
+    );
   };
 
   const actionBar = (
     <MapPrimaryActionBar
       canReview={researchDesign !== null}
+      analysisMode={assessment.canInfer ? 'comparison' : 'descriptive'}
       analysisUnlocked={visibleConfirmedDesign !== null}
       onReview={startAnalysis}
-      onPasteTerritories={openPasteMode}
+      onPasteTerritories={() => setContextPanelMode('paste')}
       onClearMap={() => setClearAllOpen(true)}
       clearConfirmOpen={clearAllOpen}
       onClearConfirmOpenChange={setClearAllOpen}
       onConfirmClear={clearAllWork}
     />
   );
+
+  const comparisonReview = state.groups.length > 0 ? (
+    <GroupComparisonReview groups={state.groups} assessment={assessment} />
+  ) : null;
 
   return (
     <motion.div
@@ -535,108 +587,114 @@ export function MapasPage() {
       transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
     >
       <h1 className="font-sans text-display font-bold tracking-tight text-text">Mapas</h1>
-      <p className="mt-1 max-w-2xl font-sans text-sm text-text-muted">
-        Selecione territórios, defina populações, doenças e período — tudo no site, sem
-        TABNET na aula.
+      <p className="mt-1 max-w-3xl font-sans text-sm leading-relaxed text-text-muted">
+        Primeiro selecione e confirme cada grupo. Depois defina, dentro dele, território,
+        doença, medida e período. A comparação só é liberada quando o desenho é válido.
       </p>
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
-        <section
-          className="lacir-mapas-map w-full shrink-0 lg:w-[58%]"
-          aria-label="Mapa do Brasil"
-        >
-          <MapBreadcrumb
-            className="mb-3"
-            mapView={state.mapView}
-            onNavigate={handleSetMapView}
-          />
+        <section className="lacir-mapas-map w-full shrink-0 lg:w-[58%]" aria-label="Mapa do Brasil">
+          <MapBreadcrumb className="mb-3" mapView={state.mapView} onNavigate={handleSetMapView} />
 
           <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-elevated/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <PopulationGroupBar
-                state={state}
-                dispatch={dispatch}
-                onApplySelectionPreset={applySelectionPreset}
+            <PopulationGroupBar
+              state={state}
+              dispatch={dispatch}
+              onNewGroup={startNewGroup}
+              onSelectGroup={selectConfirmedGroup}
+              onApplySelectionPreset={applySelectionPreset}
+            />
+
+            <div className="px-3 pt-3">
+              <TerritoryDraftBar
+                territories={territoryDraft}
+                nextGroupNumber={state.groups.length + 1}
+                onCreateGroup={createDraftGroup}
+                onClear={() => setTerritoryDraft([])}
+                editingGroupName={editingGroup?.name}
+                onCancelEdit={editingGroup ? cancelTerritoryEdit : undefined}
+                onRemove={(territory) =>
+                  setTerritoryDraft((current) => withoutTerritories(current, [territory]))
+                }
+              />
+            </div>
+
+            <div className="relative px-2 pb-2 pt-1">
+              <BrazilMapCanvas
+                hoveredUF={hoveredUF}
+                selectedUFs={draftSelectedUFs}
+                highlightedUFs={previewUFs}
+                groupMembership={groupMembership}
+                groupMunicipioMembership={groupMunicipioMembership}
+                onHoverUF={(uf) => {
+                  if (uf) markInteracted();
+                  setHoveredUF(uf);
+                }}
+                onToggleUF={handleToggleUF}
+                choroplethValues={{}}
+                activeVariableId={null}
+                mapView={state.mapView}
+                onSetMapView={handleSetMapView}
+                selectedMunicipioIds={draftSelectedMunicipios}
+                onToggleDrillFeature={handleToggleDrillFeature}
+                isDrillFeatureSelected={isDrillFeatureSelected}
+                pendingGroupIndex={
+                  editingGroup
+                    ? Math.max(0, state.groups.findIndex((group) => group.id === editingGroup.id))
+                    : state.groups.length
+                }
               />
 
-              <div className="relative px-2 pb-2 pt-1">
-                <BrazilMapCanvas
-                  hoveredUF={hoveredUF}
-                  selectedUFs={activeSelectedUFs}
-                  highlightedUFs={previewUFs}
-                  groupMembership={groupMembership}
-                  groupMunicipioMembership={groupMunicipioMembership}
-                  onHoverUF={handleHoverUF}
-                  onToggleUF={handleToggleUF}
-                  choroplethValues={{}}
-                  activeVariableId={null}
-                  mapView={state.mapView}
-                  onSetMapView={handleSetMapView}
-                  selectedMunicipioIds={activeSelectedMunicipios}
-                  onToggleDrillFeature={handleToggleDrillFeature}
-                  isDrillFeatureSelected={isDrillFeatureSelected}
-                  pendingGroupIndex={Math.max(0, activeGroupIndex)}
-                />
+              <PresetTerritoryCarousel
+                visible
+                focusUfSigla={state.mapView.level !== 'uf' ? state.mapView.parentCode ?? null : null}
+                selectedUFs={draftSelectedUFs}
+                selectedMunicipioIds={draftSelectedMunicipios}
+                onToggleRegion={handleToggleRegion}
+                onToggleMeso={handleToggleMeso}
+                onPreviewRegion={(siglas) => setPreviewUFs(siglas ?? [])}
+              />
 
-                <PresetTerritoryCarousel
-                  visible
-                  focusUfSigla={
-                    state.mapView.level !== 'uf' ? state.mapView.parentCode ?? null : null
-                  }
-                  selectedUFs={activeSelectedUFs}
-                  selectedMunicipioIds={activeSelectedMunicipios}
-                  onToggleRegion={handleToggleRegion}
-                  onToggleMeso={handleToggleMeso}
-                  onPreviewRegion={handlePreviewRegion}
-                />
-
-                {state.groups.length > 0 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setClearAllOpen(true)}
-                    aria-label="Limpar mapa"
-                    title="Limpar seleção e grupos"
-                    className={cn(
-                      'pointer-events-auto absolute bottom-3 right-3 z-20 h-8 gap-1.5 rounded-full border border-white/10 bg-elevated/80 px-2.5 font-sans text-[11px] font-medium text-text-muted shadow-sm backdrop-blur-sm',
-                      'transition-[color,background-color,border-color,opacity,transform] duration-150',
-                      'hover:-translate-y-0.5 hover:border-white/20 hover:bg-elevated hover:text-text',
-                      'focus-visible:ring-2 focus-visible:ring-accent/50',
-                    )}
-                  >
-                    <Eraser className="size-3.5 opacity-70" aria-hidden />
-                    Limpar
-                  </Button>
-                ) : null}
-              </div>
+              {state.groups.length > 0 || territoryDraft.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setClearAllOpen(true)}
+                  aria-label="Limpar mapa"
+                  title="Limpar seleção e grupos"
+                  className={cn(
+                    'pointer-events-auto absolute bottom-3 right-3 z-20 h-8 gap-1.5 rounded-full border border-white/10 bg-elevated/80 px-2.5 font-sans text-[11px] font-medium text-text-muted shadow-sm backdrop-blur-sm',
+                    'transition-[color,background-color,border-color,opacity,transform] duration-150 hover:-translate-y-0.5 hover:border-white/20 hover:bg-elevated hover:text-text',
+                  )}
+                >
+                  <Eraser className="size-3.5 opacity-70" aria-hidden />
+                  Limpar
+                </Button>
+              ) : null}
+            </div>
           </div>
 
-          <ChoroplethLegend
-            values={[]}
-            activeVariableId={null}
-          />
-          <SihDivergenceNotes
-            variableIds={state.groups.flatMap((group) => group.variableIds)}
-          />
+          <ChoroplethLegend values={[]} activeVariableId={null} />
+          <SihDivergenceNotes variableIds={state.groups.flatMap((group) => group.variableIds)} />
           {!hasInteracted ? <MapLegendHint /> : null}
         </section>
 
         {!isTablet ? (
           <div
-            className="lacir-mapas-panel flex w-full shrink-0 flex-col overflow-hidden lg:h-[min(90vh,980px)] lg:w-[42%] lg:max-h-[min(90vh,980px)]"
-            aria-label="Variáveis e configuração"
+            className="lacir-mapas-panel flex w-full shrink-0 flex-col lg:max-h-[min(90vh,980px)] lg:w-[42%]"
+            aria-label="Grupos e configuração"
           >
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
               {renderContextBody()}
+              {comparisonReview}
             </div>
             <div className="mt-3 shrink-0 pt-1">{actionBar}</div>
           </div>
         ) : (
-          <div
-            className="w-full min-w-0 space-y-4 lg:hidden"
-            aria-label="Pergunta e configuração"
-          >
-            <div className="min-h-0">{renderContextBody()}</div>
+          <div className="w-full min-w-0 space-y-4 lg:hidden" aria-label="Grupos e configuração">
+            {renderContextBody()}
+            {comparisonReview}
             <div className="sticky bottom-0 z-20 rounded-xl border border-border bg-surface/90 p-4 backdrop-blur-md">
               {actionBar}
             </div>
@@ -662,7 +720,7 @@ export function MapasPage() {
             renderTestSelector={(props) => (
               <MapTestRecommendation
                 {...props}
-                comparisonAxis={questionDraft.comparisonAxis}
+                comparisonAxis={comparisonAxisForDesign(assessment)}
               />
             )}
           />

@@ -19,10 +19,13 @@ import {
   type MapAnalysisAction,
   type MapAnalysisState,
 } from './mapAnalysisState';
+import { groupCompletionIssues } from './comparisonAssessment';
 
 export interface PopulationGroupBarProps {
   state: MapAnalysisState;
   dispatch: Dispatch<MapAnalysisAction>;
+  onNewGroup: () => void;
+  onSelectGroup?: (groupId: string) => void;
   onApplySelectionPreset?: (presetId: GroupSelectionPresetId) => void;
   className?: string;
 }
@@ -132,14 +135,11 @@ function PresetMenu({
   );
 }
 
-function comparatorName(state: MapAnalysisState): string {
-  const count = state.groups.filter((group) => /^Comparador(?:\s|$)/i.test(group.name)).length;
-  return count === 0 ? 'Comparador' : `Comparador ${count + 1}`;
-}
-
 export function PopulationGroupBar({
   state,
   dispatch,
+  onNewGroup,
+  onSelectGroup,
   onApplySelectionPreset,
   className,
 }: PopulationGroupBarProps) {
@@ -147,12 +147,12 @@ export function PopulationGroupBar({
   const activeGroup = activeIndex >= 0 ? state.groups[activeIndex]! : null;
   const accent = groupColor(Math.max(0, activeIndex));
   const instruction = activeGroup
-    ? `Clique no mapa para adicionar à ${activeGroup.name}`
-    : 'Clique no mapa para criar a População selecionada';
+    ? `${activeGroup.name} está ativo. A configuração abaixo pertence somente a este grupo.`
+    : 'Nenhum grupo confirmado. Selecione territórios no mapa e confirme a seleção.';
 
   return (
     <div
-      aria-label="Populações da pergunta"
+      aria-label="Grupos definidos"
       className={cn(
         'border-b border-white/8 bg-surface/40 px-3 py-2.5',
         className,
@@ -160,7 +160,7 @@ export function PopulationGroupBar({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-sans text-[10px] font-bold uppercase tracking-wide text-text-muted">
-          Populações
+          Grupos definidos
         </span>
 
         {onApplySelectionPreset ? <PresetMenu onApply={onApplySelectionPreset} /> : null}
@@ -168,7 +168,7 @@ export function PopulationGroupBar({
         {state.groups.length > 0 ? (
           <div
             role="tablist"
-            aria-label="Populações selecionadas"
+            aria-label="Grupos confirmados"
             aria-orientation="horizontal"
             className="contents"
           >
@@ -178,22 +178,26 @@ export function PopulationGroupBar({
                 group={group}
                 index={index}
                 isActive={state.activeGroupId === group.id}
-                onSelect={(groupId) => dispatch({ type: 'SET_ACTIVE_GROUP', groupId })}
+                onSelect={(groupId) => {
+                  if (onSelectGroup) onSelectGroup(groupId);
+                  else dispatch({ type: 'SET_ACTIVE_GROUP', groupId });
+                }}
                 onRename={(groupId, name) => dispatch({ type: 'RENAME_GROUP', groupId, name })}
                 onDelete={(groupId) => dispatch({ type: 'DELETE_GROUP', groupId })}
+                statusLabel={groupCompletionIssues(group).length === 0 ? 'Pronto' : 'Incompleto'}
               />
             ))}
           </div>
         ) : null}
 
-        {state.groups.length > 0 && state.groups.length < MAX_GROUPS ? (
+        {state.groups.length < MAX_GROUPS ? (
           <button
             type="button"
-            onClick={() => dispatch({ type: 'CREATE_GROUP', name: comparatorName(state) })}
+            onClick={onNewGroup}
             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-dashed border-white/20 bg-elevated/40 px-3 font-sans text-xs font-bold text-text-muted transition-colors hover:border-accent/60 hover:bg-accent-soft hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             <Plus className="size-3.5" aria-hidden />
-            Adicionar comparador
+            Novo grupo
           </button>
         ) : null}
       </div>

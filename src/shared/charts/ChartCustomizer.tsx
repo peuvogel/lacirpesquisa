@@ -1,6 +1,5 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { CHART_TYPE_CATALOG } from './chartTypeCatalog';
 import { ChartTypeIcon } from './ChartTypeIcon';
 import type { ChartPresetOption, CustomizerState } from './useChartCustomizer';
 
@@ -23,13 +22,6 @@ export function ChartCustomizer({
   onPresetVisibleChange,
   className,
 }: ChartCustomizerProps) {
-  const availableVisualIds = new Set(presets.map((preset) => preset.visualType));
-  const visualCounts = presets.reduce<Record<string, number>>((acc, preset) => {
-    acc[preset.visualType] = (acc[preset.visualType] ?? 0) + 1;
-    return acc;
-  }, {});
-  const unavailableTypes = CHART_TYPE_CATALOG.filter((type) => !availableVisualIds.has(type.id));
-
   return (
     <aside
       className={cn(
@@ -49,8 +41,7 @@ export function ChartCustomizer({
           {presets.map((preset) => {
             const inputId = `chart-type-${preset.id}`;
             const checked = state.visiblePresetIds[preset.id] !== false;
-            const label =
-              (visualCounts[preset.visualType] ?? 0) > 1 ? `${preset.label}` : preset.label;
+            const label = preset.label;
             return (
               <label
                 key={preset.id}
@@ -69,19 +60,6 @@ export function ChartCustomizer({
               </label>
             );
           })}
-
-          {unavailableTypes.map((type) => (
-            <label key={type.id} className="lacir-vis-thumb lacir-vis-thumb--disabled">
-              <Checkbox
-                checked={false}
-                disabled
-                aria-label={type.label}
-                className="lacir-vis-thumb__check !absolute top-1.5 left-1.5 z-[1]"
-              />
-              <ChartTypeIcon type={type.id} className="lacir-vis-thumb__icon" />
-              <span className="lacir-vis-thumb__label">{type.label}</span>
-            </label>
-          ))}
         </div>
       </fieldset>
     </aside>

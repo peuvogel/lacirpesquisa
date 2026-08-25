@@ -8,6 +8,7 @@ import {
   deriveMapAnalysis,
   deriveSelectionSummary,
   formatTimeSummary,
+  groupsForTerritory,
   isGroupComplete,
   isRangeTimeInvalid,
   mapAnalysisReducer,
@@ -160,7 +161,36 @@ describe('mapAnalysisReducer', () => {
     ]);
   });
 
-  it('does not silently move a territory owned by another population', () => {
+  it('SET_GROUP_TERRITORIES replaces and deduplicates only the addressed group', () => {
+    const rio = {
+      level: 'uf' as const,
+      ibgeCode: '33',
+      sigla: 'RJ',
+      name: 'Rio de Janeiro',
+    };
+    let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
+      type: 'CREATE_GROUP',
+      name: 'Grupo editado',
+      territories: [sampleTerritory],
+    });
+    const editedId = state.activeGroupId!;
+    state = mapAnalysisReducer(state, {
+      type: 'CREATE_GROUP',
+      name: 'Grupo preservado',
+      territories: [sampleTerritory],
+    });
+
+    state = mapAnalysisReducer(state, {
+      type: 'SET_GROUP_TERRITORIES',
+      groupId: editedId,
+      territories: [rio, rio],
+    });
+
+    expect(state.groups[0]!.territoryIds).toEqual([rio]);
+    expect(state.groups[1]!.territoryIds).toEqual([sampleTerritory]);
+  });
+
+  it('allows the same territory in different groups without moving it', () => {
     let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
       territories: [sampleTerritory],
@@ -175,14 +205,20 @@ describe('mapAnalysisReducer', () => {
     });
 
     expect(territoryOwner(state, sampleTerritory)?.id).toBe(ownerId);
+    expect(groupsForTerritory(state, sampleTerritory).map((group) => group.id)).toEqual([
+      ownerId,
+      comparatorId,
+    ]);
     expect(state.groups.find((group) => group.id === ownerId)!.territoryIds).toEqual([
       sampleTerritory,
     ]);
-    expect(state.groups.find((group) => group.id === comparatorId)!.territoryIds).toEqual([]);
+    expect(state.groups.find((group) => group.id === comparatorId)!.territoryIds).toEqual([
+      sampleTerritory,
+    ]);
     expect(state.activeGroupId).toBe(comparatorId);
   });
 
-  it('explicit comparator creation inherits the shared disease and time seed', () => {
+  it('creates every explicit group with independent blank disease and time fields', () => {
     let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'ASSIGN_TERRITORIES_TO_ACTIVE',
       territories: [sampleTerritory],
@@ -198,14 +234,8 @@ describe('mapAnalysisReducer', () => {
 
     state = mapAnalysisReducer(state, { type: 'CREATE_GROUP', name: 'Comparador' });
 
-    expect(state.groups[1]!.time).toEqual({
-      mode: 'range',
-      start: '2018-01',
-      end: '2022-12',
-    });
-    expect(state.groups[1]!.variableIds).toContain(
-      'sih.embolia_e_trombose_arteriais.internacoes',
-    );
+    expect(state.groups[1]!.time).toEqual({ mode: 'point' });
+    expect(state.groups[1]!.variableIds).toEqual([]);
   });
 
   it('direct assignment keeps legacy session defaults valid', () => {
@@ -324,7 +354,7 @@ describe('mapAnalysisReducer', () => {
     }
   });
 
-  it('CREATE_GROUP seeds disease catalog ids from the active group', () => {
+  it('CREATE_GROUP never seeds disease catalog ids from the active group', () => {
     let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'CREATE_GROUP',
       territories: [sampleTerritory],
@@ -338,7 +368,7 @@ describe('mapAnalysisReducer', () => {
       territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
     });
 
-    expect(state.groups[1]!.variableIds).toContain('sih.embolia_e_trombose_arteriais.internacoes');
+    expect(state.groups[1]!.variableIds).toEqual([]);
   });
 
   it('SET_SHARED_TIME syncs every group while scope is shared', () => {
@@ -350,6 +380,7 @@ describe('mapAnalysisReducer', () => {
       type: 'CREATE_GROUP',
       territories: [{ level: 'uf', ibgeCode: '35', sigla: 'SP', name: 'São Paulo' }],
     });
+    state = mapAnalysisReducer(state, { type: 'SET_PERIOD_SCOPE', scope: 'shared' });
     const time = { mode: 'range' as const, start: '2015-01', end: '2019-12' };
     state = mapAnalysisReducer(state, { type: 'SET_SHARED_TIME', time });
 
@@ -451,7 +482,35 @@ describe('deriveMapAnalysis', () => {
       geography: 'uf',
       locationBasis: 'residencia',
       diseaseIds: ['embolia_e_trombose_arteriais', 'amputacao_mmii'],
+      groupOutcomes: {
+        g1: { diseaseId: 'embolia_e_trombose_arteriais', variableId: 'internacoes' },
+        g2: { diseaseId: 'amputacao_mmii', variableId: 'obitos' },
+      },
       period: { scope: 'shared', time: { mode: 'range', start: '2020-01', end: '2021-12' } },
+      },
+    });
+  });
+
+  it('maps the didactic rate id to the loadable research profile', () => {
+    const state: MapAnalysisState = {
+      ...createInitialMapAnalysisState(),
+      sharedTime: { mode: 'point', point: '2024' },
+      groups: [completeGroup({
+        variableIds: [
+          'sih.embolia_e_trombose_arteriais.taxa_internacao_100k',
+        ],
+      })],
+    };
+
+    expect(createResearchDesignFromMapState(state)).toMatchObject({
+      ok: true,
+      value: {
+        groupOutcomes: {
+          g1: {
+            diseaseId: 'embolia_e_trombose_arteriais',
+            variableId: 'taxa_internacao_100k',
+          },
+        },
       },
     });
   });

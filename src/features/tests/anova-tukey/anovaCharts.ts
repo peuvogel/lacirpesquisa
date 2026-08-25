@@ -1,6 +1,7 @@
 import type { ChartPreset } from '@/shared/charts/useChartCustomizer';
 import { buildAnovaMeansChartData } from '@/shared/charts/chartFactories/anovaChart';
 import { buildPostHocHeatmapChartData } from '@/shared/charts/chartFactories/postHocHeatmapChart';
+import { buildGroupedRawDotChartData } from '@/shared/charts/chartFactories/groupedRawDotChart';
 import { mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP } from '@/shared/format';
 import { ANOVA_ANNOTATIONS, CHART_PRESET_LABELS } from './anovaConfig';
@@ -10,6 +11,36 @@ export const ANOVA_CHART_ANNOTATIONS = ANOVA_ANNOTATIONS;
 
 export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEngineOutput>[] {
   const presets: ChartPreset<AnovaEngineOutput>[] = [
+    {
+      id: 'raw-data',
+      label: CHART_PRESET_LABELS.rawData,
+      visualType: 'dot',
+      buildChart: (output) => {
+        const { data, options } = buildGroupedRawDotChartData(
+          output.groups,
+          output.groupOrder,
+          output.headers.outcome,
+        );
+        return {
+          type: 'scatter',
+          data,
+          options: mergeChartOptions(options, {
+            layout: { padding: { top: 28, right: 18, bottom: 10, left: 10 } },
+            plugins: {
+              title: {
+                display: true,
+                text: CHART_PRESET_LABELS.rawData,
+                color: '#1E293B',
+                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+              },
+            },
+          }),
+          ariaLabel: CHART_PRESET_LABELS.rawData,
+        };
+      },
+      defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
+      annotationKeys: [],
+    },
     {
       id: 'means',
       label: CHART_PRESET_LABELS.means,
@@ -99,7 +130,7 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
 }
 
 export function getDefaultAnovaChartPreset(): string {
-  return 'means';
+  return 'raw-data';
 }
 
 export function buildAnovaChartPresetsForOutput(output: AnovaEngineOutput): ChartPreset<AnovaEngineOutput>[] {

@@ -205,6 +205,38 @@ function ledgerRows() {
 }
 
 describe('Supabase research repository', () => {
+  it('loads only the disease assigned to each group outcome', async () => {
+    const client = new FakeSupabase({
+      sih_metric_uf: () => ({
+        data: [
+          metricRow({ disease_id: 'acidente_vascular_cerebral', uf_codigo: '29', internacoes: 12 }),
+          metricRow({ disease_id: 'diabetes_mellitus', uf_codigo: '29', internacoes: 30, obitos: 5 }),
+        ],
+        error: null,
+      }),
+      sih_collection_status: () => ({ data: ledgerRows(), error: null }),
+    });
+    const repo = createResearchRepository({ supabase: client });
+    const design = ufDesign({
+      groups: [
+        { id: 'grupo_avc', name: 'AVC', territories: [{ id: '29', label: 'Bahia' }] },
+        { id: 'diabetes', name: 'Diabetes', territories: [{ id: '29', label: 'Bahia' }] },
+      ],
+      period: { scope: 'shared', time: { mode: 'point', point: '2020' } },
+      groupOutcomes: {
+        grupo_avc: { diseaseId: 'acidente_vascular_cerebral', variableId: 'internacoes' },
+        diabetes: { diseaseId: 'diabetes_mellitus', variableId: 'obitos' },
+      },
+    });
+
+    const snapshot = await repo.load(design, baseProfiles.slice(0, 2));
+
+    expect(snapshot.cells.map((cell) => [cell.groupId, cell.diseaseId, cell.variableId, cell.rawValue])).toEqual([
+      ['grupo_avc', 'acidente_vascular_cerebral', 'internacoes', 12],
+      ['diabetes', 'diabetes_mellitus', 'obitos', 5],
+    ]);
+  });
+
   it('deduplicates concurrent identical loads and batches all selected profiles', async () => {
     const client = new FakeSupabase({
       sih_metric_uf: () => ({ data: [metricRow()], error: null }),
@@ -411,7 +443,7 @@ describe('Supabase research repository', () => {
         name: 'Salvador',
         territoryIds: [{ level: 'municipio', ibgeCode: '2927408', sigla: 'BA', name: 'Salvador' }],
         time: { mode: 'point', point: '2020' },
-        variableIds: ['sih.embolia_e_trombose_arteriais.internacoes'],
+        variableIds: ['sih.embolia_e_trombose_arteriais.taxa_internacao_100k'],
       }],
       activeGroupId: 'salvador',
       mapView: { level: 'municipio', parentCode: 'BA', ufIbge: '29' },

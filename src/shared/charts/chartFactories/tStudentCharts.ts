@@ -1,6 +1,7 @@
 import type { ChartData, ChartOptions } from 'chart.js';
 import { BASE_OPTS, COLORS, mergeChartOptions } from '../chartTheme';
 import { fmtNumber, fmtSigned } from '@/shared/format';
+import { buildGroupedRawDotChartData } from './groupedRawDotChart';
 
 export interface WelchResult {
   diff: number;
@@ -114,7 +115,7 @@ export function buildTStudentDiffChartData(
   return { data, options };
 }
 
-/** Distribution summary bars per group — solid Datawrapper-like columns. */
+/** Raw observations per group; no summary bar hides the underlying distribution. */
 export function buildTStudentDistChartData(
   groupA: number[],
   groupB: number[],
@@ -124,30 +125,20 @@ export function buildTStudentDistChartData(
   const sA = groupStats(groupA);
   const sB = groupStats(groupB);
 
-  const data: ChartData = {
-    labels: [labelA || 'Grupo A', labelB || 'Grupo B'],
-    datasets: [
-      {
-        label: 'Média',
-        data: [sA.mean, sB.mean],
-        backgroundColor: [COLORS.blueSolid, COLORS.primarySolid],
-        borderWidth: 0,
-        borderRadius: 3,
-        borderSkipped: false,
-        maxBarThickness: 56,
-        categoryPercentage: 0.55,
-        barPercentage: 0.85,
-      },
-    ],
-  };
-
-  const options = mergeChartOptions(BASE_OPTS, {
+  const labels = [labelA || 'Grupo A', labelB || 'Grupo B'];
+  const raw = buildGroupedRawDotChartData(
+    { [labels[0]]: groupA, [labels[1]]: groupB },
+    labels,
+  );
+  const options = mergeChartOptions(raw.options, {
     plugins: {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (item) => {
-            const s = item.dataIndex === 0 ? sA : sB;
+          afterBody: (items) => {
+            const item = items[0];
+            if (!item) return [];
+            const s = item.datasetIndex === 0 ? sA : sB;
             return [
               `Média: ${fmtNumber(s.mean, 3)}`,
               `DP: ${fmtNumber(s.std, 3)}`,
@@ -159,24 +150,9 @@ export function buildTStudentDistChartData(
         },
       },
     },
-    scales: {
-      x: {
-        grid: { display: false },
-        border: { display: false },
-      },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Valor médio',
-          color: COLORS.label,
-          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
-        },
-      },
-    },
   });
 
-  return { data, options };
+  return { data: raw.data, options };
 }
 
 /** Simple means bar chart — customizer preset. */

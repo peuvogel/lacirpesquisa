@@ -83,12 +83,12 @@ describe('TStudentTest', () => {
 
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar Intervalo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baixar Colunas agrupadas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Pontos' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar Colunas' })).toBeInTheDocument();
     expect(screen.getByText('Tipos de gráfico')).toBeInTheDocument();
-    expect(screen.getByLabelText('Dispersão')).toBeDisabled();
+    expect(screen.queryByLabelText('Dispersão')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Editar Intervalo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Editar Colunas agrupadas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar Pontos' })).toBeInTheDocument();
 
     const prose = screen.getAllByText(/Observou-se|Não se observou|Pergunta analisada/i);
     expect(prose.length).toBeGreaterThan(0);

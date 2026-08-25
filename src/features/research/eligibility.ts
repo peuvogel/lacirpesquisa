@@ -1,5 +1,5 @@
 import { TEST_REGISTRY } from '@/features/tests/registry';
-import { completePairs, profileVariable } from './profiling';
+import { completePairs, profileVariable, shapiroWilk } from './profiling';
 import type {
   AnalysisCell,
   AnalysisScenario,
@@ -86,6 +86,31 @@ function overlappingTerritories(cells: readonly (AnalysisCell & { rawValue: numb
   return [...groupsByTerritory.values()].some((groups) => groups.size > 1);
 }
 
+function isPairedDesign(design: ResearchDesign): boolean {
+  return design.comparisonKind === 'paired_period' || design.comparisonKind === 'paired_disease';
+}
+
+function pairedValues(
+  cells: readonly (AnalysisCell & { rawValue: number })[],
+  groupIds: readonly string[],
+): Array<[number, number]> | null {
+  if (groupIds.length !== 2) return null;
+  const byGroup = groupIds.map((groupId) => new Map(
+    cells
+      .filter((cell) => cell.groupId === groupId)
+      .map((cell) => [cell.territoryId, cell.rawValue] as const),
+  ));
+  const territoryIds = [...byGroup[0]!.keys()].sort();
+  if (
+    territoryIds.length !== byGroup[1]!.size
+    || territoryIds.some((territoryId) => !byGroup[1]!.has(territoryId))
+  ) return null;
+  return territoryIds.map((territoryId) => [
+    byGroup[0]!.get(territoryId)!,
+    byGroup[1]!.get(territoryId)!,
+  ]);
+}
+
 function scopeKey(cell: Pick<AnalysisCell, 'groupId' | 'territoryId' | 'periodKey'>): string {
   return JSON.stringify([cell.groupId, cell.territoryId, cell.periodKey]);
 }
@@ -149,6 +174,13 @@ function groupTest(
   parametric: boolean,
 ): EligibilityDecision {
   const roles = input.roleAssignments ?? {};
+  const paired = isPairedDesign(input.design);
+  if (paired && testId !== 't-student') {
+    return decision(testId, 'ineligible', [reason(
+      'paired_test_not_supported',
+      'Este contraste é pareado; nesta etapa, somente o teste t pareado está implementado.',
+    )], roles);
+  }
   const profile = outcomeProfile(input);
   const acceptedTypes = parametric ? ['numeric', 'rate'] : ['numeric', 'rate', 'ordinal'];
   if (!profile || !acceptedTypes.includes(profile.variableType)) {
@@ -171,7 +203,16 @@ function groupTest(
   if (hasDuplicateAnalyticScopes(cells)) {
     return decision(testId, 'ineligible', [reason('duplicate_analytic_scope', 'Existe mais de um valor para a mesma unidade, período e variável.')], roles);
   }
-  if (overlappingTerritories(cells)) {
+  const alignedPairs = paired
+    ? pairedValues(cells, input.design.groups.map((group) => group.id))
+    : null;
+  if (paired && !alignedPairs) {
+    return decision(testId, 'ineligible', [reason(
+      'paired_units_misaligned',
+      'Os dois grupos pareados precisam conter exatamente os mesmos territórios com valores utilizáveis.',
+    )], roles);
+  }
+  if (!paired && overlappingTerritories(cells)) {
     return decision(testId, 'ineligible', [reason('overlapping_independent_units', 'O mesmo território não pode representar grupos independentes distintos.')], roles);
   }
   if (repeatedUnits(cells)) {
@@ -189,7 +230,11 @@ function groupTest(
     values.push(cell);
     valuesByGroup.set(cell.groupId, values);
   }
-  if (parametric && [...valuesByGroup.values()].some((values) => distinctValues(values) < 2)) {
+  const pairedDifferences = alignedPairs?.map(([left, right]) => right - left) ?? [];
+  if (paired && new Set(pairedDifferences).size < 2) {
+    return decision(testId, 'ineligible', [reason('insufficient_variation', 'As diferenças dentro dos pares precisam apresentar variação.')], roles);
+  }
+  if (!paired && parametric && [...valuesByGroup.values()].some((values) => distinctValues(values) < 2)) {
     return decision(testId, 'ineligible', [reason('insufficient_variation', 'Cada grupo precisa apresentar variação para uma comparação paramétrica.')], roles);
   }
   if (!parametric && distinctValues(cells) < 2) {
@@ -214,6 +259,28 @@ function groupTest(
     }
   }
   const classifications = Object.values(profiled.byGroup).map((group) => group.normality.classification);
+  if (paired) {
+    const normality = shapiroWilk(pairedDifferences);
+    if (normality.state === 'supported' && normality.pValue < 0.05 && pairedDifferences.length < 10) {
+      return decision(
+        testId,
+        'ineligible',
+        [reason('small_non_normal_pairs', 'Amostra pequena e diferenças não normais não sustentam o teste t pareado.')],
+        roles,
+        ['paired_difference_normality', 'complete_pair_count'],
+      );
+    }
+    return decision(
+      testId,
+      normality.state === 'supported' && normality.pValue >= 0.05 ? 'eligible' : 'eligible_with_caveat',
+      [reason(
+        'paired_groups_supported',
+        `${pairedDifferences.length} pares territoriais completos serão comparados pelas diferenças dentro de cada território.`,
+      )],
+      roles,
+      ['paired_difference_normality', 'complete_pair_count'],
+    );
+  }
   const allNormal = classifications.every((classification) => classification === 'approximately_normal');
   const nonNormal = classifications.some((classification) => classification === 'non_normal') || profile.variableType === 'ordinal';
   if (parametric) {

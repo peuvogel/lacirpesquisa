@@ -222,6 +222,15 @@ describe('VariaveisPage', () => {
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 
+  it('keeps a description-only map design locked against promotion to comparison', async () => {
+    renderPage('/variaveis', { ...guidedDesign, goal: 'describe' });
+
+    expect(await screen.findByRole('heading', { name: /Nordeste · Embolia e trombose arteriais/i })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Comparar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /Descrever e comparar/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: '2. Dados indisponíveis' })).toBeInTheDocument();
+  });
+
   it('loads a loadable selection into Estatística via setDataset (D-14)', async () => {
     const user = userEvent.setup();
     renderPage();

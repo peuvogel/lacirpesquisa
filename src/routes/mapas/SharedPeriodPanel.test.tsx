@@ -14,7 +14,7 @@ const sampleTerritory = {
 };
 
 describe('SharedPeriodPanel', () => {
-  it('defaults to shared scope and dispatches SET_SHARED_TIME', () => {
+  it('dispatches SET_SHARED_TIME when shared scope is selected', () => {
     let state = mapAnalysisReducer(createInitialMapAnalysisState(), {
       type: 'CREATE_GROUP',
       territories: [sampleTerritory],
@@ -23,6 +23,7 @@ describe('SharedPeriodPanel', () => {
       type: 'TOGGLE_DISEASE_ALL_GROUPS',
       diseaseId: 'embolia_e_trombose_arteriais',
     });
+    state = mapAnalysisReducer(state, { type: 'SET_PERIOD_SCOPE', scope: 'shared' });
     const dispatch = vi.fn();
 
     render(

@@ -22,6 +22,7 @@ export interface GroupChipProps {
   onSelect: (groupId: string) => void;
   onRename: (groupId: string, name: string) => void;
   onDelete: (groupId: string) => void;
+  statusLabel?: 'Incompleto' | 'Pronto' | 'Atenção' | 'Bloqueado';
 }
 
 export function GroupChip({
@@ -31,6 +32,7 @@ export function GroupChip({
   onSelect,
   onRename,
   onDelete,
+  statusLabel,
 }: GroupChipProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(group.name);
@@ -144,6 +146,20 @@ export function GroupChip({
                 }}
               >
                 {group.territoryIds.length}
+              </span>
+            ) : null}
+            {statusLabel ? (
+              <span
+                className={cn(
+                  'shrink-0 rounded-full border px-1.5 py-px text-[9px] font-black uppercase tracking-wide',
+                  statusLabel === 'Pronto'
+                    ? 'border-success/35 bg-success/10 text-success'
+                    : statusLabel === 'Bloqueado'
+                      ? 'border-danger/35 bg-danger/10 text-danger'
+                      : 'border-warning/35 bg-warning/10 text-warning',
+                )}
+              >
+                {statusLabel}
               </span>
             ) : null}
           </>

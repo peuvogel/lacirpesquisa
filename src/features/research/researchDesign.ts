@@ -144,14 +144,26 @@ export function canonicalizeResearchDesign(design: ResearchDesign): string {
               .map(([groupId, time]) => [groupId, normalizePeriod(time)]),
           ),
         };
+  const groupOutcomes = design.groupOutcomes
+    ? Object.fromEntries(
+        Object.entries(design.groupOutcomes)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([groupId, outcome]) => [groupId, {
+            diseaseId: outcome.diseaseId,
+            variableId: outcome.variableId,
+          }]),
+      )
+    : undefined;
 
   return JSON.stringify({
     groups,
     geography: design.geography,
     locationBasis: design.locationBasis,
     diseaseIds: [...design.diseaseIds].sort((a, b) => a.localeCompare(b)),
+    ...(groupOutcomes ? { groupOutcomes } : {}),
     period,
     ...(design.goal ? { goal: design.goal } : {}),
+    ...(design.comparisonKind ? { comparisonKind: design.comparisonKind } : {}),
   });
 }
 

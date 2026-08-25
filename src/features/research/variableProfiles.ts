@@ -97,6 +97,16 @@ export const VARIABLE_PROFILES: readonly VariableProfile[] = [
   desfechoHospitalar,
 ];
 
+const VARIABLE_PROFILE_ID_BY_MAP_MEASURE: Readonly<Record<string, string>> = {
+  custo: 'valor_total',
+  taxa_internacao: 'taxa_internacao_100k',
+};
+
+/** Converte o id didático usado em Mapas para o indicador analítico carregável. */
+export function variableProfileIdForMapMeasure(measureId: string): string {
+  return VARIABLE_PROFILE_ID_BY_MAP_MEASURE[measureId] ?? measureId;
+}
+
 export function findVariableProfile(variableId: string): VariableProfile | undefined {
   return VARIABLE_PROFILES.find((profile) => profile.variableId === variableId);
 }

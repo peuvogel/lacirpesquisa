@@ -4,9 +4,14 @@ export interface BrazilMockMapProps {
   hoveredUF: string | null;
   selectedUFs: string[];
   highlightedUFs?: string[];
-  groupMembership?: Record<string, { groupIndex: number; groupName: string }>;
+  groupMembership?: Record<string, MapGroupMembership[]>;
   onHoverUF: (uf: string | null) => void;
   onToggleUF: (uf: string) => void;
+}
+
+export interface MapGroupMembership {
+  groupIndex: number;
+  groupName: string;
 }
 
 /**
@@ -26,4 +31,3 @@ export function BrazilMockMap(props: BrazilMockMapProps) {
     />
   );
 }
-

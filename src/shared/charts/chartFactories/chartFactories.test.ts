@@ -19,10 +19,18 @@ describe('chartFactories', () => {
     expect((options.scales?.x as { title?: unknown })?.title).toBeDefined();
   });
 
-  it('buildTStudentDistChartData returns bar datasets for two groups', () => {
+  it('buildTStudentDistChartData preserves every raw observation in a dot plot', () => {
     const { data, options } = buildTStudentDistChartData([1, 2, 3], [4, 5, 6], 'A', 'B');
-    expect(data.labels).toEqual(['A', 'B']);
-    expect(data.datasets?.[0]?.data).toEqual([2, 5]);
+    expect(data.datasets).toHaveLength(2);
+    expect(data.datasets?.flatMap((dataset) => dataset.data)).toHaveLength(6);
+    expect(data.datasets?.[0]?.data).toEqual([
+      expect.objectContaining({ y: 1 }),
+      expect.objectContaining({ y: 2 }),
+      expect.objectContaining({ y: 3 }),
+    ]);
+    expect((options.scales?.x as { ticks?: { callback?: unknown } })?.ticks?.callback).toBeTypeOf(
+      'function',
+    );
     expect(options.plugins?.tooltip).toBeDefined();
   });
 

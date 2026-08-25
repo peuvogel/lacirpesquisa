@@ -64,7 +64,7 @@ export function MapGeoPath({
       role="button"
       tabIndex={0}
       aria-label={name}
-      aria-description={description}
+      aria-description={[groupBadge, description].filter(Boolean).join(' — ') || undefined}
       aria-pressed={isSelected}
       aria-grabbed={canShapeDrag ? isDragging : undefined}
       onMouseEnter={() => onHover(territoryId)}

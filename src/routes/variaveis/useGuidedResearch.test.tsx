@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ResearchDataSnapshot } from '@/features/research/supabaseResearchRepository';
-import type { ResearchDesign } from '@/features/research/types';
+import type { ResearchDesign, VariableProfile } from '@/features/research/types';
 import { VARIABLE_PROFILES } from '@/features/research/variableProfiles';
 import { createRecommendedScenario, reviseScenario, treatAsMissing } from '@/features/research/scenarios';
 import {
@@ -266,6 +266,37 @@ describe('guided research orchestration', () => {
     await act(async () => Promise.resolve());
 
     expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads and exposes only the measure assigned inside the map groups', async () => {
+    const loader = vi.fn(async (
+      _currentDesign: ResearchDesign,
+      _profiles: readonly VariableProfile[],
+    ) => snapshot());
+    const assignedDesign: ResearchDesign = {
+      ...design,
+      groupOutcomes: {
+        a: { diseaseId: 'doenca_teste', variableId: 'taxa_internacao_100k' },
+        b: { diseaseId: 'doenca_teste', variableId: 'taxa_internacao_100k' },
+      },
+    };
+    const selection = {
+      goal: 'describe' as const,
+      variableIds: [] as string[],
+      trendTestIds: [] as string[],
+      testIds: [] as string[],
+      primaryTestId: null,
+      roleAssignments: {},
+    };
+
+    const { result } = renderHook(() =>
+      useGuidedResearch(assignedDesign, selection, { loader }));
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(loader.mock.calls[0]![1].map((profile) => profile.variableId))
+      .toEqual(['taxa_internacao_100k']);
+    expect(result.current.variables?.map((variable) => variable.id))
+      .toEqual(['taxa_internacao_100k']);
   });
 
   it('reuses the same load for a semantically equivalent design object', async () => {

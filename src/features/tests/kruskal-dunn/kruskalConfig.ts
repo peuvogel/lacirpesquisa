@@ -59,6 +59,7 @@ export const exampleText = `desfecho;grupo
 `;
 
 export const CHART_PRESET_LABELS = {
+  rawData: 'Dados individuais por grupo',
   medians: 'Medianas por grupo',
   heatmap: 'Mapa de p ajustado (Dunn)',
 } as const;

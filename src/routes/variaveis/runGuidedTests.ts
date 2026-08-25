@@ -215,6 +215,29 @@ function groupVectors(input: RunGuidedTestsInput, variableId: string): GroupVect
   });
 }
 
+function pairedGroupVectors(input: RunGuidedTestsInput, variableId: string): GroupVector[] {
+  const valuesByGroup = new Map<string, Map<string, number>>();
+  for (const cell of input.scenario.cells) {
+    if (cell.variableId !== variableId || !isUsable(cell)) continue;
+    const group = valuesByGroup.get(cell.groupId) ?? new Map<string, number>();
+    group.set(cell.territoryId, cell.rawValue);
+    valuesByGroup.set(cell.groupId, group);
+  }
+  const territoryOrder = input.design.groups[0]?.territories
+    .map((territory) => territory.id)
+    .filter((territoryId) =>
+      input.design.groups.every((group) => valuesByGroup.get(group.id)?.has(territoryId))) ?? [];
+  const nameCounts = new Map<string, number>();
+  for (const group of input.design.groups) {
+    nameCounts.set(group.name, (nameCounts.get(group.name) ?? 0) + 1);
+  }
+  return input.design.groups.map((group) => ({
+    id: group.id,
+    label: (nameCounts.get(group.name) ?? 0) > 1 ? `${group.name} (${group.id})` : group.name,
+    values: territoryOrder.map((territoryId) => valuesByGroup.get(group.id)!.get(territoryId)!),
+  }));
+}
+
 function expectedScopes(input: RunGuidedTestsInput, variableIds: readonly string[]): number {
   const ids = new Set(variableIds);
   return new Set(input.scenario.cells
@@ -339,20 +362,25 @@ function runGroupTest(
   alpha: number,
   outcome: VariableProfile,
 ): GuidedTestResult {
-  const entries = groupVectors(input, outcome.variableId);
+  const paired = input.design.comparisonKind === 'paired_period'
+    || input.design.comparisonKind === 'paired_disease';
+  const entries = paired
+    ? pairedGroupVectors(input, outcome.variableId)
+    : groupVectors(input, outcome.variableId);
   const expected = expectedScopes(input, [outcome.variableId]);
   const used = entries.reduce((sum, entry) => sum + entry.values.length, 0);
   const resultCoverage = coverage(expected, used);
 
   if (testId === 't-student') {
+    const mode = paired ? 'paired' : 'independent';
     const dataset: TStudentBuiltDataset = {
       g1: entries[0]?.values ?? [],
       g2: entries[1]?.values ?? [],
       labels: [entries[0]?.label ?? 'Grupo A', entries[1]?.label ?? 'Grupo B'],
-      mode: 'independent',
+      mode,
     };
-    validateEngine(validateTStudent('independent', dataset), testId);
-    const result = runTStudent('independent', dataset);
+    validateEngine(validateTStudent(mode, dataset), testId);
+    const result = runTStudent(mode, dataset);
     const output = toTStudentOutput(dataset, result);
     return resultBase(input, testId, outcome.variableId, buildTStudentMetrics(result, dataset.labels),
       buildTStudentChartPresets()[0]!.buildChart(output),

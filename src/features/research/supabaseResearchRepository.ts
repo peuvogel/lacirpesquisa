@@ -525,6 +525,15 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
       ? uniqueSorted(territories.map(municipioTransportId))
       : territories;
     const years = uniqueSortedNumbers(expected.flatMap((cell) => cell.years));
+    const profilesByVariableId = new Map(profiles.map((profile) => [profile.variableId, profile]));
+    const missingAssignedProfile = Object.values(design.groupOutcomes ?? {})
+      .find((outcome) => !profilesByVariableId.has(outcome.variableId));
+    if (missingAssignedProfile) {
+      throw new ResearchRepositoryError(
+        'query_failed',
+        `O indicador ${missingAssignedProfile.variableId} configurado no grupo não foi solicitado.`,
+      );
+    }
     const variables = requestedSourceVariables(profiles);
     const measures = ledgerMeasuresFor(variables);
     const needsPopulation = variables.includes('populacao');
@@ -662,15 +671,20 @@ export function createResearchRepository(options: CreateResearchRepositoryOption
 
     const cells: ResearchSourceCell[] = [];
     for (const expectedCell of expected) {
+      const assignedOutcome = design.groupOutcomes?.[expectedCell.groupId];
+      const diseasesForGroup = assignedOutcome ? [assignedOutcome.diseaseId] : diseases;
+      const variablesForGroup = assignedOutcome
+        ? requestedSourceVariables([profilesByVariableId.get(assignedOutcome.variableId)!])
+        : variables;
       for (const year of expectedCell.years) {
-        for (const diseaseId of diseases) {
+        for (const diseaseId of diseasesForGroup) {
           const transportTerritoryId = grain === 'municipio'
             ? municipioTransportId(expectedCell.territoryId)
             : expectedCell.territoryId;
           const row = metrics.get(metricKey(diseaseId, transportTerritoryId, year));
           const partitionUnavailable = grain === 'municipio'
             && unavailableMunicipioUfs.has(municipioUf(expectedCell.territoryId));
-          for (const variableId of variables) {
+          for (const variableId of variablesForGroup) {
             const value = sourceValue({
               row,
               variable: variableId,

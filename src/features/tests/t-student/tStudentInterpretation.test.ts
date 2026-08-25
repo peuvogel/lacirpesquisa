@@ -121,5 +121,9 @@ describe('tStudentCharts presets', () => {
     expect(labels).toContain(CHART_PRESET_LABELS.diff);
     expect(labels).toContain(CHART_PRESET_LABELS.distribution);
     expect(labels).toContain(CHART_PRESET_LABELS.meansBar);
+    const { getDefaultTStudentChartPreset } = await import('./tStudentCharts');
+    expect(getDefaultTStudentChartPreset('independent', {} as never, ['A', 'B'])).toBe(
+      'distribution',
+    );
   });
 });

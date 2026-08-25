@@ -458,17 +458,23 @@ export function buildGuidedResearchData(
   design: ResearchDesign,
   snapshot: ResearchDataSnapshot,
 ): GuidedResearchData {
+  const configuredVariableIds = new Set(
+    Object.values(design.groupOutcomes ?? {}).map((outcome) => outcome.variableId),
+  );
+  const variableProfiles = configuredVariableIds.size === 0
+    ? VARIABLE_PROFILES
+    : VARIABLE_PROFILES.filter((profile) => configuredVariableIds.has(profile.variableId));
   const sourceCells = collapseDiseases(snapshot.cells);
-  const annualVariables = annualProfileCells(sourceCells, VARIABLE_PROFILES, design.geography);
+  const annualVariables = annualProfileCells(sourceCells, variableProfiles, design.geography);
   const annualPopulation = annualProfileCells(sourceCells, [POPULATION_PROFILE], design.geography);
   const annualCells = [...annualVariables, ...annualPopulation];
   const analyticCells = aggregateAnalyticCells(
     design,
     sourceCells,
     annualCells,
-    VARIABLE_PROFILES,
+    variableProfiles,
   );
-  const availabilityByVariableId = Object.fromEntries(VARIABLE_PROFILES.map((profile) => [
+  const availabilityByVariableId = Object.fromEntries(variableProfiles.map((profile) => [
     profile.variableId,
     summarizeAvailability(annualVariables.filter((cell) => cell.variableId === profile.variableId)),
   ]));
@@ -476,7 +482,7 @@ export function buildGuidedResearchData(
     group.territories.map((territory) => [territory.id, territory.label] as const)));
   return {
     design,
-    variables: VARIABLE_PROFILES.map((profile) =>
+    variables: variableProfiles.map((profile) =>
       toVariableViewModel(profile, availabilityByVariableId[profile.variableId]!, territoryLabels)),
     availabilityByVariableId,
     annualCells,
@@ -741,7 +747,13 @@ export function useGuidedResearch(
   useEffect(() => {
     const controller = new AbortController();
     setState({ status: 'loading', fingerprint });
-    loader(design, VARIABLE_PROFILES, { signal: controller.signal }).then(
+    const configuredVariableIds = new Set(
+      Object.values(design.groupOutcomes ?? {}).map((outcome) => outcome.variableId),
+    );
+    const variableProfiles = configuredVariableIds.size === 0
+      ? VARIABLE_PROFILES
+      : VARIABLE_PROFILES.filter((profile) => configuredVariableIds.has(profile.variableId));
+    loader(design, variableProfiles, { signal: controller.signal }).then(
       (snapshot) => setState({ status: 'ready', fingerprint, snapshot }),
       (error: unknown) => {
         if (controller.signal.aborted) return;

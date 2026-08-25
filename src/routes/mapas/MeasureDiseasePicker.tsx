@@ -25,6 +25,8 @@ export interface MeasureDiseasePickerProps {
   diseasesOnly?: boolean;
   /** Show disease measures + place/period context vars (step 4). */
   measuresOnly?: boolean;
+  /** Hide optional place/period context fields when choosing one primary outcome. */
+  hideContextVariables?: boolean;
   /** Map question flow: keep selected rows visible and show only a short suggestion set until search. */
   searchFirst?: boolean;
   className?: string;
@@ -83,6 +85,7 @@ export function MeasureDiseasePicker({
   onToggleDisease,
   diseasesOnly = false,
   measuresOnly = false,
+  hideContextVariables = false,
   searchFirst = false,
   className,
 }: MeasureDiseasePickerProps) {
@@ -249,7 +252,7 @@ export function MeasureDiseasePicker({
           ) : null}
         </div>
 
-        <div>
+        {!hideContextVariables ? <div>
           <p className="mb-1 font-sans text-[10px] font-bold uppercase tracking-wide text-text-muted">
             Do período (denominadores)
           </p>
@@ -260,9 +263,9 @@ export function MeasureDiseasePicker({
             periodVars,
             'Disponível no pack — entra na análise ao revisar.',
           )}
-        </div>
+        </div> : null}
 
-        <div>
+        {!hideContextVariables ? <div>
           <p className="mb-1 font-sans text-[10px] font-bold uppercase tracking-wide text-text-muted">
             Do lugar (oferta e contexto)
           </p>
@@ -274,7 +277,7 @@ export function MeasureDiseasePicker({
             placeVars,
             'Disponível no pack — entra na análise ao revisar.',
           )}
-        </div>
+        </div> : null}
       </div>
     );
   }
