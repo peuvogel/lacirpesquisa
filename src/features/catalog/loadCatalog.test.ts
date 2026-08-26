@@ -209,6 +209,23 @@ describe('loadCatalog', () => {
     await expect(loadCatalog()).rejects.toThrow('metricKeys');
   });
 
+  it('rejects an undeclared object value in a pack row', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const relative = catalogRelativePath(String(input));
+        if (relative.endsWith('.json') && relative.startsWith('packs/')) {
+          const pack = cloneCatalogJson<{ rows: Array<Record<string, unknown>> }>(relative);
+          pack.rows[0]!.unexpectedMetadata = { nested: true };
+          return responseJson(pack);
+        }
+        return responseJson(readCatalogJson(relative));
+      }),
+    );
+
+    await expect(loadCatalog()).rejects.toThrow('unexpectedMetadata');
+  });
+
   it('does not let a reset-invalidated request repopulate the cache', async () => {
     const manifest = deferred<Response>();
     vi.stubGlobal(

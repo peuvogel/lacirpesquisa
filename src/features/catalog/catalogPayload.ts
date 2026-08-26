@@ -167,6 +167,16 @@ export function validateCatalogEntries(value: unknown): CatalogEntry[] {
 function validatePackRow(value: unknown, index: number, pack: Pick<PackFile, 'keys' | 'metricKeys'>): PackRow {
   const label = `pack.rows[${index}]`;
   const row = asRecord(value, label);
+  for (const [key, rowValue] of Object.entries(row)) {
+    if (
+      rowValue !== undefined
+      && rowValue !== null
+      && typeof rowValue !== 'string'
+      && (typeof rowValue !== 'number' || !Number.isFinite(rowValue))
+    ) {
+      invalid(`${label}.${key} deve ser string, número finito, null ou undefined.`);
+    }
+  }
   for (const key of pack.keys) {
     if (!(key in row) || row[key] == null) invalid(`${label}.${key} é obrigatório.`);
     const rowValue = row[key];
