@@ -2,6 +2,7 @@ import { deflateRawSync } from 'node:zlib';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { legacyStats, legacyUtils, readFileText } from './legacyAdapters';
 import { readTabularFileState, readWorkbookTablesFromFile } from './parseTabular';
+import { preflightXml } from './xlsxReader';
 
 // Real tiny ZIP fixtures, including the data descriptors emitted by Excel writers.
 interface Entry { name: string; text: string; deflate?: boolean; descriptor?: boolean; flags?: number; declaredSize?: number }
@@ -127,6 +128,12 @@ describe('bounded XLSX import', () => {
     expect(parse).not.toHaveBeenCalled();
   });
 
+  it('bounds all XML elements with an injected profile before DOM allocation', () => {
+    const limits = { fileBytes: 10, textCharacters: 10, dataRows: 2, columns: 2, cells: 3, sheets: 1, zipEntries: 1, entryBytes: 10, totalBytes: 10 };
+    expect(() => preflightXml('<worksheet>' + '<unknown/>'.repeat(20) + '</worksheet>', 'worksheet', limits)).not.toThrow();
+    expect(() => preflightXml('<worksheet>' + '<unknown/>'.repeat(21) + '</worksheet>', 'worksheet', limits)).toThrow(/estrutura XML.*21.*elementos/i);
+  });
+
   it('rejects malformed dimension ranges before splitting the reference', async () => {
     await expect(read(entries(worksheet.replace('<sheetData>', '<dimension ref="A1:A2:A3"/><sheetData>')))).rejects.toThrow(/referência|dimensão/i);
   });
@@ -175,7 +182,9 @@ describe('bounded XLSX import', () => {
     items[0].text = items[0].text.replace('</sheets>', '<sheet name="Second" r:id="r2"/></sheets>');
     items[1].text = items[1].text.replace('</Relationships>', '<Relationship Id="r2" Target="worksheets/sheet2.xml"/></Relationships>');
     items.push({ name: 'xl/worksheets/sheet2.xml', text: items[2].text });
+    const parse = vi.spyOn(DOMParser.prototype, 'parseFromString');
     await expect(read(items)).rejects.toThrow(/10[. ]?000.*linhas/);
+    expect(parse).toHaveBeenCalledTimes(3);
   });
 
   it.each([

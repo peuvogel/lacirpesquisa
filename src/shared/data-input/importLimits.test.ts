@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IMPORT_LIMITS, validateImportLimit, validateTableSize } from './importLimits';
+import { IMPORT_LIMITS, validateImportLimit, validateTableSize, validateXmlElementLimit } from './importLimits';
 
 describe('import resource boundaries', () => {
   it.each([
@@ -21,5 +21,11 @@ describe('import resource boundaries', () => {
     expect(() => validateTableSize(3, 3, { ...profile, cells: 11 })).toThrow(/células/);
     expect(() => validateTableSize(4, 1, profile)).toThrow(/linhas/);
     expect(() => validateTableSize(1, 4, profile)).toThrow(/colunas/);
+  });
+
+  it('derives the XML element ceiling from existing sheet, row and cell budgets', () => {
+    const profile = { ...IMPORT_LIMITS, sheets: 1, dataRows: 2, cells: 3 };
+    expect(() => validateXmlElementLimit(21, profile)).not.toThrow();
+    expect(() => validateXmlElementLimit(22, profile)).toThrow(/estrutura XML.*21.*elementos/i);
   });
 });

@@ -195,25 +195,26 @@ export function parseDelimitedRows(text: string, sourceType: 'paste' | 'file' = 
   if (!sample.length) return { rows: [], delimiter: ';', formatLabel: 'texto' };
   const delimiter = detectDelimiter(sample), rows: string[][] = [];
   let cells: string[] = [], cellQuoted = false, closedQuote = false, cellStart = 0, quoteEnd = 0;
-  let rowQuoted = false, rowStart = 0, columns = 0, headerWidth = 0;
+  let rowQuoted = false, rowStart = 0, columns = 0, headerWidth = 0, cellHasContent = false, recordHasContent = false;
   quoted = false;
   const pushCell = (index: number) => {
     validateImportLimit('columns', cells.length + 1);
     const raw = source.slice(cellStart, cellQuoted ? quoteEnd : index);
     cells.push(cellQuoted ? raw.replace(/""/g, '"') : normalizeTabularSpaces(raw));
-    cellStart = index + 1; cellQuoted = false; closedQuote = false;
+    cellStart = index + 1; cellQuoted = false; closedQuote = false; cellHasContent = false;
   };
   for (let index = 0; index <= source.length; index++) {
     const char = source[index];
     if (char === '"') {
-      if (quoted && source[index + 1] === '"') index++;
+      if (quoted && source[index + 1] === '"') { recordHasContent = true; index++; }
       else if (quoted) { quoted = false; closedQuote = true; quoteEnd = index; }
-      else if (!source.slice(cellStart, index).trim() && !closedQuote) { quoted = true; cellQuoted = true; rowQuoted = true; cellStart = index + 1; }
+      else if (!cellHasContent && !closedQuote) { quoted = true; cellQuoted = true; rowQuoted = true; cellStart = index + 1; }
       else throw new Error('Aspas inválidas na tabela; revise a célula entre aspas.');
       continue;
     }
     if (index === source.length && quoted) throw new Error('Aspas não fechadas na tabela.');
     if (!quoted && (char === delimiter || char === '\n' || index === source.length)) {
+      if ((char === '\n' || index === source.length) && recordHasContent) validateImportLimit('dataRows', rows.length);
       pushCell(index);
       if (char === delimiter) continue;
       // TABNET sometimes uses unquoted decimal commas in a comma-separated file.
@@ -228,9 +229,10 @@ export function parseDelimitedRows(text: string, sourceType: 'paste' | 'file' = 
         rows.push(cells);
         if (!headerWidth) headerWidth = cells.length;
       }
-      cells = []; rowQuoted = false; rowStart = index + 1;
+      cells = []; rowQuoted = false; rowStart = index + 1; recordHasContent = false;
       continue;
     }
+    if (char?.trim()) { cellHasContent = true; recordHasContent = true; }
     if (closedQuote && char?.trim()) throw new Error('Texto inesperado após o fechamento de aspas.');
   }
   return { rows, delimiter, formatLabel: delimiterFormatLabel(delimiter) };

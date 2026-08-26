@@ -7,7 +7,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as port from './parseTabular';
 // eslint-disable-next-line import/extensions -- differential parity import of the untouched legacy module
 import * as legacy from '../../../assets/js/tabular-data-input.js';
@@ -137,6 +137,20 @@ describe('readTabularPasteState direct behavior (not just parity)', () => {
   it('rejects excess columns before row padding and excess data rows before splitting all lines', () => {
     expect(() => port.parseDelimitedRows('x;'.repeat(128) + 'x')).toThrow(/128.*colunas/);
     expect(() => port.parseDelimitedRows('A\n' + 'x\n'.repeat(10_001))).toThrow(/10[. ]?000.*linhas/);
+  });
+
+  it('rejects the prospective 10,001st logical row before slicing its content', () => {
+    const finalRow = `"${'z'.repeat(100_000)}\ncontinua"`;
+    const text = 'A\n' + 'x\n'.repeat(10_000) + finalRow;
+    const finalRowStart = text.length - finalRow.length;
+    const slice = vi.spyOn(String.prototype, 'slice');
+
+    try {
+      expect(() => port.parseDelimitedRows(text)).toThrow(/10[. ]?000.*linhas/);
+      expect(slice.mock.calls.map(([start]) => start)).not.toContain(finalRowStart);
+    } finally {
+      slice.mockRestore();
+    }
   });
 
   it('rejects pasted text beyond the character limit and unterminated quoted cells', () => {

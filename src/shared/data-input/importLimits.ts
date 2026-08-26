@@ -37,3 +37,12 @@ export function validateTableSize(dataRows: number, columns: number, limits: Imp
   validateImportLimit('columns', columns, limits);
   validateImportLimit('cells', (dataRows + 1) * columns, limits);
 }
+
+/** XML cells may contain formulas and rich-text runs; bound all DOM elements from table budgets. */
+export function validateXmlElementLimit(count: number, limits: ImportLimits = IMPORT_LIMITS): void {
+  if (!Number.isSafeInteger(count) || count < 0) throw new Error('Tamanho inválido para a estrutura XML do XLSX.');
+  const maximum = (limits.cells * 6) + limits.dataRows + limits.sheets;
+  if (!Number.isSafeInteger(maximum) || maximum < 0) throw new Error('Limite inválido para a estrutura XML do XLSX.');
+  if (count <= maximum) return;
+  throw new Error(`A estrutura XML do XLSX excede o limite de ${maximum.toLocaleString('pt-BR')} elementos.`);
+}

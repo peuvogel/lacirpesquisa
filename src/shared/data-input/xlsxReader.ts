@@ -1,4 +1,5 @@
-import { validateImportLimit, validateTableSize } from './importLimits';
+import { IMPORT_LIMITS, validateImportLimit, validateTableSize, validateXmlElementLimit } from './importLimits';
+import type { ImportLimits } from './importLimits';
 import type { ImportWarning, WorkbookTable } from './types';
 
 interface ZipEntry { name: string; method: number; size: number; compressedSize: number; crc: number; start: number }
@@ -148,38 +149,129 @@ function xmlReader(buffer: ArrayBuffer, entries: Map<string, ZipEntry>) {
 }
 
 function nodes(node: Document | Element, name: string): Element[] {
-  return Array.from(node.getElementsByTagName('*')).filter((item) => item.localName === name);
+  return Array.from(node.getElementsByTagNameNS('*', name));
 }
 
-function parseXml(text: string, root: string): Document {
-  if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(text)) throw new Error('DTD e entidades não são suportados no XML do XLSX.');
-  // Count relevant nodes before DOM allocation, without building a match array.
-  const tags = /<(?:[^<>\s/:]+:)?(row|c|si|sheet)(?=[\s/>])/g;
-  const counts = { row: 0, c: 0, si: 0, sheet: 0 };
-  for (let match = tags.exec(text); match; match = tags.exec(text)) {
-    const tag = match[1] as keyof typeof counts;
-    counts[tag]++;
-    if (tag === 'sheet') validateImportLimit('sheets', counts[tag]);
-    else if (tag === 'row') validateImportLimit('dataRows', Math.max(0, counts[tag] - 1));
-    else validateImportLimit('cells', counts[tag]);
+function xmlAttribute(tag: string, name: string): string | undefined {
+  const match = new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`).exec(tag);
+  return match?.[1] ?? match?.[2];
+}
+
+function scanXmlOpenElements(text: string, onElement: (name: string, tag: string) => void): void {
+  let offset = 0, depth = 0;
+  while (offset < text.length) {
+    const start = text.indexOf('<', offset);
+    if (start < 0) break;
+    if (text.startsWith('<!--', start)) {
+      const end = text.indexOf('-->', start + 4);
+      if (end < 0) throw new Error('Estrutura XML interna do XLSX inválida.');
+      offset = end + 3;
+      continue;
+    }
+    if (text.startsWith('<![CDATA[', start)) {
+      const end = text.indexOf(']]>', start + 9);
+      if (end < 0) throw new Error('Estrutura XML interna do XLSX inválida.');
+      offset = end + 3;
+      continue;
+    }
+    if (text.startsWith('<?', start)) {
+      const end = text.indexOf('?>', start + 2);
+      if (end < 0) throw new Error('Estrutura XML interna do XLSX inválida.');
+      offset = end + 2;
+      continue;
+    }
+    if (text[start + 1] === '/') {
+      const end = text.indexOf('>', start + 2);
+      if (end < 0 || --depth < 0) throw new Error('Estrutura XML interna do XLSX inválida.');
+      offset = end + 1;
+      continue;
+    }
+    if (text[start + 1] === '!') throw new Error('Estrutura XML interna do XLSX não suportada.');
+    let nameEnd = start + 1;
+    while (nameEnd < text.length && !/[\s/>]/.test(text[nameEnd])) nameEnd++;
+    const name = text.slice(start + 1, nameEnd);
+    if (!name) throw new Error('Estrutura XML interna do XLSX inválida.');
+    let end = nameEnd, quote = '';
+    for (; end < text.length; end++) {
+      const char = text[end];
+      if (quote) { if (char === quote) quote = ''; }
+      else if (char === '"' || char === "'") quote = char;
+      else if (char === '>') break;
+    }
+    if (end >= text.length || quote) throw new Error('Estrutura XML interna do XLSX inválida.');
+    const tag = text.slice(start, end + 1);
+    onElement(name, tag);
+    if (!/\/\s*>$/.test(tag)) depth++;
+    offset = end + 1;
   }
-  const document = new DOMParser().parseFromString(text, 'application/xml');
-  if (document.documentElement?.localName !== root || nodes(document, 'parsererror').length) throw new Error('Não foi possível interpretar a estrutura XML interna do XLSX.');
-  return document;
+  if (depth !== 0) throw new Error('Estrutura XML interna do XLSX inválida.');
 }
 
-function cellPosition(ref: string): { row: number; column: number } {
+function localName(name: string): string {
+  return name.slice(name.lastIndexOf(':') + 1);
+}
+
+function cellPosition(ref: string, limits: ImportLimits = IMPORT_LIMITS): { row: number; column: number } {
   const match = /^([A-Z]{1,3})([1-9]\d{0,6})$/.exec(ref);
   if (!match) throw new Error('Referência de célula XLSX inválida.');
   let column = 0;
   for (const char of match[1]) column = column * 26 + char.charCodeAt(0) - 64;
   const row = Number(match[2]);
-  validateImportLimit('columns', column); validateImportLimit('dataRows', row - 1);
+  validateImportLimit('columns', column, limits); validateImportLimit('dataRows', row - 1, limits);
   return { row, column: column - 1 };
 }
 
+/** Pure lexical preflight: bound all elements and worksheet dimensions before DOMParser allocation. */
+export function preflightXml(text: string, root: string, limits: ImportLimits = IMPORT_LIMITS, previous = { rows: 0, cells: 0 }): void {
+  if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(text)) throw new Error('DTD e entidades não são suportados no XML do XLSX.');
+  const counts = { row: 0, c: 0, si: 0, sheet: 0 };
+  let elements = 0, first = true, maxRow = 0, columns = 0;
+  const validateWorksheetBudget = () => {
+    const dataRows = Math.max(0, maxRow - 1);
+    validateTableSize(dataRows, columns, limits);
+    validateImportLimit('dataRows', previous.rows + dataRows, limits);
+    validateImportLimit('cells', previous.cells + maxRow * columns, limits);
+  };
+  scanXmlOpenElements(text, (qualifiedName, tag) => {
+    const name = localName(qualifiedName);
+    if (first) {
+      first = false;
+      if (name !== root) throw new Error('Não foi possível interpretar a estrutura XML interna do XLSX.');
+    }
+    validateXmlElementLimit(++elements, limits);
+    if (name === 'sheet' || name === 'row' || name === 'c' || name === 'si') {
+      const counted = name as keyof typeof counts;
+      counts[counted]++;
+      if (counted === 'sheet') validateImportLimit('sheets', counts[counted], limits);
+      else if (counted === 'row') validateImportLimit('dataRows', Math.max(0, counts[counted] - 1), limits);
+      else validateImportLimit('cells', counts[counted], limits);
+    }
+    if (root !== 'worksheet') return;
+    if (name === 'row') {
+      const reference = xmlAttribute(tag, 'r');
+      const row = reference === undefined ? maxRow + 1 : (/^[1-9]\d{0,6}$/.test(reference) ? Number(reference) : NaN);
+      if (!Number.isSafeInteger(row) || row <= maxRow) throw new Error('Referência de linha XLSX inválida.');
+      maxRow = row;
+      validateWorksheetBudget();
+    } else if (name === 'c') {
+      const reference = xmlAttribute(tag, 'r') || '';
+      const position = cellPosition(reference, limits);
+      columns = Math.max(columns, position.column + 1);
+      validateWorksheetBudget();
+    }
+  });
+  if (first) throw new Error('Não foi possível interpretar a estrutura XML interna do XLSX.');
+}
+
+function parseXml(text: string, root: string, previous?: { rows: number; cells: number }): Document {
+  preflightXml(text, root, IMPORT_LIMITS, previous);
+  const document = new DOMParser().parseFromString(text, 'application/xml');
+  if (document.documentElement?.localName !== root || nodes(document, 'parsererror').length) throw new Error('Não foi possível interpretar a estrutura XML interna do XLSX.');
+  return document;
+}
+
 async function readWorksheet(text: string, getShared: () => Promise<string[]>, name: string, previous: { rows: number; cells: number }): Promise<WorkbookTable> {
-  const document = parseXml(text, 'worksheet');
+  const document = parseXml(text, 'worksheet', previous);
   const shared = nodes(document, 'c').some((cell) => cell.getAttribute('t') === 's') ? await getShared() : [];
   const dimensions = nodes(document, 'dimension')[0]?.getAttribute('ref');
   if (dimensions) {
