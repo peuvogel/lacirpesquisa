@@ -4,6 +4,8 @@ import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { ResearchQuestionField } from '@/features/tests/shared/ResearchQuestionField';
 import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
 import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
+import type { ImportWarning } from '@/shared/data-input/types';
 import { defaultQuestion, didacticCards, TABULAR_OPTIONS } from './mannWhitneyConfig';
 
 export interface MannWhitneyLoadedInput {
@@ -28,6 +30,10 @@ export interface MannWhitneyConfigPanelProps {
     rows: string[][];
     recognizedColumns: Record<string, number>;
   }) => void;
+  document?: TableDocument;
+  testId?: string;
+  onDocumentChange?: (document: TableDocument) => void;
+  importWarnings?: ImportWarning[];
 }
 
 export function MannWhitneyConfigPanel({
@@ -41,6 +47,10 @@ export function MannWhitneyConfigPanel({
   onIndependenceConfirmedChange,
   onRoleAdjust,
   onConfirm,
+  document,
+  testId,
+  onDocumentChange,
+  importWarnings,
 }: MannWhitneyConfigPanelProps) {
   return (
     <div className="space-y-4">
@@ -76,6 +86,10 @@ export function MannWhitneyConfigPanel({
           onRoleAdjust={onRoleAdjust}
           onConfirm={onConfirm}
           confirmDisabled={!independenceConfirmed}
+          document={document}
+          testId={testId}
+          onDocumentChange={onDocumentChange}
+          importWarnings={importWarnings}
         />
       </div>
     </div>

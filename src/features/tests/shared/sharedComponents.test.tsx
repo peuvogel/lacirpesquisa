@@ -58,9 +58,9 @@ describe('shared Configurar components', () => {
 
     const alert = screen.getByRole('status');
     expect(alert).toBeInTheDocument();
-    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
     expect(
-      screen.getByText(/Mantivemos os dados colados, mas limpamos as configurações específicas deste modo/),
+      screen.getByText(/Os dados ou a configuração foram alterados/),
     ).toBeInTheDocument();
   });
 });

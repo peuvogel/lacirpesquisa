@@ -1,5 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
+import type { ImportWarning } from '@/shared/data-input/types';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { ResearchQuestionField } from '@/features/tests/shared/ResearchQuestionField';
@@ -30,6 +32,10 @@ export interface PoissonConfigPanelProps {
     rows: string[][];
     recognizedColumns: Record<string, number>;
   }) => void;
+  document?: TableDocument;
+  testId?: string;
+  onDocumentChange?: (document: TableDocument) => void;
+  importWarnings?: ImportWarning[];
 }
 
 export function PoissonConfigPanel({
@@ -41,6 +47,10 @@ export function PoissonConfigPanel({
   showSoftReset,
   onRoleAdjust,
   onConfirm,
+  document,
+  testId,
+  onDocumentChange,
+  importWarnings,
 }: PoissonConfigPanelProps) {
   return (
     <div className="space-y-4">
@@ -67,6 +77,10 @@ export function PoissonConfigPanel({
           tabularOptions={TABULAR_OPTIONS}
           onRoleAdjust={onRoleAdjust}
           onConfirm={onConfirm}
+          document={document}
+          testId={testId}
+          onDocumentChange={onDocumentChange}
+          importWarnings={importWarnings}
         />
       </div>
     </div>

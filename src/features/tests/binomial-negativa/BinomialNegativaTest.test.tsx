@@ -123,7 +123,7 @@ describe('BinomialNegativaTest', () => {
 
     await screen.findByRole('button', { name: 'Analisar dados' });
 
-    const detectedBadges = screen.getAllByText('detectado');
+    const detectedBadges = screen.getAllByText('em uso');
     expect(detectedBadges.length).toBe(2);
 
     const resultados = await runToResultados(user);
@@ -140,8 +140,8 @@ describe('BinomialNegativaTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Papel da coluna contagem/i), 'ignorar');
+    await user.selectOptions(screen.getByLabelText(/Tipo da coluna contagem/i), 'ignorar');
 
-    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
 });

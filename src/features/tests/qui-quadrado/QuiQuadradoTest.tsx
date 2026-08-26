@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { UseExampleButton } from '@/features/tests/shared/UseExampleButton';
+import { useEffect, useMemo, useState } from 'react';
 import { AssumptionNudgeStrip } from '@/features/tests/shared/AssumptionNudgeStrip';
 import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
-import { useTabularInput } from '@/shared/data-input/useTabularInput';
+import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useSession } from '@/shared/session/SessionProvider';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
@@ -62,9 +61,9 @@ function initialStepFromSession(sessionDataset: ReturnType<typeof useSession>['d
 }
 
 export function QuiQuadradoTest() {
-  const { dataset: sessionDataset, setDataset } = useSession();
-  const tabular = useTabularInput(TABULAR_OPTIONS);
-  const sourceLabelRef = useRef('colado');
+  const { dataset: sessionDataset } = useSession();
+  const analysisTable = useAnalysisTable('qui-quadrado', { tabularOptions: TABULAR_OPTIONS });
+  const tabular = analysisTable.tabular;
 
   const [activeStep, setActiveStep] = useState<FlowStep>(() => initialStepFromSession(sessionDataset));
   const [loadedInput, setLoadedInput] = useState<QuiQuadradoLoadedInput | null>(() =>
@@ -76,19 +75,23 @@ export function QuiQuadradoTest() {
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
-    if (tabular.status === 'loaded') {
-      setLoadedInput({
-        headers: tabular.headers,
-        rows: tabular.bodyRows,
-        recognizedColumns: tabular.recognizedColumns,
-        sourceLabel: sourceLabelRef.current,
-      });
+    if (!analysisTable.loadedInput) {
+      setLoadedInput(null);
+      setActiveStep('dados');
+      return;
     }
-  }, [tabular.status, tabular.headers, tabular.bodyRows, tabular.recognizedColumns]);
+    setLoadedInput(analysisTable.loadedInput);
+  }, [analysisTable.loadedInput]);
+
+  useEffect(() => {
+    if (analysisTable.confirmed || !confirmedDataset) return;
+    setConfirmedDataset(null);
+    setShowSoftReset(true);
+    setActiveStep((step) => (step === 'resultados' ? 'configurar' : step));
+  }, [analysisTable.confirmed, confirmedDataset]);
 
   function handleUseExample() {
-    sourceLabelRef.current = 'exemplo';
-    tabular.setRawText(exampleText);
+    analysisTable.useExample(exampleText);
   }
 
   function handleRoleAdjust() {
@@ -104,29 +107,18 @@ export function QuiQuadradoTest() {
     recognizedColumns: Record<string, number>;
   }) {
     const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
-    setConfirmedDataset({
-      headers: confirmed.headers,
-      rows: confirmed.rows,
-      sourceLabel,
-      recognizedColumns: confirmed.recognizedColumns,
-    });
+    setConfirmedDataset(analysisTable.confirm() ?? { ...confirmed, sourceLabel });
     setShowSoftReset(false);
-    setDataset({
-      headers: confirmed.headers,
-      rows: confirmed.rows,
-      sourceLabel,
-      confirmedAt: Date.now(),
-    });
     setActiveStep('resultados');
   }
 
   function handleClearData() {
-    tabular.reset();
-    setLoadedInput(null);
-    setConfirmedDataset(null);
-    setShowSoftReset(false);
-    setActiveStep('dados');
-    sourceLabelRef.current = 'colado';
+    analysisTable.requestClear(() => {
+      setLoadedInput(null);
+      setConfirmedDataset(null);
+      setShowSoftReset(false);
+      setActiveStep('dados');
+    });
   }
 
   const canAdvance = useMemo(
@@ -194,8 +186,17 @@ export function QuiQuadradoTest() {
       canAdvance={canAdvance}
       dados={
         <div className="space-y-3">
-          <UseExampleButton onClick={handleUseExample} />
-          <TabularInputPanel {...tabular} showPreview={false} />
+          <TabularInputPanel
+            {...tabular}
+            showPreview={false}
+            onUseExample={handleUseExample}
+            onClear={handleClearData}
+            onRawTextChange={analysisTable.requestPaste}
+            onFileSelect={analysisTable.requestFile}
+            pendingAction={analysisTable.pendingAction}
+            onConfirmPendingAction={analysisTable.confirmPendingAction}
+            onCancelPendingAction={analysisTable.cancelPendingAction}
+          />
         </div>
       }
       configurar={
@@ -209,6 +210,9 @@ export function QuiQuadradoTest() {
             showSoftReset={showSoftReset}
             onRoleAdjust={handleRoleAdjust}
             onConfirm={handleConfigureConfirm}
+            document={analysisTable.table ?? undefined} testId="qui-quadrado"
+            onDocumentChange={analysisTable.setDocument}
+            importWarnings={analysisTable.importWarnings}
           />
         ) : (
           <p className="text-sm text-muted-foreground">Carregue dados na etapa Dados para continuar.</p>

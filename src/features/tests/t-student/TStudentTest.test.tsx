@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SessionProvider } from '@/shared/session/SessionProvider';
+import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import { TStudentTest } from './TStudentTest';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
@@ -33,8 +33,14 @@ vi.mock('chart.js', () => ({
 }));
 
 function renderTStudent() {
+  function GlobalClearControl() {
+    const { clearSession } = useSession();
+    return <button type="button" onClick={clearSession}>Limpar sessão global</button>;
+  }
+
   return render(
     <SessionProvider>
+      <GlobalClearControl />
       <TStudentTest />
     </SessionProvider>,
   );
@@ -110,9 +116,41 @@ describe('TStudentTest', () => {
 
     await user.click(screen.getByRole('radio', { name: /t pareado/i }));
 
-    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
     expect(
-      screen.getByText(/Mantivemos os dados colados, mas limpamos as configurações específicas/i),
+      screen.getByText(/Os dados ou a configuração foram alterados/i),
     ).toBeInTheDocument();
+  });
+
+  it('invalidates the visible result when a new source replaces the confirmed table', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderTStudent();
+    await loadExample(user);
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+    await screen.findByText('O que isso significa?');
+
+    fireEvent.change(screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'), {
+      target: { value: 'Grupo A;Grupo B\n1;4\n2;5\n3;6' },
+    });
+    await vi.advanceTimersByTimeAsync(200);
+
+    await waitFor(() => {
+      expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
+  });
+
+  it('returns to the empty data step when the global session is cleared', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderTStudent();
+    await loadExample(user);
+    expect(screen.getByText('Papéis desta análise')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Limpar sessão global' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Papéis desta análise')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Cole ou envie seus dados')).toBeInTheDocument();
   });
 });

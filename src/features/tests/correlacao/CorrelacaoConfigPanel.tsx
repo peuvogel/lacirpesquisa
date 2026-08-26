@@ -1,5 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
+import type { ImportWarning } from '@/shared/data-input/types';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { ModeChoiceCard } from '@/features/tests/shared/ModeChoiceCard';
@@ -34,6 +36,10 @@ export interface CorrelacaoConfigPanelProps {
     rows: string[][];
     recognizedColumns: Record<string, number>;
   }) => void;
+  document?: TableDocument;
+  testId?: string;
+  onDocumentChange?: (document: TableDocument) => void;
+  importWarnings?: ImportWarning[];
 }
 
 export function CorrelacaoConfigPanel({
@@ -46,6 +52,10 @@ export function CorrelacaoConfigPanel({
   onResearchQuestionChange,
   showSoftReset,
   onConfirm,
+  document,
+  testId,
+  onDocumentChange,
+  importWarnings,
 }: CorrelacaoConfigPanelProps) {
   return (
     <div className="space-y-4">
@@ -86,6 +96,10 @@ export function CorrelacaoConfigPanel({
           tabularOptions={TABULAR_OPTIONS}
           onConfirm={onConfirm}
           editable
+          document={document}
+          testId={testId}
+          onDocumentChange={onDocumentChange}
+          importWarnings={importWarnings}
         />
       </div>
     </div>

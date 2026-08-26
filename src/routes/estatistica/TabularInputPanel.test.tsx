@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useTabularInput } from '@/shared/data-input/useTabularInput';
@@ -47,6 +47,50 @@ describe('TabularInputPanel', () => {
       expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(TEXTAREA_LABEL)).toBeInTheDocument();
+    expect(screen.getByLabelText('Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)')).toBeInTheDocument();
+  });
+
+  it('keeps example and clear actions reachable after load', async () => {
+    const user = userEvent.setup();
+    const onExample = vi.fn();
+    const onClear = vi.fn();
+    function ActionHarness() {
+      const hook = useTabularInput(options);
+      return <TabularInputPanel {...hook} onUseExample={onExample} onClear={onClear} />;
+    }
+    render(<ActionHarness />);
+    fireEvent.change(screen.getByLabelText(TEXTAREA_LABEL), { target: { value: 'Município;Taxa por 100k\nBA;10' } });
+    await screen.findByRole('button', { name: 'Analisar dados' });
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await user.click(screen.getByRole('button', { name: 'Limpar tabela' }));
+    expect(onExample).toHaveBeenCalledTimes(1);
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses an accessible confirmation dialog before discarding edited data', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+
+    function DialogHarness() {
+      const hook = useTabularInput(options);
+      return (
+        <TabularInputPanel
+          {...hook}
+          pendingAction="Substituir dados"
+          onConfirmPendingAction={onConfirm}
+          onCancelPendingAction={onCancel}
+        />
+      );
+    }
+
+    render(<DialogHarness />);
+    expect(screen.getByRole('dialog', { name: 'Substituir dados' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Manter tabela' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: 'Descartar alterações' }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it('renders a destructive Alert with the Portuguese copy and a working Ver detalhes disclosure for junk text', async () => {
@@ -60,6 +104,7 @@ describe('TabularInputPanel', () => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
     expect(screen.getByText('Não conseguimos reconhecer esses dados')).toBeInTheDocument();
+    expect(screen.getByText(/não encontramos colunas compatíveis/i)).toBeInTheDocument();
 
     const disclosure = screen.getByText('Ver detalhes');
     expect(disclosure).toBeInTheDocument();

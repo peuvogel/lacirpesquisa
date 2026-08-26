@@ -101,9 +101,9 @@ describe('CorrelacaoTest', () => {
 
     await user.click(screen.getByRole('radio', { name: /^Spearman/i }));
 
-    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
     expect(
-      screen.getByText(/Mantivemos os dados colados, mas limpamos as configurações específicas/i),
+      screen.getByText(/Os dados ou a configuração foram alterados/i),
     ).toBeInTheDocument();
   });
 });

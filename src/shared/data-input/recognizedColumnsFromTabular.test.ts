@@ -62,12 +62,34 @@ describe('deriveRecognizedColumnsFromTabular', () => {
     expect(recognized.grupo_b).toBe(2);
   });
 
+  it('does not apply position fallback when the structured rows are incompatible', () => {
+    const recognized = deriveRecognizedColumnsFromTabular(
+      ['Identificador', 'Medida A', 'Medida B'],
+      [['UF1', 'sem medida', 'também texto'], ['UF2', 'inválido', 'inválido']],
+      tStudentOptions,
+    );
+
+    expect(recognized.grupo_a).toBeUndefined();
+    expect(recognized.grupo_b).toBeUndefined();
+  });
+
   it('returns empty object for unrecognizable table without throwing', () => {
     const headers = ['Notas'];
     const rows = [['abc'], ['def']];
     const recognized = deriveRecognizedColumnsFromTabular(headers, rows, tStudentOptions);
 
     expect(recognized).toEqual({});
+  });
+
+  it('keeps structural handoff cells untouched when they contain delimiters and newlines', () => {
+    const headers = ['variavel_x', 'variavel_y'];
+    const rows = [['texto; literal', 'linha 1\nlinha 2']];
+
+    expect(deriveRecognizedColumnsFromTabular(headers, rows, correlacaoOptions)).toEqual({
+      variavel_x: 0,
+      variavel_y: 1,
+    });
+    expect(rows).toEqual([['texto; literal', 'linha 1\nlinha 2']]);
   });
 });
 

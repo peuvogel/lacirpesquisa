@@ -82,8 +82,8 @@ describe('QuiQuadradoTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Papel da coluna tratamento/i), 'ignorar');
+    await user.selectOptions(screen.getByLabelText(/Tipo da coluna tratamento/i), 'ignorar');
 
-    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
 });

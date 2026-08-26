@@ -34,7 +34,7 @@ export function FlowSteps({ active, canAdvance, dados, configurar, resultados }:
   return (
     <div className="space-y-10">
       <section aria-label="Dados e configuração" className="space-y-4">
-        {showConfig ? configurar : dados}
+        {showConfig ? <>{dados}{configurar}</> : dados}
       </section>
       {showResults ? (
         <section

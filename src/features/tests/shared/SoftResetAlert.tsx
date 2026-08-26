@@ -12,10 +12,10 @@ export function SoftResetAlert({ className }: SoftResetAlertProps) {
       aria-live="polite"
       className={cn('border-l-4 border-l-[var(--color-accent)] bg-[var(--color-surface)]', className)}
     >
-      <AlertTitle className="text-base font-bold text-foreground">Modo alterado.</AlertTitle>
+      <AlertTitle className="text-base font-bold text-foreground">Análise anterior invalidada.</AlertTitle>
       <AlertDescription className="text-base text-muted-foreground">
-        Mantivemos os dados colados, mas limpamos as configurações específicas deste modo. Revise
-        Configurar e confirme a tabela antes de analisar.
+        Os dados ou a configuração foram alterados. Mantivemos a tabela, mas os resultados anteriores
+        não são mais atuais. Revise as escolhas e clique em Analisar dados novamente.
       </AlertDescription>
     </Alert>
   );

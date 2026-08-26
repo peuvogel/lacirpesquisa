@@ -203,8 +203,8 @@ describe('EstatisticaPage', () => {
       expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
 
-    const desfechoSelect = screen.getByLabelText(/Papel da coluna desfecho/i);
-    const grupoSelect = screen.getByLabelText(/Papel da coluna grupo/i);
+    const desfechoSelect = screen.getByLabelText(/Tipo da coluna desfecho/i);
+    const grupoSelect = screen.getByLabelText(/Tipo da coluna grupo/i);
     expect(desfechoSelect).toHaveValue('numerica');
     expect(grupoSelect).toHaveValue('categorica');
 
@@ -223,10 +223,10 @@ describe('EstatisticaPage', () => {
     expect(mount).toHaveAttribute('data-active-test-id', 'kruskal-dunn');
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Papel da coluna desfecho/i)).toHaveValue('numerica');
+      expect(screen.getByLabelText(/Tipo da coluna desfecho/i)).toHaveValue('numerica');
     });
 
-    expect(screen.getByLabelText(/Papel da coluna grupo/i)).toHaveValue('categorica');
+    expect(screen.getByLabelText(/Tipo da coluna grupo/i)).toHaveValue('categorica');
   });
 
   const OVERDISPERSED_PASTE = `contagem;exposicao
@@ -258,8 +258,8 @@ describe('EstatisticaPage', () => {
       expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
-    expect(screen.getByLabelText(/Papel da coluna exposicao/i)).toHaveValue('numerica');
+    expect(screen.getByLabelText(/Tipo da coluna contagem/i)).toHaveValue('numerica');
+    expect(screen.getByLabelText(/Tipo da coluna exposicao/i)).toHaveValue('numerica');
 
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
@@ -274,10 +274,10 @@ describe('EstatisticaPage', () => {
     expect(mount).toHaveAttribute('data-active-test-id', 'binomial-negativa');
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Papel da coluna contagem/i)).toHaveValue('numerica');
+      expect(screen.getByLabelText(/Tipo da coluna contagem/i)).toHaveValue('numerica');
     });
 
-    expect(screen.getByLabelText(/Papel da coluna exposicao/i)).toHaveValue('numerica');
-    expect(screen.getAllByText('detectado').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByLabelText(/Tipo da coluna exposicao/i)).toHaveValue('numerica');
+    expect(screen.getAllByText('em uso').length).toBeGreaterThanOrEqual(2);
   });
 });

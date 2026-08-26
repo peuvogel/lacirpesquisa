@@ -1,5 +1,5 @@
 import { legacyStats } from './legacyAdapters';
-import { matchTabularColumns, readTabularPasteState } from './parseTabular';
+import { matchStructuredPositionFallback, matchTabularColumns } from './parseTabular';
 import type { RecognizedColumn, TabularInputOptions } from './types';
 
 export type TabularColumnRole = 'numerica' | 'categorica' | 'tempo' | 'ignorar';
@@ -15,15 +15,10 @@ function toIndexMap(recognizedColumns: Record<string, RecognizedColumn>): Record
   return Object.fromEntries(Object.entries(recognizedColumns).map(([key, column]) => [key, column.index]));
 }
 
-function tabularToPasteText(headers: string[], rows: string[][]): string {
-  const headerLine = headers.join(';');
-  const rowLines = rows.map((row) => row.join(';'));
-  return [headerLine, ...rowLines].join('\n');
-}
-
 /**
- * Re-derives domain column keys from session/handoff headers and rows by
- * serializing to delimited paste text and delegating to readTabularPasteState.
+ * Re-derives domain keys from an already structured handoff. This deliberately
+ * never serializes cells to a delimiter format: cells may themselves contain
+ * semicolons, quotes or line breaks that are valid data, not transport syntax.
  */
 export function deriveRecognizedColumnsFromTabular(
   headers: string[],
@@ -31,13 +26,16 @@ export function deriveRecognizedColumnsFromTabular(
   options: TabularInputOptions,
 ): Record<string, number> {
   if (!headers.length) return {};
-
-  const text = tabularToPasteText(headers, rows);
-  const parsed = readTabularPasteState(text, legacyStats, options);
-
-  if (parsed.status !== 'loaded') return {};
-
-  return toIndexMap(parsed.recognizedColumns);
+  const requiredKeys = options.requiredKeys ?? [];
+  const matched = matchTabularColumns(headers, options.aliases ?? {}, requiredKeys);
+  const recognized = toIndexMap(matched.recognizedColumns);
+  const positional = toIndexMap(matchStructuredPositionFallback(headers, rows, options, legacyStats));
+  Object.entries(positional).forEach(([key, index]) => {
+    if (recognized[key] === undefined) recognized[key] = index;
+  });
+  return Object.fromEntries(
+    Object.entries(recognized).filter(([key, index]) => isKnownDomainKey(key, options) && index >= 0 && index < headers.length),
+  );
 }
 
 /**

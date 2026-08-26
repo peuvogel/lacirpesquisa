@@ -116,9 +116,9 @@ describe('AnovaTukeyTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Papel da coluna desfecho/i), 'categorica');
+    await user.selectOptions(screen.getByLabelText(/Tipo da coluna desfecho/i), 'categorica');
 
-    expect(screen.getByText('Modo alterado.')).toBeInTheDocument();
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
 
   it('calls onNavigateTest for Kruskal CTA when nudge is shown', async () => {

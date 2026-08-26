@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
-import { UseExampleButton } from '@/features/tests/shared/UseExampleButton';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
-import { useTabularInput } from '@/shared/data-input/useTabularInput';
+import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useSession } from '@/shared/session/SessionProvider';
 import {
@@ -49,9 +48,9 @@ function initialLoadedFromSession(dataset: ReturnType<typeof useSession>['datase
 }
 
 export function MannWhitneyTest() {
-  const { dataset: sessionDataset, setDataset } = useSession();
-  const tabular = useTabularInput(TABULAR_OPTIONS);
-  const sourceLabelRef = useRef('colado');
+  const { dataset: sessionDataset } = useSession();
+  const analysisTable = useAnalysisTable('mann-whitney', { tabularOptions: TABULAR_OPTIONS });
+  const tabular = analysisTable.tabular;
   const [activeStep, setActiveStep] = useState<FlowStep>(() => sessionDataset ? 'configurar' : 'dados');
   const [loadedInput, setLoadedInput] = useState<MannWhitneyLoadedInput | null>(() => initialLoadedFromSession(sessionDataset));
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
@@ -61,20 +60,27 @@ export function MannWhitneyTest() {
   const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
 
   useEffect(() => {
-    if (tabular.status !== 'loaded') return;
-    setLoadedInput({
-      headers: tabular.headers,
-      rows: tabular.bodyRows,
-      recognizedColumns: tabular.recognizedColumns,
-      sourceLabel: sourceLabelRef.current,
-    });
+    if (!analysisTable.loadedInput) {
+      setLoadedInput(null);
+      setIndependenceConfirmed(false);
+      setActiveStep('dados');
+      return;
+    }
+    setLoadedInput(analysisTable.loadedInput);
     setIndependenceConfirmed(false);
     setActiveStep((step) => step === 'dados' ? 'configurar' : step);
-  }, [tabular.status, tabular.headers, tabular.bodyRows, tabular.recognizedColumns]);
+  }, [analysisTable.loadedInput]);
+
+  useEffect(() => {
+    if (analysisTable.confirmed || !confirmedDataset) return;
+    setConfirmedDataset(null);
+    setShowSoftReset(true);
+    setIndependenceConfirmed(false);
+    setActiveStep((step) => (step === 'resultados' ? 'configurar' : step));
+  }, [analysisTable.confirmed, confirmedDataset]);
 
   function handleUseExample() {
-    sourceLabelRef.current = 'exemplo';
-    tabular.setRawText(exampleText);
+    analysisTable.useExample(exampleText);
   }
 
   function handleConfirm(confirmed: {
@@ -83,9 +89,8 @@ export function MannWhitneyTest() {
     recognizedColumns: Record<string, number>;
   }) {
     const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
-    setConfirmedDataset({ ...confirmed, sourceLabel });
+    setConfirmedDataset(analysisTable.confirm() ?? { ...confirmed, sourceLabel });
     setShowSoftReset(false);
-    setDataset({ ...confirmed, sourceLabel, confirmedAt: Date.now() });
     setActiveStep('resultados');
   }
 
@@ -98,13 +103,13 @@ export function MannWhitneyTest() {
   }
 
   function handleClearData() {
-    tabular.reset();
-    setLoadedInput(null);
-    setConfirmedDataset(null);
-    setShowSoftReset(false);
-    setIndependenceConfirmed(false);
-    setActiveStep('dados');
-    sourceLabelRef.current = 'colado';
+    analysisTable.requestClear(() => {
+      setLoadedInput(null);
+      setConfirmedDataset(null);
+      setShowSoftReset(false);
+      setIndependenceConfirmed(false);
+      setActiveStep('dados');
+    });
   }
 
   const canAdvance = useMemo(() => ({
@@ -147,8 +152,17 @@ export function MannWhitneyTest() {
       canAdvance={canAdvance}
       dados={(
         <div className="space-y-3">
-          <UseExampleButton onClick={handleUseExample} />
-          <TabularInputPanel {...tabular} showPreview={false} />
+          <TabularInputPanel
+            {...tabular}
+            showPreview={false}
+            onUseExample={handleUseExample}
+            onClear={handleClearData}
+            onRawTextChange={analysisTable.requestPaste}
+            onFileSelect={analysisTable.requestFile}
+            pendingAction={analysisTable.pendingAction}
+            onConfirmPendingAction={analysisTable.confirmPendingAction}
+            onCancelPendingAction={analysisTable.cancelPendingAction}
+          />
         </div>
       )}
       configurar={loadedInput ? (
@@ -163,6 +177,10 @@ export function MannWhitneyTest() {
           onIndependenceConfirmedChange={setIndependenceConfirmed}
           onRoleAdjust={handleRoleAdjust}
           onConfirm={handleConfirm}
+          document={analysisTable.table ?? undefined}
+          testId="mann-whitney"
+          onDocumentChange={analysisTable.setDocument}
+          importWarnings={analysisTable.importWarnings}
         />
       ) : <p className="text-sm text-muted-foreground">Carregue os dados para continuar.</p>}
       resultados={resultsContent ?? (

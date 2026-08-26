@@ -2,12 +2,19 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import { fingerprintResearchDesign } from '@/features/research/researchDesign';
 import type { GuidedAnalysisState, ResearchDesign } from '@/features/research/types';
 import type { MapAnalysisState } from '@/routes/mapas/mapAnalysisState';
+import {
+  createTableDocument,
+  isTableDocument,
+  type TableDocument,
+} from '@/shared/data-input/tableDocument';
 
 export interface SessionDataset {
   headers: string[];
   rows: string[][];
   sourceLabel: string; // e.g. 'colado', 'planilha.xlsx', 'assistente DATASUS'
   confirmedAt: number; // Date.now()
+  /** Stable editable representation; absent only on legacy handoffs before the provider normalizes them. */
+  table?: TableDocument;
 }
 
 export interface SessionState {
@@ -33,8 +40,27 @@ export interface SessionApi extends SessionState {
 
 const SessionContext = createContext<SessionApi | null>(null);
 
+/**
+ * Legacy producers still send headers/rows. Normalize exactly when they cross
+ * the provider boundary so all subsequent table edits retain the same IDs.
+ */
+export function normalizeSessionDataset(dataset: SessionDataset | null): SessionDataset | null {
+  if (!dataset) return null;
+  if (isTableDocument(dataset.table)) {
+    return {
+      ...dataset,
+      headers: dataset.table.columns.map((column) => column.name),
+      rows: dataset.table.rows,
+      sourceLabel: dataset.table.sourceLabel,
+      table: dataset.table,
+    };
+  }
+  const table = createTableDocument(dataset.headers, dataset.rows, dataset.sourceLabel);
+  return { ...dataset, table };
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [dataset, setDataset] = useState<SessionDataset | null>(null);
+  const [dataset, setDatasetState] = useState<SessionDataset | null>(null);
   const [datasusSession, setDatasusSession] = useState<unknown | null>(null);
   const [mapSelection, setMapSelection] = useState<{ ufs: string[]; variables: string[] } | null>(
     null,
@@ -43,6 +69,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [researchDesign, setResearchDesignState] = useState<ResearchDesign | null>(null);
   const [guidedAnalysis, setGuidedAnalysis] = useState<GuidedAnalysisState | null>(null);
   const researchDesignRef = useRef<ResearchDesign | null>(null);
+
+  const setDataset = useCallback((nextDataset: SessionDataset | null) => {
+    setDatasetState(normalizeSessionDataset(nextDataset));
+  }, []);
 
   const setResearchDesign = useCallback((design: ResearchDesign | null) => {
     researchDesignRef.current = design;

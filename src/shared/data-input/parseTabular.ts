@@ -305,6 +305,7 @@ function cellMatchesExpectedType(
   raw: unknown,
   key: string,
   positionFallback: PositionFallbackOptions | null | undefined,
+  numericKeys: readonly string[] | undefined,
   stats: LegacyStatsAdapter | undefined,
 ): boolean {
   const normalized = normalizeTabularSpaces(raw);
@@ -315,7 +316,7 @@ function cellMatchesExpectedType(
     return Boolean(validator(normalized, stats as LegacyStatsAdapter));
   }
 
-  return parseTabularNumber(normalized, stats) !== null;
+  return !numericKeys?.includes(key) || parseTabularNumber(normalized, stats) !== null;
 }
 
 function buildPositionalRecognizedColumns(
@@ -342,6 +343,7 @@ function rowLooksLikeFallbackHeader(
   headers: string[],
   bodyRows: string[][],
   positionFallback: PositionFallbackOptions | null | undefined,
+  numericKeys: readonly string[] | undefined,
   stats: LegacyStatsAdapter | undefined,
 ): boolean {
   const minColumns = positionFallback?.minColumns || 3;
@@ -364,7 +366,7 @@ function rowLooksLikeFallbackHeader(
   const textualHeaderCount = headerCells.filter((value) => cellLooksLikeHeader(value, stats)).length;
   const firstRowHasCompatibleData = requiredPositions.some((index) => {
     const key = (positionFallback as PositionFallbackOptions).keysByIndex?.[index] as string;
-    return cellMatchesExpectedType(firstDataRow[index], key, positionFallback, stats);
+    return cellMatchesExpectedType(firstDataRow[index], key, positionFallback, numericKeys, stats);
   });
 
   return textualRequiredHeaders === requiredPositions.length
@@ -396,7 +398,7 @@ function buildPositionalFallbackCandidate(
 ): TabularCandidate | null {
   const positionFallback = options?.positionFallback;
   if (!positionFallback) return null;
-  if (!rowLooksLikeFallbackHeader(headers, bodyRows, positionFallback, stats)) return null;
+  if (!rowLooksLikeFallbackHeader(headers, bodyRows, positionFallback, options.numericKeys, stats)) return null;
 
   const recognizedColumns = buildPositionalRecognizedColumns(headers, positionFallback);
   const requiredKeys = positionFallback.requiredKeys || options?.requiredKeys || [];
@@ -407,7 +409,7 @@ function buildPositionalFallbackCandidate(
     requiredKeys.forEach((key) => {
       const index = recognizedColumns[key]?.index;
       if (!Number.isInteger(index)) return;
-      if (cellMatchesExpectedType(row[index as number], key, positionFallback, stats)) {
+      if (cellMatchesExpectedType(row[index as number], key, positionFallback, options.numericKeys, stats)) {
         compatibilityCounts[key] += 1;
       }
     });
@@ -432,6 +434,27 @@ function buildPositionalFallbackCandidate(
     recognitionMode: 'position',
     recognitionDetails: buildFallbackRecognitionDetails(positionFallback),
   };
+}
+
+/**
+ * Validates positional suggestions against an already structured table.
+ * Unlike the legacy handoff, this never serializes cells to delimited text.
+ */
+export function matchStructuredPositionFallback(
+  headers: string[],
+  bodyRows: string[][],
+  options: TabularInputOptions,
+  stats: LegacyStatsAdapter,
+): Record<string, RecognizedColumn> {
+  const candidate = buildPositionalFallbackCandidate(
+    { name: 'tabela estruturada', rows: [headers, ...bodyRows] },
+    0,
+    headers,
+    bodyRows,
+    options,
+    stats,
+  );
+  return candidate?.recognizedColumns ?? {};
 }
 
 function buildTabularRecognitionError(

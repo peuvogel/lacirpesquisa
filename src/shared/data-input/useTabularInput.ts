@@ -25,6 +25,10 @@ export interface TabularInputState {
   recognizedColumns: Record<string, number>;
   error: TabularInputError | null;
   rawText: string;
+  /** Human-readable provenance for the loaded table. */
+  sourceLabel?: string;
+  /** Monotonic source generation; consumers must not infer it from table contents. */
+  requestId: number;
 }
 
 export interface UseTabularInputResult extends TabularInputState {
@@ -39,6 +43,7 @@ const IDLE_RESULT_FIELDS: Omit<TabularInputState, 'rawText'> = {
   bodyRows: [],
   recognizedColumns: {},
   error: null,
+  requestId: 0,
 };
 
 function toIndexMap(recognizedColumns: Record<string, RecognizedColumn>): Record<string, number> {
@@ -81,7 +86,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
     } catch (caught) {
       if (requestId !== requestRef.current) return;
       const reason = caught instanceof Error ? caught.message : 'Não foi possível interpretar o texto colado.';
-      setState({ ...IDLE_RESULT_FIELDS, status: 'error', rawText: text, error: { message: reason, details: [reason] } });
+      setState({ ...IDLE_RESULT_FIELDS, status: 'error', rawText: text, error: { message: reason, details: [reason] }, requestId });
       return;
     }
     if (requestId !== requestRef.current) return;
@@ -95,6 +100,8 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         recognizedColumns: toIndexMap(result.recognizedColumns),
         error: null,
         rawText: text,
+        sourceLabel: 'colado',
+        requestId,
       });
     } else {
       // Parser's { message, details } shape flows straight into the hook's
@@ -106,6 +113,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         recognizedColumns: {},
         error: { message: result.message, details: result.details },
         rawText: text,
+        requestId,
       });
     }
   }, []);
@@ -121,11 +129,11 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
 
       if (!text.trim()) {
         // A cleared textarea is not a failure — it resets to idle immediately.
-        setState({ ...IDLE_RESULT_FIELDS, rawText: text });
+        setState({ ...IDLE_RESULT_FIELDS, rawText: text, requestId });
         return;
       }
 
-      setState({ ...IDLE_RESULT_FIELDS, status: 'parsing', rawText: text });
+      setState({ ...IDLE_RESULT_FIELDS, status: 'parsing', rawText: text, requestId });
 
       debounceRef.current = setTimeout(() => {
         debounceRef.current = null;
@@ -142,7 +150,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
     }
 
     const requestId = ++requestRef.current;
-    setState({ ...IDLE_RESULT_FIELDS, status: 'parsing', rawText: '' });
+    setState({ ...IDLE_RESULT_FIELDS, status: 'parsing', rawText: '', requestId });
 
     try {
       const result = await readTabularFileState(file, legacyUtils, legacyStats, optionsRef.current);
@@ -160,6 +168,8 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
           recognizedColumns: toIndexMap(result.recognizedColumns),
           error: null,
           rawText: '',
+          sourceLabel: file.name,
+          requestId,
         });
       } else {
         setState({
@@ -169,6 +179,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
           recognizedColumns: {},
           error: { message: result.message, details: result.details },
           rawText: '',
+          requestId,
         });
       }
     } catch (caught) {
@@ -181,6 +192,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         recognizedColumns: {},
         error: { message: FILE_READ_ERROR_MESSAGE, details: [reason] },
         rawText: '',
+        requestId,
       });
     }
   }, []);
@@ -191,7 +203,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
       debounceRef.current = null;
     }
     requestRef.current += 1;
-    setState({ ...IDLE_RESULT_FIELDS, rawText: '' });
+    setState({ ...IDLE_RESULT_FIELDS, rawText: '', requestId: requestRef.current });
   }, []);
 
   return { ...state, setRawText, setFile, reset };

@@ -62,7 +62,19 @@ describe('SessionProvider / useSession', () => {
       result.current.setDataset(sampleDataset);
     });
     expect(result.current.hasData).toBe(true);
-    expect(result.current.dataset).toEqual(sampleDataset);
+    expect(result.current.dataset).toMatchObject(sampleDataset);
+    expect(result.current.dataset?.table).toBeDefined();
+  });
+
+  it('normalizes a legacy handoff to one stable TableDocument at the provider boundary', () => {
+    const { result } = renderSession();
+    act(() => result.current.setDataset(sampleDataset));
+    const firstTable = result.current.dataset!.table;
+    act(() => result.current.setDataset({ ...result.current.dataset!, rows: [['SP', '11']] }));
+
+    expect(firstTable).toBeDefined();
+    expect(result.current.dataset!.table).toBe(firstTable);
+    expect(result.current.dataset!.headers).toEqual(['UF', 'Valor']);
   });
 
   it('flips hasData to true when a datasusSession is set alone', () => {

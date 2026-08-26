@@ -1,6 +1,8 @@
 import { useState, type ChangeEvent, type DragEvent } from 'react';
 import { Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { UseTabularInputResult } from '@/shared/data-input/useTabularInput';
 import { ColumnPreviewTable } from './ColumnPreviewTable';
@@ -9,6 +11,13 @@ const ACCEPTED_FILE_TYPES = '.csv,.txt,.tsv,.xlsx';
 
 export interface TabularInputPanelProps extends UseTabularInputResult {
   onConfirm?: (confirmed: { headers: string[]; rows: string[][] }) => void;
+  onUseExample?: () => void;
+  onClear?: () => void;
+  onRawTextChange?: (text: string) => void;
+  onFileSelect?: (file: File) => void;
+  pendingAction?: string | null;
+  onConfirmPendingAction?: () => void;
+  onCancelPendingAction?: () => void;
   /** When false, loaded data is acknowledged without rendering ColumnPreviewTable (01-10 flow). */
   showPreview?: boolean;
 }
@@ -27,17 +36,27 @@ export function TabularInputPanel({
   recognizedColumns,
   error,
   onConfirm,
+  onUseExample,
+  onClear,
+  onRawTextChange,
+  onFileSelect,
+  pendingAction,
+  onConfirmPendingAction,
+  onCancelPendingAction,
   showPreview = true,
 }: TabularInputPanelProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   function handleTextareaChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    setRawText(event.target.value);
+    (onRawTextChange ?? setRawText)(event.target.value);
   }
 
   function handleFileInputChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (file) void setFile(file);
+    if (file) {
+      if (onFileSelect) onFileSelect(file);
+      else void setFile(file);
+    }
     event.target.value = '';
   }
 
@@ -45,7 +64,10 @@ export function TabularInputPanel({
     event.preventDefault();
     setIsDragOver(false);
     const file = event.dataTransfer.files?.[0];
-    if (file) void setFile(file);
+    if (file) {
+      if (onFileSelect) onFileSelect(file);
+      else void setFile(file);
+    }
   }
 
   function handleDragOver(event: DragEvent<HTMLLabelElement>) {
@@ -75,6 +97,13 @@ export function TabularInputPanel({
         </div>
       ) : null}
 
+      {onUseExample || onClear ? (
+        <div aria-label="Ações da tabela" className="flex flex-wrap gap-2">
+          {onUseExample ? <Button type="button" variant="outline" onClick={onUseExample}>Usar exemplo</Button> : null}
+          {onClear ? <Button type="button" variant="outline" onClick={onClear}>Limpar tabela</Button> : null}
+        </div>
+      ) : null}
+
       {loadedOk ? (
         <div
           role="status"
@@ -92,8 +121,9 @@ export function TabularInputPanel({
             </p>
           </div>
         </div>
-      ) : (
-        <>
+      ) : null}
+
+      <>
           <textarea
             aria-label="Cole aqui os dados copiados do DataSUS/TABNET"
             value={rawText}
@@ -129,8 +159,7 @@ export function TabularInputPanel({
               aria-label="Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)"
             />
           </label>
-        </>
-      )}
+      </>
 
       {status === 'parsing' ? (
         <div
@@ -147,7 +176,8 @@ export function TabularInputPanel({
           <Alert variant="destructive">
             <AlertTitle>Não conseguimos reconhecer esses dados</AlertTitle>
             <AlertDescription>
-              <p>
+              <p className="font-bold">{error.message}</p>
+              <p className="mt-1">
                 Confira se há pelo menos duas colunas e tente novamente. Aceitamos texto colado do DataSUS/TABNET,{' '}
                 <code>;</code>, vírgula decimal, CSV ou Excel.
               </p>
@@ -172,6 +202,18 @@ export function TabularInputPanel({
           onConfirm={handleConfirm}
         />
       ) : null}
+      <Dialog open={Boolean(pendingAction)} onOpenChange={(open) => { if (!open) onCancelPendingAction?.(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{pendingAction}</DialogTitle>
+            <DialogDescription>Há edições na tabela atual. Deseja descartá-las?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onCancelPendingAction}>Manter tabela</Button>
+            <Button type="button" variant="destructive" onClick={onConfirmPendingAction}>Descartar alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

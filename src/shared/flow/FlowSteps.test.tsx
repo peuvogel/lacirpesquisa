@@ -5,7 +5,21 @@ import { FlowSteps } from './FlowSteps';
 const baseCanAdvance = { dados: true, configurar: true, resultados: true };
 
 describe('FlowSteps', () => {
-  it('shows configurar instead of dados when config can advance', () => {
+  it('keeps the data slot reachable while configuration is visible', () => {
+    render(
+      <FlowSteps
+        active="configurar"
+        canAdvance={{ dados: true, configurar: true, resultados: false }}
+        dados={<p>Trocar dados</p>}
+        configurar={<p>Configuração da análise</p>}
+        resultados={<p>Resultados</p>}
+      />,
+    );
+
+    expect(screen.getByText('Trocar dados')).toBeInTheDocument();
+    expect(screen.getByText('Configuração da análise')).toBeInTheDocument();
+  });
+  it('shows both dados and configurar when config can advance', () => {
     render(
       <FlowSteps
         active="dados"
@@ -16,7 +30,7 @@ describe('FlowSteps', () => {
       />,
     );
 
-    expect(screen.queryByText('Conteúdo Dados')).not.toBeInTheDocument();
+    expect(screen.getByText('Conteúdo Dados')).toBeInTheDocument();
     expect(screen.getByText('Conteúdo Configurar')).toBeInTheDocument();
     expect(screen.queryByText('Conteúdo Resultados')).not.toBeInTheDocument();
   });

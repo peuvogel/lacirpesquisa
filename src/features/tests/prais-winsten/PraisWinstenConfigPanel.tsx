@@ -1,8 +1,11 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
+import type { ImportWarning } from '@/shared/data-input/types';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { ResearchQuestionField } from '@/features/tests/shared/ResearchQuestionField';
+import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
 import {
   defaultQuestion,
   didacticCards,
@@ -24,11 +27,16 @@ export interface PraisWinstenConfigPanelProps {
   onAlphaChange: (value: AlphaValue) => void;
   researchQuestion: string;
   onResearchQuestionChange: (value: string) => void;
+  showSoftReset: boolean;
   onConfirm: (confirmed: {
     headers: string[];
     rows: string[][];
     recognizedColumns: Record<string, number>;
   }) => void;
+  document?: TableDocument;
+  testId?: string;
+  onDocumentChange?: (document: TableDocument) => void;
+  importWarnings?: ImportWarning[];
 }
 
 export function PraisWinstenConfigPanel({
@@ -37,7 +45,12 @@ export function PraisWinstenConfigPanel({
   onAlphaChange,
   researchQuestion,
   onResearchQuestionChange,
+  showSoftReset,
   onConfirm,
+  document,
+  testId,
+  onDocumentChange,
+  importWarnings,
 }: PraisWinstenConfigPanelProps) {
   const previewDataset = buildDatasetFromConfirmed({
     headers: loadedInput.headers,
@@ -47,6 +60,8 @@ export function PraisWinstenConfigPanel({
 
   return (
     <div className="space-y-4">
+      {showSoftReset ? <SoftResetAlert /> : null}
+
       <div className="grid gap-4 md:grid-cols-2">
         <AlphaSelector value={alpha} onChange={onAlphaChange} />
         <ResearchQuestionField
@@ -80,6 +95,10 @@ export function PraisWinstenConfigPanel({
           recognizedColumns={loadedInput.recognizedColumns}
           tabularOptions={TABULAR_OPTIONS}
           onConfirm={onConfirm}
+          document={document}
+          testId={testId}
+          onDocumentChange={onDocumentChange}
+          importWarnings={importWarnings}
         />
       </div>
     </div>

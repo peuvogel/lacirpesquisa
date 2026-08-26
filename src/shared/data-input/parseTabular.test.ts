@@ -134,6 +134,32 @@ describe('readTabularPasteState direct behavior (not just parity)', () => {
     expect(result).toMatchObject({ status: 'loaded', headers: ['Pessoa', 'Medida'], bodyRows: [['Ana', '2'], ['Bia', '3']], recognizedColumns: {} });
   });
 
+  it('accepts non-empty categorical roles in a validated positional fallback', () => {
+    const result = port.readTabularPasteState('T1;T2\n1;A\n2;B', legacyStats, {
+      aliases: {
+        desfecho: ['Desfecho'],
+        grupo: ['Grupo'],
+      },
+      requiredKeys: ['desfecho', 'grupo'],
+      numericKeys: ['desfecho'],
+      expectedFormatLabel: 'Desfecho; Grupo',
+      positionFallback: {
+        minColumns: 2,
+        requiredKeys: ['desfecho', 'grupo'],
+        keysByIndex: ['desfecho', 'grupo'],
+      },
+    });
+
+    expect(result).toMatchObject({
+      status: 'loaded',
+      recognizedColumns: {
+        desfecho: { index: 0, detection: 'position' },
+        grupo: { index: 1, detection: 'position' },
+      },
+      recognitionMode: 'position',
+    });
+  });
+
   it('rejects excess columns before row padding and excess data rows before splitting all lines', () => {
     expect(() => port.parseDelimitedRows('x;'.repeat(128) + 'x')).toThrow(/128.*colunas/);
     expect(() => port.parseDelimitedRows('A\n' + 'x\n'.repeat(10_001))).toThrow(/10[. ]?000.*linhas/);

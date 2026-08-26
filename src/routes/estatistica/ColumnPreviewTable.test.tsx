@@ -1,13 +1,121 @@
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TABULAR_OPTIONS as tStudentOptions } from '@/features/tests/t-student/tStudentConfig';
+import { createTableDocument, type TableDocument } from '@/shared/data-input/tableDocument';
 import { ColumnPreviewTable } from './ColumnPreviewTable';
 
 const headers = ['Município', 'Taxa'];
 const bodyRows = Array.from({ length: 10 }, (_, index) => [`Cidade ${index + 1}`, String(index + 1)]);
 
 describe('ColumnPreviewTable', () => {
+  it('keeps a manual type while editing row 51 and confirms all document rows', async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn();
+    function Harness() {
+      const [document, setDocument] = useState<TableDocument>(() => createTableDocument(
+        ['Região', 'Valor'],
+        Array.from({ length: 51 }, (_, index) => [`UF ${index + 1}`, String(index + 1)]),
+        'colado',
+        () => 'doc-1',
+      ));
+      return (
+        <ColumnPreviewTable
+          document={document}
+          testId="correlacao"
+          tabularOptions={{ aliases: { variavel_x: ['Região'], variavel_y: ['Valor'] }, requiredKeys: ['variavel_x', 'variavel_y'], numericKeys: ['variavel_y'] }}
+          onDocumentChange={setDocument}
+          onConfirm={onConfirm}
+        />
+      );
+    }
+
+    render(<Harness />);
+    await user.selectOptions(screen.getByLabelText('Tipo da coluna Região'), 'categorica');
+    await user.click(screen.getByRole('button', { name: 'Próxima página' }));
+    const cell = screen.getByLabelText('Linha 51, coluna 1');
+    await user.clear(cell);
+    await user.type(cell, 'SP');
+    expect(screen.getByLabelText('Tipo da coluna Região')).toHaveValue('categorica');
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ rows: expect.arrayContaining([['SP', '51']]) }));
+    expect(onConfirm.mock.calls[0][0].rows).toHaveLength(51);
+  });
+
+  it('disambiguates duplicate headers and keeps a manual role binding after a rename', async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const [document, setDocument] = useState<TableDocument>(() => createTableDocument(
+        ['Valor', 'Valor'],
+        [['1', '2']],
+        'colado',
+        () => 'doc-1',
+      ));
+      return (
+        <ColumnPreviewTable
+          document={document}
+          testId="correlacao"
+          tabularOptions={{
+            aliases: { variavel_x: ['Valor'], variavel_y: ['Valor'] },
+            requiredKeys: ['variavel_x', 'variavel_y'],
+            numericKeys: ['variavel_x', 'variavel_y'],
+            positionFallback: { keysByIndex: ['variavel_x', 'variavel_y'] },
+          }}
+          onDocumentChange={setDocument}
+          onConfirm={() => {}}
+        />
+      );
+    }
+
+    render(<Harness />);
+    expect(screen.getAllByRole('option', { name: 'Valor · coluna 1' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('option', { name: 'Valor · coluna 2' }).length).toBeGreaterThan(0);
+
+    await user.selectOptions(screen.getByLabelText('Vincular X'), 'doc-1-col-2');
+    expect(screen.getByLabelText('Vincular X')).toHaveValue('doc-1-col-2');
+    expect(screen.getByLabelText('Vincular Y')).toHaveValue('');
+    expect(screen.getByText(/Vincule todos os papéis obrigatórios/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeDisabled();
+
+    await user.clear(screen.getByLabelText('Nome da coluna 2'));
+    await user.type(screen.getByLabelText('Nome da coluna 2'), 'Desfecho');
+    expect(screen.getByLabelText('Vincular X')).toHaveValue('doc-1-col-2');
+    expect(screen.getByText('definido por você')).toBeInTheDocument();
+  });
+
+  it('lets the user reject an automatic role suggestion', async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const [document, setDocument] = useState<TableDocument>(() => createTableDocument(
+        ['Grupo A', 'Grupo B'],
+        [['1', '2'], ['3', '4']],
+        'exemplo',
+        () => 'doc-1',
+      ));
+      return (
+        <ColumnPreviewTable
+          document={document}
+          testId="t-student"
+          tabularOptions={tStudentOptions}
+          onDocumentChange={setDocument}
+          onConfirm={() => {}}
+        />
+      );
+    }
+
+    render(<Harness />);
+    expect(screen.getByLabelText('Vincular grupo B')).toHaveValue('doc-1-col-2');
+
+    await user.selectOptions(screen.getByLabelText('Vincular grupo B'), '');
+
+    expect(screen.getByLabelText('Vincular grupo B')).toHaveValue('');
+    expect(screen.getByText(/Vincule todos os papéis obrigatórios/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeDisabled();
+  });
+
   it('renders headers, up to 8 preview rows, and the total-count caption', () => {
     render(
       <ColumnPreviewTable
@@ -51,6 +159,19 @@ describe('ColumnPreviewTable', () => {
     expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeEnabled();
   });
 
+  it('does not classify malformed dotted tokens as numeric in the compatibility preview', () => {
+    render(
+      <ColumnPreviewTable
+        headers={['Grupo', 'Valor']}
+        bodyRows={[['A', '1.2.3'], ['B', '2.3.4']]}
+        recognizedColumns={{}}
+        onConfirm={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeDisabled();
+  });
+
   it('marks a role select as "ajustado" once the user changes it away from the detected value', async () => {
     const user = userEvent.setup();
     render(
@@ -64,10 +185,10 @@ describe('ColumnPreviewTable', () => {
 
     expect(screen.queryByText('ajustado')).not.toBeInTheDocument();
 
-    const select = screen.getByLabelText('Papel da coluna Taxa');
+    const select = screen.getByLabelText('Tipo da coluna Taxa');
     await user.selectOptions(select, 'categorica');
 
-    expect(screen.getByText('ajustado')).toBeInTheDocument();
+    expect(screen.getByText('tipo ajustado por você')).toBeInTheDocument();
   });
 
   it('calls onConfirm with the full row set (not just the preview slice)', async () => {
@@ -149,7 +270,7 @@ describe('ColumnPreviewTable', () => {
       />,
     );
 
-    await user.selectOptions(screen.getByLabelText('Papel da coluna variavel_x'), 'ignorar');
+    await user.selectOptions(screen.getByLabelText('Tipo da coluna variavel_x'), 'ignorar');
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
     const payload = onConfirm.mock.calls[0][0];

@@ -106,4 +106,19 @@ describe('PraisWinstenTest', () => {
       expect(screen.getByText('Prais-Winsten: resíduos')).toBeInTheDocument();
     });
   });
+
+  it('explains that the previous result was invalidated after a table edit', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await runToResultados(user);
+
+    const firstValue = screen.getByLabelText('Linha 1, coluna 2');
+    await user.clear(firstValue);
+    await user.type(firstValue, '121');
+
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
+    expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
+  });
 });
