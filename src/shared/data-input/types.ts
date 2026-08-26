@@ -102,6 +102,16 @@ export interface WorkbookTable {
   rows: string[][];
   delimiter?: string;
   formatLabel?: string;
+  importWarnings?: ImportWarning[];
+}
+
+/** Coordinates refer to the original worksheet: one-based row, zero-based column. */
+export interface ImportWarning {
+  code: 'formula-without-cache' | 'unusable-cell';
+  message: string;
+  cellReference: string;
+  rowNumber: number;
+  columnIndex: number;
 }
 
 export interface WorkbookTablesResult {
@@ -118,11 +128,12 @@ export interface TabularCandidate {
   numericRows: number;
   recognizedColumns: Record<string, RecognizedColumn>;
   duplicates: string[];
-  recognitionMode: 'aliases' | 'position';
+  recognitionMode: 'aliases' | 'position' | 'unmapped';
   recognitionDetails: string[];
 }
 
 export interface TabularLoadedState {
+  importWarnings?: ImportWarning[];
   status: 'loaded';
   fileName: string;
   workbookKind: string;

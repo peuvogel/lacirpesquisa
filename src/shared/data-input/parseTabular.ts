@@ -1,18 +1,7 @@
-/**
- * Typed port of `assets/js/tabular-data-input.js` (777 lines, ported in
- * full). Logic is byte-for-byte unchanged from the legacy module — every
- * function body below is the same expressions/conditionals/regexes/
- * thresholds as the original; only parameter/return types were added.
- *
- * `structuralCommaCount`'s digit-adjacency check, `detectDelimiter`'s
- * scoring over the first 10 lines, and `normalizeNumericSource`'s
- * thousands-vs-decimal disambiguation are load-bearing for D-09's "maximum
- * format tolerance" and must NOT be "improved" during future edits — see
- * 01-RESEARCH.md Pitfall 3. The differential parity suite
- * (`parseTabular.test.ts`) runs this file's exports against the legacy
- * source over real messy TABNET fixtures to make any accidental behavior
- * drift here fail loudly.
- */
+/** Tabular import with bounded parsing. Numeric/DATASUS compatibility stays centralized here. */
+
+import { validateImportLimit, validateTableSize } from './importLimits';
+import { readXlsxTables } from './xlsxReader';
 
 import type {
   LegacyStatsAdapter,
@@ -54,19 +43,8 @@ export function normalizeHeaderToken(value: unknown): string {
     .trim();
 }
 
-function structuralCommaCount(line: string): number {
-  let count = 0;
-
-  for (let index = 0; index < line.length; index += 1) {
-    if (line[index] !== ',') continue;
-    if (/\d/.test(line[index - 1] || '') && /\d/.test(line[index + 1] || '')) continue;
-    count += 1;
-  }
-
-  return count;
-}
-
 export function splitDelimitedLine(line: string, delimiter: string): string[] {
+  validateImportLimit('textCharacters', line.length);
   if (!line) return [''];
 
   const cells: string[] = [];
@@ -92,6 +70,7 @@ export function splitDelimitedLine(line: string, delimiter: string): string[] {
       if (delimiter === ',' && /\d/.test(prev || '') && /\d/.test(next || '')) {
         current += char;
       } else {
+        validateImportLimit('columns', cells.length + 1);
         cells.push(normalizeTabularSpaces(current));
         current = '';
       }
@@ -101,6 +80,7 @@ export function splitDelimitedLine(line: string, delimiter: string): string[] {
     current += char;
   }
 
+  validateImportLimit('columns', cells.length + 1);
   cells.push(normalizeTabularSpaces(current));
   return cells;
 }
@@ -110,16 +90,30 @@ export function detectDelimiter(lines: string[]): string {
   let semicolonScore = 0;
   let tabScore = 0;
   let commaScore = 0;
+  let rawCommaScore = 0;
 
   sample.forEach((line) => {
-    semicolonScore += (line.match(/;/g) || []).length;
-    tabScore += (line.match(/\t/g) || []).length;
-    commaScore += structuralCommaCount(line);
+    let quoted = false;
+    for (let index = 0; index < line.length; index++) {
+      const char = line[index];
+      if (char === '"') {
+        if (quoted && line[index + 1] === '"') index++;
+        else quoted = !quoted;
+      } else if (!quoted) {
+        if (char === ';') semicolonScore++;
+        else if (char === '\t') tabScore++;
+        else if (char === ',') {
+          rawCommaScore++;
+          // Decimal commas must not outvote the actual TSV/semicolon separator.
+          if (!(/\d/.test(line[index - 1] || '') && /\d/.test(line[index + 1] || ''))) commaScore++;
+        }
+      }
+    }
   });
 
   if (semicolonScore > 0 && semicolonScore >= tabScore && semicolonScore >= commaScore) return ';';
   if (tabScore > 0 && tabScore >= commaScore) return '\t';
-  if (commaScore > 0) return ',';
+  if (rawCommaScore > 0) return ',';
   return ';';
 }
 
@@ -181,26 +175,75 @@ export function describeIgnoredRowReason(index: number, notes: string[] = []): s
   return `A linha ${index} foi ignorada porque ${normalized}.`;
 }
 
-export function parseDelimitedRows(text: string): ParsedDelimitedRows {
-  const lines = normalizeTabularText(text)
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.trim() !== '');
-
-  if (!lines.length) {
-    return {
-      rows: [],
-      delimiter: ';',
-      formatLabel: 'texto',
-    };
+export function parseDelimitedRows(text: string, sourceType: 'paste' | 'file' = 'paste'): ParsedDelimitedRows {
+  validateImportLimit(sourceType === 'file' ? 'fileBytes' : 'textCharacters', text.length);
+  const source = normalizeTabularText(text);
+  // Sample at most ten logical records; never split the entire untrusted text.
+  const sample: string[] = [];
+  let quoted = false, start = 0;
+  for (let index = 0; index <= source.length && sample.length < 10; index++) {
+    if (source[index] === '"') {
+      if (quoted && source[index + 1] === '"') index++;
+      else quoted = !quoted;
+    }
+    if ((source[index] === '\n' && !quoted) || index === source.length) {
+      const line = source.slice(start, index);
+      if (line.trim()) sample.push(line);
+      start = index + 1;
+    }
   }
-
-  const delimiter = detectDelimiter(lines);
-  return {
-    rows: lines.map((line) => splitDelimitedLine(line, delimiter)),
-    delimiter,
-    formatLabel: delimiterFormatLabel(delimiter),
+  if (!sample.length) return { rows: [], delimiter: ';', formatLabel: 'texto' };
+  const delimiter = detectDelimiter(sample), rows: string[][] = [];
+  let cells: string[] = [], cellQuoted = false, closedQuote = false, cellStart = 0, quoteEnd = 0;
+  let rowQuoted = false, rowStart = 0, columns = 0, headerWidth = 0;
+  quoted = false;
+  const pushCell = (index: number) => {
+    validateImportLimit('columns', cells.length + 1);
+    const raw = source.slice(cellStart, cellQuoted ? quoteEnd : index);
+    cells.push(cellQuoted ? raw.replace(/""/g, '"') : normalizeTabularSpaces(raw));
+    cellStart = index + 1; cellQuoted = false; closedQuote = false;
   };
+  for (let index = 0; index <= source.length; index++) {
+    const char = source[index];
+    if (char === '"') {
+      if (quoted && source[index + 1] === '"') index++;
+      else if (quoted) { quoted = false; closedQuote = true; quoteEnd = index; }
+      else if (!source.slice(cellStart, index).trim() && !closedQuote) { quoted = true; cellQuoted = true; rowQuoted = true; cellStart = index + 1; }
+      else throw new Error('Aspas inválidas na tabela; revise a célula entre aspas.');
+      continue;
+    }
+    if (index === source.length && quoted) throw new Error('Aspas não fechadas na tabela.');
+    if (!quoted && (char === delimiter || char === '\n' || index === source.length)) {
+      pushCell(index);
+      if (char === delimiter) continue;
+      // TABNET sometimes uses unquoted decimal commas in a comma-separated file.
+      // Repair only excess fields that resolve exactly to the established width.
+      if (delimiter === ',' && headerWidth && cells.length > headerWidth && !rowQuoted) {
+        const compatible = splitDelimitedLine(source.slice(rowStart, index), delimiter);
+        if (compatible.length === headerWidth) cells = compatible;
+      }
+      if (cells.some((cell) => cell.trim() !== '')) {
+        columns = Math.max(columns, cells.length);
+        validateTableSize(rows.length, columns);
+        rows.push(cells);
+        if (!headerWidth) headerWidth = cells.length;
+      }
+      cells = []; rowQuoted = false; rowStart = index + 1;
+      continue;
+    }
+    if (closedQuote && char?.trim()) throw new Error('Texto inesperado após o fechamento de aspas.');
+  }
+  return { rows, delimiter, formatLabel: delimiterFormatLabel(delimiter) };
+}
+
+function unmappedCandidate(tables: WorkbookTable[] | null | undefined, aliases: Record<string, string[]>): TabularCandidate | null {
+  const table = tables?.find((item) => item.rows.length > 1 && item.rows[0].length > 0);
+  if (!table) return null;
+  const headers = table.rows[0].slice();
+  const { recognizedColumns, duplicates } = matchTabularColumns(headers, aliases);
+  return { table, headers, headerRowIndex: 0, bodyRows: table.rows.slice(1), score: 0, numericRows: 0,
+    recognizedColumns, duplicates, recognitionMode: 'unmapped',
+    recognitionDetails: ['Tabela lida. Selecione as colunas necessárias na configuração do teste.'] };
 }
 
 export function matchTabularColumns(
@@ -412,206 +455,23 @@ function buildTabularRecognitionError(
   };
 }
 
-function xmlNodes(node: Element | Document, localName: string): Element[] {
-  return Array.from(node.getElementsByTagName('*')).filter((item) => item.localName === localName);
-}
-
-function parseXmlDocument(text: string): Document {
-  const doc = new DOMParser().parseFromString(text, 'application/xml');
-  const parserError = xmlNodes(doc, 'parsererror')[0];
-  if (parserError) {
-    throw new Error('Nao foi possivel interpretar a estrutura XML interna do arquivo XLSX.');
-  }
-  return doc;
-}
-
-function cellReferenceToIndex(ref: string | null): number | null {
-  const match = String(ref || '').match(/[A-Z]+/i);
-  if (!match) return null;
-
-  return match[0]
-    .toUpperCase()
-    .split('')
-    .reduce((acc, char) => (acc * 26) + (char.charCodeAt(0) - 64), 0) - 1;
-}
-
-async function unzipDeflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
-  if (typeof DecompressionStream === 'undefined') {
-    throw new Error('Este navegador não consegue abrir arquivos XLSX sem suporte a DecompressionStream.');
-  }
-
-  const stream = new Blob([bytes as unknown as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  const buffer = await new Response(stream).arrayBuffer();
-  return new Uint8Array(buffer);
-}
-
-function findEndOfCentralDirectory(view: DataView): number {
-  const signature = 0x06054b50;
-  const minimumOffset = Math.max(0, view.byteLength - 65557);
-
-  for (let offset = view.byteLength - 22; offset >= minimumOffset; offset -= 1) {
-    if (view.getUint32(offset, true) === signature) return offset;
-  }
-
-  return -1;
-}
-
-async function unzipXlsxEntries(arrayBuffer: ArrayBuffer): Promise<Map<string, Uint8Array>> {
-  const view = new DataView(arrayBuffer);
-  const directoryOffset = findEndOfCentralDirectory(view);
-  if (directoryOffset === -1) {
-    throw new Error('Nao foi possivel localizar a estrutura ZIP do arquivo XLSX.');
-  }
-
-  const entryCount = view.getUint16(directoryOffset + 10, true);
-  const centralDirectoryOffset = view.getUint32(directoryOffset + 16, true);
-  const decoder = new TextDecoder('utf-8');
-  const entries = new Map<string, Uint8Array>();
-  let offset = centralDirectoryOffset;
-
-  for (let index = 0; index < entryCount; index += 1) {
-    if (view.getUint32(offset, true) !== 0x02014b50) {
-      throw new Error('A tabela central do arquivo XLSX esta corrompida.');
-    }
-
-    const compressionMethod = view.getUint16(offset + 10, true);
-    const compressedSize = view.getUint32(offset + 20, true);
-    const fileNameLength = view.getUint16(offset + 28, true);
-    const extraLength = view.getUint16(offset + 30, true);
-    const commentLength = view.getUint16(offset + 32, true);
-    const localHeaderOffset = view.getUint32(offset + 42, true);
-    const fileName = decoder.decode(new Uint8Array(arrayBuffer, offset + 46, fileNameLength)).replace(/\\/g, '/');
-
-    const localNameLength = view.getUint16(localHeaderOffset + 26, true);
-    const localExtraLength = view.getUint16(localHeaderOffset + 28, true);
-    const dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength;
-    const compressedBytes = new Uint8Array(arrayBuffer.slice(dataOffset, dataOffset + compressedSize));
-
-    let contentBytes: Uint8Array;
-    if (compressionMethod === 0) {
-      contentBytes = compressedBytes;
-    } else if (compressionMethod === 8) {
-      contentBytes = await unzipDeflateRaw(compressedBytes);
-    } else {
-      throw new Error('O arquivo XLSX usa um método de compressão não suportado.');
-    }
-
-    entries.set(fileName, contentBytes);
-    offset += 46 + fileNameLength + extraLength + commentLength;
-  }
-
-  return entries;
-}
-
-function decodeEntryText(entries: Map<string, Uint8Array>, path: string): string {
-  const bytes = entries.get(path);
-  if (!bytes) return '';
-  return normalizeTabularText(new TextDecoder('utf-8').decode(bytes));
-}
-
-function readRelationshipMap(entries: Map<string, Uint8Array>): Map<string, string> {
-  const relText = decodeEntryText(entries, 'xl/_rels/workbook.xml.rels');
-  if (!relText) return new Map();
-
-  const relDoc = parseXmlDocument(relText);
-  const relMap = new Map<string, string>();
-  xmlNodes(relDoc, 'Relationship').forEach((node) => {
-    relMap.set(node.getAttribute('Id') || '', node.getAttribute('Target') || '');
-  });
-  return relMap;
-}
-
-function readSharedStrings(entries: Map<string, Uint8Array>): string[] {
-  const sharedText = decodeEntryText(entries, 'xl/sharedStrings.xml');
-  if (!sharedText) return [];
-
-  const sharedDoc = parseXmlDocument(sharedText);
-  return xmlNodes(sharedDoc, 'si').map((item) => (
-    xmlNodes(item, 't').map((node) => node.textContent || '').join('')
-  ));
-}
-
-function parseWorksheetRows(sheetText: string, sharedStrings: string[]): string[][] {
-  const sheetDoc = parseXmlDocument(sheetText);
-
-  return xmlNodes(sheetDoc, 'row')
-    .map((rowNode) => {
-      const cells = new Map<number, string>();
-      let maxIndex = -1;
-
-      xmlNodes(rowNode, 'c').forEach((cellNode) => {
-        const index = cellReferenceToIndex(cellNode.getAttribute('r'));
-        if (index === null) return;
-
-        const type = cellNode.getAttribute('t') || '';
-        let rawValue = '';
-
-        if (type === 'inlineStr') {
-          rawValue = xmlNodes(cellNode, 't').map((node) => node.textContent || '').join('');
-        } else {
-          const valueNode = xmlNodes(cellNode, 'v')[0];
-          const valueText = valueNode?.textContent || '';
-
-          if (type === 's') {
-            rawValue = sharedStrings[Number(valueText)] ?? '';
-          } else if (type === 'b') {
-            rawValue = valueText === '1' ? 'TRUE' : 'FALSE';
-          } else {
-            rawValue = valueText;
-          }
-        }
-
-        cells.set(index, normalizeTabularSpaces(rawValue));
-        maxIndex = Math.max(maxIndex, index);
-      });
-
-      return Array.from({ length: maxIndex + 1 }, (_, index) => cells.get(index) || '');
-    })
-    .filter((row) => row.some((cell) => normalizeTabularSpaces(cell) !== ''));
-}
-
-function readWorkbookSheets(entries: Map<string, Uint8Array>): WorkbookTable[] {
-  const workbookText = decodeEntryText(entries, 'xl/workbook.xml');
-  if (!workbookText) {
-    throw new Error('Nao foi possivel localizar a pasta de trabalho dentro do arquivo XLSX.');
-  }
-
-  const workbookDoc = parseXmlDocument(workbookText);
-  const relationshipMap = readRelationshipMap(entries);
-  const sharedStrings = readSharedStrings(entries);
-
-  return xmlNodes(workbookDoc, 'sheet').map((sheetNode) => {
-    const relationId = sheetNode.getAttribute('r:id') || sheetNode.getAttribute('id') || '';
-    const target = relationshipMap.get(relationId) || '';
-    const normalizedTarget = target.replace(/^\/?xl\//, '');
-    const path = normalizedTarget ? `xl/${normalizedTarget}` : '';
-    const sheetText = decodeEntryText(entries, path);
-
-    return {
-      name: normalizeTabularSpaces(sheetNode.getAttribute('name')) || 'Planilha',
-      rows: sheetText ? parseWorksheetRows(sheetText, sharedStrings) : [],
-    };
-  });
-}
-
 export async function readWorkbookTablesFromFile(
   file: File,
   utils: LegacyUtilsAdapter,
 ): Promise<WorkbookTablesResult> {
+  validateImportLimit('fileBytes', file.size);
   const fileName = normalizeTabularSpaces(file?.name || 'arquivo');
   const extension = fileName.toLowerCase().split('.').pop();
 
   if (extension === 'xlsx') {
-    const buffer = await file.arrayBuffer();
-    const entries = await unzipXlsxEntries(buffer);
     return {
       kind: 'xlsx',
-      tables: readWorkbookSheets(entries),
+      tables: await readXlsxTables(file),
     };
   }
 
   const text = await utils.readFileText(file);
-  const parsed = parseDelimitedRows(text);
+  const parsed = parseDelimitedRows(text, 'file');
 
   return {
     kind: 'text',
@@ -637,16 +497,15 @@ export function findBestTabularCandidate(
   } = options || {};
 
   const aliasCandidates = (tables || []).map((table): TabularCandidate | null => {
-    const rows = (table.rows || []).filter((row) => row.some((cell) => normalizeTabularSpaces(cell) !== ''));
+    const rows = table.rows || [];
 
     for (let rowIndex = 0; rowIndex < Math.min(rows.length, 20); rowIndex += 1) {
-      const headers = rows[rowIndex].map((value) => normalizeTabularSpaces(value));
+      const headers = rows[rowIndex].slice();
+      if (!headers.some((cell) => cell.trim())) continue;
       const headerMatch = matchTabularColumns(headers, aliases, requiredKeys);
       if (!headerMatch.requiredFound) continue;
 
-      const bodyRows = rows
-        .slice(rowIndex + 1)
-        .filter((row) => row.some((cell) => normalizeTabularSpaces(cell) !== ''));
+      const bodyRows = rows.slice(rowIndex + 1);
 
       const numericRows = bodyRows.filter((row) => (
         numericKeys.some((key) => {
@@ -679,16 +538,14 @@ export function findBestTabularCandidate(
     return aliasCandidates[0];
   }
 
-  if (!positionFallback) return null;
+  if (!positionFallback) return unmappedCandidate(tables, aliases);
 
   const positionalCandidates = (tables || []).map((table) => {
-    const rows = (table.rows || []).filter((row) => row.some((cell) => normalizeTabularSpaces(cell) !== ''));
+    const rows = table.rows || [];
 
     for (let rowIndex = 0; rowIndex < Math.min(rows.length, 20); rowIndex += 1) {
-      const headers = rows[rowIndex].map((value) => normalizeTabularSpaces(value));
-      const bodyRows = rows
-        .slice(rowIndex + 1)
-        .filter((row) => row.some((cell) => normalizeTabularSpaces(cell) !== ''));
+      const headers = rows[rowIndex].slice();
+      const bodyRows = rows.slice(rowIndex + 1);
 
       const candidate = buildPositionalFallbackCandidate(table, rowIndex, headers, bodyRows, {
         aliases,
@@ -702,7 +559,7 @@ export function findBestTabularCandidate(
     return null;
   }).filter((candidate): candidate is TabularCandidate => Boolean(candidate));
 
-  if (!positionalCandidates.length) return null;
+  if (!positionalCandidates.length) return unmappedCandidate(tables, aliases);
   positionalCandidates.sort((left, right) => right.score - left.score);
   return positionalCandidates[0];
 }
@@ -755,6 +612,7 @@ function buildLoadedTabularState(
 
   return {
     status: 'loaded',
+    ...(candidate.table.importWarnings?.length ? { importWarnings: candidate.table.importWarnings } : {}),
     fileName: extra.fileName || 'dados',
     workbookKind: extra.workbookKind || 'text',
     tableName: extra.tableName || candidate.table.name || 'Tabela principal',

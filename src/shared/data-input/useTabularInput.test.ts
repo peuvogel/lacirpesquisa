@@ -92,6 +92,22 @@ function deferNextFileRead() {
 }
 
 describe('useTabularInput', () => {
+  it('forwards source import warnings and clears them on a new source', async () => {
+    const warning = { code: 'formula-without-cache' as const, rowNumber: 3, columnIndex: 0, cellReference: 'A3', message: 'Fórmula sem cache.' };
+    vi.mocked(parseTabularModule.readTabularFileState).mockResolvedValueOnce(makeLoadedState({ importWarnings: [warning] }));
+    const { result } = renderHook(() => useTabularInput());
+    await act(async () => result.current.setFile(new File(['x'], 'dados.xlsx')));
+    expect(result.current.importWarnings).toEqual([warning]);
+    act(() => result.current.setRawText('A;B\n1;2'));
+    expect(result.current.importWarnings ?? []).toEqual([]);
+  });
+  it('surfaces a synchronous paste parser failure without escaping the debounce', () => {
+    const { result } = renderHook(() => useTabularInput());
+    act(() => result.current.setRawText('A;B\n"incompleto;2'));
+    expect(() => act(() => vi.advanceTimersByTime(200))).not.toThrow();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error?.message).toMatch(/aspas/i);
+  });
   beforeEach(() => {
     vi.useFakeTimers();
   });

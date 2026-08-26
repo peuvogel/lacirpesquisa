@@ -16,6 +16,7 @@
  */
 
 import { statsEngine } from '../stats/statsEngine';
+import { validateImportLimit } from './importLimits';
 import type { LegacyStatsAdapter, LegacyUtilsAdapter } from './types';
 
 export function hasLikelyMojibake(text: string): boolean {
@@ -67,7 +68,9 @@ export function normalizeImportedLabel(value: string): string {
 }
 
 export async function readFileText(file: File): Promise<string> {
+  validateImportLimit('fileBytes', file.size);
   const buffer = await file.arrayBuffer();
+  validateImportLimit('fileBytes', buffer.byteLength);
   const candidates: string[] = [];
 
   try {

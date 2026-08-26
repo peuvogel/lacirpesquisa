@@ -117,6 +117,33 @@ describe('parseDelimitedRows differential parity', () => {
 });
 
 describe('readTabularPasteState direct behavior (not just parity)', () => {
+  it('preserves quoted delimiters, escaped quotes, spaces and embedded newlines', () => {
+    expect(port.parseDelimitedRows('Nome,Valor\n"  A; B, ""C""  ",2\n"duas\nlinhas",3').rows).toEqual([
+      ['Nome', 'Valor'], ['  A; B, "C"  ', '2'], ['duas\nlinhas', '3'],
+    ]);
+  });
+
+  it('parses ordinary numeric comma-separated columns separately', () => {
+    expect(port.parseDelimitedRows('A,B,C\n1,2,3\n4,5,6').rows).toEqual([
+      ['A', 'B', 'C'], ['1', '2', '3'], ['4', '5', '6'],
+    ]);
+  });
+
+  it('opens a syntactically valid unmapped table for editing', () => {
+    const result = port.readTabularPasteState('Pessoa;Medida\nAna;2\nBia;3', legacyStats, semicolonMetadataOptions);
+    expect(result).toMatchObject({ status: 'loaded', headers: ['Pessoa', 'Medida'], bodyRows: [['Ana', '2'], ['Bia', '3']], recognizedColumns: {} });
+  });
+
+  it('rejects excess columns before row padding and excess data rows before splitting all lines', () => {
+    expect(() => port.parseDelimitedRows('x;'.repeat(128) + 'x')).toThrow(/128.*colunas/);
+    expect(() => port.parseDelimitedRows('A\n' + 'x\n'.repeat(10_001))).toThrow(/10[. ]?000.*linhas/);
+  });
+
+  it('rejects pasted text beyond the character limit and unterminated quoted cells', () => {
+    expect(() => port.parseDelimitedRows(' '.repeat(5_000_001))).toThrow(/5[. ]?000[. ]?000.*caracteres/);
+    expect(() => port.parseDelimitedRows('A;B\n"incompleto;2')).toThrow(/aspas/i);
+  });
+
   it('detects the real header row past leading metadata/título/período lines', () => {
     const text = readFixture('tabnet-semicolon-metadata.txt');
     const result = port.readTabularPasteState(text, legacyStats, semicolonMetadataOptions);

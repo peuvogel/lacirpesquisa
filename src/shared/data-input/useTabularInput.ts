@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { legacyStats, legacyUtils } from './legacyAdapters';
 import { readTabularFileState, readTabularPasteState } from './parseTabular';
-import type { RecognizedColumn, TabularInputOptions } from './types';
+import type { ImportWarning, RecognizedColumn, TabularInputOptions } from './types';
 
 const PASTE_DEBOUNCE_MS = 150;
 
@@ -16,6 +16,8 @@ export interface TabularInputError {
 }
 
 export interface TabularInputState {
+  /** Original worksheet coordinates, not current edited-table validity. */
+  importWarnings?: ImportWarning[];
   status: TabularInputStatus;
   headers: string[];
   bodyRows: string[][];
@@ -73,12 +75,21 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
   const commitPasteResult = useCallback((text: string, requestId: number) => {
     if (requestId !== requestRef.current) return;
 
-    const result = readTabularPasteState(text, legacyStats, optionsRef.current);
+    let result;
+    try {
+      result = readTabularPasteState(text, legacyStats, optionsRef.current);
+    } catch (caught) {
+      if (requestId !== requestRef.current) return;
+      const reason = caught instanceof Error ? caught.message : 'Não foi possível interpretar o texto colado.';
+      setState({ ...IDLE_RESULT_FIELDS, status: 'error', rawText: text, error: { message: reason, details: [reason] } });
+      return;
+    }
     if (requestId !== requestRef.current) return;
 
     if (result.status === 'loaded') {
       setState({
         status: 'loaded',
+        ...(result.importWarnings?.length ? { importWarnings: result.importWarnings } : {}),
         headers: result.headers,
         bodyRows: result.bodyRows,
         recognizedColumns: toIndexMap(result.recognizedColumns),
@@ -143,6 +154,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
       if (result.status === 'loaded') {
         setState({
           status: 'loaded',
+          ...(result.importWarnings?.length ? { importWarnings: result.importWarnings } : {}),
           headers: result.headers,
           bodyRows: result.bodyRows,
           recognizedColumns: toIndexMap(result.recognizedColumns),
