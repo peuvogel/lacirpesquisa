@@ -43,8 +43,8 @@ export function normalizeHeaderToken(value: unknown): string {
     .trim();
 }
 
-export function splitDelimitedLine(line: string, delimiter: string): string[] {
-  validateImportLimit('textCharacters', line.length);
+export function splitDelimitedLine(line: string, delimiter: string, sourceType: 'paste' | 'file' = 'paste'): string[] {
+  validateImportLimit(sourceType === 'file' ? 'fileBytes' : 'textCharacters', line.length);
   if (!line) return [''];
 
   const cells: string[] = [];
@@ -219,7 +219,7 @@ export function parseDelimitedRows(text: string, sourceType: 'paste' | 'file' = 
       // TABNET sometimes uses unquoted decimal commas in a comma-separated file.
       // Repair only excess fields that resolve exactly to the established width.
       if (delimiter === ',' && headerWidth && cells.length > headerWidth && !rowQuoted) {
-        const compatible = splitDelimitedLine(source.slice(rowStart, index), delimiter);
+        const compatible = splitDelimitedLine(source.slice(rowStart, index), delimiter, sourceType);
         if (compatible.length === headerWidth) cells = compatible;
       }
       if (cells.some((cell) => cell.trim() !== '')) {

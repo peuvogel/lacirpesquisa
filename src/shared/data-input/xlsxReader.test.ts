@@ -68,8 +68,8 @@ describe('bounded XLSX import', () => {
     expect(readBuffer).not.toHaveBeenCalled();
   });
 
-  it('keeps the 10 MiB text-file budget distinct from the 5-million-character paste budget', async () => {
-    const content = 'A\n' + 'x'.repeat(5_000_001);
+  it.each(['plain', 'TABNET decimal-comma'])('keeps the file and paste budgets distinct for %s input', async (format) => {
+    const content = format === 'plain' ? 'A\n' + 'x'.repeat(5_000_001) : 'Nome,Valor,Grupo\n' + 'x'.repeat(5_000_001) + ',1,5,A';
     const result = await readWorkbookTablesFromFile(new File([content], 'grande.csv'), legacyUtils);
     expect(result.tables[0].rows[1][0].length).toBe(5_000_001);
   });
