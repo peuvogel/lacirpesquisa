@@ -55,23 +55,26 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
   const [state, setState] = useState<TabularInputState>({ ...IDLE_RESULT_FIELDS, rawText: '' });
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pasteRequestRef = useRef(0);
-  const fileRequestRef = useRef(0);
+  const requestRef = useRef(0);
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
   useEffect(
     () => () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      requestRef.current += 1;
+      if (debounceRef.current !== null) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
     },
     [],
   );
 
   const commitPasteResult = useCallback((text: string, requestId: number) => {
-    if (requestId !== pasteRequestRef.current) return;
+    if (requestId !== requestRef.current) return;
 
     const result = readTabularPasteState(text, legacyStats, optionsRef.current);
-    if (requestId !== pasteRequestRef.current) return;
+    if (requestId !== requestRef.current) return;
 
     if (result.status === 'loaded') {
       setState({
@@ -98,19 +101,23 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
 
   const setRawText = useCallback(
     (text: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (debounceRef.current !== null) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+
+      const requestId = ++requestRef.current;
 
       if (!text.trim()) {
         // A cleared textarea is not a failure — it resets to idle immediately.
-        pasteRequestRef.current += 1;
         setState({ ...IDLE_RESULT_FIELDS, rawText: text });
         return;
       }
 
-      const requestId = ++pasteRequestRef.current;
-      setState((previous) => ({ ...previous, status: 'parsing', rawText: text }));
+      setState({ ...IDLE_RESULT_FIELDS, status: 'parsing', rawText: text });
 
       debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
         commitPasteResult(text, requestId);
       }, PASTE_DEBOUNCE_MS);
     },
@@ -118,15 +125,20 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
   );
 
   const setFile = useCallback(async (file: File) => {
-    const requestId = ++fileRequestRef.current;
-    setState((previous) => ({ ...previous, status: 'parsing' }));
+    if (debounceRef.current !== null) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    const requestId = ++requestRef.current;
+    setState({ ...IDLE_RESULT_FIELDS, status: 'parsing', rawText: '' });
 
     try {
       const result = await readTabularFileState(file, legacyUtils, legacyStats, optionsRef.current);
       // Guard against stale async results: only the most recently *started*
       // setFile call may commit state, so a slow big XLSX can never clobber
       // a newer, faster result.
-      if (requestId !== fileRequestRef.current) return;
+      if (requestId !== requestRef.current) return;
 
       if (result.status === 'loaded') {
         setState({
@@ -148,7 +160,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         });
       }
     } catch (caught) {
-      if (requestId !== fileRequestRef.current) return;
+      if (requestId !== requestRef.current) return;
       const reason = caught instanceof Error ? caught.message : String(caught);
       setState({
         status: 'error',
@@ -162,9 +174,11 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
   }, []);
 
   const reset = useCallback(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    pasteRequestRef.current += 1;
-    fileRequestRef.current += 1;
+    if (debounceRef.current !== null) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    requestRef.current += 1;
     setState({ ...IDLE_RESULT_FIELDS, rawText: '' });
   }, []);
 

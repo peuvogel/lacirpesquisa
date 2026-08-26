@@ -4,6 +4,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTabularInput } from './useTabularInput';
 import * as parseTabularModule from './parseTabular';
+import * as legacyAdaptersModule from './legacyAdapters';
 import type { TabularInputOptions, TabularLoadedState } from './types';
 
 // Wraps the real port with a spy so individual tests can override a single
@@ -69,6 +70,27 @@ function makeLoadedState(overrides: Partial<TabularLoadedState> = {}): TabularLo
   };
 }
 
+function makeDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function deferNextFileRead() {
+  const gate = makeDeferred<void>();
+  const readFileText = legacyAdaptersModule.legacyUtils.readFileText;
+  const readFileTextSpy = vi.spyOn(legacyAdaptersModule.legacyUtils, 'readFileText');
+  readFileTextSpy.mockImplementationOnce(async (file) => {
+    await gate.promise;
+    return readFileText(file);
+  });
+  return { gate, readFileTextSpy };
+}
+
 describe('useTabularInput', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -76,6 +98,7 @@ describe('useTabularInput', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.mocked(parseTabularModule.readTabularFileState).mockClear();
   });
 
@@ -189,5 +212,145 @@ describe('useTabularInput', () => {
 
     // The stale slow response must not overwrite the later fast one.
     expect(result.current.headers).toEqual(['FAST']);
+  });
+
+  it('lets a file replace pasted input while the paste debounce is pending', async () => {
+    const { result } = renderHook(() => useTabularInput(commaAmbiguousOptions));
+    const file = new File(['Município;Taxa por 100k\nArquivo;2'], 'arquivo.csv', { type: 'text/csv' });
+    const { gate, readFileTextSpy } = deferNextFileRead();
+
+    act(() => {
+      result.current.setRawText('Município;Taxa por 100k\nColado;1');
+    });
+    let filePromise!: Promise<void>;
+    act(() => {
+      filePromise = result.current.setFile(file);
+    });
+    gate.resolve();
+    await act(async () => {
+      await filePromise;
+      await vi.advanceTimersByTimeAsync(150);
+    });
+
+    expect(result.current.headers).toEqual(['Município', 'Taxa por 100k']);
+    expect(result.current.bodyRows).toEqual([['Arquivo', '2']]);
+    expect(readFileTextSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps pasted input when a deferred file resolves after it', async () => {
+    const { result } = renderHook(() => useTabularInput(commaAmbiguousOptions));
+    const file = new File(['Município;Taxa por 100k\nArquivo;2'], 'arquivo.csv', { type: 'text/csv' });
+    const { gate } = deferNextFileRead();
+    let filePromise!: Promise<void>;
+    act(() => {
+      filePromise = result.current.setFile(file);
+    });
+
+    act(() => {
+      result.current.setRawText('Município;Taxa por 100k\nColado;1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+    expect(result.current.bodyRows).toEqual([['Colado', '1']]);
+
+    gate.resolve();
+    await act(async () => {
+      await filePromise;
+    });
+
+    expect(result.current.headers).toEqual(['Município', 'Taxa por 100k']);
+    expect(result.current.bodyRows).toEqual([['Colado', '1']]);
+  });
+
+  it('keeps the idle state when a deferred file resolves after reset', async () => {
+    const { result } = renderHook(() => useTabularInput(commaAmbiguousOptions));
+    const file = new File(['Município;Taxa por 100k\nArquivo;2'], 'arquivo.csv', { type: 'text/csv' });
+    const { gate } = deferNextFileRead();
+    let filePromise!: Promise<void>;
+    act(() => {
+      filePromise = result.current.setFile(file);
+    });
+
+    act(() => {
+      result.current.reset();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.headers).toEqual([]);
+    expect(result.current.bodyRows).toEqual([]);
+
+    gate.resolve();
+    await act(async () => {
+      await filePromise;
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.headers).toEqual([]);
+    expect(result.current.bodyRows).toEqual([]);
+  });
+
+  it('does not commit a deferred file after unmount', async () => {
+    const hook = renderHook(() => useTabularInput(commaAmbiguousOptions));
+    const file = new File(['Município;Taxa por 100k\nArquivo;2'], 'arquivo.csv', { type: 'text/csv' });
+    const { gate } = deferNextFileRead();
+    let filePromise!: Promise<void>;
+    act(() => {
+      filePromise = hook.result.current.setFile(file);
+    });
+
+    hook.unmount();
+    gate.resolve();
+    await act(async () => {
+      await filePromise;
+    });
+
+    expect(hook.result.current.status).toBe('parsing');
+    expect(hook.result.current.headers).toEqual([]);
+    expect(hook.result.current.bodyRows).toEqual([]);
+  });
+
+  it('ignores a stale file failure after pasted input has loaded', async () => {
+    const { result } = renderHook(() => useTabularInput(commaAmbiguousOptions));
+    const file = new File(['Município;Taxa por 100k\nArquivo;2'], 'arquivo.csv', { type: 'text/csv' });
+    const { gate } = deferNextFileRead();
+    let filePromise!: Promise<void>;
+    act(() => {
+      filePromise = result.current.setFile(file);
+    });
+
+    act(() => {
+      result.current.setRawText('Município;Taxa por 100k\nColado;1');
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+    expect(result.current.status).toBe('loaded');
+
+    gate.reject(new Error('leitura falhou'));
+    await act(async () => {
+      await filePromise;
+    });
+
+    expect(result.current.status).toBe('loaded');
+    expect(result.current.bodyRows).toEqual([['Colado', '1']]);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('invalidates pending file work through StrictMode cleanup', async () => {
+    const hook = renderHook(() => useTabularInput(commaAmbiguousOptions), { reactStrictMode: true });
+    const file = new File(['Município;Taxa por 100k\nArquivo;2'], 'arquivo.csv', { type: 'text/csv' });
+    const { gate } = deferNextFileRead();
+    let filePromise!: Promise<void>;
+    act(() => {
+      filePromise = hook.result.current.setFile(file);
+    });
+
+    hook.unmount();
+    gate.resolve();
+    await act(async () => {
+      await filePromise;
+    });
+
+    expect(hook.result.current.status).toBe('parsing');
+    expect(hook.result.current.headers).toEqual([]);
   });
 });
