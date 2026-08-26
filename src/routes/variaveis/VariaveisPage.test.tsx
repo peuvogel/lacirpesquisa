@@ -17,6 +17,14 @@ function readCatalogJson(relativePath: string): unknown {
   return JSON.parse(readFileSync(resolve(CATALOG_ROOT, relativePath), 'utf8'));
 }
 
+function deferred<T>() {
+  let resolvePromise!: (value: T) => void;
+  const promise = new Promise<T>((resolve) => {
+    resolvePromise = resolve;
+  });
+  return { promise, resolve: resolvePromise };
+}
+
 function LocationProbe() {
   const location = useLocation();
   const state = location.state as {
@@ -137,6 +145,44 @@ describe('VariaveisPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('listbox', { name: 'Variáveis do catálogo' })).toBeInTheDocument();
     });
+  });
+
+  it('retries a failed catalog load without leaving the page', async () => {
+    const user = userEvent.setup();
+    const retryManifest = deferred<Response>();
+    let manifestAttempts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        const relative = url.replace(/^\/data\/catalog\//, '');
+        if (relative === 'manifest.json') {
+          manifestAttempts += 1;
+          if (manifestAttempts === 1) return new Response('unavailable', { status: 503 });
+          if (manifestAttempts === 2) return retryManifest.promise;
+        }
+        return new Response(JSON.stringify(readCatalogJson(relative)), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }),
+    );
+
+    renderPage();
+    expect(await screen.findByText(/503/)).toBeInTheDocument();
+
+    const retry = screen.getByRole('button', { name: 'Tentar novamente' });
+    await user.click(retry);
+    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeDisabled();
+    expect(screen.queryByText(/503/)).not.toBeInTheDocument();
+
+    retryManifest.resolve(
+      new Response(JSON.stringify(readCatalogJson('manifest.json')), { status: 200 }),
+    );
+    const list = await screen.findByRole('listbox', { name: 'Variáveis do catálogo' });
+    expect(list).toBeInTheDocument();
+    expect(within(list).getByText(/Médicos vasculares no SUS/i)).toBeInTheDocument();
+    expect(manifestAttempts).toBe(2);
   });
 
   it('filters the list by search query (CAT-01)', async () => {

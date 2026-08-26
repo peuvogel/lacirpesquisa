@@ -47,6 +47,7 @@ function DirectCatalogPage() {
   const [catalog, setCatalog] = useState<LoadedCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadAttempt, setReloadAttempt] = useState(0);
   const [filters, setFilters] = useState<CatalogFilters>(INITIAL_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedLoadableIds, setSelectedLoadableIds] = useState<Set<string>>(
@@ -80,7 +81,13 @@ function DirectCatalogPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadAttempt]);
+
+  function handleRetryCatalogLoad() {
+    if (loading) return;
+    setLoadError(null);
+    setReloadAttempt((attempt) => attempt + 1);
+  }
 
   const variables = useMemo(
     () =>
@@ -176,6 +183,7 @@ function DirectCatalogPage() {
   }
 
   const reduceMotion = useReducedMotion();
+  const showRetry = loadError !== null || (loading && reloadAttempt > 0);
 
   return (
     <motion.div
@@ -216,6 +224,16 @@ function DirectCatalogPage() {
             onSelect={setSelectedId}
             onToggleLoadable={handleToggleLoadable}
           />
+          {showRetry ? (
+            <button
+              type="button"
+              className="mt-3 rounded-lg border border-border px-3 py-2 font-sans text-sm font-medium text-text transition-colors hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={handleRetryCatalogLoad}
+              disabled={loading}
+            >
+              Tentar novamente
+            </button>
+          ) : null}
         </div>
 
         <aside

@@ -1,11 +1,6 @@
-export function resolvePublicAssetUrl(baseUrl: string, assetPath: string) {
-  const normalizedBase = baseUrl
-    ? `${baseUrl.replace(/\/+$/, '')}/`
-    : '/';
-  const normalizedAssetPath = assetPath.replace(/^\/+/, '');
+import { resolvePublicAssetUrl } from '@/lib/publicAssets';
 
-  return `${normalizedBase}${normalizedAssetPath}`;
-}
+export { resolvePublicAssetUrl } from '@/lib/publicAssets';
 
 export function LogoLockup() {
   return (
