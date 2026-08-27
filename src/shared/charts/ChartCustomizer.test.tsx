@@ -13,6 +13,10 @@ describe('ChartCustomizer', () => {
         state={{
           chartTypePreset: 'raw-data',
           axisLabels: { x: 'Grupo', y: 'Valor' },
+          axisLabelsByPreset: {
+            'raw-data': { x: 'Grupo', y: 'Valor' },
+            effect: { x: 'Efeito', y: '' },
+          },
           annotationToggles: {},
           themeVariant: 'publication',
           visiblePresetIds: { 'raw-data': true, effect: true },

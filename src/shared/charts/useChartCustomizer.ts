@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartData, ChartOptions } from 'chart.js';
 import type { ChartCanvasType } from './ChartCanvas';
 import { COLORS, mergeChartOptions } from './chartTheme';
-import { getChartTypeLabel, type ChartVisualType } from './chartTypeCatalog';
+import type { ChartVisualType } from './chartTypeCatalog';
+import {
+  applyChartCapabilities,
+  capabilityDefaults,
+  type ChartCapability,
+} from './chartCapabilities';
 
 export type ThemeVariant = 'lacir' | 'neutral' | 'publication';
 
@@ -20,7 +25,8 @@ export interface ChartPreset<T = unknown> {
   visualType: ChartVisualType;
   buildChart: (engineOutput: T) => ChartProps;
   defaultAxisLabels?: { x: string; y: string };
-  annotationKeys?: string[];
+  /** Explicit visual targets for every control offered by this preset. */
+  capabilities: readonly ChartCapability[];
 }
 
 export interface BuiltChart<T = unknown> {
@@ -35,6 +41,8 @@ export interface CustomizerState {
   /** Chart focused for axis edits / primary export highlight. */
   chartTypePreset: string;
   axisLabels: { x: string; y: string };
+  /** Preserves edits independently when the user moves between presets. */
+  axisLabelsByPreset: Record<string, { x: string; y: string }>;
   annotationToggles: Record<string, boolean>;
   themeVariant: ThemeVariant;
   /** Which available presets are shown in the gallery. */
@@ -58,11 +66,11 @@ const DEBOUNCE_MS = 150;
 /** Accent variants on always-white canvas (publication default). */
 const THEME_VARIANTS: Record<
   ThemeVariant,
-  { label: string; gridOpacity: string; primaryOverride?: string }
+  { label: string; gridOpacity: string }
 > = {
   publication: { label: 'Publicação (branco)', gridOpacity: COLORS.grid },
-  lacir: { label: 'Teal LACIR', gridOpacity: COLORS.grid, primaryOverride: COLORS.primarySolid },
-  neutral: { label: 'Neutro alto contraste', gridOpacity: 'rgba(15, 23, 42, 0.12)', primaryOverride: '#475569' },
+  lacir: { label: 'Teal LACIR', gridOpacity: 'rgba(13, 148, 136, 0.14)' },
+  neutral: { label: 'Neutro alto contraste', gridOpacity: 'rgba(15, 23, 42, 0.12)' },
 };
 
 function sanitizeAxisLabel(value: string): string {
@@ -157,12 +165,20 @@ export function useChartCustomizer<T>({
 
   const buildDefaultState = useCallback((): CustomizerState => {
     const toggles: Record<string, boolean> = {};
+    for (const preset of presets) {
+      Object.assign(toggles, capabilityDefaults(preset.capabilities));
+    }
     for (const def of annotations) {
-      toggles[def.id] = true;
+      if (!(def.id in toggles)) toggles[def.id] = true;
     }
     const visiblePresetIds: Record<string, boolean> = {};
+    const axisLabelsByPreset: Record<string, { x: string; y: string }> = {};
     for (const preset of presets) {
       visiblePresetIds[preset.id] = true;
+      axisLabelsByPreset[preset.id] = {
+        x: preset.defaultAxisLabels?.x ?? '',
+        y: preset.defaultAxisLabels?.y ?? '',
+      };
     }
     return {
       chartTypePreset: defaultPreset.id,
@@ -170,6 +186,7 @@ export function useChartCustomizer<T>({
         x: defaultPreset.defaultAxisLabels?.x ?? '',
         y: defaultPreset.defaultAxisLabels?.y ?? '',
       },
+      axisLabelsByPreset,
       annotationToggles: toggles,
       themeVariant: 'publication',
       visiblePresetIds,
@@ -193,27 +210,29 @@ export function useChartCustomizer<T>({
   const charts: BuiltChart<T>[] = useMemo(() => {
     return presets.map((preset) => {
       const base = preset.buildChart(engineOutput);
-      const axisLabels =
-        preset.id === state.chartTypePreset
-          ? state.axisLabels
-          : {
-              x: preset.defaultAxisLabels?.x ?? '',
-              y: preset.defaultAxisLabels?.y ?? '',
-            };
-      const label = getChartTypeLabel(preset.visualType) || preset.label;
+      const controlled = applyChartCapabilities(
+        base,
+        state.annotationToggles,
+        preset.capabilities,
+      );
+      const axisLabels = state.axisLabelsByPreset[preset.id] ?? {
+        x: preset.defaultAxisLabels?.x ?? '',
+        y: preset.defaultAxisLabels?.y ?? '',
+      };
+      const label = preset.label;
       return {
         id: preset.id,
         label,
         visualType: preset.visualType,
         preset,
         chart: {
-          ...base,
+          ...controlled,
           ariaLabel: label,
-          options: mergeCustomizerIntoOptions(base.options, axisLabels),
+          options: mergeCustomizerIntoOptions(controlled.options, axisLabels),
         },
       };
     });
-  }, [presets, engineOutput, state.chartTypePreset, state.axisLabels, mergeCustomizerIntoOptions]);
+  }, [presets, engineOutput, state.axisLabelsByPreset, state.annotationToggles, mergeCustomizerIntoOptions]);
 
   const visibleCharts = useMemo(
     () => charts.filter((item) => state.visiblePresetIds[item.id] !== false),
@@ -245,9 +264,9 @@ export function useChartCustomizer<T>({
       setState((prev) => ({
         ...prev,
         chartTypePreset: id,
-        axisLabels: {
-          x: preset.defaultAxisLabels?.x ?? prev.axisLabels.x,
-          y: preset.defaultAxisLabels?.y ?? prev.axisLabels.y,
+        axisLabels: prev.axisLabelsByPreset[id] ?? {
+          x: preset.defaultAxisLabels?.x ?? '',
+          y: preset.defaultAxisLabels?.y ?? '',
         },
       }));
     },
@@ -258,6 +277,13 @@ export function useChartCustomizer<T>({
     setState((prev) => ({
       ...prev,
       axisLabels: { ...prev.axisLabels, [axis]: sanitizeAxisLabel(value) },
+      axisLabelsByPreset: {
+        ...prev.axisLabelsByPreset,
+        [prev.chartTypePreset]: {
+          ...(prev.axisLabelsByPreset[prev.chartTypePreset] ?? prev.axisLabels),
+          [axis]: sanitizeAxisLabel(value),
+        },
+      },
     }));
   }, []);
 
@@ -290,9 +316,9 @@ export function useChartCustomizer<T>({
         visiblePresetIds: nextVisible,
         chartTypePreset: nextFocus,
         axisLabels: focusPreset
-          ? {
-              x: focusPreset.defaultAxisLabels?.x ?? prev.axisLabels.x,
-              y: focusPreset.defaultAxisLabels?.y ?? prev.axisLabels.y,
+          ? prev.axisLabelsByPreset[focusPreset.id] ?? {
+              x: focusPreset.defaultAxisLabels?.x ?? '',
+              y: focusPreset.defaultAxisLabels?.y ?? '',
             }
           : prev.axisLabels,
       };

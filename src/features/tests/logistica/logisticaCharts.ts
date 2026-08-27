@@ -43,7 +43,10 @@ export function buildLogisticaChartPresets(): ChartPreset<LogisticaEngineOutput>
           ariaLabel: CHART_PRESET_LABELS.forest,
         };
       },
-      annotationKeys: ['showConfidenceIntervals', 'showCoefficientValues'],
+      capabilities: [
+        { id: 'showConfidenceIntervals', kind: 'annotationVisibility', annotationPrefixes: ['showConfidenceIntervals_'] },
+        { id: 'showCoefficientValues', kind: 'annotationVisibility', annotationPrefixes: ['showCoefficientValues_'] },
+      ],
     },
   ];
 }

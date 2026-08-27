@@ -25,6 +25,7 @@ const presets: ChartPreset<{ value: number }>[] = [
       ariaLabel: 'Gráfico de diferença',
     }),
     defaultAxisLabels: { x: 'Diferença', y: 'Valor' },
+    capabilities: [],
   },
   {
     id: 'dist',
@@ -36,6 +37,7 @@ const presets: ChartPreset<{ value: number }>[] = [
       ariaLabel: 'Gráfico de distribuição',
     }),
     defaultAxisLabels: { x: 'Grupo', y: 'Valor médio' },
+    capabilities: [],
   },
 ];
 
@@ -59,7 +61,7 @@ describe('useChartCustomizer', () => {
 
     expect(result.current.state.chartTypePreset).toBe('diff');
     expect(result.current.chart.type).toBe('scatter');
-    expect(result.current.chart.ariaLabel).toBe('Intervalo');
+    expect(result.current.chart.ariaLabel).toBe('Diferença de médias');
     expect(result.current.visibleCharts).toHaveLength(2);
   });
 
@@ -78,8 +80,60 @@ describe('useChartCustomizer', () => {
 
     expect(result.current.state.chartTypePreset).toBe('dist');
     expect(result.current.chart.type).toBe('bar');
-    expect(result.current.chart.ariaLabel).toBe('Colunas agrupadas');
+    expect(result.current.chart.ariaLabel).toBe('Distribuição por grupo');
     expect(result.current.state.axisLabels.x).toBe('Grupo');
+  });
+
+  it('retains axis customization when leaving and returning to a preset', () => {
+    const { result } = renderHook(() =>
+      useChartCustomizer({
+        presets,
+        defaultPresetId: 'diff',
+        engineOutput: { value: 1 },
+      }),
+    );
+
+    act(() => result.current.setAxisLabel('x', 'Efeito personalizado'));
+    act(() => result.current.setChartTypePreset('dist'));
+    act(() => result.current.setAxisLabel('x', 'Grupo personalizado'));
+    act(() => result.current.setChartTypePreset('diff'));
+
+    expect(result.current.state.axisLabels.x).toBe('Efeito personalizado');
+    act(() => result.current.setChartTypePreset('dist'));
+    expect(result.current.state.axisLabels.x).toBe('Grupo personalizado');
+  });
+
+  it('applies declared capability defaults and toggle updates to the built chart', () => {
+    const capabilityPreset: ChartPreset<{ value: number }> = {
+      id: 'trend',
+      label: 'Tendência',
+      visualType: 'lines',
+      buildChart: () => ({
+        type: 'line',
+        data: { datasets: [{ data: [1, 2], lacirId: 'fit' }] },
+        options: { scales: { y: { type: 'linear' } } },
+        ariaLabel: 'Tendência',
+      }),
+      capabilities: [{
+        id: 'logY',
+        kind: 'scaleType',
+        axis: 'y',
+        enabledType: 'logarithmic',
+        disabledType: 'linear',
+        defaultEnabled: false,
+      }],
+    };
+    const { result } = renderHook(() =>
+      useChartCustomizer({
+        presets: [capabilityPreset],
+        defaultPresetId: 'trend',
+        engineOutput: { value: 1 },
+      }),
+    );
+
+    expect(result.current.chart.options?.scales?.y).toMatchObject({ type: 'linear' });
+    act(() => result.current.setAnnotationToggle('logY', true));
+    expect(result.current.chart.options?.scales?.y).toMatchObject({ type: 'logarithmic' });
   });
 
   it('resetToDefault restores initial preset and axis labels', () => {

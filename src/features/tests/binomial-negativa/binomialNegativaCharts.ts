@@ -54,7 +54,10 @@ export function buildBinomialNegativaChartPresets(): ChartPreset<BinomialNegativ
           ariaLabel: CHART_PRESET_LABELS.forest,
         };
       },
-      annotationKeys: ['showConfidenceIntervals', 'showCoefficientValues'],
+      capabilities: [
+        { id: 'showConfidenceIntervals', kind: 'annotationVisibility', annotationPrefixes: ['showConfidenceIntervals_'] },
+        { id: 'showCoefficientValues', kind: 'annotationVisibility', annotationPrefixes: ['showCoefficientValues_'] },
+      ],
     },
     {
       id: 'predicted',
@@ -68,6 +71,7 @@ export function buildBinomialNegativaChartPresets(): ChartPreset<BinomialNegativ
         const data = {
           datasets: [
             {
+              lacirId: 'observed-predicted',
               label: 'Observado vs previsto',
               data: observed.map((y, index) => ({ x: fitted[index], y })),
               backgroundColor: COLORS.primary,
@@ -77,6 +81,7 @@ export function buildBinomialNegativaChartPresets(): ChartPreset<BinomialNegativ
               showLine: false,
             },
             {
+              lacirId: 'reference-line',
               label: 'y = x',
               data: [
                 { x: 0, y: 0 },
@@ -125,7 +130,9 @@ export function buildBinomialNegativaChartPresets(): ChartPreset<BinomialNegativ
         };
       },
       defaultAxisLabels: { x: 'Previsto', y: 'Observado' },
-      annotationKeys: ['showReferenceLine'],
+      capabilities: [
+        { id: 'showReferenceLine', kind: 'datasetVisibility', datasetIds: ['reference-line'] },
+      ],
     },
   ];
 }

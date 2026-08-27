@@ -32,3 +32,14 @@ export {
 } from './timeseriesChart';
 
 export { buildResidualBarChartData } from './residualChart';
+
+export { buildPairedComparisonChartData } from './pairedComparisonChart';
+export {
+  buildChiResidualChartData,
+  standardizedResidual,
+  type ChiResidualChartInput,
+} from './chiResidualChart';
+export {
+  buildChiProportionChartData,
+  type ChiProportionChartInput,
+} from './chiProportionChart';

@@ -4,6 +4,7 @@ import { BASE_OPTS, COLORS, mergeChartOptions } from '@/shared/charts/chartTheme
 import { fmtP } from '@/shared/format';
 import { MANN_WHITNEY_ANNOTATIONS } from './mannWhitneyConfig';
 import type { MannWhitneyEngineOutput } from './mannWhitneyEngine';
+import { buildBoxPlotChartData } from '@/shared/charts/chartFactories/boxPlotChart';
 
 export const MANN_WHITNEY_CHART_ANNOTATIONS = MANN_WHITNEY_ANNOTATIONS;
 
@@ -63,6 +64,22 @@ function rankOptions(output: MannWhitneyEngineOutput): ChartOptions {
 
 export const mannWhitneyChartPresets: ChartPreset<MannWhitneyEngineOutput>[] = [
   {
+    id: 'boxplot',
+    label: 'Boxplot por grupo',
+    visualType: 'box-plot',
+    buildChart: (output) => ({
+      type: 'scatter',
+      ...buildBoxPlotChartData(
+        { [output.labels[0]]: output.groupA, [output.labels[1]]: output.groupB },
+        output.labels,
+        'Valor observado',
+      ),
+      ariaLabel: 'Boxplot por grupo',
+    }),
+    defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
+    capabilities: [],
+  },
+  {
     id: 'rank-dot',
     label: 'Postos por grupo',
     visualType: 'dot',
@@ -73,6 +90,8 @@ export const mannWhitneyChartPresets: ChartPreset<MannWhitneyEngineOutput>[] = [
       ariaLabel: 'Postos por grupo',
     }),
     defaultAxisLabels: { x: 'Posto no conjunto combinado', y: 'Grupo' },
-    annotationKeys: ['showPValue'],
+    capabilities: [
+      { id: 'showPValue', kind: 'annotationVisibility', annotationIds: ['showPValue'] },
+    ],
   },
 ];

@@ -1,6 +1,7 @@
 import type { ChartData, ChartDataset, ChartOptions } from 'chart.js';
 import type { ChartProps } from './useChartCustomizer';
 import { mergeChartOptions } from './chartTheme';
+import { applyChartCapabilities, type ChartCapability } from './chartCapabilities';
 
 export interface ChartStyleOverrides {
   title?: string;
@@ -165,7 +166,11 @@ function hideDatasetsByToggle(data: ChartData, toggles: Record<string, boolean>)
 }
 
 /** Apply user style overrides on top of a built chart (data + options). */
-export function applyChartOverrides(chart: ChartProps, overrides?: ChartStyleOverrides): ChartProps {
+export function applyChartOverrides(
+  chart: ChartProps,
+  overrides?: ChartStyleOverrides,
+  capabilities: readonly ChartCapability[] = [],
+): ChartProps {
   if (!overrides) return chart;
 
   let data: ChartData = {
@@ -272,17 +277,20 @@ export function applyChartOverrides(chart: ChartProps, overrides?: ChartStyleOve
     });
   }
 
-  if (overrides.annotationToggles) {
+  if (overrides.annotationToggles && capabilities.length === 0) {
     options = filterAnnotationsByToggles(options, overrides.annotationToggles);
     data = hideDatasetsByToggle(data, overrides.annotationToggles);
   }
 
-  return {
+  const styled = {
     ...chart,
     data,
     options,
     ariaLabel: overrides.title?.trim() || chart.ariaLabel,
   };
+  return overrides.annotationToggles && capabilities.length > 0
+    ? applyChartCapabilities(styled, overrides.annotationToggles, capabilities)
+    : styled;
 }
 
 export function extractEditableFields(chart: ChartProps): {
@@ -295,6 +303,9 @@ export function extractEditableFields(chart: ChartProps): {
   axisX: string;
   axisY: string;
   isBar: boolean;
+  categoryColorsEditable: boolean;
+  seriesColorsEditable: boolean;
+  datasetLabelsEditable: boolean;
 } {
   const labels = (chart.data.labels ?? []).map(String);
   const datasets = chart.data.datasets ?? [];
@@ -304,10 +315,12 @@ export function extractEditableFields(chart: ChartProps): {
     | (ChartDataset & { maxBarThickness?: number; categoryPercentage?: number })
     | undefined;
   const bg = asColorArray(first?.backgroundColor) ?? ['#0D9488'];
-  const colors =
-    bg.length > 1
-      ? bg
-      : datasets.map((d) => asColorArray(d.backgroundColor)?.[0] ?? bg[0] ?? `#2563EB`);
+  const categoryColorsEditable =
+    datasets.length === 1 && Array.isArray(first?.backgroundColor) && bg.length > 1;
+  const seriesColorsEditable = datasets.length > 0 && !categoryColorsEditable;
+  const colors = categoryColorsEditable
+    ? bg
+    : datasets.map((d) => asColorArray(d.backgroundColor)?.[0] ?? bg[0] ?? '#2563EB');
 
   const barThickness = typeof first?.maxBarThickness === 'number' ? first.maxBarThickness : 48;
   const categoryPercentage =
@@ -318,6 +331,8 @@ export function extractEditableFields(chart: ChartProps): {
     | undefined;
   const pluginTitle = (chart.options?.plugins as { title?: { text?: string | string[] } } | undefined)
     ?.title?.text;
+  const legendDisplay = (chart.options?.plugins as { legend?: { display?: boolean } } | undefined)
+    ?.legend?.display;
 
   return {
     title: Array.isArray(pluginTitle)
@@ -331,5 +346,8 @@ export function extractEditableFields(chart: ChartProps): {
     axisX: String(scales?.x?.title?.text ?? ''),
     axisY: String(scales?.y?.title?.text ?? ''),
     isBar: chart.type === 'bar',
+    categoryColorsEditable,
+    seriesColorsEditable,
+    datasetLabelsEditable: legendDisplay !== false,
   };
 }

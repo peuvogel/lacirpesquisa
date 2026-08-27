@@ -42,6 +42,7 @@ export function buildTStudentDiffChartData(
   const data: ChartData = {
     datasets: [
       {
+        lacirId: 'effect-estimate',
         label: 'Diferença entre médias (IC95%)',
         data: [{ x: diff, y: 0 }],
         backgroundColor: COLORS.primary,
@@ -52,6 +53,7 @@ export function buildTStudentDiffChartData(
         showLine: false,
       },
       {
+        lacirId: 'effect-ci',
         label: 'Intervalo de confiança',
         data: [
           { x: low, y: 0 },

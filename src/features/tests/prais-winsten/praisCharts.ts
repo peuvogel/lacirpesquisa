@@ -13,7 +13,9 @@ import type { PraisEngineOutput } from './praisEngine';
 
 export { PRAIS_TREND_ANNOTATIONS, PRAIS_RESIDUAL_ANNOTATIONS };
 
-export function buildPraisTrendPresets(): ChartPreset<PraisEngineOutput>[] {
+export function buildPraisTrendPresets(
+  logScaleAvailable = true,
+): ChartPreset<PraisEngineOutput>[] {
   return [
     {
       id: 'trend',
@@ -38,11 +40,21 @@ export function buildPraisTrendPresets(): ChartPreset<PraisEngineOutput>[] {
           options: mergeChartOptions(options, {
             plugins: {
               annotation: {
-                annotations: {
-                  showFittedLine: { display: true },
-                  showPointLabels: { display: true },
-                  logScaleY: { display: false },
-                },
+                annotations: Object.fromEntries(
+                  output.dataset.orderedRows.map((row, index) => [
+                    `showPointLabels_${index}`,
+                    {
+                      type: 'label',
+                      xValue: output.dataset.time[index],
+                      yValue: output.dataset.values[index],
+                      content: row.timeLabel,
+                      color: '#334155',
+                      backgroundColor: 'rgba(255,255,255,0.85)',
+                      yAdjust: -15,
+                      clip: false,
+                    },
+                  ]),
+                ),
               },
             },
           }),
@@ -53,7 +65,20 @@ export function buildPraisTrendPresets(): ChartPreset<PraisEngineOutput>[] {
         x: 'Período',
         y: 'Valor',
       },
-      annotationKeys: PRAIS_TREND_ANNOTATIONS.map((item) => item.id),
+      capabilities: [
+        { id: 'showFittedLine', kind: 'datasetVisibility', datasetIds: ['fitted'] },
+        { id: 'showPointLabels', kind: 'annotationVisibility', annotationPrefixes: ['showPointLabels_'] },
+        ...(logScaleAvailable
+          ? [{
+              id: 'logScaleY',
+              kind: 'scaleType' as const,
+              axis: 'y' as const,
+              enabledType: 'logarithmic' as const,
+              disabledType: 'linear' as const,
+              defaultEnabled: false,
+            }]
+          : []),
+      ],
     },
   ];
 }
@@ -87,12 +112,14 @@ export function buildPraisResidualPresets(): ChartPreset<PraisEngineOutput>[] {
         x: 'Período',
         y: 'Resíduo',
       },
-      annotationKeys: PRAIS_RESIDUAL_ANNOTATIONS.map((item) => item.id),
+      capabilities: [
+        { id: 'showZeroLine', kind: 'annotationVisibility', annotationIds: ['zeroLine'] },
+      ],
     },
   ];
 }
 
-export const praisTrendPresets = buildPraisTrendPresets();
+export const praisTrendPresets = buildPraisTrendPresets(true);
 export const praisResidualPresets = buildPraisResidualPresets();
 
 export function getDefaultPraisPresetId(tab: 'trend' | 'residual'): string {

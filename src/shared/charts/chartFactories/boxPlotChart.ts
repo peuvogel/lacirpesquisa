@@ -65,8 +65,8 @@ export function buildBoxPlotChartData(
   yTitle = 'Valor observado',
 ): { data: ChartData; options: ChartOptions } {
   const annotations: Record<string, Record<string, unknown>> = {};
-  const regularPoints: Array<{ x: number; y: number; groupIndex: number }> = [];
-  const outlierPoints: Array<{ x: number; y: number; groupIndex: number }> = [];
+  const regularPoints: Array<{ x: number; y: number; groupIndex: number; groupLabel: string }> = [];
+  const outlierPoints: Array<{ x: number; y: number; groupIndex: number; groupLabel: string }> = [];
 
   groupOrder.forEach((label, groupIndex) => {
     const values = (groups[label] ?? []).filter(Number.isFinite);
@@ -111,14 +111,18 @@ export function buildBoxPlotChartData(
     };
 
     values.forEach((value, pointIndex) => {
-      const point = { x: jitter(groupIndex, pointIndex, values.length), y: value, groupIndex };
+      const point = {
+        x: jitter(groupIndex, pointIndex, values.length),
+        y: value,
+        groupIndex,
+        groupLabel: label,
+      };
       if (value < summary.low || value > summary.high) outlierPoints.push(point);
       else regularPoints.push(point);
     });
   });
 
   const data: ChartData = {
-    labels: [...groupOrder],
     datasets: [
       {
         label: 'Observações',
@@ -155,8 +159,8 @@ export function buildBoxPlotChartData(
       tooltip: {
         callbacks: {
           label: (item: TooltipItem<'scatter'>) => {
-            const raw = item.raw as { y: number; groupIndex: number };
-            return `${groupOrder[raw.groupIndex]}: ${fmtNumber(raw.y, 3)}`;
+            const raw = item.raw as { y: number; groupIndex: number; groupLabel?: string };
+            return `${raw.groupLabel ?? groupOrder[raw.groupIndex]}: ${fmtNumber(raw.y, 3)}`;
           },
         },
       },

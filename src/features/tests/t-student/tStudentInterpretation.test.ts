@@ -10,6 +10,7 @@ import { TABULAR_OPTIONS } from './tStudentConfig';
 import {
   buildDatasetFromConfirmed,
   runIndependentWelch,
+  runPairedT,
 } from './tStudentEngine';
 import {
   buildTStudentInterpretation,
@@ -109,6 +110,13 @@ describe('tStudentInterpretation', () => {
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);
     expect(paragraphsContainNoHtml(paragraphs)).toBe(true);
+  });
+
+  it('identifies a paired comparison when no custom question was supplied', () => {
+    const result = runPairedT([10, 12, 15, 20], [9, 13, 13, 18]);
+    const paragraphs = buildTStudentInterpretation(result, 0.05, ['Antes', 'Depois']);
+    expect(paragraphs.join(' ')).toContain('médias pareadas');
+    expect(paragraphs.join(' ')).not.toContain('médias independentes');
   });
 });
 

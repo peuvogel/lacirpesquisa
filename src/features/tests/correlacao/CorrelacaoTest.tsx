@@ -162,7 +162,10 @@ export function CorrelacaoTest() {
         title="Correlação: resultados"
         metrics={metrics}
         engineOutput={engineOutput}
-        presets={buildCorrelacaoChartPresets(method)}
+        presets={buildCorrelacaoChartPresets(
+          method,
+          engineOutput.outlierFlags.some(Boolean),
+        )}
         defaultPresetId={getDefaultCorrelacaoChartPreset(method)}
         annotations={CORRELACAO_CHART_ANNOTATIONS}
         interpretation={interpretation}

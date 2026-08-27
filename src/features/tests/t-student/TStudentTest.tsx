@@ -19,8 +19,8 @@ import {
   type TStudentMode,
 } from './tStudentConfig';
 import {
+  buildTStudentChartPresets,
   getDefaultTStudentChartPreset,
-  tStudentChartPresets,
   T_STUDENT_CHART_ANNOTATIONS,
 } from './tStudentCharts';
 import {
@@ -165,7 +165,7 @@ export function TStudentTest() {
         title="t de Student: resultados"
         metrics={metrics}
         engineOutput={engineOutput}
-        presets={tStudentChartPresets}
+        presets={buildTStudentChartPresets(mode)}
         defaultPresetId={getDefaultTStudentChartPreset(mode, engineOutput.result, engineOutput.labels)}
         annotations={T_STUDENT_CHART_ANNOTATIONS}
         interpretation={interpretation}

@@ -18,6 +18,7 @@ export const CHART_TYPE_CATALOG = [
   { id: 'scatter', label: 'Dispersão' },
   { id: 'dot', label: 'Pontos' },
   { id: 'range', label: 'Intervalo' },
+  { id: 'box-plot', label: 'Boxplot' },
   { id: 'arrow', label: 'Setas' },
   { id: 'election-donut', label: 'Rosca eleitoral' },
   { id: 'pie', label: 'Pizza' },

@@ -1,10 +1,10 @@
 import type { ChartPreset } from '@/shared/charts/useChartCustomizer';
 import { buildPointIntervalChartData } from '@/shared/charts/chartFactories/pointIntervalChart';
-import { summarizeBoxPlot } from '@/shared/charts/chartFactories/boxPlotChart';
+import { buildBoxPlotChartData, summarizeBoxPlot } from '@/shared/charts/chartFactories/boxPlotChart';
 import { buildPostHocHeatmapChartData } from '@/shared/charts/chartFactories/postHocHeatmapChart';
 import { buildGroupedRawDotChartData } from '@/shared/charts/chartFactories/groupedRawDotChart';
 import { mergeChartOptions } from '@/shared/charts/chartTheme';
-import { fmtNumber } from '@/shared/format';
+import { fmtNumber, fmtP } from '@/shared/format';
 import { CHART_PRESET_LABELS, KRUSKAL_ANNOTATIONS } from './kruskalConfig';
 import type { KruskalEngineOutput } from './kruskalEngine';
 
@@ -60,7 +60,19 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
         };
       },
       defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
-      annotationKeys: [],
+      capabilities: [],
+    },
+    {
+      id: 'boxplot',
+      label: 'Boxplot por grupo',
+      visualType: 'box-plot',
+      buildChart: (output) => ({
+        type: 'scatter',
+        ...buildBoxPlotChartData(output.groups, output.groupOrder, output.headers.outcome),
+        ariaLabel: 'Boxplot por grupo',
+      }),
+      defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
+      capabilities: [],
     },
     {
       id: 'medians',
@@ -82,24 +94,36 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
                 padding: { bottom: 10 },
               },
               annotation: {
-                annotations: Object.fromEntries(
-                  output.groupOrder.map((label, index) => [
-                    `showMeanValues_${index}`,
-                    {
-                      type: 'label',
-                      xValue: label,
-                      yValue: output.result.groupSummaries[label].median,
-                      content: fmtNumber(output.result.groupSummaries[label].median, 2),
-                      color: '#0F172A',
-                      backgroundColor: 'rgba(255,255,255,0.85)',
-                      borderRadius: 4,
-                      padding: { top: 2, bottom: 2, left: 4, right: 4 },
-                      font: { size: 11, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
-                      yAdjust: -16,
-                      clip: false,
-                    },
-                  ]),
-                ),
+                annotations: {
+                  ...Object.fromEntries(
+                    output.groupOrder.map((label, index) => [
+                      `showMeanValues_${index}`,
+                      {
+                        type: 'label',
+                        xValue: label,
+                        yValue: output.result.groupSummaries[label].median,
+                        content: fmtNumber(output.result.groupSummaries[label].median, 2),
+                        color: '#0F172A',
+                        backgroundColor: 'rgba(255,255,255,0.85)',
+                        borderRadius: 4,
+                        padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                        font: { size: 11, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                        yAdjust: -16,
+                        clip: false,
+                      },
+                    ]),
+                  ),
+                  showPValue: {
+                    type: 'label',
+                    xValue: output.groupOrder[output.groupOrder.length - 1],
+                    yValue: Math.max(...output.groupOrder.map((label) => output.result.groupSummaries[label].median)),
+                    content: `p omnibus = ${fmtP(output.result.p)}`,
+                    color: '#334155',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    yAdjust: -32,
+                    clip: false,
+                  },
+                },
               },
             },
           } as Parameters<typeof mergeChartOptions>[1]),
@@ -107,7 +131,11 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
         };
       },
       defaultAxisLabels: { x: 'Grupo', y: 'Mediana do desfecho' },
-      annotationKeys: ['showIqr', 'showMeanValues', 'showPValue'],
+      capabilities: [
+        { id: 'showIqr', kind: 'annotationVisibility', annotationPrefixes: ['showIqr_'] },
+        { id: 'showMeanValues', kind: 'annotationVisibility', annotationPrefixes: ['showMeanValues_'] },
+        { id: 'showPValue', kind: 'annotationVisibility', annotationIds: ['showPValue'] },
+      ],
     },
   ];
 
@@ -137,7 +165,7 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
         };
       },
       defaultAxisLabels: { x: 'Grupo', y: 'Grupo' },
-      annotationKeys: [],
+      capabilities: [],
     });
   }
 

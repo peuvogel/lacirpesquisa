@@ -1,5 +1,7 @@
 import type { ChartPreset } from '@/shared/charts/useChartCustomizer';
 import { buildContingencyChartData } from '@/shared/charts/chartFactories/contingencyChart';
+import { buildChiProportionChartData } from '@/shared/charts/chartFactories/chiProportionChart';
+import { buildChiResidualChartData } from '@/shared/charts/chartFactories/chiResidualChart';
 import { mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP } from '@/shared/format';
 import {
@@ -106,7 +108,43 @@ export function buildQuiQuadradoChartPresets(): ChartPreset<QuiQuadradoEngineOut
         };
       },
       defaultAxisLabels: { x: 'Células da tabela', y: 'Contagem' },
-      annotationKeys: ['showCellCounts', 'showPValue'],
+      capabilities: [
+        { id: 'showCellCounts', kind: 'annotationVisibility', annotationPrefixes: ['showCellCounts_'] },
+        { id: 'showPValue', kind: 'annotationVisibility', annotationIds: ['showPValue'] },
+      ],
+    },
+    {
+      id: 'proportions',
+      label: 'Proporções dentro de cada grupo',
+      visualType: 'stacked-columns',
+      buildChart: ({ dataset }) => ({
+        type: 'bar',
+        ...buildChiProportionChartData({
+          observed: dataset.table,
+          rowLabels: dataset.rowLabels,
+          colLabels: dataset.colLabels,
+        }),
+        ariaLabel: 'Proporções dentro de cada grupo',
+      }),
+      defaultAxisLabels: { x: 'Grupo', y: 'Proporção (%)' },
+      capabilities: [],
+    },
+    {
+      id: 'residuals',
+      label: 'Resíduos padronizados por célula',
+      visualType: 'scatter',
+      buildChart: ({ dataset, result }) => ({
+        type: 'scatter',
+        ...buildChiResidualChartData({
+          observed: dataset.table,
+          expected: result.expected,
+          rowLabels: dataset.rowLabels,
+          colLabels: dataset.colLabels,
+        }),
+        ariaLabel: 'Resíduos padronizados por célula',
+      }),
+      defaultAxisLabels: { x: 'Categoria de coluna', y: 'Categoria de linha' },
+      capabilities: [],
     },
   ];
 }

@@ -135,15 +135,17 @@ export function ChartClickEditor({
           <div className="grid gap-2 sm:grid-cols-2">
             {categoryLabels.map((label, index) => (
               <div key={`cat-${index}`} className="flex items-center gap-2">
-                <ColorSwatch
-                  ariaLabel={`Cor de ${label}`}
-                  value={normalizeHex(colors[index] ?? colors[0] ?? '#0D9488')}
-                  onChange={(hex) => {
-                    const next = [...colors];
-                    next[index] = hex;
-                    patch({ colors: next });
-                  }}
-                />
+                {base.categoryColorsEditable ? (
+                  <ColorSwatch
+                    ariaLabel={`Cor de ${label}`}
+                    value={normalizeHex(colors[index] ?? colors[0] ?? '#0D9488')}
+                    onChange={(hex) => {
+                      const next = [...colors];
+                      next[index] = hex;
+                      patch({ colors: next });
+                    }}
+                  />
+                ) : null}
                 <input
                   type="text"
                   value={label}
@@ -161,13 +163,13 @@ export function ChartClickEditor({
         </div>
       ) : null}
 
-      {datasetLabels.length > 0 ? (
+      {datasetLabels.length > 0 && (base.datasetLabelsEditable || base.seriesColorsEditable) ? (
         <div className="space-y-2 sm:col-span-2">
           <p className="text-xs font-medium text-foreground">Séries</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {datasetLabels.map((label, index) => (
               <div key={`ds-${index}`} className="flex items-center gap-2">
-                {categoryLabels.length <= 1 ? (
+                {base.seriesColorsEditable ? (
                   <ColorSwatch
                     ariaLabel={`Cor da série ${label}`}
                     value={normalizeHex(colors[index] ?? colors[0] ?? '#0D9488')}
@@ -178,17 +180,21 @@ export function ChartClickEditor({
                     }}
                   />
                 ) : null}
-                <input
-                  type="text"
-                  value={label}
-                  autoFocus={highlightDataset === index && highlightCategory == null}
-                  onChange={(e) => {
-                    const next = [...datasetLabels];
-                    next[index] = e.target.value;
-                    patch({ datasetLabels: next });
-                  }}
-                  className={fieldClassName}
-                />
+                {base.datasetLabelsEditable ? (
+                  <input
+                    type="text"
+                    value={label}
+                    autoFocus={highlightDataset === index && highlightCategory == null}
+                    onChange={(e) => {
+                      const next = [...datasetLabels];
+                      next[index] = e.target.value;
+                      patch({ datasetLabels: next });
+                    }}
+                    className={fieldClassName}
+                  />
+                ) : (
+                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">{label}</span>
+                )}
               </div>
             ))}
           </div>

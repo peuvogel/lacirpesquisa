@@ -95,6 +95,7 @@ function withPearsonEquation(
 
 export function buildCorrelacaoChartPresets(
   method: CorrelacaoMethod = 'pearson',
+  hasOutliers = true,
 ): ChartPreset<CorrelacaoEngineOutput>[] {
   const scatter: ChartPreset<CorrelacaoEngineOutput> = {
     id: 'scatter',
@@ -115,10 +116,25 @@ export function buildCorrelacaoChartPresets(
       };
     },
     defaultAxisLabels: { x: '', y: '' },
-    annotationKeys:
-      method === 'pearson'
-        ? ['showRegressionLine', 'highlightOutliers', 'showEquation']
-        : ['highlightOutliers', 'showEquation'],
+    capabilities: [
+      ...(method === 'pearson'
+        ? [{
+            id: 'showRegressionLine',
+            kind: 'datasetVisibility' as const,
+            datasetIds: ['regression-fit'],
+          }]
+        : []),
+      ...(hasOutliers
+        ? [{
+            id: 'highlightOutliers',
+            kind: 'datasetVisibility' as const,
+            datasetIds: ['outlier-points'],
+            disabledBehavior: 'merge' as const,
+            mergeIntoDatasetId: 'observed-points',
+          }]
+        : []),
+      { id: 'showEquation', kind: 'annotationVisibility', annotationIds: ['showEquation'] },
+    ],
   };
 
   const rankScatter: ChartPreset<CorrelacaoEngineOutput> = {
@@ -140,7 +156,16 @@ export function buildCorrelacaoChartPresets(
       };
     },
     defaultAxisLabels: { x: '', y: '' },
-    annotationKeys: ['highlightOutliers', 'showEquation'],
+    capabilities: [
+      {
+        id: 'highlightOutliers',
+        kind: 'datasetVisibility',
+        datasetIds: ['rank-gap-points'],
+        disabledBehavior: 'merge',
+        mergeIntoDatasetId: 'rank-points',
+      },
+      { id: 'showEquation', kind: 'annotationVisibility', annotationIds: ['showEquation'] },
+    ],
   };
 
   const scatterWithFit: ChartPreset<CorrelacaoEngineOutput> = {
@@ -166,7 +191,19 @@ export function buildCorrelacaoChartPresets(
       };
     },
     defaultAxisLabels: { x: '', y: '' },
-    annotationKeys: ['showRegressionLine', 'highlightOutliers', 'showEquation'],
+    capabilities: [
+      { id: 'showRegressionLine', kind: 'datasetVisibility', datasetIds: ['regression-fit'] },
+      ...(hasOutliers
+        ? [{
+            id: 'highlightOutliers',
+            kind: 'datasetVisibility' as const,
+            datasetIds: ['outlier-points'],
+            disabledBehavior: 'merge' as const,
+            mergeIntoDatasetId: 'observed-points',
+          }]
+        : []),
+      { id: 'showEquation', kind: 'annotationVisibility', annotationIds: ['showEquation'] },
+    ],
   };
 
   if (method === 'spearman') {

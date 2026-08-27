@@ -25,8 +25,8 @@ import {
   type AnnotationDefinition,
   type ChartPreset,
 } from './useChartCustomizer';
-import { getChartTypeLabel } from './chartTypeCatalog';
 import { usePresenceList } from './usePresenceList';
+import { capabilityDefaults } from './chartCapabilities';
 import { InterpretationText } from '@/routes/estatistica/InterpretationText';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
 import { cn } from '@/lib/utils';
@@ -87,6 +87,13 @@ export function ResultsPanelWithCustomizer<T>({
       ? undefined
       : presenceCharts.find((item) => item.id === editingId) ??
         customizer.visibleCharts.find((item) => item.id === editingId);
+  const effectiveToggles = useCallback(
+    (item: (typeof customizer.charts)[number]) => ({
+      ...capabilityDefaults(item.preset.capabilities),
+      ...(overridesById[item.id]?.annotationToggles ?? {}),
+    }),
+    [overridesById],
+  );
 
   const setChartTypePreset = customizer.setChartTypePreset;
   const beginEditing = useCallback(
@@ -132,7 +139,7 @@ export function ResultsPanelWithCustomizer<T>({
     () =>
       presets.map((preset) => ({
         id: preset.id,
-        label: getChartTypeLabel(preset.visualType) || preset.label,
+        label: preset.label,
         visualType: preset.visualType,
       })),
     [presets],
@@ -198,7 +205,14 @@ export function ResultsPanelWithCustomizer<T>({
                 item.phase !== 'exit' && activeCount % 2 === 1 && activeIndex === activeCount - 1;
               const isEditing = editingId === item.id;
               const isDimmed = editingId != null && !isEditing;
-              const displayChart = applyChartOverrides(item.chart, overridesById[item.id]);
+              const displayChart = applyChartOverrides(
+                item.chart,
+                {
+                  ...(overridesById[item.id] ?? {}),
+                  annotationToggles: effectiveToggles(item),
+                },
+                item.preset.capabilities,
+              );
 
               return (
                 <article
@@ -295,9 +309,9 @@ export function ResultsPanelWithCustomizer<T>({
             setOverridesById((prev) => ({ ...prev, [editingItem.id]: next }))
           }
           annotations={(annotations ?? []).filter((def) =>
-            editingItem.preset.annotationKeys?.includes(def.id),
+            editingItem.preset.capabilities.some((capability) => capability.id === def.id),
           )}
-          annotationToggles={overridesById[editingItem.id]?.annotationToggles ?? {}}
+          annotationToggles={effectiveToggles(editingItem)}
           onAnnotationToggle={(id, value) => {
             setOverridesById((prev) => {
               const current = prev[editingItem.id] ?? {};

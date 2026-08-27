@@ -137,8 +137,8 @@ export function buildPointIntervalChartData(
   }
 
   const data: ChartData = {
-    labels,
     datasets: [{
+      lacirId: 'interval-estimates',
       label: input.estimateLabel ?? 'Estimativa',
       data: points,
       backgroundColor: COLORS.primary,

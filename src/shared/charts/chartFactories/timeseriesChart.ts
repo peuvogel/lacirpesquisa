@@ -16,11 +16,16 @@ export function buildTimeseriesChartData(
   axisLabels: AxisLabels = {},
 ): { data: ChartData; options: ChartOptions } {
   const labels = pointLabels ?? time.map(String);
+  const numericTime = time.map((value, index) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : index;
+  });
 
   const datasets: ChartData['datasets'] = [
     {
+      lacirId: 'observed',
       label: axisLabels.y || 'Observado',
-      data: observed,
+      data: observed.map((y, index) => ({ x: numericTime[index], y, pointLabel: labels[index] })),
       borderColor: COLORS.blue,
       backgroundColor: 'rgba(37, 99, 235, 0.08)',
       borderWidth: 2.5,
@@ -34,8 +39,9 @@ export function buildTimeseriesChartData(
 
   if (fitted) {
     datasets.unshift({
+      lacirId: 'fitted',
       label: 'Tendência ajustada (Prais-Winsten)',
-      data: fitted,
+      data: fitted.map((y, index) => ({ x: numericTime[index], y, pointLabel: labels[index] })),
       borderColor: COLORS.primary,
       backgroundColor: 'transparent',
       borderWidth: 2.5,
@@ -47,7 +53,8 @@ export function buildTimeseriesChartData(
     });
   }
 
-  const data: ChartData = { labels, datasets };
+  const data: ChartData = { datasets };
+  const labelByTime = new Map(numericTime.map((value, index) => [value, labels[index]]));
 
   const options = mergeChartOptions(BASE_OPTS, {
     plugins: {
@@ -61,11 +68,15 @@ export function buildTimeseriesChartData(
     },
     scales: {
       x: {
+        type: 'linear',
         title: {
           display: true,
           text: axisLabels.x || 'Período',
           color: COLORS.label,
           font: { size: 12 },
+        },
+        ticks: {
+          callback: (value) => labelByTime.get(Number(value)) ?? String(value),
         },
       },
       y: {

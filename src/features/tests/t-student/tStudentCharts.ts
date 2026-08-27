@@ -4,6 +4,8 @@ import {
   buildTStudentDistChartData,
   buildTStudentMeansBarChartData,
 } from '@/shared/charts/chartFactories/tStudentCharts';
+import { buildBoxPlotChartData } from '@/shared/charts/chartFactories/boxPlotChart';
+import { buildPairedComparisonChartData } from '@/shared/charts/chartFactories/pairedComparisonChart';
 import { mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import { CHART_PRESET_LABELS, T_STUDENT_ANNOTATIONS, type TStudentMode } from './tStudentConfig';
@@ -50,8 +52,10 @@ function pValueAnnotation(content: string, xValue: string | number, yValue: numb
   };
 }
 
-export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[] {
-  return [
+export function buildTStudentChartPresets(
+  mode: TStudentMode = 'independent',
+): ChartPreset<TStudentEngineOutput>[] {
+  const presets: ChartPreset<TStudentEngineOutput>[] = [
     {
       id: 'diff',
       label: CHART_PRESET_LABELS.diff,
@@ -80,16 +84,6 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
                     borderColor: 'rgba(100, 116, 139, 0.45)',
                     borderWidth: 1,
                     borderDash: [4, 4],
-                  },
-                  showConfidenceIntervals: {
-                    type: 'line',
-                    xMin: result.ci[0],
-                    xMax: result.ci[1],
-                    yMin: 0,
-                    yMax: 0,
-                    borderColor: 'rgba(15, 118, 110, 0.9)',
-                    borderWidth: 2.5,
-                    display: true,
                   },
                   showMeanValues: {
                     type: 'label',
@@ -128,7 +122,11 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
         };
       },
       defaultAxisLabels: { x: 'Diferença das médias', y: '' },
-      annotationKeys: ['showConfidenceIntervals', 'showMeanValues', 'showPValue'],
+      capabilities: [
+        { id: 'showConfidenceIntervals', kind: 'datasetVisibility', datasetIds: ['effect-ci'] },
+        { id: 'showMeanValues', kind: 'annotationVisibility', annotationIds: ['showMeanValues'] },
+        { id: 'showPValue', kind: 'annotationVisibility', annotationIds: ['showPValue'] },
+      ],
     },
     {
       id: 'distribution',
@@ -170,7 +168,9 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
         };
       },
       defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
-      annotationKeys: ['showPValue'],
+      capabilities: [
+        { id: 'showPValue', kind: 'annotationVisibility', annotationIds: ['showPValue'] },
+      ],
     },
     {
       id: 'means-bar',
@@ -215,9 +215,49 @@ export function buildTStudentChartPresets(): ChartPreset<TStudentEngineOutput>[]
         };
       },
       defaultAxisLabels: { x: 'Grupo', y: 'Valor médio' },
-      annotationKeys: ['showMeanValues', 'showPValue'],
+      capabilities: [
+        { id: 'showMeanValues', kind: 'annotationVisibility', annotationPrefixes: ['showMeanValues_'] },
+        { id: 'showPValue', kind: 'annotationVisibility', annotationIds: ['showPValue'] },
+      ],
     },
   ];
+
+  presets.splice(2, 0, {
+    id: 'boxplot',
+    label: 'Boxplot por grupo',
+    visualType: 'box-plot',
+    buildChart: ({ g1, g2, labels }) => {
+      const chart = buildBoxPlotChartData(
+        { [labels[0]]: g1, [labels[1]]: g2 },
+        labels,
+        'Valor observado',
+      );
+      return {
+        type: 'scatter',
+        ...chart,
+        ariaLabel: 'Boxplot por grupo',
+      };
+    },
+    defaultAxisLabels: { x: 'Grupo', y: 'Valor observado' },
+    capabilities: [],
+  });
+
+  if (mode === 'paired') {
+    presets.splice(2, 0, {
+      id: 'paired',
+      label: 'Trajetórias pareadas',
+      visualType: 'lines',
+      buildChart: ({ g1, g2, labels }) => ({
+        type: 'line',
+        ...buildPairedComparisonChartData(g1, g2, labels),
+        ariaLabel: 'Trajetórias pareadas',
+      }),
+      defaultAxisLabels: { x: 'Momento / condição', y: 'Valor observado' },
+      capabilities: [],
+    });
+  }
+
+  return presets;
 }
 
 export function getDefaultTStudentChartPreset(
@@ -228,4 +268,4 @@ export function getDefaultTStudentChartPreset(
   return 'distribution';
 }
 
-export const tStudentChartPresets = buildTStudentChartPresets();
+export const tStudentChartPresets = buildTStudentChartPresets('independent');

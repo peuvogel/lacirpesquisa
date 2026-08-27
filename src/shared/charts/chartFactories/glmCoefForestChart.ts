@@ -43,7 +43,7 @@ export function buildGlmCoefForestChartData(
 
   if (!rows.length) {
     return {
-      data: { labels: ['—'], datasets: [] },
+      data: { datasets: [] },
       options: mergeChartOptions(BASE_OPTS, {
         indexAxis: 'y',
         plugins: { title: { display: true, text: input.title ?? 'Coeficientes' } },
@@ -83,6 +83,24 @@ export function buildGlmCoefForestChartData(
             return `${interval.label}: ${fmtSigned(interval.estimate, 3)} (IC95%: ${fmtNumber(interval.low, 3)} a ${fmtNumber(interval.high, 3)})`;
           },
         },
+      },
+      annotation: {
+        annotations: Object.fromEntries(
+          intervals.map((interval, index) => [
+            `showCoefficientValues_${index}`,
+            {
+              type: 'label',
+              xValue: interval.estimate,
+              yValue: index,
+              content: fmtNumber(interval.estimate, 3),
+              color: '#334155',
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              xAdjust: 14,
+              yAdjust: -14,
+              clip: false,
+            },
+          ]),
+        ),
       },
     },
   });

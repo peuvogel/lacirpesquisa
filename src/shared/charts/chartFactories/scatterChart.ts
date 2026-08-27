@@ -62,6 +62,7 @@ export function buildScatterChartData(
     const ryMin = pearson.intercept + pearson.slope * rxMin;
     const ryMax = pearson.intercept + pearson.slope * rxMax;
     datasets.push({
+      lacirId: 'regression-fit',
       label: 'Linha de regressão',
       data: [
         { x: rxMin, y: ryMin },
@@ -78,6 +79,7 @@ export function buildScatterChartData(
   }
 
   datasets.push({
+    lacirId: 'observed-points',
     label:
       dataset.headers?.[0] && dataset.headers?.[1]
         ? `${dataset.headers[0]} × ${dataset.headers[1]}`
@@ -93,6 +95,7 @@ export function buildScatterChartData(
 
   if (outliers.length) {
     datasets.push({
+      lacirId: 'outlier-points',
       label: 'Possíveis outliers',
       data: outliers.map((p) => ({ x: p.x, y: p.y, label: p.label })),
       backgroundColor: COLORS.danger,
@@ -166,6 +169,7 @@ export function buildRankScatterChartData(
 
   const datasets: ChartData['datasets'] = [
     {
+      lacirId: 'rank-points',
       label: 'Postos (X → Y)',
       data: normal.map((p) => ({ x: p.x, y: p.y, label: p.label })),
       backgroundColor: COLORS.tealLight,
@@ -178,6 +182,7 @@ export function buildRankScatterChartData(
 
   if (high.length) {
     datasets.push({
+      lacirId: 'rank-gap-points',
       label: 'Maior diferença de ranks',
       data: high.map((p) => ({ x: p.x, y: p.y, label: p.label })),
       backgroundColor: COLORS.dangerLight,

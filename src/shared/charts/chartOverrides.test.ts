@@ -49,6 +49,33 @@ describe('chartOverrides', () => {
     expect(fields.categoryLabels).toEqual(['Grupo A', 'Grupo B']);
     expect(fields.isBar).toBe(true);
     expect(fields.axisX).toBe('Grupo');
+    expect(fields.categoryColorsEditable).toBe(true);
+    expect(fields.seriesColorsEditable).toBe(false);
+  });
+
+  it('advertises series colors instead of nonfunctional category colors on grouped bars', () => {
+    const grouped: ChartProps = {
+      ...sampleBar,
+      data: {
+        labels: ['A', 'B'],
+        datasets: [
+          { label: 'Observado', data: [1, 2], backgroundColor: '#0D9488' },
+          { label: 'Esperado', data: [1.5, 1.5], backgroundColor: '#64748B' },
+        ],
+      },
+    };
+    const fields = extractEditableFields(grouped);
+    expect(fields.categoryColorsEditable).toBe(false);
+    expect(fields.seriesColorsEditable).toBe(true);
+    expect(fields.colors).toEqual(['#0D9488', '#64748B']);
+  });
+
+  it('does not advertise series-label editing when the legend is explicitly hidden', () => {
+    const fields = extractEditableFields({
+      ...sampleBar,
+      options: { ...sampleBar.options, plugins: { legend: { display: false } } },
+    });
+    expect(fields.datasetLabelsEditable).toBe(false);
   });
 
   it('wraps long titles into multiple lines at word boundaries', () => {

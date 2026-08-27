@@ -73,7 +73,11 @@ describe('chartFactories', () => {
       [101, 109, 121],
     );
     expect(data.datasets?.length).toBe(2);
-    expect(data.labels?.length).toBe(3);
+    expect(data.datasets.find((dataset) => dataset.lacirId === 'observed')?.data).toEqual([
+      expect.objectContaining({ x: 2010, y: 100 }),
+      expect.objectContaining({ x: 2011, y: 110 }),
+      expect.objectContaining({ x: 2012, y: 120 }),
+    ]);
     expect(options.plugins?.tooltip).toBeDefined();
   });
 

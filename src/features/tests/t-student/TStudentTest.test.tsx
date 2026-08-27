@@ -89,13 +89,13 @@ describe('TStudentTest', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baixar Intervalo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baixar Pontos' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Baixar Colunas' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Diferença de médias (IC95%)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Distribuição por grupo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Baixar Barras de médias' })).toBeInTheDocument();
     expect(screen.getByText('Tipos de gráfico')).toBeInTheDocument();
     expect(screen.queryByLabelText('Dispersão')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Editar Intervalo' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Editar Pontos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar Diferença de médias (IC95%)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar Distribuição por grupo' })).toBeInTheDocument();
 
     const prose = screen.getAllByText(/Observou-se|Não se observou|Pergunta analisada/i);
     expect(prose.length).toBeGreaterThan(0);

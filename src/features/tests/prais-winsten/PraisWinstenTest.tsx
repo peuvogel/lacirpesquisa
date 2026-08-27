@@ -20,11 +20,11 @@ import {
   TABULAR_OPTIONS,
 } from './praisConfig';
 import {
+  buildPraisTrendPresets,
   getDefaultPraisPresetId,
   PRAIS_RESIDUAL_ANNOTATIONS,
   PRAIS_TREND_ANNOTATIONS,
   praisResidualPresets,
-  praisTrendPresets,
 } from './praisCharts';
 import {
   buildDatasetFromConfirmed,
@@ -170,7 +170,7 @@ export function PraisWinstenTest() {
             <ResultsPanelWithCustomizer
               key="trend"
               title="Prais-Winsten: resultados"
-              presets={praisTrendPresets}
+              presets={buildPraisTrendPresets(output.model.scale === 'log')}
               defaultPresetId={getDefaultPraisPresetId('trend')}
               annotations={PRAIS_TREND_ANNOTATIONS}
               {...panelProps}
