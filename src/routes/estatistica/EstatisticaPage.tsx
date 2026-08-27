@@ -11,6 +11,7 @@ import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTes
 import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
 import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
 import { getTestById, isTestAvailable, type TestId } from '@/features/tests/registry';
+import { SessionPersistenceControl } from '@/shared/session/SessionPersistenceControl';
 import { useSession } from '@/shared/session/SessionProvider';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
 import { PortalDatasusLink } from './PortalDatasusLink';
@@ -148,9 +149,12 @@ export function EstatisticaPage() {
           className="lacir-estatistica-main flex-1 px-6 py-8"
           data-has-session-data={hasData}
         >
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
             <h1 className="font-sans text-display font-bold text-text">{pageTitle}</h1>
-            <PortalDatasusLink />
+            <div className="flex w-full max-w-md flex-col items-stretch gap-3">
+              <PortalDatasusLink />
+              <SessionPersistenceControl />
+            </div>
           </div>
           <div id="lacir-test-module-mount" data-active-test-id={activeTestId}>
             {renderActiveTest({

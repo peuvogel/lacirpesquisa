@@ -1,0 +1,254 @@
+import type { SessionDataset } from './SessionProvider';
+import { IMPORT_LIMITS } from '@/shared/data-input/importLimits';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
+
+export const SESSION_DATABASE_NAME = 'lacirstat-private-session';
+export const SESSION_STORE_NAME = 'session';
+export const SESSION_RECORD_KEY = 'current';
+const SESSION_DATABASE_VERSION = 1;
+const SNAPSHOT_VERSION = 1;
+
+const TABLE_COLUMN_TYPES = new Set(['numerica', 'categorica', 'tempo', 'ignorar']);
+
+export interface SessionSnapshot {
+  version: 1;
+  savedAt: number;
+  dataset: SessionDataset | null;
+  visualPreferences: Record<string, unknown>;
+}
+
+export interface SessionStorageAdapter {
+  read(): Promise<SessionSnapshot | null>;
+  write(snapshot: SessionSnapshot): Promise<void>;
+  clear(): Promise<void>;
+}
+
+export interface IndexedDbSessionStorageOptions {
+  dbName?: string;
+  indexedDBFactory?: IDBFactory;
+}
+
+export class SessionSnapshotValidationError extends Error {
+  constructor(message = 'A sessão salva é incompatível ou está corrompida.') {
+    super(message);
+    this.name = 'SessionSnapshotValidationError';
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function hasOnlyKeys(record: Record<string, unknown>, keys: readonly string[]): boolean {
+  const allowed = new Set(keys);
+  return Object.keys(record).every((key) => allowed.has(key));
+}
+
+function isFiniteTimestamp(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+function isSerializableValue(
+  value: unknown,
+  depth = 0,
+  ancestors: ReadonlySet<object> = new Set(),
+): boolean {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (depth >= 12 || (typeof value !== 'object' && !Array.isArray(value))) return false;
+  if (!value || ancestors.has(value)) return false;
+
+  const nextAncestors = new Set(ancestors);
+  nextAncestors.add(value);
+  if (Array.isArray(value)) {
+    return value.length <= 1_000
+      && value.every((item) => isSerializableValue(item, depth + 1, nextAncestors));
+  }
+  if (!isRecord(value) || Object.keys(value).length > 1_000) return false;
+  return Object.values(value).every((item) => isSerializableValue(item, depth + 1, nextAncestors));
+}
+
+export function isSerializableVisualPreferences(
+  value: unknown,
+): value is Record<string, unknown> {
+  return isRecord(value) && isSerializableValue(value);
+}
+
+function isStringMatrix(value: unknown, maxColumns: number): value is string[][] {
+  return Array.isArray(value)
+    && value.length <= IMPORT_LIMITS.dataRows
+    && (value.length + 1) * maxColumns <= IMPORT_LIMITS.cells
+    && value.every((row) => (
+      Array.isArray(row)
+      && row.length <= maxColumns
+      && row.every((cell) => typeof cell === 'string')
+    ));
+}
+
+function isStrictTableDocument(value: unknown): value is TableDocument {
+  if (!isRecord(value) || !hasOnlyKeys(value, ['id', 'revision', 'columns', 'rows', 'bindings', 'sourceLabel'])) {
+    return false;
+  }
+  if (
+    typeof value.id !== 'string'
+    || !value.id
+    || !Number.isInteger(value.revision)
+    || (value.revision as number) < 0
+    || typeof value.sourceLabel !== 'string'
+    || !Array.isArray(value.columns)
+    || value.columns.length > IMPORT_LIMITS.columns
+  ) return false;
+
+  const columnIds = new Set<string>();
+  const ignoredColumnIds = new Set<string>();
+  for (const column of value.columns) {
+    if (
+      !isRecord(column)
+      || !hasOnlyKeys(column, ['id', 'name', 'type', 'explicitType'])
+      || typeof column.id !== 'string'
+      || !column.id
+      || columnIds.has(column.id)
+      || typeof column.name !== 'string'
+      || typeof column.type !== 'string'
+      || !TABLE_COLUMN_TYPES.has(column.type)
+      || typeof column.explicitType !== 'boolean'
+    ) return false;
+    columnIds.add(column.id);
+    if (column.type === 'ignorar') ignoredColumnIds.add(column.id);
+  }
+
+  if (!isStringMatrix(value.rows, value.columns.length) || !isRecord(value.bindings)) return false;
+  for (const roles of Object.values(value.bindings)) {
+    if (!isRecord(roles)) return false;
+    for (const boundColumnId of Object.values(roles)) {
+      if (boundColumnId !== null && (
+        typeof boundColumnId !== 'string'
+        || !columnIds.has(boundColumnId)
+        || ignoredColumnIds.has(boundColumnId)
+      )) return false;
+    }
+  }
+  return true;
+}
+
+function sameStringMatrix(left: readonly string[][], right: readonly string[][]): boolean {
+  return left.length === right.length && left.every((row, rowIndex) => (
+    row.length === right[rowIndex]?.length
+    && row.every((cell, columnIndex) => cell === right[rowIndex]?.[columnIndex])
+  ));
+}
+
+function isStrictSessionDataset(value: unknown): value is SessionDataset {
+  if (!isRecord(value) || !hasOnlyKeys(value, ['headers', 'rows', 'sourceLabel', 'confirmedAt', 'table'])) {
+    return false;
+  }
+  if (
+    !Array.isArray(value.headers)
+    || !value.headers.every((header) => typeof header === 'string')
+    || typeof value.sourceLabel !== 'string'
+    || !isFiniteTimestamp(value.confirmedAt)
+    || !isStrictTableDocument(value.table)
+    || !isStringMatrix(value.rows, value.headers.length)
+  ) return false;
+
+  const table = value.table;
+  return value.headers.length === table.columns.length
+    && value.headers.every((header, index) => header === table.columns[index]?.name)
+    && value.sourceLabel === table.sourceLabel
+    && sameStringMatrix(value.rows, table.rows);
+}
+
+export function parseSessionSnapshot(value: unknown): SessionSnapshot {
+  if (
+    !isRecord(value)
+    || !hasOnlyKeys(value, ['version', 'savedAt', 'dataset', 'visualPreferences'])
+    || value.version !== SNAPSHOT_VERSION
+    || !isFiniteTimestamp(value.savedAt)
+    || (value.dataset !== null && !isStrictSessionDataset(value.dataset))
+    || !isSerializableVisualPreferences(value.visualPreferences)
+  ) {
+    throw new SessionSnapshotValidationError();
+  }
+  return value as unknown as SessionSnapshot;
+}
+
+function transactionCompletion(transaction: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error ?? new Error('Falha na transação IndexedDB.'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('Transação IndexedDB cancelada.'));
+  });
+}
+
+function openDatabase(factory: IDBFactory, dbName: string): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = factory.open(dbName, SESSION_DATABASE_VERSION);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(SESSION_STORE_NAME)) {
+        request.result.createObjectStore(SESSION_STORE_NAME);
+      }
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => db.close();
+      resolve(db);
+    };
+    request.onerror = () => reject(request.error ?? new Error('Não foi possível abrir o IndexedDB.'));
+    request.onblocked = () => reject(new Error('O IndexedDB está bloqueado por outra aba.'));
+  });
+}
+
+function resolveFactory(configured?: IDBFactory): IDBFactory {
+  const factory = configured ?? globalThis.indexedDB;
+  if (!factory) throw new Error('IndexedDB não está disponível neste navegador.');
+  return factory;
+}
+
+export function createIndexedDbSessionStorage(
+  options: IndexedDbSessionStorageOptions = {},
+): SessionStorageAdapter {
+  const dbName = options.dbName ?? SESSION_DATABASE_NAME;
+
+  return {
+    async read() {
+      const db = await openDatabase(resolveFactory(options.indexedDBFactory), dbName);
+      try {
+        const transaction = db.transaction(SESSION_STORE_NAME, 'readonly');
+        const request = transaction.objectStore(SESSION_STORE_NAME).get(SESSION_RECORD_KEY);
+        const value = await new Promise<unknown>((resolve, reject) => {
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error ?? new Error('Não foi possível ler a sessão.'));
+        });
+        await transactionCompletion(transaction);
+        return value === undefined ? null : parseSessionSnapshot(value);
+      } finally {
+        db.close();
+      }
+    },
+
+    async write(snapshot) {
+      const validated = parseSessionSnapshot(snapshot);
+      const db = await openDatabase(resolveFactory(options.indexedDBFactory), dbName);
+      try {
+        const transaction = db.transaction(SESSION_STORE_NAME, 'readwrite');
+        transaction.objectStore(SESSION_STORE_NAME).put(validated, SESSION_RECORD_KEY);
+        await transactionCompletion(transaction);
+      } finally {
+        db.close();
+      }
+    },
+
+    async clear() {
+      const db = await openDatabase(resolveFactory(options.indexedDBFactory), dbName);
+      try {
+        const transaction = db.transaction(SESSION_STORE_NAME, 'readwrite');
+        transaction.objectStore(SESSION_STORE_NAME).delete(SESSION_RECORD_KEY);
+        await transactionCompletion(transaction);
+      } finally {
+        db.close();
+      }
+    },
+  };
+}
