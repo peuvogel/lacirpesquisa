@@ -229,6 +229,7 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
           engineOutput={engineOutput}
           presets={chartPresets}
           defaultPresetId={getDefaultAnovaChartPreset()}
+          preferenceScopeId="anova-tukey"
           annotations={ANOVA_CHART_ANNOTATIONS}
           interpretation={interpretation}
           exportFilename="anova-tukey-lacirstat.png"

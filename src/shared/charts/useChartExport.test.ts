@@ -1,7 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { RefObject } from 'react';
-import { useChartExport } from './useChartExport';
+import { Chart } from 'chart.js';
+import { exportCanvasPng, useChartExport } from './useChartExport';
 
 function renderWithCanvas(canvas: HTMLCanvasElement | null) {
   const canvasRef = { current: canvas } as RefObject<HTMLCanvasElement | null>;
@@ -81,5 +82,26 @@ describe('useChartExport', () => {
     expect(() => download()).not.toThrow();
     expect(clickSpy).not.toHaveBeenCalled();
     expect(getAppendedAnchor(appendChildSpy)).toBeUndefined();
+  });
+
+  it('restores the screen pixel ratio and reports an export failure', () => {
+    const canvas = document.createElement('canvas');
+    const resize = vi.fn();
+    const chart = {
+      options: { devicePixelRatio: 1.5 },
+      resize,
+    };
+    vi.spyOn(Chart, 'getChart').mockReturnValue(chart as never);
+    vi.spyOn(canvas, 'toDataURL').mockImplementation(() => {
+      throw new Error('canvas tainted');
+    });
+    const reportError = vi.fn();
+
+    const exported = exportCanvasPng(canvas, 'falha.png', reportError);
+
+    expect(exported).toBe(false);
+    expect(reportError).toHaveBeenCalledWith(expect.any(Error));
+    expect(chart.options.devicePixelRatio).toBe(1.5);
+    expect(resize).toHaveBeenCalledTimes(2);
   });
 });

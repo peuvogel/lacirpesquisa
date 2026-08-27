@@ -78,6 +78,12 @@ describe('chartFactories', () => {
       expect.objectContaining({ x: 2011, y: 110 }),
       expect.objectContaining({ x: 2012, y: 120 }),
     ]);
+    expect(options.scales?.x).toMatchObject({
+      suggestedMin: expect.any(Number),
+      suggestedMax: expect.any(Number),
+    });
+    expect((options.scales?.x as { suggestedMin: number }).suggestedMin).toBeLessThan(2010);
+    expect((options.scales?.x as { suggestedMax: number }).suggestedMax).toBeGreaterThan(2012);
     expect(options.plugins?.tooltip).toBeDefined();
   });
 

@@ -44,11 +44,22 @@ ensureChartAnnotationsRegistered();
 
 export type ChartCanvasType = 'bar' | 'line' | 'scatter';
 
+export const DEFAULT_CHART_HEIGHT = 420;
+export const MIN_CHART_HEIGHT = 280;
+export const MAX_CHART_HEIGHT = 900;
+
+export function clampChartHeight(height = DEFAULT_CHART_HEIGHT): number {
+  if (!Number.isFinite(height)) return DEFAULT_CHART_HEIGHT;
+  return Math.min(MAX_CHART_HEIGHT, Math.max(MIN_CHART_HEIGHT, Math.round(height)));
+}
+
 export interface ChartCanvasProps {
   type: ChartCanvasType;
   data: ChartData;
   options?: ChartOptions;
   ariaLabel: string;
+  /** Responsive container height in CSS pixels. The canvas backing store remains Chart.js-managed. */
+  height?: number;
   className?: string;
   onCanvasReady?: (canvas: HTMLCanvasElement | null) => void;
   onChartInteract?: (target: ChartClickTarget) => void;
@@ -125,6 +136,7 @@ export function ChartCanvas({
   data,
   options,
   ariaLabel,
+  height,
   className,
   onCanvasReady,
   onChartInteract,
@@ -177,15 +189,16 @@ export function ChartCanvas({
   return (
     <div
       className={cn(
-        'relative mx-auto h-[220px] w-full overflow-hidden rounded-xl bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.08)] sm:h-[250px]',
+        'relative mx-auto w-full overflow-hidden rounded-xl bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.08)]',
         className,
       )}
+      style={{ height: `${clampChartHeight(height)}px` }}
     >
       <canvas
         ref={setCanvasRef}
         role="img"
         aria-label={ariaLabel}
-        className="h-full w-full cursor-pointer bg-white"
+        className={cn('h-full w-full bg-white', onChartInteract && 'cursor-pointer')}
       />
     </div>
   );

@@ -23,7 +23,7 @@ export function ProfileDistributionVisual({
     const chart = buildCategoryChart(distribution, label, context);
     return (
       <figure className="relative">
-        <ChartCanvas {...chart} onCanvasReady={(canvas) => { primaryCanvas.current = canvas; }} className="h-[220px] sm:h-[250px]" />
+        <ChartCanvas {...chart} height={300} onCanvasReady={(canvas) => { primaryCanvas.current = canvas; }} />
         <DownloadPngButton
           className="absolute right-2 top-2"
           label={`Baixar frequências de ${label}`}
@@ -43,7 +43,7 @@ export function ProfileDistributionVisual({
   return (
     <div className={qq.length ? 'grid gap-3 sm:grid-cols-2' : ''}>
       <figure className="relative">
-        <ChartCanvas {...histogram} onCanvasReady={(canvas) => { primaryCanvas.current = canvas; }} className="h-[220px] sm:h-[250px]" />
+        <ChartCanvas {...histogram} height={300} onCanvasReady={(canvas) => { primaryCanvas.current = canvas; }} />
         <DownloadPngButton
           className="absolute right-2 top-2"
           label={`Baixar histograma de ${label}`}
@@ -55,7 +55,7 @@ export function ProfileDistributionVisual({
       </figure>
       {qq.length ? (
         <figure className="relative">
-          <ChartCanvas {...buildQqChart(distribution, label, context)} onCanvasReady={(canvas) => { qqCanvas.current = canvas; }} className="h-[220px] sm:h-[250px]" />
+          <ChartCanvas {...buildQqChart(distribution, label, context)} height={300} onCanvasReady={(canvas) => { qqCanvas.current = canvas; }} />
           <DownloadPngButton
             className="absolute right-2 top-2"
             label={`Baixar gráfico Q–Q de ${label}`}

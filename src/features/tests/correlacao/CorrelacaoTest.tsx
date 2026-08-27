@@ -167,6 +167,7 @@ export function CorrelacaoTest() {
           engineOutput.outlierFlags.some(Boolean),
         )}
         defaultPresetId={getDefaultCorrelacaoChartPreset(method)}
+        preferenceScopeId={`correlacao-${method}`}
         annotations={CORRELACAO_CHART_ANNOTATIONS}
         interpretation={interpretation}
         exportFilename="correlacao-lacirstat.png"

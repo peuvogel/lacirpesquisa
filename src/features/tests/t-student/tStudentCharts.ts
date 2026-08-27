@@ -139,7 +139,7 @@ export function buildTStudentChartPresets(
           type: 'scatter',
           data,
           options: mergeChartOptions(options, {
-            layout: { padding: { top: 36, right: 18, bottom: 10, left: 10 } },
+            layout: { padding: { top: 52, right: 24, bottom: 16, left: 16 } },
             plugins: {
               title: {
                 display: true,
@@ -198,7 +198,7 @@ export function buildTStudentChartPresets(
                   ...meanValueAnnotations(means, [labels[0], labels[1]]),
                   showPValue: pValueAnnotation(
                     `p = ${fmtP(result.p)}`,
-                    labels[1],
+                    0.5,
                     peak,
                   ),
                 },
@@ -207,7 +207,7 @@ export function buildTStudentChartPresets(
             scales: {
               y: {
                 beginAtZero: true,
-                grace: '22%',
+                grace: '32%',
               },
             },
           } as Parameters<typeof mergeChartOptions>[1]),

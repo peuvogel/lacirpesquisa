@@ -167,6 +167,7 @@ export function TStudentTest() {
         engineOutput={engineOutput}
         presets={buildTStudentChartPresets(mode)}
         defaultPresetId={getDefaultTStudentChartPreset(mode, engineOutput.result, engineOutput.labels)}
+        preferenceScopeId={`t-student-${mode}`}
         annotations={T_STUDENT_CHART_ANNOTATIONS}
         interpretation={interpretation}
         exportFilename="t-student-lacirstat.png"

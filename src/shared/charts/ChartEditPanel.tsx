@@ -26,6 +26,8 @@ export interface ChartEditPanelProps {
   onOpenChange: (open: boolean) => void;
   chartLabel: string;
   chart: ChartProps;
+  chartHeight: number;
+  onChartHeightChange: (height: number) => void;
   overrides: ChartStyleOverrides;
   onOverridesChange: (next: ChartStyleOverrides) => void;
   annotations?: AnnotationDefinition[];
@@ -54,6 +56,8 @@ export function ChartEditPanel({
   onOpenChange,
   chartLabel,
   chart,
+  chartHeight,
+  onChartHeightChange,
   overrides,
   onOverridesChange,
   annotations = [],
@@ -184,6 +188,25 @@ export function ChartEditPanel({
       </div>
 
       <div className="max-h-[min(52vh,380px)] space-y-4 overflow-y-auto px-3 py-3">
+        <div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3">
+          <Label htmlFor="chart-edit-height" className="text-xs font-medium">
+            Altura do gráfico ({chartHeight}px)
+          </Label>
+          <input
+            id="chart-edit-height"
+            type="range"
+            min={280}
+            max={900}
+            step={20}
+            value={chartHeight}
+            onChange={(event) => onChartHeightChange(Number(event.target.value))}
+            className="w-full accent-[var(--color-accent)]"
+          />
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Ajuste o espaço vertical sem esticar a imagem. O download mantém a resolução nítida.
+          </p>
+        </div>
+
         <ChartClickEditor
           chart={chart}
           overrides={overrides}

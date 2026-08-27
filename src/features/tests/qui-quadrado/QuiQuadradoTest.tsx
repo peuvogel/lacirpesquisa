@@ -178,6 +178,7 @@ export function QuiQuadradoTest() {
           engineOutput={engineOutput}
           presets={quiQuadradoChartPresets}
           defaultPresetId={getDefaultQuiQuadradoChartPreset()}
+          preferenceScopeId="qui-quadrado"
           annotations={QUI_QUADRADO_CHART_ANNOTATIONS}
           interpretation={interpretation}
           exportFilename="qui-quadrado-lacirstat.png"

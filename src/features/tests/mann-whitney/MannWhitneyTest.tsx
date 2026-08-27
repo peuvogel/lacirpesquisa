@@ -196,6 +196,7 @@ export function MannWhitneyTest() {
         engineOutput={output}
         presets={mannWhitneyChartPresets}
         defaultPresetId="rank-dot"
+        preferenceScopeId="mann-whitney"
         annotations={MANN_WHITNEY_CHART_ANNOTATIONS}
         interpretation={interpretation}
         exportFilename="mann-whitney-lacirstat.png"

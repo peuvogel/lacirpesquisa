@@ -180,6 +180,7 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
           engineOutput={engineOutput}
           presets={binomialNegativaChartPresets}
           defaultPresetId={getDefaultBinomialNegativaChartPreset()}
+          preferenceScopeId="binomial-negativa"
           annotations={BINOMIAL_NEGATIVA_CHART_ANNOTATIONS}
           interpretation={interpretation}
           exportFilename="binomial-negativa-lacirstat.png"

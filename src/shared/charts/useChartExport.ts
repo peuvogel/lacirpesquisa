@@ -6,7 +6,11 @@ const DEFAULT_FILENAME = 'grafico-lacirstat.png';
 export const EXPORT_PIXEL_RATIO = 3;
 
 /** Imperative PNG download — temporarily upscales Chart.js for a crisp paper export. */
-export function exportCanvasPng(canvas: HTMLCanvasElement, filename = DEFAULT_FILENAME): void {
+export function exportCanvasPng(
+  canvas: HTMLCanvasElement,
+  filename = DEFAULT_FILENAME,
+  onError?: (error: unknown) => void,
+): boolean {
   const chart =
     typeof Chart.getChart === 'function' ? Chart.getChart(canvas) : undefined;
   let restore: (() => void) | undefined;
@@ -28,6 +32,10 @@ export function exportCanvasPng(canvas: HTMLCanvasElement, filename = DEFAULT_FI
     document.body.appendChild(a);
     a.click();
     a.remove();
+    return true;
+  } catch (error) {
+    onError?.(error);
+    return false;
   } finally {
     restore?.();
   }
@@ -42,7 +50,7 @@ export function useChartExport(canvasRef: RefObject<HTMLCanvasElement | null>) {
     (filename = DEFAULT_FILENAME) => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      exportCanvasPng(canvas, filename);
+      return exportCanvasPng(canvas, filename);
     },
     [canvasRef],
   );

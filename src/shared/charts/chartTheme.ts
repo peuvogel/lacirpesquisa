@@ -43,7 +43,7 @@ export const BASE_OPTS: ChartOptions = {
   maintainAspectRatio: false,
   animation: { duration: 450, easing: 'easeOutQuart' },
   layout: {
-    padding: { top: 18, right: 20, bottom: 8, left: 10 },
+    padding: { top: 28, right: 28, bottom: 16, left: 18 },
   },
   plugins: {
     legend: {

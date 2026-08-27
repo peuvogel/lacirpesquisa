@@ -226,6 +226,7 @@ export function KruskalDunnTest({
           engineOutput={engineOutput}
           presets={chartPresets}
           defaultPresetId={getDefaultKruskalChartPreset()}
+          preferenceScopeId="kruskal-dunn"
           annotations={KRUSKAL_CHART_ANNOTATIONS}
           interpretation={interpretation}
           exportFilename="kruskal-dunn-lacirstat.png"

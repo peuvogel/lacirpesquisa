@@ -113,4 +113,27 @@ describe('ChartCanvas', () => {
 
     expect(screen.getByRole('img', { name: 'Distribuição dos dados' })).toBeInTheDocument();
   });
+
+  it('uses a readable 420px default height and honors an explicit height', () => {
+    const { rerender } = render(
+      <ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" />,
+    );
+    const container = screen.getByRole('img', { name: 'Gráfico teste' }).parentElement;
+
+    expect(container).toHaveStyle({ height: '420px' });
+
+    rerender(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" height={620} />);
+    expect(container).toHaveStyle({ height: '620px' });
+  });
+
+  it('clamps requested heights to the supported 280–900px range', () => {
+    const { rerender } = render(
+      <ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" height={120} />,
+    );
+    const container = screen.getByRole('img', { name: 'Gráfico teste' }).parentElement;
+    expect(container).toHaveStyle({ height: '280px' });
+
+    rerender(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" height={1200} />);
+    expect(container).toHaveStyle({ height: '900px' });
+  });
 });

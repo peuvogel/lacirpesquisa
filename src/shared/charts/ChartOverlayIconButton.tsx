@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-export interface ChartOverlayIconButtonProps {
+export interface ChartOverlayIconButtonProps
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'onClick'> {
   onClick: () => void;
   label: string;
   className?: string;
@@ -9,26 +10,29 @@ export interface ChartOverlayIconButtonProps {
 }
 
 /** Compact icon control for chart overlays (edit / download). */
-export function ChartOverlayIconButton({
+export const ChartOverlayIconButton = forwardRef<HTMLButtonElement, ChartOverlayIconButtonProps>(function ChartOverlayIconButton({
   onClick,
   label,
   className,
   children,
-}: ChartOverlayIconButtonProps) {
+  ...buttonProps
+}, ref) {
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       aria-label={label}
       title={label}
       className={cn('lacir-dl-btn', className)}
+      {...buttonProps}
     >
       <span className="lacir-dl-btn__icon" aria-hidden="true">
         {children}
       </span>
     </button>
   );
-}
+});
 
 export function PencilIcon({ className }: { className?: string }) {
   return (

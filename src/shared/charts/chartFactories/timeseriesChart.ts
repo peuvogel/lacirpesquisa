@@ -55,6 +55,9 @@ export function buildTimeseriesChartData(
 
   const data: ChartData = { datasets };
   const labelByTime = new Map(numericTime.map((value, index) => [value, labels[index]]));
+  const minTime = Math.min(...numericTime);
+  const maxTime = Math.max(...numericTime);
+  const timePadding = Math.max((maxTime - minTime) * 0.035, 0.5);
 
   const options = mergeChartOptions(BASE_OPTS, {
     plugins: {
@@ -69,6 +72,8 @@ export function buildTimeseriesChartData(
     scales: {
       x: {
         type: 'linear',
+        suggestedMin: minTime - timePadding,
+        suggestedMax: maxTime + timePadding,
         title: {
           display: true,
           text: axisLabels.x || 'Período',

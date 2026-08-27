@@ -4,6 +4,8 @@ import { mergeChartOptions } from './chartTheme';
 import { applyChartCapabilities, type ChartCapability } from './chartCapabilities';
 
 export interface ChartStyleOverrides {
+  /** Serializable responsive container height, not a Chart.js engine option. */
+  height?: number;
   title?: string;
   categoryLabels?: string[];
   datasetLabels?: string[];

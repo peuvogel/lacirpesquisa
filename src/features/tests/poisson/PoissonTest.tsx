@@ -190,6 +190,7 @@ export function PoissonTest({ onNavigateTest }: PoissonTestProps) {
           engineOutput={engineOutput}
           presets={poissonChartPresets}
           defaultPresetId={getDefaultPoissonChartPreset()}
+          preferenceScopeId="poisson"
           annotations={POISSON_CHART_ANNOTATIONS}
           interpretation={interpretation}
           exportFilename="poisson-lacirstat.png"

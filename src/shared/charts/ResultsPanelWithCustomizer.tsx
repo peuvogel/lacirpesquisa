@@ -7,7 +7,8 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
-import { ChartCanvas } from './ChartCanvas';
+import { Maximize2Icon } from 'lucide-react';
+import { ChartCanvas, DEFAULT_CHART_HEIGHT, clampChartHeight } from './ChartCanvas';
 import { ChartCustomizer } from './ChartCustomizer';
 import { ChartEditPanel } from './ChartEditPanel';
 import { DownloadPngButton } from './DownloadPngButton';
@@ -30,6 +31,17 @@ import { capabilityDefaults } from './chartCapabilities';
 import { InterpretationText } from '@/routes/estatistica/InterpretationText';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
 import { cn } from '@/lib/utils';
+import { useSession } from '@/shared/session/SessionProvider';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export interface ResultsPanelWithCustomizerProps<T> {
   title: string;
@@ -41,6 +53,48 @@ export interface ResultsPanelWithCustomizerProps<T> {
   interpretation: string[];
   exportFilename?: string;
   actions?: ReactNode;
+  /** Stable statistical test id used to scope saved visual preferences. */
+  preferenceScopeId?: string;
+}
+
+function preferenceToken(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function readStoredOverrides(value: unknown): ChartStyleOverrides | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const source = value as Record<string, unknown>;
+  const next: ChartStyleOverrides = {};
+  if (typeof source.height === 'number') next.height = clampChartHeight(source.height);
+  if (typeof source.title === 'string') next.title = source.title;
+  if (typeof source.axisX === 'string') next.axisX = source.axisX;
+  if (typeof source.axisY === 'string') next.axisY = source.axisY;
+  if (typeof source.barThickness === 'number') next.barThickness = source.barThickness;
+  if (typeof source.categoryPercentage === 'number') {
+    next.categoryPercentage = source.categoryPercentage;
+  }
+  for (const key of ['categoryLabels', 'datasetLabels', 'colors'] as const) {
+    const stored = source[key];
+    if (Array.isArray(stored) && stored.every((item) => typeof item === 'string')) {
+      next[key] = [...stored];
+    }
+  }
+  if (
+    source.annotationToggles
+    && typeof source.annotationToggles === 'object'
+    && !Array.isArray(source.annotationToggles)
+  ) {
+    next.annotationToggles = Object.fromEntries(
+      Object.entries(source.annotationToggles as Record<string, unknown>)
+        .filter((entry): entry is [string, boolean] => typeof entry[1] === 'boolean'),
+    );
+  }
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 function isInsideEditChrome(target: EventTarget | null): boolean {
@@ -66,12 +120,59 @@ export function ResultsPanelWithCustomizer<T>({
   interpretation,
   exportFilename = 'grafico-lacirstat.png',
   actions,
+  preferenceScopeId,
 }: ResultsPanelWithCustomizerProps<T>) {
+  const { dataset, visualPreferences, setVisualPreferences } = useSession();
   const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
+  const expandButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const visualPreferencesRef = useRef(visualPreferences);
   const [overridesById, setOverridesById] = useState<Record<string, ChartStyleOverrides>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const editingIdRef = useRef<string | null>(null);
   editingIdRef.current = editingId;
+
+  const datasetScope = dataset?.table?.id
+    ?? (dataset ? `${preferenceToken(dataset.sourceLabel)}-${dataset.confirmedAt}` : 'sem-dados');
+  const testScope = preferenceScopeId ?? (preferenceToken(title) || 'resultado');
+  const preferencePrefix = `charts:${datasetScope}:${testScope}`;
+  const preferenceKey = useCallback(
+    (presetId: string) => `${preferencePrefix}:${presetId}`,
+    [preferencePrefix],
+  );
+
+  useEffect(() => {
+    visualPreferencesRef.current = visualPreferences;
+    const restored: Record<string, ChartStyleOverrides> = {};
+    for (const preset of presets) {
+      const stored = readStoredOverrides(visualPreferences[preferenceKey(preset.id)]);
+      if (stored) restored[preset.id] = stored;
+    }
+    setOverridesById(restored);
+  }, [preferenceKey, presets, visualPreferences]);
+
+  const persistOverrides = useCallback((id: string, next: ChartStyleOverrides) => {
+    setOverridesById((current) => ({ ...current, [id]: next }));
+    const nextPreferences = {
+      ...visualPreferencesRef.current,
+      [preferenceKey(id)]: next,
+    };
+    visualPreferencesRef.current = nextPreferences;
+    setVisualPreferences(nextPreferences);
+  }, [preferenceKey, setVisualPreferences]);
+
+  const removeStoredOverrides = useCallback((id: string) => {
+    setOverridesById((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+    const nextPreferences = { ...visualPreferencesRef.current };
+    delete nextPreferences[preferenceKey(id)];
+    visualPreferencesRef.current = nextPreferences;
+    setVisualPreferences(nextPreferences);
+  }, [preferenceKey, setVisualPreferences]);
 
   const customizer = useChartCustomizer({
     presets,
@@ -171,6 +272,40 @@ export function ResultsPanelWithCustomizer<T>({
     event.currentTarget.style.setProperty('--parallax-y', '0deg');
   };
 
+  const reportExportFailure = useCallback(() => {
+    setExportError('Não foi possível exportar o gráfico em PNG. Tente novamente ou use a visualização ampliada.');
+  }, []);
+
+  const exportChart = useCallback((canvas: HTMLCanvasElement, filename: string) => {
+    setExportError(null);
+    const exported = exportCanvasPng(canvas, filename, reportExportFailure);
+    if (!exported) reportExportFailure();
+    return exported;
+  }, [reportExportFailure]);
+
+  const expandedItem = expandedId == null
+    ? undefined
+    : customizer.charts.find((item) => item.id === expandedId);
+  const expandedChart = expandedItem
+    ? applyChartOverrides(
+        expandedItem.chart,
+        {
+          ...(overridesById[expandedItem.id] ?? {}),
+          annotationToggles: effectiveToggles(expandedItem),
+        },
+        expandedItem.preset.capabilities,
+      )
+    : undefined;
+  const availableExpandedHeight = typeof window === 'undefined'
+    ? 640
+    : Math.max(280, window.innerHeight - 240);
+  const expandedHeight = expandedItem
+    ? clampChartHeight(Math.min(
+        Math.max(overridesById[expandedItem.id]?.height ?? DEFAULT_CHART_HEIGHT, 640),
+        availableExpandedHeight,
+      ))
+    : clampChartHeight(availableExpandedHeight);
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-bold text-foreground">{title}</h2>
@@ -196,7 +331,7 @@ export function ResultsPanelWithCustomizer<T>({
             </p>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
             {presenceCharts.map((item) => {
               const activeIndex = presenceCharts
                 .filter((row) => row.phase !== 'exit')
@@ -213,6 +348,9 @@ export function ResultsPanelWithCustomizer<T>({
                 },
                 item.preset.capabilities,
               );
+              const chartHeight = clampChartHeight(
+                overridesById[item.id]?.height ?? DEFAULT_CHART_HEIGHT,
+              );
 
               return (
                 <article
@@ -221,7 +359,7 @@ export function ResultsPanelWithCustomizer<T>({
                   data-chart-id={item.id}
                   className={cn(
                     'lacir-chart-card min-w-0',
-                    isLastOdd && 'md:col-span-2',
+                    isLastOdd && 'xl:col-span-2',
                     isEditing && 'lacir-chart-card--editing',
                     isDimmed && 'lacir-chart-card--dimmed',
                   )}
@@ -236,8 +374,8 @@ export function ResultsPanelWithCustomizer<T>({
                       data={displayChart.data}
                       options={displayChart.options}
                       ariaLabel={displayChart.ariaLabel}
+                      height={chartHeight}
                       onCanvasReady={(canvas) => handleCanvasReady(item.id, canvas)}
-                      onChartInteract={() => beginEditing(item.id)}
                     />
                     <div className="pointer-events-none absolute top-1.5 right-1.5 z-10 flex items-center gap-1">
                       <div className="pointer-events-auto">
@@ -255,11 +393,26 @@ export function ResultsPanelWithCustomizer<T>({
                         </ChartOverlayIconButton>
                       </div>
                       <div className="pointer-events-auto">
+                        <ChartOverlayIconButton
+                          ref={(node) => {
+                            if (node) expandButtonRefs.current.set(item.id, node);
+                            else expandButtonRefs.current.delete(item.id);
+                          }}
+                          label={`Ampliar ${item.label}`}
+                          onClick={() => {
+                            setEditingId(null);
+                            setExpandedId(item.id);
+                          }}
+                        >
+                          <Maximize2Icon className="lacir-dl-btn__svg lacir-dl-btn__svg--stroke" />
+                        </ChartOverlayIconButton>
+                      </div>
+                      <div className="pointer-events-auto">
                         <DownloadPngButton
                           label={`Baixar ${item.label}`}
                           onClick={() => {
                             const canvas = canvasRefs.current.get(item.id);
-                            if (canvas) exportCanvasPng(canvas, slugFilename(item.label, item.id));
+                            if (canvas) exportChart(canvas, slugFilename(item.label, item.id));
                           }}
                         />
                       </div>
@@ -280,6 +433,15 @@ export function ResultsPanelWithCustomizer<T>({
         </div>
       </div>
 
+      {exportError ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          {exportError}
+        </p>
+      ) : null}
+
       <InterpretationText paragraphs={interpretation} />
 
       <div className="flex flex-wrap items-center gap-3">
@@ -289,7 +451,7 @@ export function ResultsPanelWithCustomizer<T>({
           onClick={() => {
             for (const item of customizer.visibleCharts) {
               const canvas = canvasRefs.current.get(item.id);
-              if (canvas) exportCanvasPng(canvas, slugFilename(item.label, item.id));
+              if (canvas) exportChart(canvas, slugFilename(item.label, item.id));
             }
           }}
         />
@@ -304,41 +466,87 @@ export function ResultsPanelWithCustomizer<T>({
           }}
           chartLabel={editingItem.label}
           chart={editingItem.chart}
+          chartHeight={clampChartHeight(
+            overridesById[editingItem.id]?.height ?? DEFAULT_CHART_HEIGHT,
+          )}
+          onChartHeightChange={(height) => {
+            const current = overridesById[editingItem.id] ?? {};
+            persistOverrides(editingItem.id, {
+              ...current,
+              height: clampChartHeight(height),
+            });
+          }}
           overrides={overridesById[editingItem.id] ?? {}}
-          onOverridesChange={(next) =>
-            setOverridesById((prev) => ({ ...prev, [editingItem.id]: next }))
-          }
+          onOverridesChange={(next) => persistOverrides(editingItem.id, next)}
           annotations={(annotations ?? []).filter((def) =>
             editingItem.preset.capabilities.some((capability) => capability.id === def.id),
           )}
           annotationToggles={effectiveToggles(editingItem)}
           onAnnotationToggle={(id, value) => {
-            setOverridesById((prev) => {
-              const current = prev[editingItem.id] ?? {};
-              return {
-                ...prev,
-                [editingItem.id]: {
-                  ...current,
-                  annotationToggles: {
-                    ...(current.annotationToggles ?? {}),
-                    [id]: value,
-                  },
-                },
-              };
+            const current = overridesById[editingItem.id] ?? {};
+            persistOverrides(editingItem.id, {
+              ...current,
+              annotationToggles: {
+                ...(current.annotationToggles ?? {}),
+                [id]: value,
+              },
             });
           }}
           themeVariant={customizer.state.themeVariant}
           onThemeChange={customizer.setThemeVariant}
           onReset={() => {
             customizer.resetToDefault();
-            setOverridesById((prev) => {
-              const next = { ...prev };
-              delete next[editingItem.id];
-              return next;
-            });
+            removeStoredOverrides(editingItem.id);
           }}
         />
       ) : null}
+
+      <Dialog
+        open={expandedItem != null}
+        onOpenChange={(open) => {
+          if (!open) setExpandedId(null);
+        }}
+      >
+        {expandedItem && expandedChart ? (
+          <DialogContent
+            showCloseButton={false}
+            aria-describedby={`expanded-chart-description-${expandedItem.id}`}
+            className="max-h-[94vh] max-w-[min(96vw,1400px)] overflow-y-auto p-5 sm:max-w-[min(96vw,1400px)]"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              expandButtonRefs.current.get(expandedItem.id)?.focus();
+            }}
+          >
+            <DialogHeader className="pr-10">
+              <DialogTitle>{expandedItem.label}</DialogTitle>
+              <DialogDescription id={`expanded-chart-description-${expandedItem.id}`}>
+                Visualização ampliada com os mesmos ajustes do gráfico principal.
+              </DialogDescription>
+            </DialogHeader>
+            <ChartCanvas
+              type={expandedChart.type}
+              data={expandedChart.data}
+              options={expandedChart.options}
+              ariaLabel={expandedChart.ariaLabel}
+              height={expandedHeight}
+            />
+            <DialogFooter className="sm:justify-between">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Fechar ampliação</Button>
+              </DialogClose>
+              <Button
+                type="button"
+                onClick={() => {
+                  const canvas = canvasRefs.current.get(expandedItem.id);
+                  if (canvas) exportChart(canvas, slugFilename(expandedItem.label, expandedItem.id));
+                }}
+              >
+                Baixar PNG
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        ) : null}
+      </Dialog>
     </div>
   );
 }

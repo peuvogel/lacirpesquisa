@@ -171,6 +171,7 @@ export function LogisticaTest() {
           engineOutput={engineOutput}
           presets={logisticaChartPresets}
           defaultPresetId={getDefaultLogisticaChartPreset()}
+          preferenceScopeId="logistica"
           annotations={LOGISTICA_CHART_ANNOTATIONS}
           interpretation={interpretation}
           exportFilename="logistica-lacirstat.png"

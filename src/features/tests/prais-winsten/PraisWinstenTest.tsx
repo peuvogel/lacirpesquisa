@@ -172,6 +172,7 @@ export function PraisWinstenTest() {
               title="Prais-Winsten: resultados"
               presets={buildPraisTrendPresets(output.model.scale === 'log')}
               defaultPresetId={getDefaultPraisPresetId('trend')}
+              preferenceScopeId="prais-winsten-trend"
               annotations={PRAIS_TREND_ANNOTATIONS}
               {...panelProps}
             />
@@ -182,6 +183,7 @@ export function PraisWinstenTest() {
               title="Prais-Winsten: resíduos"
               presets={praisResidualPresets}
               defaultPresetId={getDefaultPraisPresetId('residual')}
+              preferenceScopeId="prais-winsten-residual"
               annotations={PRAIS_RESIDUAL_ANNOTATIONS}
               {...panelProps}
             />
