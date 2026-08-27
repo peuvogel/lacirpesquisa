@@ -500,7 +500,7 @@ export function oneWayAnova(groups: Record<string, number[]>): OneWayAnovaResult
     throw new Error('ANOVA requer ao menos dois grupos.');
   }
 
-  const groupStats: Record<string, GroupStats> = {};
+  const groupStats: Record<string, GroupStats> = Object.create(null) as Record<string, GroupStats>;
   let grandSum = 0;
   let grandN = 0;
   labels.forEach((label) => {

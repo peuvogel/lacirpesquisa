@@ -4,6 +4,7 @@ import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useSession } from '@/shared/session/SessionProvider';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
@@ -34,6 +35,7 @@ import {
 import { buildQuiQuadradoInterpretation } from './quiQuadradoInterpretation';
 
 interface ConfirmedDataset {
+  document: TableDocument;
   headers: string[];
   rows: string[][];
   sourceLabel: string;
@@ -106,8 +108,9 @@ export function QuiQuadradoTest() {
     rows: string[][];
     recognizedColumns: Record<string, number>;
   }) {
-    const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
-    setConfirmedDataset(analysisTable.confirm() ?? { ...confirmed, sourceLabel });
+    const next = analysisTable.confirm();
+    if (!next) return;
+    setConfirmedDataset(next);
     setShowSoftReset(false);
     setActiveStep('resultados');
   }
@@ -138,6 +141,10 @@ export function QuiQuadradoTest() {
       confirmedDataset.headers,
       confirmedDataset.rows,
       confirmedDataset.recognizedColumns,
+      confirmedDataset.document.columns
+        .map((column, index) => ({ column, index }))
+        .filter(({ column }) => column.explicitType && column.type === 'categorica')
+        .map(({ index }) => index),
     );
     if (typeErrors.length) {
       return <QuiQuadradoValidationAlert message={typeErrors[0]} />;

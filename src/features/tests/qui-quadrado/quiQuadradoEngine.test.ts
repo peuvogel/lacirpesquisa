@@ -126,6 +126,32 @@ describe('quiQuadradoEngine validation', () => {
     expect(errors.join(' ')).toMatch(/numérica/i);
   });
 
+  it('allows numeric category codes when both columns were explicitly marked categorical', () => {
+    const errors = validateColumnTypes(
+      ['exposição', 'desfecho'],
+      [['0', '1'], ['1', '0'], ['1', '1']],
+      { categoria_a: 0, categoria_b: 1 },
+      [0, 1],
+    );
+
+    expect(errors).toEqual([]);
+  });
+
+  it('caps category levels before allocating the contingency matrix', () => {
+    const rows = Array.from({ length: 21 * 21 }, (_, index) => [
+      `A${Math.floor(index / 21)}`,
+      `B${index % 21}`,
+    ]);
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['A', 'B'],
+      rows,
+      recognizedColumns: { categoria_a: 0, categoria_b: 1 },
+    });
+
+    expect(dataset).toMatchObject({ categoryLimitExceeded: true, table: [] });
+    expect(validateDataset(dataset)).toContainEqual(expect.stringMatching(/20×20|20.*categorias/i));
+  });
+
   it('returns PT errors for single-level categorical column', () => {
     const dataset = buildDatasetFromConfirmed({
       headers: ['grupo', 'desfecho'],

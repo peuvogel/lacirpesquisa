@@ -179,6 +179,22 @@ describe('tStudentEngine differential parity vs module.js', () => {
     ]);
   });
 
+  it('rejects independent and paired comparisons with zero standard error', () => {
+    const independent = { g1: [1, 1], g2: [2, 2], labels: ['A', 'B'] as [string, string], mode: 'independent' as const };
+    const paired = { g1: [1, 2], g2: [2, 3], labels: ['A', 'B'] as [string, string], mode: 'paired' as const };
+
+    expect(validateSampleSize('independent', independent)).toContainEqual(expect.stringMatching(/erro padrão.*zero|variação.*insuficiente/i));
+    expect(validateSampleSize('paired', paired)).toContainEqual(expect.stringMatching(/erro padrão.*zero|diferenças.*variação/i));
+    expect(() => runAnalysis('independent', independent)).toThrow(/erro padrão|variação/i);
+    expect(() => runAnalysis('paired', paired)).toThrow(/erro padrão|variação/i);
+  });
+
+  it('allows one constant independent group when the combined standard error is positive', () => {
+    const dataset = { g1: [1, 1, 1], g2: [2, 3, 4], labels: ['A', 'B'] as [string, string], mode: 'independent' as const };
+    expect(validateSampleSize('independent', dataset)).toEqual([]);
+    expect(runAnalysis('independent', dataset).se).toBeGreaterThan(0);
+  });
+
   it('runAnalysis delegates to Welch or paired based on mode', () => {
     const parsed = readTabularPasteState(exemploText, legacyStats, TABULAR_OPTIONS);
     if (parsed.status !== 'loaded') throw new Error('expected loaded paste');

@@ -59,7 +59,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): AnovaBuiltD
     return { groups: {}, groupOrder: [], headers: columnHeaders };
   }
 
-  const groups: Record<string, number[]> = {};
+  const groups: Record<string, number[]> = Object.create(null) as Record<string, number[]>;
   const groupOrder: string[] = [];
 
   rows.forEach((row) => {
@@ -68,7 +68,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): AnovaBuiltD
     const value = statsEngine.parseNumber((row[indexOutcome] ?? '').trim());
     if (value === null) return;
 
-    if (!groups[rawGroup]) {
+    if (!Object.hasOwn(groups, rawGroup)) {
       groups[rawGroup] = [];
       groupOrder.push(rawGroup);
     }

@@ -2,11 +2,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  buildDatasetFromPrepared,
   buildDatasetFromConfirmed,
   runAnalysis,
   runMannWhitney,
   validateDataset,
+  validateDatasetIssues,
 } from './mannWhitneyEngine';
+import type { PreparedGroupedSamples } from '@/shared/data-input/groupedSamples';
 
 interface GoldenCase {
   input: { groupA: number[]; groupB: number[] };
@@ -77,6 +80,17 @@ describe('runMannWhitney golden parity', () => {
 });
 
 describe('Mann–Whitney dataset contract', () => {
+  it.each(['constructor', 'toString', '__proto__'])('keeps the arbitrary long-format label %s', (reservedLabel) => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['desfecho', 'grupo'],
+      rows: [['1', reservedLabel], ['2', reservedLabel], ['3', reservedLabel], ['4', 'B'], ['5', 'B'], ['6', 'B']],
+      recognizedColumns: { desfecho: 0, grupo: 1 },
+    });
+
+    expect(dataset.groupOrder).toEqual([reservedLabel, 'B']);
+    expect(dataset.groupA).toEqual([1, 2, 3]);
+  });
+
   it('builds exactly two long-format groups and validates replication/variation', () => {
     const dataset = buildDatasetFromConfirmed({
       headers: ['valor', 'grupo'],
@@ -96,5 +110,54 @@ describe('Mann–Whitney dataset contract', () => {
       .toContainEqual(expect.stringMatching(/pelo menos 3/i));
     expect(validateDataset({ groupA: [5, 5, 5], groupB: [5, 5, 5], labels: ['A', 'B'], headers: { outcome: 'valor', group: 'grupo' } }))
       .toContainEqual(expect.stringMatching(/variação/i));
+  });
+
+  it('builds a wide dataset from two explicit columns', () => {
+    const prepared: PreparedGroupedSamples = {
+      format: 'wide',
+      groups: [
+        { label: 'Antes', values: [1, 2, 3], columnId: 'a' },
+        { label: 'Depois', values: [7, 8, 9], columnId: 'b' },
+      ],
+      invalidRowCount: 0,
+      invalidRowNumbers: [],
+      issues: [],
+    };
+
+    const dataset = buildDatasetFromPrepared(prepared, { outcome: 'Valores', group: 'colunas separadas' });
+
+    expect(dataset).toMatchObject({ labels: ['Antes', 'Depois'], groupA: [1, 2, 3], groupB: [7, 8, 9] });
+    expect(validateDatasetIssues(dataset)).toEqual([]);
+  });
+
+  it('keeps structured issue codes and all discovered long groups', () => {
+    const prepared: PreparedGroupedSamples = {
+      format: 'long',
+      groups: [
+        { label: 'A', values: [1, 2, 3] },
+        { label: 'B', values: [4, 5, 6] },
+        { label: 'C', values: [7, 8, 9] },
+      ],
+      invalidRowCount: 0,
+      invalidRowNumbers: [],
+      issues: [{ code: 'group_count', severity: 'error', message: 'Foram encontrados 3 grupos (A, B, C).' }],
+    };
+
+    const dataset = buildDatasetFromPrepared(prepared, { outcome: 'Valor', group: 'Grupo' });
+
+    expect(dataset.groupOrder).toEqual(['A', 'B', 'C']);
+    expect(validateDatasetIssues(dataset)).toContainEqual(expect.objectContaining({ code: 'group_count' }));
+  });
+
+  it('returns distinct issue codes for too few observations and all ties', () => {
+    const issues = validateDatasetIssues({
+      groupA: [5, 5],
+      groupB: [5, 5],
+      labels: ['A', 'B'],
+      groupOrder: ['A', 'B'],
+      headers: { outcome: 'valor', group: 'grupo' },
+    });
+
+    expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining(['group_too_small', 'all_values_tied']));
   });
 });

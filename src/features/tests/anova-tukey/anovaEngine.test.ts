@@ -128,6 +128,18 @@ describe('anovaEngine assumption nudges', () => {
 });
 
 describe('anovaEngine validation', () => {
+  it.each(['constructor', 'toString', '__proto__'])('keeps the arbitrary group label %s through summaries', (reservedLabel) => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['desfecho', 'grupo'],
+      rows: [['1', reservedLabel], ['2', reservedLabel], ['3', 'B'], ['4', 'B']],
+      recognizedColumns: { desfecho: 0, grupo: 1 },
+    });
+
+    expect(dataset.groupOrder).toEqual([reservedLabel, 'B']);
+    expect(dataset.groups[reservedLabel]).toEqual([1, 2]);
+    expect(runAnalysis(dataset).groupStats[reservedLabel]).toMatchObject({ n: 2, mean: 1.5 });
+  });
+
   it('rejects fewer than two groups', () => {
     const dataset = {
       groups: { A: [1, 2, 3] },

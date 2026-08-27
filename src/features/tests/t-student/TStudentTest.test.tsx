@@ -153,4 +153,18 @@ describe('TStudentTest', () => {
     });
     expect(screen.getByText('Cole ou envie seus dados')).toBeInTheDocument();
   });
+
+  it('shows a corrective error instead of a finite result when standard error is zero', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderTStudent();
+    fireEvent.change(screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'), {
+      target: { value: 'Grupo A;Grupo B\n1;2\n1;2' },
+    });
+    await vi.advanceTimersByTimeAsync(200);
+
+    await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
+
+    expect(await screen.findByText(/erro padrão.*zero|variação suficiente/i)).toBeInTheDocument();
+    expect(screen.queryByText('Estatística t')).not.toBeInTheDocument();
+  });
 });

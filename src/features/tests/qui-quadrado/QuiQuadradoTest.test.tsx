@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
@@ -85,5 +85,21 @@ describe('QuiQuadradoTest', () => {
     await user.selectOptions(screen.getByLabelText(/Tipo da coluna tratamento/i), 'ignorar');
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
+  });
+
+  it('accepts numeric category codes after the user explicitly marks both columns categorical', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderQuiQuadrado();
+    fireEvent.change(screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'), {
+      target: { value: 'categoria_a;categoria_b\n0;0\n0;0\n0;1\n0;1\n1;0\n1;0\n1;1\n1;1' },
+    });
+    await vi.advanceTimersByTimeAsync(200);
+
+    await user.selectOptions(await screen.findByLabelText('Tipo da coluna categoria_a'), 'categorica');
+    await user.selectOptions(screen.getByLabelText('Tipo da coluna categoria_b'), 'categorica');
+    await runToResultados(user);
+
+    expect(screen.getByText('Qui-quadrado (χ²)')).toBeInTheDocument();
+    expect(screen.queryByText(/parece numérica/i)).not.toBeInTheDocument();
   });
 });

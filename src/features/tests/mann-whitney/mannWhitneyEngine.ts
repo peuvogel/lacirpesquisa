@@ -2,6 +2,8 @@ import jStat from 'jstat';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
 import { fmtNumber, fmtP } from '@/shared/format';
 import { statsEngine } from '@/shared/stats/statsEngine';
+import type { AnalysisIssue } from '@/shared/data-input/analysisIssues';
+import type { PreparedGroupedSamples } from '@/shared/data-input/groupedSamples';
 
 export const MAX_EXACT_PRODUCT = 200;
 export const MAX_TOTAL_OBSERVATIONS = 10_000;
@@ -59,6 +61,8 @@ export interface MannWhitneyBuiltDataset {
   labels: [string, string];
   headers: { outcome: string; group: string };
   groupOrder?: string[];
+  issues?: AnalysisIssue[];
+  invalidRowNumbers?: number[];
 }
 
 export interface MannWhitneyEngineOutput {
@@ -259,19 +263,73 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): MannWhitney
   };
 }
 
-export function validateDataset(dataset: MannWhitneyBuiltDataset): string[] {
-  const groupCount = dataset.groupOrder?.length ?? [dataset.groupA, dataset.groupB].filter((group) => group.length > 0).length;
-  if (groupCount !== 2) return ['Mann–Whitney exige exatamente dois grupos independentes com dados.'];
-  if (dataset.groupA.length < MIN_GROUP_OBSERVATIONS || dataset.groupB.length < MIN_GROUP_OBSERVATIONS) {
-    return [`Cada grupo precisa de pelo menos ${MIN_GROUP_OBSERVATIONS} observações independentes.`];
+export function buildDatasetFromPrepared(
+  prepared: PreparedGroupedSamples,
+  headers: { outcome: string; group: string },
+): MannWhitneyBuiltDataset {
+  const groupOrder = prepared.groups.map((group) => group.label);
+  const labels: [string, string] = [groupOrder[0] ?? 'Grupo A', groupOrder[1] ?? 'Grupo B'];
+  return {
+    groupA: prepared.groups[0]?.values ?? [],
+    groupB: prepared.groups[1]?.values ?? [],
+    labels,
+    headers,
+    groupOrder,
+    issues: [...prepared.issues],
+    invalidRowNumbers: [...prepared.invalidRowNumbers],
+  };
+}
+
+export function validateDatasetIssues(dataset: MannWhitneyBuiltDataset): AnalysisIssue[] {
+  const issues: AnalysisIssue[] = [...(dataset.issues ?? [])];
+  const addIssue = (issue: AnalysisIssue) => {
+    if (!issues.some((existing) => existing.code === issue.code)) issues.push(issue);
+  };
+  const groupCount = dataset.groupOrder?.length
+    ?? [dataset.groupA, dataset.groupB].filter((group) => group.length > 0).length;
+  if (groupCount !== 2) {
+    addIssue({
+      code: 'group_count',
+      severity: 'error',
+      message: groupCount === 1
+        ? 'Foi encontrado apenas um grupo com dados; Mann–Whitney exige exatamente dois grupos independentes.'
+        : `Foram encontrados ${groupCount} grupos; Mann–Whitney exige exatamente dois grupos independentes.`,
+      hint: 'Revise o formato e os vínculos das colunas; nenhum grupo será descartado automaticamente.',
+    });
+  }
+  const small = [
+    { label: dataset.labels[0], n: dataset.groupA.length },
+    { label: dataset.labels[1], n: dataset.groupB.length },
+  ].filter((group) => group.n < MIN_GROUP_OBSERVATIONS);
+  if (small.length) {
+    addIssue({
+      code: 'group_too_small',
+      severity: 'error',
+      message: `Cada grupo precisa de pelo menos ${MIN_GROUP_OBSERVATIONS} observações independentes. Revise: ${small.map((group) => `${group.label} (n=${group.n})`).join(', ')}.`,
+    });
   }
   if (dataset.groupA.length + dataset.groupB.length > MAX_TOTAL_OBSERVATIONS) {
-    return [`Limite de ${MAX_TOTAL_OBSERVATIONS.toLocaleString('pt-BR')} observações excedido.`];
+    addIssue({
+      code: 'too_many_observations',
+      severity: 'error',
+      message: `Limite de ${MAX_TOTAL_OBSERVATIONS.toLocaleString('pt-BR')} observações excedido.`,
+    });
   }
-  if (new Set([...dataset.groupA, ...dataset.groupB]).size < 2) {
-    return ['Os valores precisam apresentar variação; todos estão empatados.'];
+  const values = [...dataset.groupA, ...dataset.groupB];
+  if (values.length > 1 && new Set(values).size < 2) {
+    addIssue({
+      code: 'all_values_tied',
+      severity: 'error',
+      message: 'Todos os valores válidos estão empatados; não há variação para ordenar os grupos.',
+    });
   }
-  return [];
+  return issues;
+}
+
+export function validateDataset(dataset: MannWhitneyBuiltDataset): string[] {
+  return validateDatasetIssues(dataset)
+    .filter((issue) => issue.severity === 'error')
+    .map((issue) => issue.message);
 }
 
 export function runAnalysis(dataset: MannWhitneyBuiltDataset, options: MannWhitneyOptions = {}): MannWhitneyResult {

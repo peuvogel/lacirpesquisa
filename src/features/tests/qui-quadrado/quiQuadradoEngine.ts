@@ -8,6 +8,7 @@ import {
 } from '@/shared/stats/statsEngine';
 
 const MIN_TOTAL_N = 5;
+export const MAX_CATEGORY_LEVELS = 20;
 
 export interface QuiQuadradoBuiltDataset {
   table: number[][];
@@ -15,6 +16,7 @@ export interface QuiQuadradoBuiltDataset {
   colLabels: string[];
   columnHeaders: [string, string];
   totalN: number;
+  categoryLimitExceeded?: boolean;
 }
 
 export interface BuildDatasetInput {
@@ -43,18 +45,6 @@ function resolveColumnHeaders(
   ];
 }
 
-function collectUniqueLevels(values: string[]): string[] {
-  const seen = new Set<string>();
-  const levels: string[] = [];
-  for (const value of values) {
-    if (!seen.has(value)) {
-      seen.add(value);
-      levels.push(value);
-    }
-  }
-  return levels;
-}
-
 function isNumericOnlyColumn(values: string[]): boolean {
   if (!values.length) return false;
   return values.every((value) => statsEngine.parseNumber(value) !== null);
@@ -79,29 +69,46 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): QuiQuadrado
     };
   }
 
-  const rawA: string[] = [];
-  const rawB: string[] = [];
+  const pairs: Array<[string, string]> = [];
+  const rowLabels: string[] = [];
+  const colLabels: string[] = [];
+  const rowIndexByLabel = new Map<string, number>();
+  const colIndexByLabel = new Map<string, number>();
+  let categoryLimitExceeded = false;
 
   for (const row of rows) {
     const valueA = String(row[indexA] ?? '').trim();
     const valueB = String(row[indexB] ?? '').trim();
     if (valueA && valueB) {
-      rawA.push(valueA);
-      rawB.push(valueB);
+      if (!rowIndexByLabel.has(valueA)) {
+        rowIndexByLabel.set(valueA, rowLabels.length);
+        rowLabels.push(valueA);
+        if (rowLabels.length > MAX_CATEGORY_LEVELS) categoryLimitExceeded = true;
+      }
+      if (!colIndexByLabel.has(valueB)) {
+        colIndexByLabel.set(valueB, colLabels.length);
+        colLabels.push(valueB);
+        if (colLabels.length > MAX_CATEGORY_LEVELS) categoryLimitExceeded = true;
+      }
+      pairs.push([valueA, valueB]);
     }
   }
 
-  const rowLabels = collectUniqueLevels(rawA);
-  const colLabels = collectUniqueLevels(rawB);
+  if (categoryLimitExceeded) {
+    return {
+      table: [],
+      rowLabels,
+      colLabels,
+      columnHeaders,
+      totalN: pairs.length,
+      categoryLimitExceeded: true,
+    };
+  }
+
   const table = rowLabels.map(() => colLabels.map(() => 0));
 
-  rawA.forEach((valueA, rowIndex) => {
-    const valueB = rawB[rowIndex];
-    const rowIdx = rowLabels.indexOf(valueA);
-    const colIdx = colLabels.indexOf(valueB);
-    if (rowIdx >= 0 && colIdx >= 0) {
-      table[rowIdx][colIdx] += 1;
-    }
+  pairs.forEach(([valueA, valueB]) => {
+    table[rowIndexByLabel.get(valueA)!]![colIndexByLabel.get(valueB)!] += 1;
   });
 
   const totalN = statsEngine.sum(table.flat());
@@ -118,6 +125,10 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): QuiQuadrado
 export function validateDataset(dataset: QuiQuadradoBuiltDataset): string[] {
   const errors: string[] = [];
   const { table, rowLabels, colLabels, totalN } = dataset;
+
+  if (dataset.categoryLimitExceeded) {
+    return [`A tabela de contingência não pode exceder ${MAX_CATEGORY_LEVELS}×${MAX_CATEGORY_LEVELS} categorias.`];
+  }
 
   if (!table.length || !colLabels.length) {
     errors.push(
@@ -138,8 +149,8 @@ export function validateDataset(dataset: QuiQuadradoBuiltDataset): string[] {
     errors.push(`O total de observações válidas precisa ser pelo menos ${MIN_TOTAL_N}.`);
   }
 
-  if (table.length > 20 || colLabels.length > 20) {
-    errors.push('A tabela de contingência não pode exceder 20×20 categorias.');
+  if (table.length > MAX_CATEGORY_LEVELS || colLabels.length > MAX_CATEGORY_LEVELS) {
+    errors.push(`A tabela de contingência não pode exceder ${MAX_CATEGORY_LEVELS}×${MAX_CATEGORY_LEVELS} categorias.`);
   }
 
   return errors;
@@ -149,6 +160,7 @@ export function validateColumnTypes(
   headers: string[],
   rows: string[][],
   recognizedColumns: Record<string, number>,
+  explicitlyCategoricalIndexes: readonly number[] = [],
 ): string[] {
   const errors: string[] = [];
   const indexA = recognizedColumns.categoria_a;
@@ -181,13 +193,14 @@ export function validateColumnTypes(
     if (rawB) valuesB.push(rawB);
   }
 
-  if (isNumericOnlyColumn(valuesA)) {
+  const categoricalIndexes = new Set(explicitlyCategoricalIndexes);
+  if (isNumericOnlyColumn(valuesA) && !categoricalIndexes.has(indexA)) {
     errors.push(
       `A coluna "${headers[indexA] || 'categoria_a'}" parece numérica — use categorias em texto (ex.: sim/não, A/B/C).`,
     );
   }
 
-  if (isNumericOnlyColumn(valuesB)) {
+  if (isNumericOnlyColumn(valuesB) && !categoricalIndexes.has(indexB)) {
     errors.push(
       `A coluna "${headers[indexB] || 'categoria_b'}" parece numérica — use categorias em texto (ex.: sim/não, A/B/C).`,
     );

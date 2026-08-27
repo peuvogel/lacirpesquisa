@@ -5,54 +5,65 @@ import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
+import { prepareGroupedSamples } from '@/shared/data-input/groupedSamples';
+import type { TableDocument } from '@/shared/data-input/tableDocument';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useSession } from '@/shared/session/SessionProvider';
 import {
   MannWhitneyConfigPanel,
+  MannWhitneyIssueList,
   MannWhitneyValidationAlert,
   type MannWhitneyLoadedInput,
 } from './MannWhitneyConfigPanel';
 import {
   exampleText,
+  getMannWhitneyTabularOptions,
   MAX_RESEARCH_QUESTION_LENGTH,
-  TABULAR_OPTIONS,
+  type MannWhitneyFormat,
 } from './mannWhitneyConfig';
 import {
   MANN_WHITNEY_CHART_ANNOTATIONS,
   mannWhitneyChartPresets,
 } from './mannWhitneyCharts';
 import {
-  buildDatasetFromConfirmed,
+  buildDatasetFromPrepared,
   buildMetrics,
   runAnalysis,
   toEngineOutput,
-  validateDataset,
+  validateDatasetIssues,
 } from './mannWhitneyEngine';
 import { buildMannWhitneyInterpretation } from './mannWhitneyInterpretation';
 
 interface ConfirmedDataset {
+  document: TableDocument;
   headers: string[];
   rows: string[][];
   recognizedColumns: Record<string, number>;
   sourceLabel: string;
 }
 
-function initialLoadedFromSession(dataset: ReturnType<typeof useSession>['dataset']): MannWhitneyLoadedInput | null {
+function initialLoadedFromSession(
+  dataset: ReturnType<typeof useSession>['dataset'],
+  format: MannWhitneyFormat,
+): MannWhitneyLoadedInput | null {
   if (!dataset) return null;
+  const options = getMannWhitneyTabularOptions(format);
   return {
     headers: dataset.headers,
     rows: dataset.rows,
-    recognizedColumns: deriveRecognizedColumnsFromTabular(dataset.headers, dataset.rows, TABULAR_OPTIONS),
+    recognizedColumns: deriveRecognizedColumnsFromTabular(dataset.headers, dataset.rows, options),
     sourceLabel: dataset.sourceLabel,
   };
 }
 
 export function MannWhitneyTest() {
   const { dataset: sessionDataset } = useSession();
-  const analysisTable = useAnalysisTable('mann-whitney', { tabularOptions: TABULAR_OPTIONS });
+  const [format, setFormat] = useState<MannWhitneyFormat>('long');
+  const tabularOptions = getMannWhitneyTabularOptions(format);
+  const analysisTable = useAnalysisTable('mann-whitney', { tabularOptions });
   const tabular = analysisTable.tabular;
   const [activeStep, setActiveStep] = useState<FlowStep>(() => sessionDataset ? 'configurar' : 'dados');
-  const [loadedInput, setLoadedInput] = useState<MannWhitneyLoadedInput | null>(() => initialLoadedFromSession(sessionDataset));
+  const [loadedInput, setLoadedInput] = useState<MannWhitneyLoadedInput | null>(() => initialLoadedFromSession(sessionDataset, 'long'));
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
   const [researchQuestion, setResearchQuestion] = useState('');
@@ -62,14 +73,16 @@ export function MannWhitneyTest() {
   useEffect(() => {
     if (!analysisTable.loadedInput) {
       setLoadedInput(null);
-      setIndependenceConfirmed(false);
       setActiveStep('dados');
       return;
     }
     setLoadedInput(analysisTable.loadedInput);
-    setIndependenceConfirmed(false);
     setActiveStep((step) => step === 'dados' ? 'configurar' : step);
   }, [analysisTable.loadedInput]);
+
+  useEffect(() => {
+    setIndependenceConfirmed(false);
+  }, [analysisTable.table?.id]);
 
   useEffect(() => {
     if (analysisTable.confirmed || !confirmedDataset) return;
@@ -88,10 +101,21 @@ export function MannWhitneyTest() {
     rows: string[][];
     recognizedColumns: Record<string, number>;
   }) {
-    const sourceLabel = loadedInput?.sourceLabel ?? 'colado';
-    setConfirmedDataset(analysisTable.confirm() ?? { ...confirmed, sourceLabel });
+    const next = analysisTable.confirm();
+    if (!next) return;
+    setConfirmedDataset(next);
     setShowSoftReset(false);
     setActiveStep('resultados');
+  }
+
+  function handleFormatChange(nextFormat: MannWhitneyFormat) {
+    if (nextFormat === format) return;
+    if (confirmedDataset) {
+      setConfirmedDataset(null);
+      setShowSoftReset(true);
+      setActiveStep('configurar');
+    }
+    setFormat(nextFormat);
   }
 
   function handleRoleAdjust() {
@@ -118,12 +142,46 @@ export function MannWhitneyTest() {
     resultados: Boolean(confirmedDataset),
   }), [loadedInput, confirmedDataset]);
 
+  const preparation = useMemo(() => (
+    analysisTable.table
+      ? prepareGroupedSamples(
+        analysisTable.table,
+        'mann-whitney',
+        format,
+        analysisTable.recognizedColumns,
+      )
+      : null
+  ), [analysisTable.recognizedColumns, analysisTable.table, format]);
+
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
-    const dataset = buildDatasetFromConfirmed(confirmedDataset);
-    const errors = validateDataset(dataset);
-    if (errors.length > 0) return <MannWhitneyValidationAlert message={errors[0]!} />;
-    const result = runAnalysis(dataset);
+    const prepared = prepareGroupedSamples(
+      confirmedDataset.document,
+      'mann-whitney',
+      format,
+      confirmedDataset.recognizedColumns,
+    );
+    const outcomeIndex = confirmedDataset.recognizedColumns.desfecho;
+    const groupIndex = confirmedDataset.recognizedColumns.grupo;
+    const dataset = buildDatasetFromPrepared(prepared, {
+      outcome: format === 'wide'
+        ? prepared.groups.map((group) => group.label).join(' / ') || 'valores'
+        : confirmedDataset.headers[outcomeIndex] || 'desfecho',
+      group: format === 'wide'
+        ? 'colunas separadas'
+        : confirmedDataset.headers[groupIndex] || 'grupo',
+    });
+    const issues = validateDatasetIssues(dataset);
+    const blocking = issues.filter((issue) => issue.severity === 'error');
+    if (blocking.length > 0) return <MannWhitneyIssueList issues={issues} />;
+    let result;
+    try {
+      result = runAnalysis(dataset);
+    } catch {
+      return (
+        <MannWhitneyValidationAlert message="O cálculo não pôde ser concluído com estes dados. Revise os grupos, os valores e tente novamente." />
+      );
+    }
     const output = toEngineOutput(dataset, result);
     const interpretation = buildMannWhitneyInterpretation(
       result,
@@ -144,7 +202,7 @@ export function MannWhitneyTest() {
         actions={<ClearDataButton onCleared={handleClearData} />}
       />
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, alpha, researchQuestion, format]);
 
   return (
     <FlowSteps
@@ -173,6 +231,9 @@ export function MannWhitneyTest() {
           researchQuestion={researchQuestion}
           onResearchQuestionChange={setResearchQuestion}
           showSoftReset={showSoftReset}
+          format={format}
+          onFormatChange={handleFormatChange}
+          preparation={preparation}
           independenceConfirmed={independenceConfirmed}
           onIndependenceConfirmedChange={setIndependenceConfirmed}
           onRoleAdjust={handleRoleAdjust}

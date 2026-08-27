@@ -79,7 +79,7 @@ function computeGroupSummaries(
   });
   const ranks = statsEngine.rank(pooled);
 
-  const summaries: Record<string, GroupRankSummary> = {};
+  const summaries: Record<string, GroupRankSummary> = Object.create(null) as Record<string, GroupRankSummary>;
   groupOrder.forEach((label, groupIndex) => {
     const values = groups[label];
     const groupRanks = ranks.filter((_, index) => groupIndices[index] === groupIndex);
@@ -102,7 +102,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): KruskalBuil
     return { groups: {}, groupOrder: [], headers: columnHeaders };
   }
 
-  const groups: Record<string, number[]> = {};
+  const groups: Record<string, number[]> = Object.create(null) as Record<string, number[]>;
   const groupOrder: string[] = [];
 
   rows.forEach((row) => {
@@ -111,7 +111,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): KruskalBuil
     const value = statsEngine.parseNumber((row[indexOutcome] ?? '').trim());
     if (value === null) return;
 
-    if (!groups[rawGroup]) {
+    if (!Object.hasOwn(groups, rawGroup)) {
       groups[rawGroup] = [];
       groupOrder.push(rawGroup);
     }

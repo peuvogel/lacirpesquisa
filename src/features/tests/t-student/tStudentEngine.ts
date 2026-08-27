@@ -48,6 +48,29 @@ export interface RunFromDatasusInput {
   knobs: DatasusKnobState;
 }
 
+function effectivelyZeroStandardError(standardError: number, values: readonly number[]): boolean {
+  const scale = Math.max(1, ...values.map((value) => Math.abs(value)));
+  return !Number.isFinite(standardError) || standardError <= Number.EPSILON * scale * 32;
+}
+
+function unestimableStandardErrorMessage(
+  mode: TStudentMode,
+  g1: readonly number[],
+  g2: readonly number[],
+): string | null {
+  if (mode === 'paired') {
+    const differences = g1.map((value, index) => value - g2[index]!);
+    const se = statsEngine.sd(differences) / Math.sqrt(differences.length);
+    return effectivelyZeroStandardError(se, differences)
+      ? 'O erro padrão das diferenças é zero ou numericamente indistinguível de zero; as diferenças pareadas não têm variação suficiente para estimar o teste t.'
+      : null;
+  }
+  const se = Math.sqrt((statsEngine.sd([...g1]) ** 2) / g1.length + (statsEngine.sd([...g2]) ** 2) / g2.length);
+  return effectivelyZeroStandardError(se, [...g1, ...g2])
+    ? 'O erro padrão é zero ou numericamente indistinguível de zero; os grupos não têm variação suficiente para estimar o teste t.'
+    : null;
+}
+
 /** Mirrors `classifyEffect` from tests/t-student/module.js:140-147. */
 export function classifyEffect(d: number): string {
   const abs = Math.abs(d);
@@ -70,7 +93,10 @@ export function runIndependentWelch(g1: number[], g2: number[]): TStudentWelchRe
   const v2 = s2 ** 2;
   const diff = m1 - m2;
   const se = Math.sqrt(v1 / n1 + v2 / n2);
-  const t = se === 0 ? 0 : diff / se;
+  if (effectivelyZeroStandardError(se, [...g1, ...g2])) {
+    throw new Error('O erro padrão é zero; os grupos não têm variação suficiente para estimar o teste t.');
+  }
+  const t = diff / se;
   const dfDen = (v1 / n1) ** 2 / (n1 - 1) + (v2 / n2) ** 2 / (n2 - 1);
   const df = dfDen === 0 ? n1 + n2 - 2 : (v1 / n1 + v2 / n2) ** 2 / dfDen;
   const p =
@@ -100,7 +126,10 @@ export function runPairedT(g1: number[], g2: number[]): TStudentPairedResult {
   const diff = statsEngine.mean(differences);
   const sdDifference = statsEngine.sd(differences);
   const se = sdDifference / Math.sqrt(n);
-  const t = se === 0 ? 0 : diff / se;
+  if (effectivelyZeroStandardError(se, differences)) {
+    throw new Error('O erro padrão das diferenças é zero; as diferenças pareadas não têm variação suficiente para estimar o teste t.');
+  }
+  const t = diff / se;
   const df = n - 1;
   const p =
     Number.isFinite(df) && df > 0 ? 2 * (1 - statsEngine.tcdf(Math.abs(t), df)) : NaN;
@@ -198,6 +227,11 @@ export function validateSampleSize(mode: TStudentMode, dataset: TStudentBuiltDat
     }
   } else if (g1.length < 2 || g2.length < 2) {
     errors.push('Cada grupo precisa de pelo menos 2 observações válidas.');
+  }
+
+  if (!errors.length) {
+    const standardErrorIssue = unestimableStandardErrorMessage(mode, g1, g2);
+    if (standardErrorIssue) errors.push(standardErrorIssue);
   }
 
   return errors;
