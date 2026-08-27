@@ -1,6 +1,6 @@
 import type { ChartData, ChartOptions } from 'chart.js';
 import type { GlmCoefficient } from '@/shared/stats/glmEngine';
-import { BASE_OPTS, mergeChartOptions } from '../chartTheme';
+import { BASE_OPTS, CHART_FONT_FAMILY, mergeChartOptions } from '../chartTheme';
 import { fmtNumber, fmtSigned } from '@/shared/format';
 import { buildPointIntervalChartData, type PointInterval } from './pointIntervalChart';
 
@@ -68,7 +68,7 @@ export function buildGlmCoefForestChartData(
         display: true,
         text: input.title ?? (scale === 'or' ? 'Odds ratios' : 'Coeficientes'),
         color: '#1E293B',
-        font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+        font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
         padding: { bottom: 10 },
       },
       tooltip: {

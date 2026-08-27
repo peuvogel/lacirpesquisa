@@ -1,6 +1,6 @@
 import type { ChartPreset } from '@/shared/charts/useChartCustomizer';
 import { buildGlmCoefForestChartData } from '@/shared/charts/chartFactories/glmCoefForestChart';
-import { mergeChartOptions, COLORS, BASE_OPTS } from '@/shared/charts/chartTheme';
+import { mergeChartOptions, COLORS, BASE_OPTS, CHART_FONT_FAMILY } from '@/shared/charts/chartTheme';
 import { fmtNumber } from '@/shared/format';
 import {
   BINOMIAL_NEGATIVA_ANNOTATIONS,
@@ -103,7 +103,7 @@ export function buildBinomialNegativaChartPresets(): ChartPreset<BinomialNegativ
               display: true,
               text: CHART_PRESET_LABELS.predicted,
               color: '#1E293B',
-              font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+              font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
             },
             tooltip: {
               callbacks: {

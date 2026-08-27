@@ -3,7 +3,7 @@ import { buildPointIntervalChartData } from '@/shared/charts/chartFactories/poin
 import { buildBoxPlotChartData, summarizeBoxPlot } from '@/shared/charts/chartFactories/boxPlotChart';
 import { buildPostHocHeatmapChartData } from '@/shared/charts/chartFactories/postHocHeatmapChart';
 import { buildGroupedRawDotChartData } from '@/shared/charts/chartFactories/groupedRawDotChart';
-import { mergeChartOptions } from '@/shared/charts/chartTheme';
+import { CHART_FONT_FAMILY, mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP } from '@/shared/format';
 import { CHART_PRESET_LABELS, KRUSKAL_ANNOTATIONS } from './kruskalConfig';
 import type { KruskalEngineOutput } from './kruskalEngine';
@@ -52,7 +52,7 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
                 display: true,
                 text: CHART_PRESET_LABELS.rawData,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
               },
             },
           }),
@@ -90,7 +90,7 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
                 display: true,
                 text: CHART_PRESET_LABELS.medians,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
               annotation: {
@@ -107,7 +107,7 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
                         backgroundColor: 'rgba(255,255,255,0.85)',
                         borderRadius: 4,
                         padding: { top: 2, bottom: 2, left: 4, right: 4 },
-                        font: { size: 11, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                        font: { size: 11, weight: 'bold', family: CHART_FONT_FAMILY },
                         yAdjust: -16,
                         clip: false,
                       },
@@ -156,7 +156,7 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
                 display: true,
                 text: CHART_PRESET_LABELS.heatmap,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
             },

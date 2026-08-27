@@ -34,10 +34,9 @@
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  /* Fonts — Google Fonts loaded in index.html, system fallback keeps
-     text readable if the offline classroom can't reach the CDN */
-  --font-sans: 'Sora', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  /* Fonts — system-first and fully local; no proprietary font files are distributed. */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
   /* Type scale — exactly 4 UI sizes, 2 weights (400/700) app-wide */
   --text-label: 14px;
@@ -134,6 +133,40 @@
     }
   }
 
+  @keyframes lacirCollapsibleOpen {
+    from {
+      height: 0;
+      opacity: 0;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+  }
+
+  @keyframes lacirCollapsibleClose {
+    from {
+      height: var(--radix-collapsible-content-height);
+      opacity: 1;
+    }
+    to {
+      height: 0;
+      opacity: 0;
+    }
+  }
+
+  .lacir-collapsible-content {
+    overflow: hidden;
+  }
+
+  .lacir-collapsible-content[data-state='open'] {
+    animation: lacirCollapsibleOpen 180ms ease-out;
+  }
+
+  .lacir-collapsible-content[data-state='closed'] {
+    animation: lacirCollapsibleClose 150ms ease-in;
+  }
+
   .lacir-chart-card {
     overflow: hidden;
   }
@@ -216,13 +249,26 @@
       animation: none;
     }
 
+    .lacir-chart-card--dimmed,
+    .lacir-chart-focus,
+    .lacir-vis-thumb {
+      transition: none;
+    }
+
     .lacir-chart-focus--editing {
-      transform: scale(1.02);
+      transform: none;
     }
 
     .lacir-dl-btn,
     .lacir-dl-btn__icon,
     .lacir-dl-btn__text {
+      transition: none;
+    }
+
+    .lacir-collapsible-content,
+    .lacir-collapsible-content[data-state='open'],
+    .lacir-collapsible-content[data-state='closed'] {
+      animation: none;
       transition: none;
     }
   }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChartCanvas } from './ChartCanvas';
+import { CHART_FONT_FAMILY } from './chartTheme';
 
 const { ChartMock, destroySpy, updateSpy, events, logarithmicScale } = vi.hoisted(() => {
   const events: string[] = [];
@@ -54,7 +55,11 @@ function getLastConfig() {
   return calls[calls.length - 1]?.[1] as {
     type: string;
     data: unknown;
-    options: { animation?: { duration?: number } };
+    options: {
+      animation?: { duration?: number };
+      plugins?: { legend?: { labels?: { font?: { family?: string } } } };
+      scales?: { x?: { ticks?: { font?: { family?: string } } } };
+    };
   };
 }
 
@@ -81,6 +86,15 @@ describe('ChartCanvas', () => {
 
   it('registers the logarithmic scale required by odds-ratio forests', () => {
     expect(ChartMock.register.mock.calls.flat(Number.POSITIVE_INFINITY)).toContain(logarithmicScale);
+  });
+
+  it('renders chart text with the shared system-first font family', () => {
+    render(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" />);
+    const options = getLastConfig().options;
+
+    expect(options.plugins?.legend?.labels?.font?.family).toBe(CHART_FONT_FAMILY);
+    expect(options.scales?.x?.ticks?.font?.family).toBe(CHART_FONT_FAMILY);
+    expect(CHART_FONT_FAMILY).not.toContain('Sora');
   });
 
   it('updates in place without destroying when data changes', () => {

@@ -1,6 +1,6 @@
 import type { ChartData, ChartDataset, ChartOptions } from 'chart.js';
 import type { ChartProps } from './useChartCustomizer';
-import { mergeChartOptions } from './chartTheme';
+import { CHART_FONT_FAMILY, mergeChartOptions } from './chartTheme';
 import { applyChartCapabilities, type ChartCapability } from './chartCapabilities';
 
 export interface ChartStyleOverrides {
@@ -241,7 +241,7 @@ export function applyChartOverrides(
           display: overrides.title.trim().length > 0,
           text: wrapped,
           color: '#1E293B',
-          font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+          font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
           padding: { top: 4, bottom: 10 },
         },
       },
@@ -258,7 +258,7 @@ export function applyChartOverrides(
                   display: overrides.axisX.length > 0,
                   text: overrides.axisX,
                   color: '#334155',
-                  font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+                  font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
                 },
               },
             }
@@ -270,7 +270,7 @@ export function applyChartOverrides(
                   display: overrides.axisY.length > 0,
                   text: overrides.axisY,
                   color: '#334155',
-                  font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+                  font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
                 },
               },
             }

@@ -3,7 +3,7 @@ import { buildAnovaMeansChartData } from '@/shared/charts/chartFactories/anovaCh
 import { buildPostHocHeatmapChartData } from '@/shared/charts/chartFactories/postHocHeatmapChart';
 import { buildGroupedRawDotChartData } from '@/shared/charts/chartFactories/groupedRawDotChart';
 import { buildBoxPlotChartData } from '@/shared/charts/chartFactories/boxPlotChart';
-import { mergeChartOptions } from '@/shared/charts/chartTheme';
+import { CHART_FONT_FAMILY, mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP } from '@/shared/format';
 import { ANOVA_ANNOTATIONS, CHART_PRESET_LABELS } from './anovaConfig';
 import type { AnovaEngineOutput } from './anovaEngine';
@@ -32,7 +32,7 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
                 display: true,
                 text: CHART_PRESET_LABELS.rawData,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
               },
             },
           }),
@@ -73,7 +73,7 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
                 display: true,
                 text: CHART_PRESET_LABELS.means,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
               annotation: {
@@ -90,7 +90,7 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
                         backgroundColor: 'rgba(255,255,255,0.85)',
                         borderRadius: 4,
                         padding: { top: 2, bottom: 2, left: 4, right: 4 },
-                        font: { size: 11, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                        font: { size: 11, weight: 'bold', family: CHART_FONT_FAMILY },
                         yAdjust: -16,
                         clip: false,
                       },
@@ -139,7 +139,7 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
                 display: true,
                 text: CHART_PRESET_LABELS.heatmap,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
             },

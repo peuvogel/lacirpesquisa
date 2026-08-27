@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChartData, ChartOptions } from 'chart.js';
 import type { ChartCanvasType } from './ChartCanvas';
-import { COLORS, mergeChartOptions } from './chartTheme';
+import { CHART_FONT_FAMILY, COLORS, mergeChartOptions } from './chartTheme';
 import type { ChartVisualType } from './chartTypeCatalog';
 import {
   applyChartCapabilities,
@@ -109,7 +109,7 @@ function applyAxisLabels(
                 display: true,
                 text: xTitle,
                 color: COLORS.label,
-                font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+                font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
               },
             },
           }
@@ -121,7 +121,7 @@ function applyAxisLabels(
                 display: true,
                 text: yTitle,
                 color: COLORS.label,
-                font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+                font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
               },
             },
           }

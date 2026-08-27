@@ -5,7 +5,7 @@ import {
   buildScatterWithFitChartData,
   buildSpearmanRankDiagnostics,
 } from '@/shared/charts/chartFactories/scatterChart';
-import { mergeChartOptions } from '@/shared/charts/chartTheme';
+import { CHART_FONT_FAMILY, mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import { statsEngine } from '@/shared/stats/statsEngine';
 import {
@@ -56,7 +56,7 @@ function withCoefAnnotation(
             backgroundColor: 'rgba(255,255,255,0.92)',
             borderRadius: 4,
             padding: 6,
-            font: { size: 11, family: "'Sora', 'Helvetica Neue', sans-serif" },
+            font: { size: 11, family: CHART_FONT_FAMILY },
             yAdjust: 14,
             xAdjust: 0,
             position: 'start',

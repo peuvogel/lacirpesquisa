@@ -1,5 +1,5 @@
 import type { ChartData, ChartOptions } from 'chart.js';
-import { BASE_OPTS, COLORS, mergeChartOptions } from '../chartTheme';
+import { BASE_OPTS, CHART_FONT_FAMILY, COLORS, mergeChartOptions } from '../chartTheme';
 import { fmtNumber } from '@/shared/format';
 
 const GROUP_COLORS = [
@@ -81,7 +81,7 @@ export function buildGroupedRawDotChartData(
           display: true,
           text: 'Grupo',
           color: COLORS.label,
-          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+          font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
         },
       },
       y: {
@@ -89,7 +89,7 @@ export function buildGroupedRawDotChartData(
           display: true,
           text: yLabel,
           color: COLORS.label,
-          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+          font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
         },
       },
     },

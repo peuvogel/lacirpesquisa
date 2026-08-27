@@ -4,6 +4,9 @@
  */
 import type { ChartOptions, ChartType, Plugin } from 'chart.js';
 
+/** Mirrors the CSS `--font-sans` token for canvas text, where CSS variables are unavailable. */
+export const CHART_FONT_FAMILY = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
 export const COLORS = {
   primary: '#0F766E',
   primarySolid: '#0D9488',
@@ -51,7 +54,7 @@ export const BASE_OPTS: ChartOptions = {
       align: 'start',
       labels: {
         color: COLORS.text,
-        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12, weight: 500 },
+        font: { family: CHART_FONT_FAMILY, size: 12, weight: 500 },
         boxWidth: 10,
         boxHeight: 10,
         usePointStyle: true,
@@ -69,35 +72,35 @@ export const BASE_OPTS: ChartOptions = {
       cornerRadius: 6,
       displayColors: true,
       boxPadding: 4,
-      titleFont: { family: "'Sora', 'Helvetica Neue', sans-serif", weight: 600, size: 12 },
-      bodyFont: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12 },
+      titleFont: { family: CHART_FONT_FAMILY, weight: 600, size: 12 },
+      bodyFont: { family: CHART_FONT_FAMILY, size: 12 },
     },
   },
   scales: {
     x: {
       ticks: {
         color: COLORS.tick,
-        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 11 },
+        font: { family: CHART_FONT_FAMILY, size: 11 },
         padding: 6,
       },
       grid: { color: COLORS.grid, drawTicks: false },
       border: { color: COLORS.border, display: true },
       title: {
         color: COLORS.label,
-        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12, weight: 500 },
+        font: { family: CHART_FONT_FAMILY, size: 12, weight: 500 },
       },
     },
     y: {
       ticks: {
         color: COLORS.tick,
-        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 11 },
+        font: { family: CHART_FONT_FAMILY, size: 11 },
         padding: 6,
       },
       grid: { color: COLORS.grid, drawTicks: false },
       border: { display: false },
       title: {
         color: COLORS.label,
-        font: { family: "'Sora', 'Helvetica Neue', sans-serif", size: 12, weight: 500 },
+        font: { family: CHART_FONT_FAMILY, size: 12, weight: 500 },
       },
     },
   },

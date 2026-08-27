@@ -1,5 +1,5 @@
 import type { ChartData, ChartOptions } from 'chart.js';
-import { BASE_OPTS, COLORS, mergeChartOptions } from '../chartTheme';
+import { BASE_OPTS, CHART_FONT_FAMILY, COLORS, mergeChartOptions } from '../chartTheme';
 import { fmtNumber, fmtSigned } from '@/shared/format';
 import { buildGroupedRawDotChartData } from './groupedRawDotChart';
 
@@ -101,7 +101,7 @@ export function buildTStudentDiffChartData(
           display: true,
           text: 'Diferença das médias',
           color: COLORS.label,
-          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+          font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
         },
         grid: { color: COLORS.grid, drawTicks: false },
       },
@@ -199,7 +199,7 @@ export function buildTStudentMeansBarChartData(
           display: true,
           text: 'Valor médio',
           color: COLORS.label,
-          font: { size: 12, family: "'Sora', 'Helvetica Neue', sans-serif", weight: 500 },
+          font: { size: 12, family: CHART_FONT_FAMILY, weight: 500 },
         },
       },
     },

@@ -2,7 +2,7 @@ import type { ChartPreset } from '@/shared/charts/useChartCustomizer';
 import { buildContingencyChartData } from '@/shared/charts/chartFactories/contingencyChart';
 import { buildChiProportionChartData } from '@/shared/charts/chartFactories/chiProportionChart';
 import { buildChiResidualChartData } from '@/shared/charts/chartFactories/chiResidualChart';
-import { mergeChartOptions } from '@/shared/charts/chartTheme';
+import { CHART_FONT_FAMILY, mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP } from '@/shared/format';
 import {
   CHART_PRESET_LABELS,
@@ -32,7 +32,7 @@ function countAnnotations(
         backgroundColor: 'rgba(255,255,255,0.85)',
         borderRadius: 4,
         padding: { top: 2, bottom: 2, left: 4, right: 4 },
-        font: { size: 10, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+        font: { size: 10, weight: 'bold', family: CHART_FONT_FAMILY },
         yAdjust: -14,
         clip: false,
       };
@@ -71,7 +71,7 @@ export function buildQuiQuadradoChartPresets(): ChartPreset<QuiQuadradoEngineOut
                 display: true,
                 text: CHART_PRESET_LABELS.contingency,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
               annotation: {
@@ -89,7 +89,7 @@ export function buildQuiQuadradoChartPresets(): ChartPreset<QuiQuadradoEngineOut
                     font: {
                       size: 11,
                       weight: 'normal',
-                      family: "'Sora', 'Helvetica Neue', sans-serif",
+                      family: CHART_FONT_FAMILY,
                     },
                     yAdjust: -28,
                     clip: false,

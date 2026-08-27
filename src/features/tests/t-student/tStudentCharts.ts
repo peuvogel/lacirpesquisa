@@ -6,7 +6,7 @@ import {
 } from '@/shared/charts/chartFactories/tStudentCharts';
 import { buildBoxPlotChartData } from '@/shared/charts/chartFactories/boxPlotChart';
 import { buildPairedComparisonChartData } from '@/shared/charts/chartFactories/pairedComparisonChart';
-import { mergeChartOptions } from '@/shared/charts/chartTheme';
+import { CHART_FONT_FAMILY, mergeChartOptions } from '@/shared/charts/chartTheme';
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import { CHART_PRESET_LABELS, T_STUDENT_ANNOTATIONS, type TStudentMode } from './tStudentConfig';
 import type { TStudentEngineOutput } from './tStudentEngine';
@@ -25,7 +25,7 @@ function meanValueAnnotations(means: number[], labels: string[]) {
       backgroundColor: 'rgba(255,255,255,0.85)',
       borderRadius: 4,
       padding: { top: 2, bottom: 2, left: 4, right: 4 },
-      font: { size: 11, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+      font: { size: 11, weight: 'bold', family: CHART_FONT_FAMILY },
       yAdjust: -16,
       position: 'center',
       clip: false,
@@ -44,7 +44,7 @@ function pValueAnnotation(content: string, xValue: string | number, yValue: numb
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 4,
     padding: { top: 2, bottom: 2, left: 5, right: 5 },
-    font: { size: 11, weight: 'normal' as const, family: "'Sora', 'Helvetica Neue', sans-serif" },
+    font: { size: 11, weight: 'normal' as const, family: CHART_FONT_FAMILY },
     yAdjust: -18,
     xAdjust: 0,
     position: 'center' as const,
@@ -72,7 +72,7 @@ export function buildTStudentChartPresets(
                 display: true,
                 text: CHART_PRESET_LABELS.diff,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
               annotation: {
@@ -94,7 +94,7 @@ export function buildTStudentChartPresets(
                     backgroundColor: 'rgba(255,255,255,0.9)',
                     borderRadius: 4,
                     padding: { top: 2, bottom: 2, left: 5, right: 5 },
-                    font: { size: 11, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                    font: { size: 11, weight: 'bold', family: CHART_FONT_FAMILY },
                     yAdjust: -22,
                     clip: false,
                   },
@@ -107,7 +107,7 @@ export function buildTStudentChartPresets(
                     backgroundColor: 'rgba(255,255,255,0.9)',
                     borderRadius: 4,
                     padding: { top: 2, bottom: 2, left: 5, right: 5 },
-                    font: { size: 11, weight: 'normal', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                    font: { size: 11, weight: 'normal', family: CHART_FONT_FAMILY },
                     yAdjust: 22,
                     clip: false,
                   },
@@ -145,7 +145,7 @@ export function buildTStudentChartPresets(
                 display: true,
                 text: CHART_PRESET_LABELS.distribution,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
               annotation: {
@@ -190,7 +190,7 @@ export function buildTStudentChartPresets(
                 display: true,
                 text: CHART_PRESET_LABELS.meansBar,
                 color: '#1E293B',
-                font: { size: 13, weight: 'bold', family: "'Sora', 'Helvetica Neue', sans-serif" },
+                font: { size: 13, weight: 'bold', family: CHART_FONT_FAMILY },
                 padding: { bottom: 10 },
               },
               annotation: {

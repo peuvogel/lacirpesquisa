@@ -1,6 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 export interface ResearchAccordionPanelProps {
@@ -74,12 +78,11 @@ export function ResearchAccordionPanel({
         />
       </CollapsibleTrigger>
 
-      {/* Conditional body (not Radix height animation) — keeps parent height stable. */}
-      {open ? (
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-1">
+      <CollapsibleContent className="min-h-0 flex-1">
+        <div className="h-full overflow-y-auto overscroll-contain px-4 pb-4 pt-1">
           {children}
         </div>
-      ) : null}
+      </CollapsibleContent>
     </Collapsible>
   );
 }
