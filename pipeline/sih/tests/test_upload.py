@@ -53,14 +53,19 @@ from sih_pipeline.paridade import RAZAO_DIVERGENCIA_JANELA_CURTA
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 # Baseline (v2, cria sih_disease/sih_metric_uf/sih_metric_muni) + schema v3 (09-03, adiciona a
-# coluna `local`, cria sih_collection_status e as 4 tabelas de população) -- as DUAS migrações
-# que definem o schema que upload.py escreve. O rename migration da Fase 8 (20260804020000) fica
+# coluna `local`, cria sih_collection_status e as 4 tabelas de população) + privilégios de
+# leitura pública -- as TRÊS migrações que definem o schema e a fronteira de acesso que upload.py
+# usa. O rename migration da Fase 8 (20260804020000) fica
 # FORA desta lista de propósito: ele pressupõe `sih_disease` já seedada com os 330 agravos
 # canônicos de produção (a prova de integridade D-04 recusa uma base vazia) -- é uma migração de
 # DADO sobre um schema já povoado, não parte da FORMA do schema que estes testes precisam.
 MIGRATIONS = [
     REPO_ROOT / "supabase" / "migrations" / "20260804015329_remote_schema.sql",
     REPO_ROOT / "supabase" / "migrations" / "20260805000000_sih_v3_schema.sql",
+    REPO_ROOT
+    / "supabase"
+    / "migrations"
+    / "20260827204819_restrict_public_table_privileges.sql",
 ]
 
 _IMAGE = "public.ecr.aws/supabase/postgres:17.6.1.147"
@@ -682,6 +687,66 @@ def _resetar_producao(conn: psycopg.Connection) -> None:
             ],
         )
     conn.commit()
+
+
+@requires_docker
+def test_migration_limita_clientes_publicos_a_select(pg_conn: psycopg.Connection) -> None:
+    """A migração real preserva leitura/RLS e remove toda permissão direta de escrita."""
+    tabelas = (
+        "sih_disease",
+        "sih_metric_uf",
+        "sih_collection_status",
+        "sih_population_total_uf",
+        "sih_population_total_muni",
+        "sih_population_uf",
+        "sih_population_muni",
+    )
+    privilegios_nao_select = (
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "TRUNCATE",
+        "REFERENCES",
+        "TRIGGER",
+        "MAINTAIN",
+    )
+
+    for tabela in tabelas:
+        rls, policies = pg_conn.execute(
+            "select c.relrowsecurity, count(p.policyname) "
+            "from pg_class c "
+            "join pg_namespace n on n.oid = c.relnamespace "
+            "left join pg_policies p on p.schemaname = n.nspname "
+            "and p.tablename = c.relname and p.cmd = 'SELECT' "
+            "and p.roles @> array['anon', 'authenticated']::name[] "
+            "where n.nspname = 'public' and c.relname = %s "
+            "group by c.relrowsecurity",
+            (tabela,),
+        ).fetchone()
+        assert rls is True
+        assert policies == 1
+
+        for role in ("anon", "authenticated"):
+            assert pg_conn.execute(
+                "select has_table_privilege(%s, %s, 'SELECT')",
+                (role, f"public.{tabela}"),
+            ).fetchone()[0] is True
+            for privilegio in privilegios_nao_select:
+                assert pg_conn.execute(
+                    "select has_table_privilege(%s, %s, %s)",
+                    (role, f"public.{tabela}", privilegio),
+                ).fetchone()[0] is False
+
+    defaults = pg_conn.execute(
+        "select pg_get_userbyid(acl.grantee), acl.privilege_type "
+        "from pg_default_acl d "
+        "cross join lateral aclexplode(d.defaclacl) acl "
+        "where d.defaclrole = 'postgres'::regrole "
+        "and d.defaclnamespace = 'public'::regnamespace "
+        "and d.defaclobjtype = 'r' "
+        "and pg_get_userbyid(acl.grantee) in ('anon', 'authenticated')"
+    ).fetchall()
+    assert set(defaults) == {("anon", "SELECT"), ("authenticated", "SELECT")}
 
 
 def _linha_staging(
