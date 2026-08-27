@@ -65,7 +65,7 @@ export const CHART_PRESET_LABELS = {
 } as const;
 
 export const KRUSKAL_ANNOTATIONS: AnnotationDefinition[] = [
-  { id: 'showConfidenceIntervals', label: 'Mostrar intervalos de confiança' },
+  { id: 'showIqr', label: 'Mostrar intervalo interquartil (IQR)' },
   { id: 'showMeanValues', label: 'Mostrar valor das medianas' },
   { id: 'showPValue', label: 'Mostrar p omnibus no gráfico' },
 ];

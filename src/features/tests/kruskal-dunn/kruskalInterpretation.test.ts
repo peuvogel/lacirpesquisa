@@ -109,4 +109,34 @@ describe('kruskalCharts presets', () => {
     expect(presets.some((preset) => preset.id === 'medians')).toBe(true);
     expect(presets.some((preset) => preset.id === 'raw-data')).toBe(true);
   });
+
+  it('renders medians with IQR geometry and never labels IQR as a confidence interval', async () => {
+    const { buildKruskalChartPresetsForOutput } = await import('./kruskalCharts');
+    const { toEngineOutput, buildDatasetFromConfirmed } = await import('./kruskalEngine');
+    const { KRUSKAL_ANNOTATIONS } = await import('./kruskalConfig');
+    const fixture = readFileSync(
+      join(__dirname, '../../../test/fixtures/tests/kruskal-dunn-exemplo.txt'),
+      'utf8',
+    );
+    const parsed = readTabularPasteState(fixture, legacyStats, TABULAR_OPTIONS);
+    if (parsed.status !== 'loaded') throw new Error('expected loaded paste');
+    const dataset = buildDatasetFromConfirmed({
+      headers: parsed.headers,
+      rows: parsed.bodyRows,
+      recognizedColumns: Object.fromEntries(
+        Object.entries(parsed.recognizedColumns).map(([key, col]) => [key, col.index]),
+      ),
+    });
+    const output = toEngineOutput(dataset, runAnalysis(dataset));
+    const preset = buildKruskalChartPresetsForOutput(output).find((item) => item.id === 'medians')!;
+    const chart = preset.buildChart(output);
+    const annotations = (chart.options?.plugins?.annotation as {
+      annotations?: Record<string, Record<string, unknown>>;
+    })?.annotations ?? {};
+
+    expect(chart.type).toBe('scatter');
+    expect(annotations.showIqr_0_line).toMatchObject({ yMin: 11.8, yMax: 13.5 });
+    expect(KRUSKAL_ANNOTATIONS.map((item) => item.label).join(' ')).not.toMatch(/confiança/i);
+    expect(KRUSKAL_ANNOTATIONS.map((item) => item.label).join(' ')).toMatch(/interquartil|IQR/i);
+  });
 });

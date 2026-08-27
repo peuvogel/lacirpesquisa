@@ -8,6 +8,7 @@ declare module 'jstat' {
     chisquare: Distribution;
     centralF: Distribution;
     normal: Distribution;
+    studentt: Distribution;
     tukey: Distribution;
     mean(arr: number[]): number;
     pooledstdev(arrays: number[][]): number;

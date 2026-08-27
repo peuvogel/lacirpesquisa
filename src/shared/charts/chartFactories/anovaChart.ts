@@ -1,82 +1,70 @@
-import type { ChartData, ChartOptions } from 'chart.js';
-import { BASE_OPTS, COLORS, mergeChartOptions } from '../chartTheme';
+import type { ChartData, ChartOptions, TooltipItem } from 'chart.js';
+import jStat from 'jstat';
 import { fmtNumber, fmtSigned } from '@/shared/format';
 import type { OneWayAnovaResult } from '@/shared/stats/statsEngine';
+import { mergeChartOptions } from '../chartTheme';
+import {
+  buildPointIntervalChartData,
+  type PointInterval,
+} from './pointIntervalChart';
 
 export interface AnovaChartInput {
   groupOrder: string[];
   result: OneWayAnovaResult;
 }
 
-function groupCi(mean: number, sd: number, n: number): [number, number] {
-  if (n < 2 || !Number.isFinite(sd)) return [mean, mean];
-  const se = sd / Math.sqrt(n);
-  const margin = 1.96 * se;
-  return [mean - margin, mean + margin];
+export function groupMeanTInterval(
+  label: string,
+  mean: number,
+  sd: number,
+  n: number,
+): PointInterval {
+  if (
+    n < 2
+    || !Number.isFinite(mean)
+    || !Number.isFinite(sd)
+    || sd < 0
+  ) return { label, estimate: mean, low: null, high: null };
+  const critical = jStat.studentt.inv(0.975, n - 1);
+  const margin = critical * (sd / Math.sqrt(n));
+  if (!Number.isFinite(margin)) return { label, estimate: mean, low: null, high: null };
+  return { label, estimate: mean, low: mean - margin, high: mean + margin };
 }
 
-/** Group means with approximate 95% CI error bars. */
+/** Group means with two-sided 95% Student-t confidence intervals. */
 export function buildAnovaMeansChartData(
   input: AnovaChartInput,
 ): { data: ChartData; options: ChartOptions } {
-  const { groupOrder, result } = input;
-  const means = groupOrder.map((label) => result.groupStats[label].mean);
-  const errors = groupOrder.map((label) => {
-    const stats = result.groupStats[label];
-    const [low, high] = groupCi(stats.mean, stats.sd, stats.n);
-    return { low, high, margin: high - stats.mean };
+  const intervals = input.groupOrder.map((label) => {
+    const stats = input.result.groupStats[label];
+    return groupMeanTInterval(label, stats.mean, stats.sd, stats.n);
   });
-
-  const data: ChartData = {
-    labels: groupOrder,
-    datasets: [
-      {
-        label: 'Média',
-        data: means,
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primarySolid,
-        borderWidth: 1,
-        borderRadius: 4,
-      },
-      {
-        label: 'IC95% (aprox.)',
-        data: errors.map((entry) => entry.margin),
-        backgroundColor: 'rgba(15, 118, 110, 0.15)',
-        borderColor: COLORS.primarySolid,
-        borderWidth: 1.5,
-        type: 'bar',
-      },
-    ],
-  };
-
-  const options = mergeChartOptions(BASE_OPTS, {
+  const chart = buildPointIntervalChartData({
+    intervals,
+    orientation: 'vertical',
+    estimateLabel: 'Média',
+    intervalLabel: 'IC95%',
+    xTitle: 'Grupo',
+    yTitle: 'Desfecho',
+  });
+  const options = mergeChartOptions(chart.options, {
     plugins: {
-      legend: { display: true },
       tooltip: {
         callbacks: {
-          label: (item) => {
-            const label = groupOrder[item.dataIndex];
-            const stats = result.groupStats[label];
-            const [low, high] = groupCi(stats.mean, stats.sd, stats.n);
-            if (item.datasetIndex === 0) {
-              return `Média: ${fmtNumber(stats.mean, 2)} (n=${stats.n})`;
+          label: (item: TooltipItem<'scatter'>) => {
+            const raw = item.raw as { x: number };
+            const index = Math.round(raw.x);
+            const label = input.groupOrder[index];
+            const stats = input.result.groupStats[label];
+            const interval = intervals[index];
+            if (interval.low === null || interval.high === null) {
+              return `Média: ${fmtNumber(stats.mean, 2)} (n=${stats.n}; IC95% indisponível)`;
             }
-            return `IC95%: ${fmtSigned(low, 2)} a ${fmtSigned(high, 2)}`;
+            return `Média: ${fmtNumber(stats.mean, 2)} (n=${stats.n}; IC95%: ${fmtSigned(interval.low, 2)} a ${fmtSigned(interval.high, 2)})`;
           },
         },
       },
     },
-    scales: {
-      y: {
-        beginAtZero: false,
-        grace: '12%',
-        title: { display: true, text: 'Desfecho' },
-      },
-      x: {
-        title: { display: true, text: 'Grupo' },
-      },
-    },
   });
-
-  return { data, options };
+  return { data: chart.data, options };
 }

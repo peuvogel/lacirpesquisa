@@ -23,6 +23,7 @@ vi.mock('chart.js', () => ({
   LineController: {},
   ScatterController: {},
   LinearScale: {},
+  LogarithmicScale: {},
   CategoryScale: {},
   PointElement: {},
   LineElement: {},

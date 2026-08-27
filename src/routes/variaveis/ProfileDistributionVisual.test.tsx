@@ -18,7 +18,7 @@ const { ChartMock } = vi.hoisted(() => {
 
 vi.mock('chart.js', () => ({
   Chart: ChartMock,
-  BarController: {}, LineController: {}, ScatterController: {}, LinearScale: {}, CategoryScale: {},
+  BarController: {}, LineController: {}, ScatterController: {}, LinearScale: {}, LogarithmicScale: {}, CategoryScale: {},
   PointElement: {}, LineElement: {}, BarElement: {}, Legend: {}, Title: {}, Tooltip: {}, Filler: {},
 }));
 

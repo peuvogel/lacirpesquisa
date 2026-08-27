@@ -1,43 +1,33 @@
 import type { ChartPreset } from '@/shared/charts/useChartCustomizer';
-import { buildAnovaMeansChartData } from '@/shared/charts/chartFactories/anovaChart';
+import { buildPointIntervalChartData } from '@/shared/charts/chartFactories/pointIntervalChart';
+import { summarizeBoxPlot } from '@/shared/charts/chartFactories/boxPlotChart';
 import { buildPostHocHeatmapChartData } from '@/shared/charts/chartFactories/postHocHeatmapChart';
 import { buildGroupedRawDotChartData } from '@/shared/charts/chartFactories/groupedRawDotChart';
 import { mergeChartOptions } from '@/shared/charts/chartTheme';
-import type { OneWayAnovaResult } from '@/shared/stats/statsEngine';
-import { statsEngine } from '@/shared/stats/statsEngine';
 import { fmtNumber } from '@/shared/format';
 import { CHART_PRESET_LABELS, KRUSKAL_ANNOTATIONS } from './kruskalConfig';
 import type { KruskalEngineOutput } from './kruskalEngine';
 
 export const KRUSKAL_CHART_ANNOTATIONS = KRUSKAL_ANNOTATIONS;
 
-function toMedianChartInput(output: KruskalEngineOutput): {
-  groupOrder: string[];
-  result: OneWayAnovaResult;
-} {
-  const groupStats: OneWayAnovaResult['groupStats'] = {};
-  output.groupOrder.forEach((label) => {
-    const summary = output.result.groupSummaries[label];
-    const values = output.groups[label];
-    groupStats[label] = {
-      n: summary.n,
-      mean: summary.median,
-      sd: values.length >= 2 ? statsEngine.sd(values) : 0,
-    };
+export function buildKruskalMedianIqrChartData(output: KruskalEngineOutput) {
+  return buildPointIntervalChartData({
+    intervals: output.groupOrder.map((label) => {
+      const summary = summarizeBoxPlot(output.groups[label] ?? []);
+      return {
+        label,
+        estimate: summary.median,
+        low: summary.n ? summary.q1 : null,
+        high: summary.n ? summary.q3 : null,
+      };
+    }),
+    orientation: 'vertical',
+    estimateLabel: 'Mediana',
+    intervalLabel: 'IQR',
+    intervalAnnotationPrefix: 'showIqr',
+    xTitle: 'Grupo',
+    yTitle: output.headers.outcome,
   });
-
-  return {
-    groupOrder: output.groupOrder,
-    result: {
-      f: 0,
-      dfBetween: output.result.df,
-      dfWithin: 0,
-      p: output.result.p,
-      eta2: 0,
-      msWithin: 0,
-      groupStats,
-    },
-  };
 }
 
 export function buildKruskalChartPresets(groupCount: number): ChartPreset<KruskalEngineOutput>[] {
@@ -75,12 +65,11 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
     {
       id: 'medians',
       label: CHART_PRESET_LABELS.medians,
-      visualType: 'column',
+      visualType: 'range',
       buildChart: (output) => {
-        const chartInput = toMedianChartInput(output);
-        const { data, options } = buildAnovaMeansChartData(chartInput);
+        const { data, options } = buildKruskalMedianIqrChartData(output);
         return {
-          type: 'bar',
+          type: 'scatter',
           data,
           options: mergeChartOptions(options, {
             layout: { padding: { top: 36, right: 18, bottom: 10, left: 10 } },
@@ -113,15 +102,12 @@ export function buildKruskalChartPresets(groupCount: number): ChartPreset<Kruska
                 ),
               },
             },
-            scales: {
-              y: { beginAtZero: true, grace: '22%' },
-            },
           } as Parameters<typeof mergeChartOptions>[1]),
           ariaLabel: CHART_PRESET_LABELS.medians,
         };
       },
       defaultAxisLabels: { x: 'Grupo', y: 'Mediana do desfecho' },
-      annotationKeys: ['showConfidenceIntervals', 'showMeanValues', 'showPValue'],
+      annotationKeys: ['showIqr', 'showMeanValues', 'showPValue'],
     },
   ];
 

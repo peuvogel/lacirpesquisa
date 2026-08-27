@@ -6,6 +6,16 @@ export {
   type GroupStats,
 } from './tStudentCharts';
 export { buildGroupedRawDotChartData } from './groupedRawDotChart';
+export {
+  buildBoxPlotChartData,
+  summarizeBoxPlot,
+  type BoxPlotSummary,
+} from './boxPlotChart';
+export {
+  buildPointIntervalChartData,
+  type PointInterval,
+  type PointIntervalChartInput,
+} from './pointIntervalChart';
 
 export {
   buildScatterChartData,

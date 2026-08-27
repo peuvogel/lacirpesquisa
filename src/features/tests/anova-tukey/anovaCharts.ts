@@ -44,14 +44,14 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
     {
       id: 'means',
       label: CHART_PRESET_LABELS.means,
-      visualType: 'column',
+      visualType: 'range',
       buildChart: (output) => {
         const { data, options } = buildAnovaMeansChartData({
           groupOrder: output.groupOrder,
           result: output.result,
         });
         return {
-          type: 'bar',
+          type: 'scatter',
           data,
           options: mergeChartOptions(options, {
             layout: { padding: { top: 36, right: 18, bottom: 10, left: 10 } },
@@ -83,9 +83,6 @@ export function buildAnovaChartPresets(groupCount: number): ChartPreset<AnovaEng
                   ]),
                 ),
               },
-            },
-            scales: {
-              y: { beginAtZero: true, grace: '22%' },
             },
           } as Parameters<typeof mergeChartOptions>[1]),
           ariaLabel: CHART_PRESET_LABELS.means,

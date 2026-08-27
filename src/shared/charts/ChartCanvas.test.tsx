@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChartCanvas } from './ChartCanvas';
 
-const { ChartMock, destroySpy, updateSpy, events } = vi.hoisted(() => {
+const { ChartMock, destroySpy, updateSpy, events, logarithmicScale } = vi.hoisted(() => {
   const events: string[] = [];
   const destroySpy = vi.fn(() => {
     events.push('destroy');
@@ -28,7 +28,7 @@ const { ChartMock, destroySpy, updateSpy, events } = vi.hoisted(() => {
     register: ReturnType<typeof vi.fn>;
   };
   ChartMock.register = vi.fn();
-  return { ChartMock, destroySpy, updateSpy, events };
+  return { ChartMock, destroySpy, updateSpy, events, logarithmicScale: { id: 'logarithmic' } };
 });
 
 vi.mock('chart.js', () => ({
@@ -37,6 +37,7 @@ vi.mock('chart.js', () => ({
   LineController: {},
   ScatterController: {},
   LinearScale: {},
+  LogarithmicScale: logarithmicScale,
   CategoryScale: {},
   PointElement: {},
   LineElement: {},
@@ -76,6 +77,10 @@ describe('ChartCanvas', () => {
     expect(config.data).toBe(sampleData);
     expect(config.options.animation).toEqual({ duration: 450, easing: 'easeOutQuart' });
     expect(events).toContain('construct');
+  });
+
+  it('registers the logarithmic scale required by odds-ratio forests', () => {
+    expect(ChartMock.register.mock.calls.flat(Number.POSITIVE_INFINITY)).toContain(logarithmicScale);
   });
 
   it('updates in place without destroying when data changes', () => {
