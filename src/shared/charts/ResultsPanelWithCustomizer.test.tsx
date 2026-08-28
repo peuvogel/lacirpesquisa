@@ -6,7 +6,11 @@ import type { ChartPreset } from './useChartCustomizer';
 import { ResultsPanelWithCustomizer } from './ResultsPanelWithCustomizer';
 
 const { exportCanvasPngMock, setVisualPreferencesMock, sessionState } = vi.hoisted(() => ({
-  exportCanvasPngMock: vi.fn(() => true),
+  exportCanvasPngMock: vi.fn((
+    _canvas: HTMLCanvasElement,
+    _filename: string,
+    _onError?: () => void,
+  ) => true),
   setVisualPreferencesMock: vi.fn(),
   sessionState: {
     dataset: {
@@ -52,7 +56,11 @@ vi.mock('./ChartCanvas', () => ({
         data-height={height}
         data-title={Array.isArray(title) ? title.join(' ') : title}
         ref={(node) => {
-          if (node) onCanvasReady?.(document.createElement('canvas'));
+          if (node) {
+            const canvas = document.createElement('canvas');
+            canvas.dataset.chartHeight = String(height);
+            onCanvasReady?.(canvas);
+          }
         }}
       />
     );
@@ -134,6 +142,18 @@ describe('ResultsPanelWithCustomizer sizing and expansion', () => {
     await user.keyboard('{Escape}');
     expect(dialog).not.toBeInTheDocument();
     expect(expand).toHaveFocus();
+  });
+
+  it('exports the expanded canvas from the expanded dialog', async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole('button', { name: 'Ampliar Médias por grupo' }));
+    const dialog = screen.getByRole('dialog', { name: 'Médias por grupo' });
+    await user.click(within(dialog).getByRole('button', { name: 'Baixar PNG' }));
+
+    const exportedCanvas = exportCanvasPngMock.mock.lastCall?.[0] as HTMLCanvasElement;
+    expect(Number(exportedCanvas.dataset.chartHeight)).toBeGreaterThan(420);
   });
 
   it('shows an accessible error when PNG export fails', async () => {

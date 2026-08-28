@@ -2,13 +2,58 @@
 
 Data: 2026-08-25. Código inspecionado: `6737acb801b72e8f18dbf4ffc695f88d4eb28f6c`.
 
-Este é um registro de diagnóstico, não uma declaração de correção nem uma especificação aprovada. Nenhum código do aplicativo foi alterado nesta etapa. A revisão completa de segurança ainda está pendente.
+Este documento preserva o diagnóstico inicial e, na seção de atualização, registra
+as correções, os testes e os limites verificados posteriormente. As afirmações de
+pendência abaixo descrevem exclusivamente o estado encontrado em 2026-08-25.
 
-## Estado local
+## Estado local no diagnóstico inicial
 
 - A implementação anterior de grupos independentes está na pasta principal do projeto, no commit inspecionado.
 - `npm run dev` executa Vite. O servidor já existente em `http://localhost:5176/` foi usado para a reprodução; o processo do usuário não foi interrompido.
 - A implementação da revisão descrita abaixo permanece pendente de validação do desenho.
+
+## Atualização após a correção — 2026-08-28
+
+As afirmações acima preservam o estado encontrado em 2026-08-25. A revisão foi
+implementada na pasta principal, com regressões antes das correções. Uma revisão
+posterior também corrigiu os cálculos de Kruskal–Wallis e Dunn na presença de
+empates, os privilégios padrão de tabelas futuras, a exportação do canvas
+ampliado, o recorte de gráficos e o respeito à preferência por movimento
+reduzido. O fluxo de
+Mapas continua começando pela criação explícita de grupos: a seleção territorial
+fica provisória até **Criar Grupo N**, e cada grupo conserva território, doença,
+medida e período próprios. A matriz de comparação mostra as dimensões que mudam;
+quando múltiplas dimensões variam juntas, a descrição continua disponível, mas a
+inferência simples é bloqueada com explicação e ação corretiva.
+
+### Evidência por critério de aceite
+
+| # | Resultado verificado |
+|---|---|
+| 1 | Corridas concorrentes de colagem, arquivo, exemplo, limpeza e desmontagem usam uma geração única; testes provam que a última ação vence e que leituras antigas não ressuscitam dados. |
+| 2 | A transferência escapa delimitadores, aspas e quebras de linha; colunas duplicadas recebem IDs estáveis distintos e aparecem separadamente nas vinculações. |
+| 3 | A tabela editável pagina todas as linhas; regressões editam a nona linha e confirmam que o motor e o resumo recebem a alteração. |
+| 4 | Papéis escolhidos manualmente sobrevivem a edições, troca de teste, handoff e restauração opt-in. |
+| 5 | Limpar ou desligar a persistência remove o registro e invalida gravações pendentes; armazenamento indisponível ou payload versionado inválido falha fechado, sem derrubar o aplicativo. A restauração exige escolha explícita no dispositivo. |
+| 6 | Mann–Whitney aceita duas colunas numéricas ou valor + grupo, autodetecta o formato ao reaproveitar o exemplo t, mantém troca manual para casos ambíguos, exige confirmação de independência e informa os grupos detectados antes da análise. |
+| 7 | ANOVA e Kruskal aceitam nomes como `constructor` e `__proto__`; Qui-quadrado valida cardinalidade antes de alocar a matriz; texto e XLSX têm tetos de bytes, células e dimensões, com rejeição controlada. |
+| 8 | Os dez exemplos executaram no navegador e na suíte. t, ANOVA, Kruskal, Mann–Whitney, correlação, Prais-Winsten, qui-quadrado, Poisson, binomial negativa e logística exibiram somente seus gráficos adequados; fixtures conferem ICs, boxplots, resíduos e o efeito dos controles. |
+| 9 | Testes e inspeções no navegador cobrem 1.440×1.000 e 390×844, alturas mínima/padrão/máxima, nomes longos, negativos, anotações e visualização ampliada sem corte nem rolagem horizontal da página. |
+| 10 | Exportação PNG individual e em lote, inclusive do canvas ampliado, abertura/fechamento, `Esc`, retorno de foco, teclado e `prefers-reduced-motion` foram exercitados. |
+| 11 | O catálogo usa `import.meta.env.BASE_URL`, compartilha cargas em andamento e permite nova tentativa após erro. O build `--base /lacirpesquisa/` carregou `/mapas`, `/variaveis`, manifest, variáveis e packs no preview. |
+| 12 | `npm run gate` passou com 170 arquivos/1.332 testes Vitest e build; o pipeline coletou 334 testes, com 333 aprovados e 1 ignorado. `npm audit --json` reportou zero vulnerabilidades; 559 pacotes tinham assinatura de registro e 183, atestação. O bundle principal ainda gera aviso de tamanho, não erro. |
+| 13 | A versão final está na pasta principal e `npm run dev` expõe o fluxo em `127.0.0.1:5176`. A publicação externa e sua revisão serão registradas no fechamento do deploy. |
+
+### Banco e limites da verificação
+
+Uma nova migração remove privilégios públicos de escrita das sete tabelas de
+agregados e preserva `SELECT`, RLS e as políticas de leitura. O verificador local
+é somente leitura e a integração Docker cobre o resultado esperado. A inspeção
+do projeto vinculado continuou somente leitura: os advisors não reportaram
+ocorrências, mas o schema remoto ainda mantém os privilégios amplos até a
+migração ser aplicada por uma operação de banco autorizada. Nenhum `db push`,
+dado ou permissão remota foi alterado nesta revisão; isso é uma limitação
+declarada, não uma validação executada.
 
 ## Falhas confirmadas
 

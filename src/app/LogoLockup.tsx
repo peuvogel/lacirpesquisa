@@ -4,13 +4,13 @@ export { resolvePublicAssetUrl } from '@/lib/publicAssets';
 
 export function LogoLockup() {
   return (
-    <span className="flex items-center gap-3">
+    <span className="flex items-center gap-0 sm:gap-3">
       <img
         src={resolvePublicAssetUrl(import.meta.env.BASE_URL, 'logo-lacir.png')}
         alt="Logo LACIR"
         style={{ height: 32, width: 'auto', objectFit: 'contain' }}
       />
-      <span className="flex flex-col leading-tight">
+      <span className="hidden flex-col leading-tight sm:flex">
         <span className="font-sans text-label font-bold uppercase tracking-wide text-accent">
           LACIR
         </span>

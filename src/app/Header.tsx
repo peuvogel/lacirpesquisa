@@ -21,18 +21,21 @@ export function Header() {
       className="lacir-header-grain sticky top-0 z-50 w-full border-b border-border-strong bg-bg/75"
       style={BLUR_CHROME}
     >
-      <div className="mx-auto flex h-16 max-w-[1520px] items-center gap-6 px-6">
+      <div className="mx-auto flex h-16 max-w-[1520px] items-center gap-3 px-3 sm:gap-6 sm:px-6">
         <NavLink to="/" end aria-label="LACIR: página inicial">
           <LogoLockup />
         </NavLink>
-        <nav aria-label="Navegação principal" className="flex items-center gap-6">
+        <nav
+          aria-label="Navegação principal"
+          className="flex min-w-0 flex-1 items-center gap-3 overflow-x-auto overscroll-x-contain sm:flex-none sm:gap-6"
+        >
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `font-sans text-label font-bold border-b-2 py-1 transition-colors ${
+                `shrink-0 font-sans text-label font-bold border-b-2 py-1 transition-colors ${
                   isActive
                     ? 'border-accent text-accent'
                     : 'border-transparent text-text hover:text-accent'

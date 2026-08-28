@@ -3,7 +3,7 @@ do $$
 declare
   target_table text;
   client_role text;
-  has_nonselect boolean;
+  forbidden_privilege text;
   rls_enabled boolean;
 begin
   foreach target_table in array array[
@@ -43,46 +43,33 @@ begin
         raise exception 'restrict-public-table-privileges: % sem SELECT em public.%', client_role, target_table;
       end if;
 
-      select exists (
-        select 1
-        from pg_class c
-        cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) acl
-        where c.oid = to_regclass(format('public.%I', target_table))
-          and pg_get_userbyid(acl.grantee) = client_role
-          and acl.privilege_type <> 'SELECT'
-      ) into has_nonselect;
-      if has_nonselect then
-        raise exception 'restrict-public-table-privileges: % tem acesso alem de SELECT em public.%', client_role, target_table;
-      end if;
+      foreach forbidden_privilege in array array[
+        'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN'
+      ] loop
+        if has_table_privilege(
+          client_role,
+          format('public.%I', target_table),
+          forbidden_privilege
+        ) then
+          raise exception 'restrict-public-table-privileges: % tem % em public.%',
+            client_role, forbidden_privilege, target_table;
+        end if;
+      end loop;
     end loop;
   end loop;
 
-  foreach client_role in array array['anon', 'authenticated'] loop
-    if not exists (
-      select 1
-      from pg_default_acl defaults
-      cross join lateral aclexplode(defaults.defaclacl) acl
-      where defaults.defaclrole = 'postgres'::regrole
-        and defaults.defaclnamespace = 'public'::regnamespace
-        and defaults.defaclobjtype = 'r'
-        and pg_get_userbyid(acl.grantee) = client_role
-        and acl.privilege_type = 'SELECT'
-    ) then
-      raise exception 'restrict-public-table-privileges: default SELECT ausente para %', client_role;
-    end if;
-
-    select exists (
-      select 1
-      from pg_default_acl defaults
-      cross join lateral aclexplode(defaults.defaclacl) acl
-      where defaults.defaclrole = 'postgres'::regrole
-        and defaults.defaclnamespace = 'public'::regnamespace
-        and defaults.defaclobjtype = 'r'
-        and pg_get_userbyid(acl.grantee) = client_role
-        and acl.privilege_type <> 'SELECT'
-    ) into has_nonselect;
-    if has_nonselect then
-      raise exception 'restrict-public-table-privileges: default alem de SELECT para %', client_role;
-    end if;
-  end loop;
+  if exists (
+    select 1
+    from pg_default_acl defaults
+    cross join lateral aclexplode(defaults.defaclacl) acl
+    where defaults.defaclrole = 'postgres'::regrole
+      and defaults.defaclnamespace = 'public'::regnamespace
+      and defaults.defaclobjtype = 'r'
+      and (
+        acl.grantee = 0
+        or pg_get_userbyid(acl.grantee) in ('anon', 'authenticated')
+      )
+  ) then
+    raise exception 'restrict-public-table-privileges: default de tabela expoe clientes publicos';
+  end if;
 end $$;

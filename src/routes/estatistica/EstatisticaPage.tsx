@@ -139,14 +139,14 @@ export function EstatisticaPage() {
   return (
     <>
       <LeaveWarningGuard />
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1600px] gap-0">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] min-w-0 max-w-[1600px] gap-0">
         <Sidebar
           activeTestId={activeTestId}
           onSelectTest={handleSelectTest}
           onOpenQualTeste={() => setQualTesteOpen(true)}
         />
         <section
-          className="lacir-estatistica-main flex-1 px-6 py-8"
+          className="lacir-estatistica-main min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8"
           data-has-session-data={hasData}
         >
           <div className="mb-6 flex flex-wrap items-start justify-between gap-4">

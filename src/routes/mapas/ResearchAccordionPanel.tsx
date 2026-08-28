@@ -71,7 +71,7 @@ export function ResearchAccordionPanel({
         </div>
         <ChevronDown
           className={cn(
-            'mt-1 size-5 shrink-0 text-text-muted transition-transform duration-200',
+            'mt-1 size-5 shrink-0 text-text-muted transition-transform duration-200 motion-reduce:transition-none',
             open && 'rotate-180 text-accent',
           )}
           aria-hidden

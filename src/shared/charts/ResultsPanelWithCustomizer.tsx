@@ -124,6 +124,7 @@ export function ResultsPanelWithCustomizer<T>({
 }: ResultsPanelWithCustomizerProps<T>) {
   const { dataset, visualPreferences, setVisualPreferences } = useSession();
   const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
+  const expandedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const expandButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const visualPreferencesRef = useRef(visualPreferences);
   const [overridesById, setOverridesById] = useState<Record<string, ChartStyleOverrides>>({});
@@ -529,6 +530,9 @@ export function ResultsPanelWithCustomizer<T>({
               options={expandedChart.options}
               ariaLabel={expandedChart.ariaLabel}
               height={expandedHeight}
+              onCanvasReady={(canvas) => {
+                expandedCanvasRef.current = canvas;
+              }}
             />
             <DialogFooter className="sm:justify-between">
               <DialogClose asChild>
@@ -537,7 +541,7 @@ export function ResultsPanelWithCustomizer<T>({
               <Button
                 type="button"
                 onClick={() => {
-                  const canvas = canvasRefs.current.get(expandedItem.id);
+                  const canvas = expandedCanvasRef.current;
                   if (canvas) exportChart(canvas, slugFilename(expandedItem.label, expandedItem.id));
                 }}
               >

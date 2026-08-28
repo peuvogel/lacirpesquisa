@@ -102,4 +102,33 @@ describe('Phase 3 classical statsEngine golden parity', () => {
     const dunn = dunnPostHoc(golden.input.groups);
     expectPairwiseParity(dunn[0], golden.expected.dunnFirst);
   });
+
+  it('corrects Kruskal-Wallis and Dunn variance for pooled ties', () => {
+    // SciPy's documented tied Kruskal fixture yields H=7 and p=0.0301973834.
+    // Dunn's tied variance follows Dunn (1964), as implemented by CRAN dunn.test 1.4.1.
+    const groups = {
+      A: [1, 1, 1],
+      B: [2, 2, 2],
+      C: [2, 2],
+    };
+
+    const kruskal = kruskalWallis(groups);
+    expect(kruskal.h).toBeCloseTo(7, 12);
+    expect(kruskal.p).toBeCloseTo(0.0301973834223185, 12);
+
+    const dunn = dunnPostHoc(groups);
+    expect(dunn[0].contrast).toBe('A − B');
+    expect(dunn[0].statistic).toBeCloseTo(-2.3664319132398464, 12);
+    expect(dunn[0].pAdj).toBeCloseTo(0.05388143257823634, 12);
+    expect(dunn[1].contrast).toBe('A − C');
+    expect(dunn[1].statistic).toBeCloseTo(-2.1166010488516727, 12);
+    expect(dunn[1].pAdj).toBeCloseTo(0.06858744207298556, 12);
+  });
+
+  it('rejects an all-tied sample instead of dividing by a zero tie correction', () => {
+    const groups = { A: [1, 1], B: [1, 1], C: [1] };
+
+    expect(() => kruskalWallis(groups)).toThrow(/todos os valores são idênticos/i);
+    expect(() => dunnPostHoc(groups)).toThrow(/todos os valores são idênticos/i);
+  });
 });

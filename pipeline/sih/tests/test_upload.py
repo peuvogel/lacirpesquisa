@@ -691,7 +691,7 @@ def _resetar_producao(conn: psycopg.Connection) -> None:
 
 @requires_docker
 def test_migration_limita_clientes_publicos_a_select(pg_conn: psycopg.Connection) -> None:
-    """A migração real preserva leitura/RLS e remove toda permissão direta de escrita."""
+    """A migração preserva a leitura explícita e deixa tabelas futuras privadas por padrão."""
     tabelas = (
         "sih_disease",
         "sih_metric_uf",
@@ -744,9 +744,21 @@ def test_migration_limita_clientes_publicos_a_select(pg_conn: psycopg.Connection
         "where d.defaclrole = 'postgres'::regrole "
         "and d.defaclnamespace = 'public'::regnamespace "
         "and d.defaclobjtype = 'r' "
-        "and pg_get_userbyid(acl.grantee) in ('anon', 'authenticated')"
+        "and (acl.grantee = 0 or pg_get_userbyid(acl.grantee) in ('anon', 'authenticated'))"
     ).fetchall()
-    assert set(defaults) == {("anon", "SELECT"), ("authenticated", "SELECT")}
+    assert defaults == []
+
+    pg_conn.execute("create table public.future_private_probe (id integer)")
+    try:
+        for role in ("anon", "authenticated"):
+            for privilegio in ("SELECT", *privilegios_nao_select):
+                assert pg_conn.execute(
+                    "select has_table_privilege(%s, 'public.future_private_probe', %s)",
+                    (role, privilegio),
+                ).fetchone()[0] is False
+    finally:
+        pg_conn.execute("drop table public.future_private_probe")
+        pg_conn.commit()
 
 
 def _linha_staging(

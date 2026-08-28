@@ -544,6 +544,25 @@ export function oneWayAnova(groups: Record<string, number[]>): OneWayAnovaResult
   return { f, dfBetween, dfWithin, p, eta2, msWithin, groupStats };
 }
 
+function pooledRankTieCorrection(ranks: number[]): number {
+  const n = ranks.length;
+  if (n < 2) {
+    throw new Error('A correção de empates requer ao menos duas observações.');
+  }
+
+  const frequencies = new Map<number, number>();
+  ranks.forEach((rank) => frequencies.set(rank, (frequencies.get(rank) ?? 0) + 1));
+  const tiedCubes = Array.from(frequencies.values()).reduce(
+    (sum, count) => sum + (count > 1 ? (count ** 3) - count : 0),
+    0,
+  );
+  const correction = 1 - (tiedCubes / ((n ** 3) - n));
+  if (!(correction > Number.EPSILON)) {
+    throw new Error('Kruskal-Wallis/Dunn não pode ser calculado: todos os valores são idênticos.');
+  }
+  return correction;
+}
+
 export function kruskalWallis(groups: Record<string, number[]>): KruskalWallisResult {
   const labels = Object.keys(groups);
   if (labels.length < 2) {
@@ -571,7 +590,9 @@ export function kruskalWallis(groups: Record<string, number[]>): KruskalWallisRe
     }
   });
 
-  h = (12 / (n * (n + 1))) * h - 3 * (n + 1);
+  const tieCorrection = pooledRankTieCorrection(ranks);
+  h = ((12 / (n * (n + 1))) * h - 3 * (n + 1)) / tieCorrection;
+  if (h < 0 && h > -1e-12) h = 0;
   const df = labels.length - 1;
   const p = df > 0 ? 1 - jStat.chisquare.cdf(h, df) : 1;
   return { h, df, p };
@@ -629,6 +650,7 @@ export function dunnPostHoc(groups: Record<string, number[]>): PairwiseRow[] {
 
   const ranks = statsEngine.rank(pooled);
   const n = pooled.length;
+  const tieCorrection = pooledRankTieCorrection(ranks);
   const meanRanks = labels.map((label, groupIndex) => {
     const groupRankValues = ranks.filter((_, index) => groupIndices[index] === groupIndex);
     return statsEngine.mean(groupRankValues);
@@ -639,7 +661,7 @@ export function dunnPostHoc(groups: Record<string, number[]>): PairwiseRow[] {
   const rawP: number[] = [];
   for (let i = 0; i < labels.length; i += 1) {
     for (let j = i + 1; j < labels.length; j += 1) {
-      const varianceTerm = (n * (n + 1)) / 12;
+      const varianceTerm = ((n * (n + 1)) / 12) * tieCorrection;
       const se = Math.sqrt(varianceTerm * ((1 / groupNs[i]) + (1 / groupNs[j])));
       const z = se > 0 ? (meanRanks[i] - meanRanks[j]) / se : 0;
       const p = 2 * (1 - jStat.normal.cdf(Math.abs(z), 0, 1));

@@ -56,8 +56,9 @@ function getLastConfig() {
     type: string;
     data: unknown;
     options: {
-      animation?: { duration?: number };
-      plugins?: { legend?: { labels?: { font?: { family?: string } } } };
+      animation?: false | { duration?: number };
+      onClick?: unknown;
+      plugins?: { legend?: { labels?: { font?: { family?: string } }; onClick?: unknown } };
       scales?: { x?: { ticks?: { font?: { family?: string } } } };
     };
   };
@@ -71,6 +72,14 @@ describe('ChartCanvas', () => {
     ChartMock.mockClear();
     destroySpy.mockClear();
     updateSpy.mockClear();
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    });
   });
 
   it('mounts exactly one Chart with the merged options', () => {
@@ -84,6 +93,31 @@ describe('ChartCanvas', () => {
     expect(events).toContain('construct');
   });
 
+  it('disables Chart.js animation when reduced motion is requested', () => {
+    vi.mocked(window.matchMedia).mockReturnValue({
+      matches: true,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    });
+
+    render(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" />);
+
+    expect(getLastConfig().options.animation).toBe(false);
+  });
+
+  it('keeps Chart.js default click and legend behavior without an interaction callback', () => {
+    render(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" />);
+    const options = getLastConfig().options;
+
+    expect(options.onClick).toBeUndefined();
+    expect(options.plugins?.legend?.onClick).toBeUndefined();
+  });
+
   it('registers the logarithmic scale required by odds-ratio forests', () => {
     expect(ChartMock.register.mock.calls.flat(Number.POSITIVE_INFINITY)).toContain(logarithmicScale);
   });
@@ -95,6 +129,9 @@ describe('ChartCanvas', () => {
     expect(options.plugins?.legend?.labels?.font?.family).toBe(CHART_FONT_FAMILY);
     expect(options.scales?.x?.ticks?.font?.family).toBe(CHART_FONT_FAMILY);
     expect(CHART_FONT_FAMILY).not.toContain('Sora');
+    expect(CHART_FONT_FAMILY).toBe(
+      "-apple-system, BlinkMacSystemFont, 'Geist Variable', 'Segoe UI', sans-serif",
+    );
   });
 
   it('updates in place without destroying when data changes', () => {
@@ -138,6 +175,15 @@ describe('ChartCanvas', () => {
 
     rerender(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" height={620} />);
     expect(container).toHaveStyle({ height: '620px' });
+  });
+
+  it('keeps the rendering surface visible instead of clipping annotations', () => {
+    render(<ChartCanvas type="bar" data={sampleData} ariaLabel="Gráfico teste" />);
+    const canvas = screen.getByRole('img', { name: 'Gráfico teste' });
+
+    expect(canvas.parentElement).toHaveClass('overflow-visible');
+    expect(canvas.parentElement).not.toHaveClass('overflow-hidden');
+    expect(canvas).toHaveClass('rounded-xl');
   });
 
   it('clamps requested heights to the supported 280–900px range', () => {

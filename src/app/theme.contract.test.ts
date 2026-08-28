@@ -60,6 +60,13 @@ describe('LACIR theme token contract', () => {
     expect(combinedCss).toContain('prefers-reduced-motion');
   });
 
+  it('uses the approved shared system font stack and never clips chart cards', () => {
+    expect(themeCss).toContain(
+      "--font-sans: -apple-system, BlinkMacSystemFont, 'Geist Variable', 'Segoe UI', sans-serif;",
+    );
+    expect(themeCss).not.toMatch(/\.lacir-chart-card\s*\{[^}]*overflow:\s*hidden/s);
+  });
+
   it('never declares a font-weight other than 400 or 700 in the token layer', () => {
     const matches = [...combinedCss.matchAll(/font-weight\s*:\s*([^;]+);/gi)];
     const disallowed = matches

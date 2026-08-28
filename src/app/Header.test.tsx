@@ -35,6 +35,15 @@ describe('Header', () => {
     expect(screen.getByAltText('Logo LACIR')).toBeInTheDocument();
   });
 
+  it('contains navigation at phone widths instead of widening the document', () => {
+    renderHeader();
+    const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
+    const logoText = screen.getByText('LACIR').parentElement;
+
+    expect(nav).toHaveClass('min-w-0', 'overflow-x-auto');
+    expect(logoText).toHaveClass('hidden', 'sm:flex');
+  });
+
   it('scopes the logo to the configured application base path', () => {
     expect(resolvePublicAssetUrl('/', 'logo-lacir.png')).toBe('/logo-lacir.png');
     expect(resolvePublicAssetUrl('/lacirpesquisa/', 'logo-lacir.png')).toBe(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
@@ -18,6 +18,7 @@ import {
 import {
   exampleText,
   getMannWhitneyTabularOptions,
+  LONG_TABULAR_OPTIONS,
   MAX_RESEARCH_QUESTION_LENGTH,
   type MannWhitneyFormat,
 } from './mannWhitneyConfig';
@@ -40,6 +41,21 @@ interface ConfirmedDataset {
   rows: string[][];
   recognizedColumns: Record<string, number>;
   sourceLabel: string;
+}
+
+const LONG_GROUP_HEADERS = new Set(
+  ['grupo', ...(LONG_TABULAR_OPTIONS.aliases?.grupo ?? [])]
+    .map((header) => header.trim().toLocaleLowerCase('pt-BR').replace(/[_-]+/g, ' ')),
+);
+
+function inferMannWhitneyFormat(document: TableDocument): MannWhitneyFormat {
+  const columns = document.columns.filter((column) => column.type !== 'ignorar');
+  if (columns.length !== 2) return 'long';
+  const hasNamedGroupColumn = columns.some((column) => (
+    LONG_GROUP_HEADERS.has(column.name.trim().toLocaleLowerCase('pt-BR').replace(/[_-]+/g, ' '))
+  ));
+  if (hasNamedGroupColumn) return 'long';
+  return columns.every((column) => column.type === 'numerica') ? 'wide' : 'long';
 }
 
 function initialLoadedFromSession(
@@ -69,6 +85,18 @@ export function MannWhitneyTest() {
   const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
   const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
+  const formatTableIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const table = analysisTable.table;
+    if (!table) {
+      formatTableIdRef.current = null;
+      return;
+    }
+    if (formatTableIdRef.current === table.id) return;
+    formatTableIdRef.current = table.id;
+    setFormat(inferMannWhitneyFormat(table));
+  }, [analysisTable.table]);
 
   useEffect(() => {
     if (!analysisTable.loadedInput) {

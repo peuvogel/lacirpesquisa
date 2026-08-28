@@ -5,7 +5,7 @@
 import type { ChartOptions, ChartType, Plugin } from 'chart.js';
 
 /** Mirrors the CSS `--font-sans` token for canvas text, where CSS variables are unavailable. */
-export const CHART_FONT_FAMILY = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+export const CHART_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Geist Variable', 'Segoe UI', sans-serif";
 
 export const COLORS = {
   primary: '#0F766E',

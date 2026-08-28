@@ -30,7 +30,7 @@ describe('public SIH table privileges migration', () => {
     const sql = migrationSql();
 
     expect(sql).toContain('revoke all privileges on table');
-    expect(sql).toContain('from anon, authenticated');
+    expect(sql).toContain('from public, anon, authenticated');
     expect(sql).toContain('grant select on table');
     expect(sql).toContain('to anon, authenticated');
     for (const table of PUBLIC_READ_TABLES) {
@@ -38,24 +38,24 @@ describe('public SIH table privileges migration', () => {
     }
   });
 
-  it('hardens postgres table defaults without changing service-role or pipeline grants', () => {
+  it('makes future public tables opt-in without changing service-role or pipeline grants', () => {
     const sql = migrationSql();
 
     expect(sql).toContain(
-      'alter default privileges for role postgres in schema public\n  revoke all privileges on tables from anon, authenticated',
+      'alter default privileges for role postgres in schema public\n  revoke all privileges on tables from public, anon, authenticated',
     );
-    expect(sql).toContain(
-      'alter default privileges for role postgres in schema public\n  grant select on tables to anon, authenticated',
-    );
+    expect(sql).not.toMatch(/alter default privileges[^;]+grant\s+select/is);
     expect(sql).not.toMatch(/(?:revoke|grant)[^;]+(?:service_role|pipeline)/);
   });
 
-  it('keeps RLS and the seven SELECT policies as executable safety checks', () => {
+  it('checks effective inherited privileges in addition to RLS and SELECT policies', () => {
     const sql = migrationSql();
 
     expect(sql).toContain('relrowsecurity');
     expect(sql).toContain('pg_policies');
     expect(sql).toContain('has_table_privilege');
+    expect(sql).toContain('foreach forbidden_privilege');
+    expect(sql).toContain("'insert', 'update', 'delete', 'truncate', 'references', 'trigger', 'maintain'");
     expect(sql).toContain('raise exception');
     expect(sql).not.toContain('disable row level security');
   });
@@ -67,6 +67,8 @@ describe('public SIH table privileges migration', () => {
     expect(verify).toContain('has_table_privilege');
     expect(verify).toContain('pg_policies');
     expect(verify).toContain('raise exception');
-    expect(verify).not.toMatch(/\b(?:grant|revoke|alter|create|drop|insert|update|delete|truncate)\b/);
+    expect(verify).not.toMatch(
+      /^\s*(?:grant|revoke|alter|create|drop|insert|update|delete|truncate)\b/im,
+    );
   });
 });

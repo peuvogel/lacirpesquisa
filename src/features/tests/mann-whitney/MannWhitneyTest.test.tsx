@@ -121,7 +121,8 @@ describe('MannWhitneyTest', () => {
       </SessionProvider>,
     );
 
-    await user.click(await screen.findByRole('radio', { name: /Uma coluna por grupo/i }));
+    const wideFormat = await screen.findByRole('radio', { name: /Uma coluna por grupo/i });
+    expect(wideFormat).toBeChecked();
     expect(await screen.findByText((_, node) => node?.textContent === 'Grupo A: n=7')).toBeInTheDocument();
     expect(screen.getByText((_, node) => node?.textContent === 'Grupo B: n=7')).toBeInTheDocument();
 

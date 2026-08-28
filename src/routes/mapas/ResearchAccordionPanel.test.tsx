@@ -41,5 +41,6 @@ describe('ResearchAccordionPanel', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Conteúdo do grupo').closest('[data-slot="collapsible-content"]'))
       .toHaveAttribute('data-motion', 'animated');
+    expect(trigger.querySelector('svg')).toHaveClass('motion-reduce:transition-none');
   });
 });

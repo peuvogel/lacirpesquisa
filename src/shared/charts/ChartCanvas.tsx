@@ -47,6 +47,7 @@ export type ChartCanvasType = 'bar' | 'line' | 'scatter';
 export const DEFAULT_CHART_HEIGHT = 420;
 export const MIN_CHART_HEIGHT = 280;
 export const MAX_CHART_HEIGHT = 900;
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 export function clampChartHeight(height = DEFAULT_CHART_HEIGHT): number {
   if (!Number.isFinite(height)) return DEFAULT_CHART_HEIGHT;
@@ -69,14 +70,24 @@ function attachInteractHandlers(
   merged: ChartOptions,
   interactRef: MutableRefObject<((target: ChartClickTarget) => void) | undefined>,
 ): ChartOptions {
+  const baseOptions: ChartOptions = {
+    ...merged,
+    devicePixelRatio: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2),
+    ...(typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia(REDUCED_MOTION_QUERY).matches
+      ? { animation: false }
+      : {}),
+  };
+  if (!interactRef.current) return baseOptions;
+
   const legendOnClick = (_event: ChartEvent, legendItem: LegendItem) => {
     const datasetIndex = legendItem.datasetIndex ?? 0;
     interactRef.current?.({ kind: 'dataset', datasetIndex });
   };
 
   return {
-    ...merged,
-    devicePixelRatio: Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2),
+    ...baseOptions,
     onClick: (event, elements, chart) => {
       if (elements.length > 0) {
         const el = elements[0];
@@ -119,9 +130,9 @@ function attachInteractHandlers(
       interactRef.current?.({ kind: 'chart' });
     },
     plugins: {
-      ...(merged.plugins ?? {}),
+      ...(baseOptions.plugins ?? {}),
       legend: {
-        ...(merged.plugins?.legend ?? {}),
+        ...(baseOptions.plugins?.legend ?? {}),
         onClick: legendOnClick,
       },
     },
@@ -184,12 +195,12 @@ export function ChartCanvas({
     chart.config.options = merged;
     chart.data = data;
     chart.update('none');
-  }, [canvasEl, data, options]);
+  }, [canvasEl, data, onChartInteract, options]);
 
   return (
     <div
       className={cn(
-        'relative mx-auto w-full overflow-hidden rounded-xl bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.08)]',
+        'relative mx-auto w-full overflow-visible rounded-xl bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.08)]',
         className,
       )}
       style={{ height: `${clampChartHeight(height)}px` }}
@@ -198,7 +209,7 @@ export function ChartCanvas({
         ref={setCanvasRef}
         role="img"
         aria-label={ariaLabel}
-        className={cn('h-full w-full bg-white', onChartInteract && 'cursor-pointer')}
+        className={cn('h-full w-full rounded-xl bg-white', onChartInteract && 'cursor-pointer')}
       />
     </div>
   );

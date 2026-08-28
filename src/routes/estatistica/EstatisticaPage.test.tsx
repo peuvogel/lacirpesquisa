@@ -80,6 +80,7 @@ describe('EstatisticaPage', () => {
     expect(mount).toHaveAttribute('data-active-test-id', 't-student');
     expect(screen.getByRole('heading', { name: 't de Student' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Usar exemplo' })).toBeInTheDocument();
+    expect(document.querySelector('.lacir-estatistica-main')).toHaveClass('min-w-0', 'px-4');
   });
 
   it('mounts correlação when selected from the sidebar', async () => {
