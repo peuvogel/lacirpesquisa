@@ -42,12 +42,13 @@ inferência simples é bloqueada com explicação e ação corretiva.
 | 10 | Exportação PNG individual e em lote, inclusive do canvas ampliado, abertura/fechamento, `Esc`, retorno de foco, teclado e `prefers-reduced-motion` foram exercitados. |
 | 11 | O catálogo usa `import.meta.env.BASE_URL`, compartilha cargas em andamento e permite nova tentativa após erro. O build `--base /lacirpesquisa/` carregou `/mapas`, `/variaveis`, manifest, variáveis e packs no preview. |
 | 12 | `npm run gate` passou com 170 arquivos/1.332 testes Vitest e build; o pipeline coletou 334 testes, com 333 aprovados e 1 ignorado. `npm audit --json` reportou zero vulnerabilidades; 559 pacotes tinham assinatura de registro e 183, atestação. O bundle principal ainda gera aviso de tamanho, não erro. |
-| 13 | A versão final está na pasta principal e `npm run dev` expõe o fluxo em `127.0.0.1:5176`. A publicação externa e sua revisão serão registradas no fechamento do deploy. |
+| 13 | O aplicativo `c453b2b` foi publicado na `main` em 2026-08-28. O [deploy do GitHub Pages](https://github.com/peuvogel/lacirpesquisa/actions/runs/33177660222) e o [CI](https://github.com/peuvogel/lacirpesquisa/actions/runs/33177660273) concluíram com sucesso. O site ao vivo serviu o bundle `index-D5kuINtE.js`; no navegador, Mann–Whitney autodetectou o exemplo t como duas colunas numéricas e calculou U=0 sem erro, Mapas criou Grupo 1 com BA+SE e iniciou o futuro Grupo 2 com matriz de validação, e Variáveis exibiu 71/71 entradas, sem erros ou avisos de console. `npm run dev` continua expondo o mesmo fluxo em `127.0.0.1:5176`. |
 
 ### Banco e limites da verificação
 
 Uma nova migração remove privilégios públicos de escrita das sete tabelas de
-agregados e preserva `SELECT`, RLS e as políticas de leitura. O verificador local
+agregados, preserva `SELECT`, RLS e as políticas de leitura e mantém tabelas
+futuras privadas por padrão. O verificador local
 é somente leitura e a integração Docker cobre o resultado esperado. A inspeção
 do projeto vinculado continuou somente leitura: os advisors não reportaram
 ocorrências, mas o schema remoto ainda mantém os privilégios amplos até a
