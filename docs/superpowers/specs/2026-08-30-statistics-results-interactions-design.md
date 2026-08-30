@@ -4,6 +4,10 @@ Data: 2026-08-30.
 Status: desenho aprovado em conversa, registrado para revisão final do usuário antes da implementação.
 Base: `5367bad` (`main` publicada).
 
+Restrição de entrega: toda a implementação permanece somente na branch local e
+deve aparecer por `npm run dev`. Não criar pull request, não fazer push e não
+publicar esta revisão no GitHub Pages.
+
 Esta especificação substitui, para a área Estatística, a experiência opt-in de
 persistência descrita na seção 4 do desenho de 2026-08-26. Os contratos de
 validação, privacidade local e proteção contra gravações obsoletas continuam
@@ -213,10 +217,10 @@ Aceite obrigatório:
 10. Sucesso e falha de clipboard têm feedback acessível e permitem repetição.
 11. Exemplos dos dez testes continuam executando e mostrando seus gráficos e
     interpretações adequados.
-12. `npm run gate`, build com `--base /lacirpesquisa/`, auditoria e inspeção real
-    no navegador passam antes da publicação.
-13. `npm run dev` na pasta principal mostra a versão final; a mesma revisão é
-    publicada e verificada no GitHub Pages.
+12. `npm run gate`, auditoria e inspeção real no navegador local passam antes do
+    fechamento.
+13. `npm run dev` na pasta principal mostra a versão final. O repositório e o
+    deploy remotos permanecem inalterados.
 
 ## 13. Fora do escopo
 
@@ -225,3 +229,4 @@ Aceite obrigatório:
 - Não alterar cálculos, pressupostos ou escolha dos testes estatísticos.
 - Não redesenhar Mapas, Meta-análise ou Variáveis.
 - Não adicionar novos testes estatísticos nesta entrega.
+- Não enviar a branch, abrir pull request nem publicar no GitHub Pages.
