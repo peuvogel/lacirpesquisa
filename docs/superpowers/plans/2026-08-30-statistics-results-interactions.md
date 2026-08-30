@@ -349,7 +349,7 @@ Expected: FAIL porque formatador, cartão e botão ainda não existem.
 
 - [ ] **Step 4: Implementar o formatador determinístico e a cópia local**
 
-Em `resultReport.ts`, importar somente o tipo `ResultMetric` e exportar:
+Definir e exportar `ResultMetric` em `ResultMetricCard.tsx`. Em `ResultsPanel.tsx`, reexportar esse tipo para manter os imports atuais do painel customizável sem criar dependência circular. Em `resultReport.ts`, importar o tipo diretamente de `ResultMetricCard.tsx` e exportar:
 
 ```ts
 export function formatResultReport(
@@ -507,22 +507,22 @@ Acrescentar regras dentro da camada atual:
   outline: none;
 }
 
-.lacir-chart-card:hover .lacir-chart-focus,
-.lacir-chart-card:focus-within .lacir-chart-focus {
+.lacir-chart-card:hover .lacir-chart-focus:not(.lacir-chart-focus--editing),
+.lacir-chart-card:focus-within .lacir-chart-focus:not(.lacir-chart-focus--editing) {
   transform: scale(1.018);
   box-shadow: 0 12px 30px -20px rgba(15, 23, 42, 0.55);
 }
 ```
 
-Manter `.lacir-chart-focus--editing` mais específico para que edição continue com sua escala/parallax. Não aplicar largura/altura ou transformação diretamente ao `<canvas>`.
+Excluir `.lacir-chart-focus--editing` dos seletores genéricos com `:not(...)`, para que edição continue com sua escala/parallax. Não aplicar largura/altura ou transformação diretamente ao `<canvas>`.
 
 Dentro de `prefers-reduced-motion: reduce`, incluir `.lacir-result-metric` nas transições desativadas e forçar:
 
 ```css
 .lacir-result-metric:hover,
 .lacir-result-metric:focus-visible,
-.lacir-chart-card:hover .lacir-chart-focus,
-.lacir-chart-card:focus-within .lacir-chart-focus {
+.lacir-chart-card:hover .lacir-chart-focus:not(.lacir-chart-focus--editing),
+.lacir-chart-card:focus-within .lacir-chart-focus:not(.lacir-chart-focus--editing) {
   transform: none;
 }
 ```
@@ -718,7 +718,7 @@ Em `QuiQuadradoTest.test.tsx`, `PoissonTest.test.tsx` e `BinomialNegativaTest.te
 Run:
 
 ```bash
-rg -n "Pergunta de pesquisa|Pergunta analisada|ResearchQuestionField|researchQuestion|MAX_RESEARCH_QUESTION_LENGTH" src
+rg -n "Pergunta de pesquisa|Pergunta analisada|ResearchQuestionField|researchQuestion|MAX_RESEARCH_QUESTION_LENGTH" src --glob '!**/*.test.*'
 ```
 
 Expected: exit 1 / nenhum resultado. O termo `defaultQuestion` pode permanecer apenas se tiver função fora do campo removido; validar cada ocorrência restante com `rg -n "defaultQuestion" src/features/tests`.
@@ -747,7 +747,7 @@ git commit -m "refactor: remove research question from remaining tests"
 Run:
 
 ```bash
-rg -n "Portal DATASUS|Lembrar neste dispositivo|Salvo neste dispositivo|Pergunta de pesquisa|Pergunta analisada|ResearchQuestionField|setPersistenceEnabled|persistenceEnabled" src
+rg -n "Portal DATASUS|Lembrar neste dispositivo|Salvo neste dispositivo|Pergunta de pesquisa|Pergunta analisada|ResearchQuestionField|setPersistenceEnabled|persistenceEnabled" src --glob '!**/*.test.*'
 ```
 
 Expected: nenhum resultado.
