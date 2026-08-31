@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { LogoLockup } from './LogoLockup';
 
-// Locked order and labels (D-01). No version badge (D-02). No Portal DATASUS
-// link here — that lives inside the Estatística route (D-03, plan 01-07).
+// Locked order and labels (D-01). No version badge (D-02).
 export const NAV_ITEMS = [
   { to: '/', label: 'Estatística' },
   { to: '/meta-analise', label: 'Meta-análise' },

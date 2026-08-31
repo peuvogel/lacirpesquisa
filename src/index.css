@@ -145,6 +145,18 @@
   }
 }
 
+/* On narrow screens the expanded test list overlays the analysis instead of
+   widening the flex row beyond the viewport. The list remains independently
+   scrollable inside the fixed-height sidebar. */
+@media (max-width: 980px) {
+  .lacir-stat-sidebar[data-state='expanded'] {
+    position: fixed;
+    left: 0;
+    top: 4rem;
+    z-index: 40;
+  }
+}
+
 /* Selected/eligible UF glow — area fill stays; merge uses brighter edge. */
 .lacir-map-glow {
   filter: drop-shadow(0 0 6px rgba(32, 153, 120, 0.55))

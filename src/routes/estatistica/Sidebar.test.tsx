@@ -138,4 +138,12 @@ describe('Sidebar', () => {
     expect(sidebar).toHaveClass('overflow-hidden');
     expect(list).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
   });
+
+  it('marks the sidebar for the mobile expanded overlay layout', () => {
+    renderSidebar();
+
+    expect(screen.getByRole('complementary', { name: 'Testes disponíveis' })).toHaveClass(
+      'lacir-stat-sidebar',
+    );
+  });
 });
