@@ -57,7 +57,7 @@ export function Sidebar({ activeTestId, onSelectTest, onOpenQualTeste }: Sidebar
       data-expanded={expanded}
       data-state={expanded ? 'expanded' : 'collapsed'}
       className={cn(
-        'flex shrink-0 flex-col overflow-hidden border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)]',
+        'sticky top-16 flex h-[calc(100dvh-4rem)] shrink-0 self-start flex-col overflow-hidden border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)]',
         'transition-[width] duration-150 ease-out',
         expanded ? 'w-64' : 'w-12',
       )}

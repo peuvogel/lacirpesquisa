@@ -13,7 +13,6 @@ import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
 import { getTestById, isTestAvailable, type TestId } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
-import { PortalDatasusLink } from './PortalDatasusLink';
 import { QualTesteModal } from './QualTesteModal';
 import { Sidebar } from './Sidebar';
 
@@ -148,11 +147,8 @@ export function EstatisticaPage() {
           className="lacir-estatistica-main min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8"
           data-has-session-data={hasData}
         >
-          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="mb-6">
             <h1 className="font-sans text-display font-bold text-text">{pageTitle}</h1>
-            <div className="flex w-full max-w-md flex-col items-stretch gap-3">
-              <PortalDatasusLink />
-            </div>
           </div>
           <div id="lacir-test-module-mount" data-active-test-id={activeTestId}>
             {renderActiveTest({

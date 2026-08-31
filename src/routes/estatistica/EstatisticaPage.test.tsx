@@ -90,6 +90,12 @@ describe('EstatisticaPage', () => {
     expect(screen.queryByRole('region', { name: /Persistência da sessão/i })).not.toBeInTheDocument();
   });
 
+  it('does not expose the DATASUS shortcut in the statistics header', () => {
+    renderPage();
+
+    expect(screen.queryByRole('link', { name: /Portal DATASUS/i })).not.toBeInTheDocument();
+  });
+
   it('mounts correlação when selected from the sidebar', async () => {
     const user = userEvent.setup();
     renderPage();

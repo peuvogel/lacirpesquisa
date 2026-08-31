@@ -128,4 +128,14 @@ describe('Sidebar', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(toggle).toHaveAccessibleName('Expandir lista de testes');
   });
+
+  it('stays below the app header while only the test list scrolls', () => {
+    renderSidebar();
+
+    const sidebar = screen.getByRole('complementary', { name: 'Testes disponíveis' });
+    const list = screen.getByRole('navigation', { name: 'Lista de testes' });
+    expect(sidebar).toHaveClass('sticky', 'top-16', 'self-start', 'h-[calc(100dvh-4rem)]');
+    expect(sidebar).toHaveClass('overflow-hidden');
+    expect(list).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
+  });
 });
