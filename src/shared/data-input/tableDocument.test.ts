@@ -32,6 +32,17 @@ describe('TableDocument', () => {
     ]);
   });
 
+  it('classifies semantic semester labels as temporal, not numeric', () => {
+    const document = createTableDocument(
+      ['Semestre', 'Valor'],
+      [['2024-S1', '10'], ['2024-S2', '11']],
+      'colado',
+      () => 'doc-time',
+    );
+
+    expect(document.columns.map((column) => column.type)).toEqual(['tempo', 'numerica']);
+  });
+
   it('does not suggest numeric for malformed tokens that only look numeric after punctuation is removed', () => {
     const document = createTableDocument(
       ['Medida'],

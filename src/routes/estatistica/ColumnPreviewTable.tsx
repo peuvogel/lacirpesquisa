@@ -16,6 +16,7 @@ import {
   type TabularColumnRole,
 } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { parseNumber } from '@/shared/data-input/legacyAdapters';
+import { isSupportedTemporalToken } from '@/shared/data-input/temporalPeriods';
 import type { ImportWarning, TabularInputOptions } from '@/shared/data-input/types';
 
 export type ColumnRole = TabularColumnRole;
@@ -75,7 +76,9 @@ function looksNumeric(raw: string): boolean {
 }
 
 function looksTemporal(raw: string): boolean {
-  return /^\d{4}([/-]\d{1,2}){0,2}$/.test(raw.trim()) || /^\d{1,2}\/\d{4}$/.test(raw.trim());
+  const token = raw.trim();
+  return isSupportedTemporalToken(token)
+    && (parseNumber(token) === null || /^\d{4}(?:\.[1-4])?$/.test(token));
 }
 
 function detectColumnRole(columnIndex: number, rows: string[][]): ColumnRole {
@@ -161,6 +164,7 @@ export function ColumnPreviewTable({
       ...(tabularOptions.requiredKeys ?? []),
       ...Object.keys(tabularOptions.aliases ?? {}),
       ...(tabularOptions.numericKeys ?? []),
+      ...(tabularOptions.temporalKeys ?? []),
     ])];
   }, [document, tabularOptions, testId]);
 
@@ -188,6 +192,7 @@ export function ColumnPreviewTable({
         tabularOptions.requiredKeys ?? [],
         tabularOptions.numericKeys ?? [],
         recognizedColumns,
+        tabularOptions.temporalKeys ?? [],
       )
       : null,
     [document, recognizedColumns, requiredMappingsComplete, tabularOptions, testId],

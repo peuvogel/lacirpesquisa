@@ -1,5 +1,7 @@
 import { derivePraisSeries } from '@/shared/data-input/datasusNormalizer';
 import { legacyStats } from '@/shared/data-input/legacyAdapters';
+import { detectTemporalColumn, type TemporalColumnResolution, type TemporalMode } from '@/shared/data-input/temporalPeriods';
+import type { AnalysisIssue } from '@/shared/data-input/analysisIssues';
 import type { DatasusSource } from '@/shared/data-input/types';
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
@@ -25,6 +27,7 @@ export interface PraisSeriesRow {
   timeRaw: string;
   timeLabel: string;
   timeValue: number;
+  timePeriodIndex: number;
   timeSortKey: string;
   yRaw: string;
   yValue: number;
@@ -42,12 +45,17 @@ export interface PraisBuiltDataset {
   uniqueIds: string[];
   reordered: boolean;
   errors: string[];
+  temporal: TemporalColumnResolution;
+  issues: AnalysisIssue[];
+  frequencyLabel: string;
+  effectBasisLabel: string;
 }
 
 export interface BuildDatasetInput {
   headers: string[];
   rows: string[][];
   recognizedColumns: Record<string, number>;
+  temporalMode?: TemporalMode;
 }
 
 export interface RunPraisOutput {
@@ -149,6 +157,21 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
   const timeIndex = recognizedColumns.tempo;
   const yIndex = recognizedColumns.variavel_y;
   const idIndex = recognizedColumns.id;
+  const timeHeaderLabel = resolveHeaderLabel(headers, recognizedColumns, 'tempo', 'Variavel 1');
+  const temporal = detectTemporalColumn(
+    timeIndex === undefined ? [] : rows.map((row) => normalizeSpaces(row[timeIndex] ?? '')),
+    timeHeaderLabel,
+    input.temporalMode ?? 'auto',
+  );
+  const issues: AnalysisIssue[] = temporal.issues.map((issue) => ({
+    code: `temporal_${issue.code}`,
+    severity: issue.severity,
+    message: issue.message,
+    rowNumbers: issue.rowNumbers,
+    hint: issue.severity === 'error'
+      ? 'Corrija os períodos ou escolha explicitamente a periodicidade antes de analisar.'
+      : undefined,
+  }));
 
   const dataset: PraisBuiltDataset = {
     time: [],
@@ -156,86 +179,112 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
     orderedRows: [],
     validCount: 0,
     periodLabel: '',
-    timeHeaderLabel: resolveHeaderLabel(headers, recognizedColumns, 'tempo', 'Variavel 1'),
+    timeHeaderLabel,
     yHeaderLabel: resolveHeaderLabel(headers, recognizedColumns, 'variavel_y', 'Variavel 2'),
     idHeaderLabel: resolveHeaderLabel(headers, recognizedColumns, 'id', 'ID'),
     uniqueIds: [],
     reordered: false,
     errors: [],
+    temporal,
+    issues,
+    frequencyLabel: temporal.frequencyLabel,
+    effectBasisLabel: temporal.effectBasis === 'annualized'
+      ? 'Variação anualizada'
+      : temporal.effectBasis === 'numeric-unit'
+        ? 'Variação por unidade numérica'
+        : 'Variação por intervalo observado',
   };
 
   if (timeIndex === undefined) {
-    dataset.errors.push('Não encontramos uma coluna compatível com tempo/ano.');
+    issues.push({
+      code: 'missing_time_column',
+      severity: 'error',
+      message: 'Não encontramos uma coluna compatível com tempo/ano.',
+    });
   }
   if (yIndex === undefined) {
-    dataset.errors.push('Não encontramos uma coluna compatível com variável y/desfecho.');
+    issues.push({
+      code: 'missing_outcome_column',
+      severity: 'error',
+      message: 'Não encontramos uma coluna compatível com variável y/desfecho.',
+    });
   }
-  if (dataset.errors.length) return dataset;
+  if (timeIndex === undefined || yIndex === undefined) {
+    dataset.errors = issues.filter((issue) => issue.severity === 'error').map((issue) => issue.message);
+    return dataset;
+  }
 
   const validRows: PraisSeriesRow[] = [];
-  const duplicateMap = new Map<string, string[]>();
-  let negativeValueCount = 0;
+  const numericPeriodIndexes = normalizedNumericPeriodIndexes(temporal);
 
   rows.forEach((row, rowIndex) => {
     const idRaw = idIndex !== undefined ? normalizeSpaces(row[idIndex] ?? '') : '';
     const timeRaw = normalizeSpaces(row[timeIndex!] ?? '');
     const yRaw = normalizeSpaces(row[yIndex!] ?? '');
-    const timeInfo = parseTemporalValue(timeRaw);
+    const timeValue = temporal.values[rowIndex];
     const yValue = statsEngine.parseNumber(yRaw);
     const rowLabel = idRaw || `Linha ${rowIndex + 1}`;
 
-    if (timeInfo.numeric !== null && yValue !== null && yValue < 0) {
-      negativeValueCount += 1;
+    if (!yRaw) {
+      issues.push({
+        code: 'missing_outcome',
+        severity: 'error',
+        message: `A linha ${rowIndex + 1} não contém valor para o desfecho.`,
+        rowNumbers: [rowIndex + 1],
+      });
+      return;
+    }
+    if (yValue === null) {
+      issues.push({
+        code: 'invalid_outcome',
+        severity: 'error',
+        message: `O desfecho da linha ${rowIndex + 1} não é numérico.`,
+        rowNumbers: [rowIndex + 1],
+      });
+      return;
+    }
+    if (yValue < 0) {
+      issues.push({
+        code: 'negative_outcome',
+        severity: 'error',
+        message: `O desfecho da linha ${rowIndex + 1} é negativo. O Prais-Winsten deste fluxo aceita apenas indicadores não negativos.`,
+        rowNumbers: [rowIndex + 1],
+      });
+      return;
     }
 
-    if (timeInfo.numeric !== null && yValue !== null && yValue >= 0) {
+    if (timeValue !== null) {
       validRows.push({
         index: rowIndex + 1,
         idLabel: rowLabel,
         timeRaw,
-        timeLabel: timeInfo.label || timeRaw,
-        timeValue: timeInfo.numeric,
-        timeSortKey: timeInfo.sortKey,
+        timeLabel: timeValue.label || timeRaw,
+        timeValue: timeValue.coordinate,
+        timePeriodIndex: numericPeriodIndexes.get(timeValue.rowNumber) ?? timeValue.periodIndex,
+        timeSortKey: String(timeValue.periodIndex),
         yRaw,
         yValue,
       });
-      const list = duplicateMap.get(timeInfo.sortKey) || [];
-      list.push(timeInfo.label || timeRaw);
-      duplicateMap.set(timeInfo.sortKey, list);
     }
   });
-
-  if (negativeValueCount > 0) {
-    dataset.errors.push(
-      `A série contém ${negativeValueCount} valor(es) negativo(s). O Prais-Winsten deste fluxo aceita apenas indicadores não negativos.`,
-    );
-  }
-
-  const duplicateTimes = [...duplicateMap.values()]
-    .filter((list) => list.length > 1)
-    .map((list) => list[0]);
-
-  if (duplicateTimes.length) {
-    dataset.errors.push(
-      `Há tempos repetidos na série (${duplicateTimes.slice(0, 4).join(', ')}${duplicateTimes.length > 4 ? ', ...' : ''}). Mantenha um único valor por tempo.`,
-    );
-  }
 
   if (idIndex !== undefined) {
     dataset.uniqueIds = [...new Set(validRows.map((row) => normalizeSpaces(row.idLabel)).filter(Boolean))];
     if (dataset.uniqueIds.length > 1) {
-      dataset.errors.push(
-        `Foram encontrados ${dataset.uniqueIds.length} IDs distintos. O Prais-Winsten deve analisar uma única série por vez.`,
-      );
+      issues.push({
+        code: 'multiple_series_ids',
+        severity: 'error',
+        message: `Foram encontrados ${dataset.uniqueIds.length} IDs distintos. O Prais-Winsten deve analisar uma única série por vez.`,
+      });
     }
   }
 
   const orderedRows = [...validRows].sort((left, right) => {
-    if (left.timeValue !== right.timeValue) return left.timeValue - right.timeValue;
+    if (left.timePeriodIndex !== right.timePeriodIndex) return left.timePeriodIndex - right.timePeriodIndex;
     return left.index - right.index;
   });
 
-  dataset.reordered = validRows.some((row, index) => row.index !== orderedRows[index]?.index);
+  dataset.reordered = temporal.issues.some((issue) => issue.code === 'reordered');
   dataset.orderedRows = orderedRows;
   dataset.validCount = orderedRows.length;
   dataset.time = orderedRows.map((row) => row.timeValue);
@@ -248,35 +297,71 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
       first.timeLabel === last.timeLabel ? first.timeLabel : `${first.timeLabel} a ${last.timeLabel}`;
   }
 
+  dataset.errors = issues.filter((issue) => issue.severity === 'error').map((issue) => issue.message);
+
   return dataset;
 }
 
-export function validateSeries(dataset: PraisBuiltDataset): string[] {
-  const errors = [...dataset.errors];
+function normalizedNumericPeriodIndexes(temporal: TemporalColumnResolution): Map<number, number> {
+  if (temporal.frequency !== 'numeric' || temporal.issues.some((issue) => issue.severity === 'error')) {
+    return new Map();
+  }
+  const values = temporal.values.filter((value): value is NonNullable<typeof value> => value !== null)
+    .sort((left, right) => left.coordinate - right.coordinate);
+  return new Map(values.map((value, index) => [value.rowNumber, index]));
+}
+
+export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[] {
+  const issues = [...dataset.issues];
 
   if (dataset.validCount < MIN_TEMPORAL_POINTS) {
-    errors.push('A série temporal precisa de pelo menos 3 pontos válidos.');
+    issues.push({
+      code: 'minimum_temporal_points',
+      severity: 'error',
+      message: 'A série temporal precisa de pelo menos 3 pontos válidos.',
+    });
   }
 
   if (dataset.time.length > SERIES_LENGTH_CAP) {
-    errors.push(`A série excede o limite de ${SERIES_LENGTH_CAP} pontos. Reduza o período antes de analisar.`);
+    issues.push({
+      code: 'series_length_cap',
+      severity: 'error',
+      message: `A série excede o limite de ${SERIES_LENGTH_CAP} pontos. Reduza o período antes de analisar.`,
+    });
   }
 
-  if (dataset.time.length >= 3) {
-    const intervals = dataset.time.slice(1).map((time, index) => time - dataset.time[index]);
-    const expectedInterval = Math.min(...intervals);
-    const tolerance = Math.max(1e-8, Math.abs(expectedInterval) * 0.05);
-    if (
-      expectedInterval <= 0 ||
-      intervals.some((interval) => Math.abs(interval - expectedInterval) > tolerance)
-    ) {
-      errors.push(
-        'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
-      );
+  const temporalHasSequenceError = dataset.issues.some((issue) => (
+    issue.code === 'temporal_missing_period' || issue.code === 'temporal_duplicate_period'
+  ));
+  if (!temporalHasSequenceError && dataset.orderedRows.length >= 2) {
+    const missingIndex = dataset.orderedRows.findIndex((row, index) => (
+      index > 0 && row.timePeriodIndex - dataset.orderedRows[index - 1]!.timePeriodIndex !== 1
+    ));
+    if (missingIndex > 0) {
+      issues.push({
+        code: 'missing_period',
+        severity: 'error',
+        message: 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
+        rowNumbers: [
+          dataset.orderedRows[missingIndex - 1]!.index,
+          dataset.orderedRows[missingIndex]!.index,
+        ],
+      });
     }
   }
 
-  return errors;
+  return issues;
+}
+
+/** Compatibility adapter for existing callers that only render blocking messages. */
+export function validateSeries(dataset: PraisBuiltDataset): string[] {
+  return [...new Set(validateSeriesIssues(dataset)
+    .filter((issue) => issue.severity === 'error')
+    .map((issue) => (
+      issue.code === 'temporal_missing_period'
+        ? 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.'
+        : issue.message
+    )))];
 }
 
 export function computeFitted(time: number[], model: PraisWinstenResult): number[] {

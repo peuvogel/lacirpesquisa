@@ -2,6 +2,7 @@
 
 import { validateImportLimit, validateTableSize } from './importLimits';
 import { readXlsxTables } from './xlsxReader';
+import { isSupportedTemporalToken } from './temporalPeriods';
 
 import type {
   LegacyStatsAdapter,
@@ -306,10 +307,13 @@ function cellMatchesExpectedType(
   key: string,
   positionFallback: PositionFallbackOptions | null | undefined,
   numericKeys: readonly string[] | undefined,
+  temporalKeys: readonly string[] | undefined,
   stats: LegacyStatsAdapter | undefined,
 ): boolean {
   const normalized = normalizeTabularSpaces(raw);
   if (!normalized) return false;
+
+  if (temporalKeys?.includes(key)) return isSupportedTemporalToken(normalized);
 
   const validator = positionFallback?.compatibilityValidators?.[key];
   if (typeof validator === 'function') {
@@ -344,6 +348,7 @@ function rowLooksLikeFallbackHeader(
   bodyRows: string[][],
   positionFallback: PositionFallbackOptions | null | undefined,
   numericKeys: readonly string[] | undefined,
+  temporalKeys: readonly string[] | undefined,
   stats: LegacyStatsAdapter | undefined,
 ): boolean {
   const minColumns = positionFallback?.minColumns || 3;
@@ -366,7 +371,7 @@ function rowLooksLikeFallbackHeader(
   const textualHeaderCount = headerCells.filter((value) => cellLooksLikeHeader(value, stats)).length;
   const firstRowHasCompatibleData = requiredPositions.some((index) => {
     const key = (positionFallback as PositionFallbackOptions).keysByIndex?.[index] as string;
-    return cellMatchesExpectedType(firstDataRow[index], key, positionFallback, numericKeys, stats);
+    return cellMatchesExpectedType(firstDataRow[index], key, positionFallback, numericKeys, temporalKeys, stats);
   });
 
   return textualRequiredHeaders === requiredPositions.length
@@ -392,13 +397,14 @@ function buildPositionalFallbackCandidate(
     aliases?: Record<string, string[]>;
     requiredKeys?: string[];
     numericKeys?: string[];
+    temporalKeys?: string[];
     positionFallback?: PositionFallbackOptions | null;
   },
   stats: LegacyStatsAdapter | undefined,
 ): TabularCandidate | null {
   const positionFallback = options?.positionFallback;
   if (!positionFallback) return null;
-  if (!rowLooksLikeFallbackHeader(headers, bodyRows, positionFallback, options.numericKeys, stats)) return null;
+  if (!rowLooksLikeFallbackHeader(headers, bodyRows, positionFallback, options.numericKeys, options.temporalKeys, stats)) return null;
 
   const recognizedColumns = buildPositionalRecognizedColumns(headers, positionFallback);
   const requiredKeys = positionFallback.requiredKeys || options?.requiredKeys || [];
@@ -409,7 +415,7 @@ function buildPositionalFallbackCandidate(
     requiredKeys.forEach((key) => {
       const index = recognizedColumns[key]?.index;
       if (!Number.isInteger(index)) return;
-      if (cellMatchesExpectedType(row[index as number], key, positionFallback, options.numericKeys, stats)) {
+      if (cellMatchesExpectedType(row[index as number], key, positionFallback, options.numericKeys, options.temporalKeys, stats)) {
         compatibilityCounts[key] += 1;
       }
     });
@@ -518,6 +524,7 @@ export function findBestTabularCandidate(
     aliases = {},
     requiredKeys = [],
     numericKeys = [],
+    temporalKeys = [],
     positionFallback = null,
   } = options || {};
 
@@ -576,6 +583,7 @@ export function findBestTabularCandidate(
         aliases,
         requiredKeys,
         numericKeys,
+        temporalKeys,
         positionFallback,
       }, stats);
       if (candidate) return candidate;
@@ -668,6 +676,7 @@ export async function readTabularFileState(
     aliases = {},
     requiredKeys = [],
     numericKeys = [],
+    temporalKeys = [],
     expectedFormatLabel = '',
     positionFallback = null,
   } = options;
@@ -679,6 +688,7 @@ export async function readTabularFileState(
       aliases,
       requiredKeys,
       numericKeys,
+      temporalKeys,
       positionFallback,
     }, stats);
     const availableNames = workbook.tables.map((table) => table.name).filter(Boolean);
@@ -721,6 +731,7 @@ export function readTabularPasteState(
     aliases = {},
     requiredKeys = [],
     numericKeys = [],
+    temporalKeys = [],
     expectedFormatLabel = '',
     positionFallback = null,
   } = options;
@@ -734,6 +745,7 @@ export function readTabularPasteState(
     aliases,
     requiredKeys,
     numericKeys,
+    temporalKeys,
     positionFallback,
   }, stats);
 

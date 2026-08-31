@@ -18,12 +18,27 @@ import {
   runAnalysis,
   runPraisWinsten,
   validateSeries,
+  validateSeriesIssues,
 } from './praisEngine';
 
 const legacyStatsOracle = loadLegacyStatsOracle();
 
 const fixtureDir = join(__dirname, '../../../test/fixtures/tests');
 const tabnetDir = join(__dirname, '../../../test/fixtures/tabnet');
+
+const pastedSemesters = `Semestre\tN de inscritos
+2021.1\t90
+2021.2\t92
+2022.1\t93
+2022.2\t95
+2023.1\t95
+2023.2\t97
+2024.1\t98
+2024.2\t100
+2025.1\t102
+2025.2\t105
+2026.1\t108
+2026.2\t114`;
 
 function readFixture(dir: string, name: string): string {
   return readFileSync(join(dir, name), 'utf8');
@@ -56,6 +71,24 @@ function buildTabnetSource(fixtureFile: string): DatasusSource {
 
 describe('praisEngine differential parity', () => {
   const exemploText = readFixture(fixtureDir, 'prais-exemplo.txt');
+
+  it('builds the user semester paste as twelve regular observations', () => {
+    const parsed = readTabularPasteState(pastedSemesters, legacyStats, TABULAR_OPTIONS);
+    expect(parsed.status).toBe('loaded');
+    if (parsed.status !== 'loaded') return;
+    const dataset = buildDatasetFromConfirmed({
+      headers: parsed.headers,
+      rows: parsed.bodyRows,
+      recognizedColumns: Object.fromEntries(
+        Object.entries(parsed.recognizedColumns).map(([key, value]) => [key, value.index]),
+      ),
+      temporalMode: 'auto',
+    });
+    expect(dataset.validCount).toBe(12);
+    expect(dataset.frequencyLabel).toBe('Semestral');
+    expect(dataset.time.slice(0, 3)).toEqual([2021, 2021.5, 2022]);
+    expect(validateSeriesIssues(dataset).filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
 
   it('runPraisWinsten matches legacy Stats on prais-exemplo fixture', () => {
     const parsed = readTabularPasteState(exemploText, legacyStats, TABULAR_OPTIONS);
@@ -139,6 +172,21 @@ describe('praisEngine differential parity', () => {
     });
 
     expect(validateSeries(dataset)).toContainEqual(expect.stringMatching(/intervalos regulares|lacuna/i));
+  });
+
+  it('reports an invalid outcome and preserves the gap created by excluding its period', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2021', '1'], ['2022', 'inválido'], ['2023', '3'], ['2024', '4']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(dataset.validCount).toBe(3);
+    expect(dataset.orderedRows.map((row) => row.timePeriodIndex)).toEqual([2021, 2023, 2024]);
+    expect(validateSeriesIssues(dataset)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'invalid_outcome', severity: 'error', rowNumbers: [2] }),
+      expect.objectContaining({ code: 'missing_period', severity: 'error', rowNumbers: [1, 3] }),
+    ]));
   });
 
   it('rejects negative indicators instead of silently dropping them', () => {

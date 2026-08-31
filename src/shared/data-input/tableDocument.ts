@@ -1,5 +1,6 @@
 import type { TabularColumnRole } from './recognizedColumnsFromTabular';
 import { parseNumber } from './legacyAdapters';
+import { isSupportedTemporalToken } from './temporalPeriods';
 
 export interface TableColumn {
   id: string;
@@ -42,7 +43,8 @@ function copyBindings(bindings: Record<string, TableRoleBindings>): Record<strin
 
 function looksTemporal(value: string): boolean {
   const token = value.trim();
-  return /^\d{4}([/-]\d{1,2}){0,2}$/.test(token) || /^\d{1,2}\/\d{4}$/.test(token);
+  return isSupportedTemporalToken(token)
+    && (parseNumber(token) === null || /^\d{4}(?:\.[1-4])?$/.test(token));
 }
 
 function looksNumeric(value: string): boolean {

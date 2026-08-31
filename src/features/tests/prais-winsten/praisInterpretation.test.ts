@@ -126,6 +126,7 @@ describe('SeriesPreviewTable truncation copy', () => {
       timeRaw: String(2010 + index),
       timeLabel: String(2010 + index),
       timeValue: 2010 + index,
+      timePeriodIndex: 2010 + index,
       timeSortKey: `year:${2010 + index}`,
       yRaw: String(100 + index),
       yValue: 100 + index,

@@ -1,6 +1,7 @@
 import { legacyStats, parseNumber } from './legacyAdapters';
 import { matchStructuredPositionFallback, matchTabularColumns } from './parseTabular';
 import { resolveBindings, type TableDocument } from './tableDocument';
+import { isSupportedTemporalToken } from './temporalPeriods';
 import type { TabularInputOptions } from './types';
 
 export interface TableValiditySummary {
@@ -9,8 +10,16 @@ export interface TableValiditySummary {
   invalid: number[];
 }
 
-function isNumeric(value: string): boolean {
-  return value.trim() !== '' && parseNumber(value) !== null;
+function valueMatchesRole(
+  value: string,
+  key: string,
+  numericKeys: readonly string[],
+  temporalKeys: readonly string[],
+): boolean {
+  if (!value.trim()) return false;
+  if (temporalKeys.includes(key)) return isSupportedTemporalToken(value);
+  if (numericKeys.includes(key)) return parseNumber(value) !== null;
+  return true;
 }
 
 /**
@@ -69,7 +78,12 @@ export function deriveRecognizedColumnsFromDocument(
     }
   });
 
-  const knownKeys = new Set([...Object.keys(aliases), ...requiredKeys, ...(options.numericKeys ?? [])]);
+  const knownKeys = new Set([
+    ...Object.keys(aliases),
+    ...requiredKeys,
+    ...(options.numericKeys ?? []),
+    ...(options.temporalKeys ?? []),
+  ]);
   return Object.fromEntries(Object.entries(recognized).filter(([key, index]) => (
     knownKeys.has(key)
     && index >= 0
@@ -85,6 +99,7 @@ export function tableValiditySummary(
   requiredKeys: readonly string[],
   numericKeys: readonly string[] = [],
   resolved?: Record<string, number>,
+  temporalKeys: readonly string[] = [],
 ): TableValiditySummary {
   const bindings = resolved ?? resolveBindings(document, testId);
   const validRows: number[] = [];
@@ -97,11 +112,16 @@ export function tableValiditySummary(
       incomplete.push(index + 1);
       return;
     }
-    const nonNumeric = numericKeys.some((key) => {
+    const mismatchedRole = [...numericKeys, ...temporalKeys].some((key) => {
       const columnIndex = bindings[key];
-      return columnIndex !== undefined && !isNumeric(String(row[columnIndex] ?? ''));
+      return columnIndex !== undefined && !valueMatchesRole(
+        String(row[columnIndex] ?? ''),
+        key,
+        numericKeys,
+        temporalKeys,
+      );
     });
-    if (nonNumeric) {
+    if (mismatchedRole) {
       invalid.push(index + 1);
       return;
     }

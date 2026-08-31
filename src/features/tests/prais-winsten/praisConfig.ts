@@ -19,6 +19,13 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
       'variavel_1',
       'variavel 1',
       'variavel1',
+      'semestre',
+      'semester',
+      'trimestre',
+      'quarter',
+      'mes',
+      'mês',
+      'data',
     ],
     variavel_y: [
       'variavel_y',
@@ -39,7 +46,8 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
     observacao_opcional: ['observacao', 'observação', 'obs', 'comentario', 'comentário'],
   },
   requiredKeys: ['tempo', 'variavel_y'],
-  numericKeys: ['tempo', 'variavel_y'],
+  numericKeys: ['variavel_y'],
+  temporalKeys: ['tempo'],
   expectedFormatLabel: 'variavel_1;variavel_2',
   positionFallback: {
     keysByIndex: ['tempo', 'variavel_y', 'observacao_opcional'],

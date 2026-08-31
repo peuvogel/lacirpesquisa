@@ -119,4 +119,28 @@ describe('analysis table helpers', () => {
       invalid: [1],
     });
   });
+
+  it('accepts temporal role values and identifies unsupported temporal tokens', () => {
+    const document = createTableDocument(
+      ['Tempo', 'Valor'],
+      [['2024-S1', '10'], ['2024-X9', '11']],
+      'colado',
+      () => 'doc-time',
+    );
+    const bound = setTableRoleBinding(
+      setTableRoleBinding(document, 'prais-winsten', 'tempo', document.columns[0]!.id),
+      'prais-winsten',
+      'variavel_y',
+      document.columns[1]!.id,
+    );
+
+    expect(tableValiditySummary(
+      bound,
+      'prais-winsten',
+      ['tempo', 'variavel_y'],
+      ['variavel_y'],
+      undefined,
+      ['tempo'],
+    )).toEqual({ valid: 1, incomplete: [], invalid: [2] });
+  });
 });

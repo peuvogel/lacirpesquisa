@@ -81,6 +81,7 @@ export interface TabularInputOptions {
   aliases?: Record<string, string[]>;
   requiredKeys?: string[];
   numericKeys?: string[];
+  temporalKeys?: string[];
   expectedFormatLabel?: string;
   positionFallback?: PositionFallbackOptions | null;
 }
