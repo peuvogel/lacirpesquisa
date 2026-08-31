@@ -29,7 +29,9 @@ import {
 import { usePresenceList } from './usePresenceList';
 import { capabilityDefaults } from './chartCapabilities';
 import { InterpretationText } from '@/routes/estatistica/InterpretationText';
+import { CopyResultsButton } from '@/routes/estatistica/CopyResultsButton';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
+import { ResultMetricCard } from '@/routes/estatistica/ResultMetricCard';
 import { cn } from '@/lib/utils';
 import { useSession } from '@/shared/session/SessionProvider';
 import {
@@ -313,14 +315,7 @@ export function ResultsPanelWithCustomizer<T>({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="rounded-lg border border-border bg-[var(--color-surface)] px-4 py-3"
-          >
-            <p className="text-sm font-bold text-muted-foreground">{metric.label}</p>
-            <p className="mt-1 text-[20px] font-bold leading-tight text-foreground">{metric.value}</p>
-            {metric.hint ? <p className="mt-1 text-xs text-muted-foreground">{metric.hint}</p> : null}
-          </div>
+          <ResultMetricCard key={metric.label} metric={metric} />
         ))}
       </div>
 
@@ -457,6 +452,7 @@ export function ResultsPanelWithCustomizer<T>({
           }}
         />
         {actions}
+        <CopyResultsButton title={title} metrics={metrics} interpretation={interpretation} />
       </div>
 
       {editingItem ? (

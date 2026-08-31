@@ -86,7 +86,7 @@ function renderPanel() {
   return render(
     <ResultsPanelWithCustomizer
       title="t de Student: resultados"
-      metrics={[]}
+      metrics={[{ label: 'Média de Grupo A', value: '4,90', hint: 'n = 7 · desvio-padrão = 0,22' }]}
       engineOutput={{ value: 1 }}
       presets={presets}
       defaultPresetId="means"
@@ -120,6 +120,17 @@ describe('ResultsPanelWithCustomizer sizing and expansion', () => {
       'charts:dataset-42:t-student:means': { height: 620 },
     });
     expect(JSON.stringify(setVisualPreferencesMock.mock.lastCall?.[0])).not.toContain('buildChart');
+  });
+
+  it('renders shared result metrics and leaves copy action at the end of the action row', () => {
+    renderPanel();
+
+    const metricCard = screen.getByRole('article', { name: 'Média de Grupo A' });
+    expect(metricCard).toHaveAttribute('tabindex', '0');
+    expect(metricCard).toHaveClass('lacir-result-metric');
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.at(-1)).toHaveAccessibleName('Copiar tudo');
   });
 
   it('keeps customization in the expanded dialog and restores focus on Escape', async () => {

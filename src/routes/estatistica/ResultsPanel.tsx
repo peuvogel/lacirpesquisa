@@ -3,13 +3,10 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import { Button } from '@/components/ui/button';
 import { ChartCanvas, type ChartCanvasType } from '@/shared/charts/ChartCanvas';
 import { useChartExport } from '@/shared/charts/useChartExport';
+import { CopyResultsButton } from './CopyResultsButton';
 import { InterpretationText } from './InterpretationText';
-
-export interface ResultMetric {
-  label: string;
-  value: string;
-  hint?: string;
-}
+import { ResultMetricCard, type ResultMetric } from './ResultMetricCard';
+export type { ResultMetric } from './ResultMetricCard';
 
 export interface ResultChart {
   type: ChartCanvasType;
@@ -63,11 +60,7 @@ export function ResultsPanel({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((metric) => (
-          <div key={metric.label} className="rounded-lg border border-border bg-[var(--color-surface)] px-4 py-3">
-            <p className="text-sm font-bold text-muted-foreground">{metric.label}</p>
-            <p className="mt-1 text-[20px] font-bold leading-tight text-foreground">{metric.value}</p>
-            {metric.hint ? <p className="mt-1 text-xs text-muted-foreground">{metric.hint}</p> : null}
-          </div>
+          <ResultMetricCard key={metric.label} metric={metric} />
         ))}
       </div>
 
@@ -99,6 +92,7 @@ export function ResultsPanel({
           Baixar gráfico (PNG)
         </Button>
         {actions}
+        <CopyResultsButton title={title} metrics={metrics} interpretation={interpretation} />
       </div>
     </div>
   );
