@@ -83,6 +83,13 @@ describe('EstatisticaPage', () => {
     expect(document.querySelector('.lacir-estatistica-main')).toHaveClass('min-w-0', 'px-4');
   });
 
+  it('does not expose persistence controls in the statistics header', () => {
+    renderPage();
+    expect(screen.queryByText('Lembrar neste dispositivo')).not.toBeInTheDocument();
+    expect(screen.queryByText('Salvo neste dispositivo')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Persistência da sessão/i })).not.toBeInTheDocument();
+  });
+
   it('mounts correlação when selected from the sidebar', async () => {
     const user = userEvent.setup();
     renderPage();

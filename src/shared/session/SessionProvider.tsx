@@ -43,7 +43,6 @@ export interface SessionState {
   guidedAnalysis: GuidedAnalysisState | null;
   hasData: boolean; // derived: dataset !== null || datasusSession !== null
   visualPreferences: Record<string, unknown>;
-  persistenceEnabled: boolean;
   persistenceReady: boolean;
   persistenceStatus: 'restoring' | 'off' | 'saving' | 'saved' | 'error';
   persistenceError: string | null;
@@ -58,7 +57,6 @@ export interface SessionApi extends SessionState {
   setResearchDesign(design: ResearchDesign | null): void;
   setGuidedAnalysis(analysis: GuidedAnalysisState | null): void;
   setVisualPreferences(preferences: Record<string, unknown>): void;
-  setPersistenceEnabled(enabled: boolean): void;
   clearSession(): void;
 }
 
@@ -116,12 +114,11 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
   const [researchDesign, setResearchDesignState] = useState<ResearchDesign | null>(null);
   const [guidedAnalysis, setGuidedAnalysis] = useState<GuidedAnalysisState | null>(null);
   const [visualPreferences, setVisualPreferencesState] = useState<Record<string, unknown>>({});
-  const [persistenceEnabled, setPersistenceEnabledState] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [persistenceStatus, setPersistenceStatus] = useState<SessionState['persistenceStatus']>('restoring');
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const researchDesignRef = useRef<ResearchDesign | null>(null);
-  const persistenceEnabledRef = useRef(false);
+  const persistenceWritableRef = useRef(false);
   const persistenceReadyRef = useRef(false);
   const persistenceGenerationRef = useRef(0);
   const persistenceSequenceRef = useRef(0);
@@ -165,7 +162,7 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
       .then(async () => {
         if (
           generation !== persistenceGenerationRef.current
-          || !persistenceEnabledRef.current
+          || !persistenceWritableRef.current
         ) return;
         const snapshot: SessionSnapshot = {
           version: 1,
@@ -194,11 +191,14 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
     persistenceQueueRef.current = operation;
   }, []);
 
-  const disablePersistence = useCallback(() => {
+  const clearPersistedSession = useCallback(() => {
     const generation = ++persistenceGenerationRef.current;
     const sequence = ++persistenceSequenceRef.current;
-    persistenceEnabledRef.current = false;
-    setPersistenceEnabledState(false);
+    const emptyVisualPreferences: Record<string, unknown> = {};
+    lastPersistedDatasetRef.current = null;
+    lastPersistedPreferencesRef.current = emptyVisualPreferences;
+    setDatasetState(null);
+    setVisualPreferencesState(emptyVisualPreferences);
     setPersistenceStatus('saving');
     setPersistenceError(null);
     const operation = persistenceQueueRef.current
@@ -209,9 +209,7 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
           generation !== persistenceGenerationRef.current
           || sequence !== persistenceSequenceRef.current
         ) return;
-        lastPersistedDatasetRef.current = NEVER_PERSISTED;
-        lastPersistedPreferencesRef.current = NEVER_PERSISTED;
-        setPersistenceStatus('off');
+        setPersistenceStatus('saved');
         setPersistenceError(null);
       })
       .catch((error: unknown) => {
@@ -222,23 +220,9 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
           setPersistenceStatus('error');
           setPersistenceError(persistenceErrorMessage('clear', error));
         }
-      });
+    });
     persistenceQueueRef.current = operation;
   }, []);
-
-  const setPersistenceEnabled = useCallback((enabled: boolean) => {
-    if (enabled === persistenceEnabledRef.current) return;
-    if (!enabled) {
-      disablePersistence();
-      return;
-    }
-    persistenceGenerationRef.current += 1;
-    persistenceSequenceRef.current += 1;
-    persistenceEnabledRef.current = true;
-    setPersistenceEnabledState(true);
-    setPersistenceStatus('saving');
-    setPersistenceError(null);
-  }, [disablePersistence]);
 
   useEffect(() => {
     let active = true;
@@ -250,49 +234,60 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
       .then((snapshot) => {
         if (!active) return;
         persistenceReadyRef.current = true;
+        persistenceWritableRef.current = true;
         setPersistenceReady(true);
         if (generation !== persistenceGenerationRef.current) return;
         if (mutatedBeforeRestoreRef.current) {
-          if (snapshot) {
-            persistenceEnabledRef.current = true;
-            setPersistenceEnabledState(true);
-            setPersistenceStatus('saving');
-          } else {
-            setPersistenceStatus('off');
-          }
+          setPersistenceStatus('saving');
           return;
         }
         if (!snapshot) {
-          setPersistenceStatus('off');
+          lastPersistedDatasetRef.current = dataset;
+          lastPersistedPreferencesRef.current = visualPreferences;
+          setPersistenceStatus('saved');
+          setPersistenceError(null);
           return;
         }
         const restoredDataset = normalizeSessionDataset(snapshot.dataset);
         lastPersistedDatasetRef.current = restoredDataset;
         lastPersistedPreferencesRef.current = snapshot.visualPreferences;
-        persistenceEnabledRef.current = true;
         setDatasetState(restoredDataset);
         setVisualPreferencesState(snapshot.visualPreferences);
-        setPersistenceEnabledState(true);
         setPersistenceStatus('saved');
         setPersistenceError(null);
       })
       .catch(async (error: unknown) => {
+        let failedOperation: 'read' | 'clear' = 'read';
         if (!active) return;
         if (error instanceof SessionSnapshotValidationError) {
           try {
             await storageRef.current!.clear();
-          } catch {
-            // The visible read error remains authoritative; the app stays in memory.
+            if (!active) return;
+            persistenceReadyRef.current = true;
+            persistenceWritableRef.current = true;
+            setPersistenceReady(true);
+            if (generation !== persistenceGenerationRef.current) return;
+            if (mutatedBeforeRestoreRef.current) {
+              setPersistenceStatus('saving');
+              return;
+            }
+            lastPersistedDatasetRef.current = dataset;
+            lastPersistedPreferencesRef.current = visualPreferences;
+            setPersistenceStatus('saved');
+            setPersistenceError(null);
+            return;
+          } catch (clearError) {
+            error = clearError;
+            failedOperation = 'clear';
           }
         }
         if (!active) return;
         persistenceReadyRef.current = true;
+        persistenceWritableRef.current = false;
         setPersistenceReady(true);
         if (generation !== persistenceGenerationRef.current) return;
-        persistenceEnabledRef.current = false;
-        setPersistenceEnabledState(false);
         setPersistenceStatus('error');
-        setPersistenceError(persistenceErrorMessage('read', error));
+        setPersistenceError(persistenceErrorMessage(failedOperation, error));
       });
     return () => {
       active = false;
@@ -300,13 +295,13 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (!persistenceReady || !persistenceEnabled) return;
+    if (!persistenceReady || !persistenceWritableRef.current) return;
     if (
       dataset === lastPersistedDatasetRef.current
       && visualPreferences === lastPersistedPreferencesRef.current
     ) return;
     scheduleWrite(dataset, visualPreferences);
-  }, [dataset, persistenceEnabled, persistenceReady, scheduleWrite, visualPreferences]);
+  }, [dataset, persistenceReady, scheduleWrite, visualPreferences]);
 
   const setResearchDesign = useCallback((design: ResearchDesign | null) => {
     researchDesignRef.current = design;
@@ -333,23 +328,20 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
   }, []);
 
   const clearSession = useCallback(() => {
-    disablePersistence();
-    setDataset(null);
+    clearPersistedSession();
     setDatasusSession(null);
     setMapSelection(null);
     setMapAnalysis(null);
     researchDesignRef.current = null;
     setResearchDesignState(null);
     setGuidedAnalysis(null);
-    setVisualPreferencesState({});
-  }, [disablePersistence, setDataset]);
+  }, [clearPersistedSession]);
 
   // hasData is derived on every render, never stored as its own state — the
   // leave-warning (plan 01-07) depends on this being current, not stale.
   // mapAnalysis alone does NOT set hasData (D-21 — dataset only on handoff).
   const hasData = dataset !== null || datasusSession !== null;
-  const hasPersistedCurrentDataset = persistenceEnabled
-    && persistenceStatus === 'saved'
+  const hasPersistedCurrentDataset = persistenceStatus === 'saved'
     && dataset === lastPersistedDatasetRef.current
     && visualPreferences === lastPersistedPreferencesRef.current;
   const hasUnsavedChanges = datasusSession !== null
@@ -365,7 +357,6 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
       guidedAnalysis,
       hasData,
       visualPreferences,
-      persistenceEnabled,
       persistenceReady,
       persistenceStatus,
       persistenceError,
@@ -377,7 +368,6 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
       setResearchDesign,
       setGuidedAnalysis: setGuidedAnalysisForCurrentDesign,
       setVisualPreferences,
-      setPersistenceEnabled,
       clearSession,
     }),
     [
@@ -389,7 +379,6 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
       guidedAnalysis,
       hasData,
       visualPreferences,
-      persistenceEnabled,
       persistenceReady,
       persistenceStatus,
       persistenceError,
@@ -397,7 +386,6 @@ export function SessionProvider({ children, storage }: SessionProviderProps) {
       setResearchDesign,
       setGuidedAnalysisForCurrentDesign,
       setVisualPreferences,
-      setPersistenceEnabled,
       clearSession,
     ],
   );
