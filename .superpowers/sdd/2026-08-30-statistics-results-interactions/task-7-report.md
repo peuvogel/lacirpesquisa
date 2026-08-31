@@ -115,3 +115,26 @@ Commit local:
 Arquivos incluídos: `src/app/Header.tsx`, `src/index.css`, `src/routes/estatistica/Sidebar.tsx` e `src/routes/estatistica/Sidebar.test.tsx`.
 
 Este relatório foi criado após a verificação e será incluído em um commit local separado. Não houve push, PR, deploy ou alteração da publicação GitHub Pages.
+
+## Fix round 1 — regressão direta do contrato CSS
+
+Finding addressed: the prior regression only checked the component marker class and could pass with the actual overlay rule removed or broken.
+
+Covering files:
+
+- `src/routes/estatistica/Sidebar.test.tsx`: reads the real `src/index.css` and asserts the narrow media query, exact `.lacir-stat-sidebar[data-state='expanded']` selector, `position: fixed`, `top: 4rem`, `z-index: 40`, and `max-width: 100vw` non-overflow safeguard.
+- `src/index.css`: adds `max-width: 100vw` to the mobile expanded overlay contract.
+
+TDD evidence: before the CSS declaration was added, the focused test failed with `expected ... to match /max-width:\s*100vw/`; after the declaration:
+
+```bash
+npx vitest run src/routes/estatistica/Sidebar.test.tsx && npm run typecheck
+```
+
+```text
+Test Files  1 passed (1)
+Tests       15 passed (15)
+npm run typecheck — passed (tsc --noEmit)
+```
+
+The round-1 changes are included in the local fix commit; no push, deploy, PR, or GitHub Pages modification was performed.

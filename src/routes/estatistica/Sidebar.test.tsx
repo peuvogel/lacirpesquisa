@@ -1,8 +1,16 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TEST_REGISTRY } from '@/features/tests/registry';
 import { Sidebar } from './Sidebar';
+
+const indexCss = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../../index.css'),
+  'utf-8',
+);
 
 function renderSidebar(overrides: Partial<Parameters<typeof Sidebar>[0]> = {}) {
   const onSelectTest = vi.fn();
@@ -145,5 +153,18 @@ describe('Sidebar', () => {
     expect(screen.getByRole('complementary', { name: 'Testes disponíveis' })).toHaveClass(
       'lacir-stat-sidebar',
     );
+  });
+
+  it('keeps the narrow expanded sidebar as a fixed non-overflowing overlay', () => {
+    const mobileOverlay = indexCss.match(
+      /@media\s*\(max-width:\s*980px\)[\s\S]*?\.lacir-stat-sidebar\[data-state='expanded'\][\s\S]*?\}/,
+    )?.[0];
+
+    expect(mobileOverlay).toBeDefined();
+    expect(mobileOverlay).toContain(".lacir-stat-sidebar[data-state='expanded']");
+    expect(mobileOverlay).toMatch(/position:\s*fixed/);
+    expect(mobileOverlay).toMatch(/top:\s*4rem/);
+    expect(mobileOverlay).toMatch(/z-index:\s*40/);
+    expect(mobileOverlay).toMatch(/max-width:\s*100vw/);
   });
 });
