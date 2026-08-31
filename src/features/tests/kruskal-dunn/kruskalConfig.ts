@@ -21,9 +21,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion =
-  'Há diferença na distribuição do desfecho entre os grupos (comparação por postos)?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Kruskal-Wallis',
@@ -69,5 +66,3 @@ export const KRUSKAL_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showMeanValues', label: 'Mostrar valor das medianas' },
   { id: 'showPValue', label: 'Mostrar p omnibus no gráfico' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

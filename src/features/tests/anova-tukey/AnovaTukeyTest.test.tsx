@@ -101,11 +101,12 @@ describe('AnovaTukeyTest', () => {
     expect(screen.getByText('Tipos de gráfico')).toBeInTheDocument();
     expect(document.getElementById('chart-type-heatmap')).toBeInTheDocument();
 
-    const prose = screen.getAllByText(/Observou-se|Não se observou|Pergunta analisada/i);
+    const prose = screen.getAllByText(/A ANOVA de uma via/i);
     expect(prose.length).toBeGreaterThan(0);
     prose.forEach((node) => {
       expect(node.textContent ?? '').not.toMatch(/<[^>]+>/);
     });
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows soft reset alert when column roles change after confirm', async () => {

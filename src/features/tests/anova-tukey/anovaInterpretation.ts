@@ -1,24 +1,19 @@
 import { fmtNumber, fmtP } from '@/shared/format';
 import type { AnovaAnalysisResult } from './anovaEngine';
 
-const DEFAULT_QUESTION = 'Há diferença entre as médias dos grupos para o desfecho analisado?';
-
 export function buildAnovaInterpretation(
   result: AnovaAnalysisResult,
   alpha: number,
   headers: { outcome: string; group: string },
   groupCount: number,
-  question?: string,
 ): string[] {
   const significant = result.p < alpha;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
 
   const lead = significant
     ? `A ANOVA de uma via indicou diferença estatisticamente significativa entre os grupos de ${headers.group} para ${headers.outcome}.`
     : `A ANOVA de uma via não encontrou diferença estatisticamente significativa entre as médias dos grupos de ${headers.group} para ${headers.outcome}.`;
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || DEFAULT_QUESTION}.`,
     `Resultado omnibus: F = ${fmtNumber(result.f, 3)}, gl entre = ${result.dfBetween}, gl dentro = ${result.dfWithin}, p = ${fmtP(result.p)}.`,
     `Tamanho de efeito: η² = ${fmtNumber(result.eta2, 3)} (${fmtNumber(result.eta2 * 100, 1)}% da variância explicada pelo fator).`,
     `Grupos analisados: ${groupCount}.`,

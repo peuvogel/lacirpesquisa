@@ -25,8 +25,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion = 'As duas variáveis estão associadas?';
-
 export const didacticCards: DidacticCard[] = legacyConfig.didacticCards.map((card) => ({
   title: card.title,
   body: card.text,
@@ -64,5 +62,3 @@ export const CORRELACAO_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'highlightOutliers', label: 'Destacar outliers / gaps de posto' },
   { id: 'showEquation', label: 'Mostrar equação / coeficiente no gráfico' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

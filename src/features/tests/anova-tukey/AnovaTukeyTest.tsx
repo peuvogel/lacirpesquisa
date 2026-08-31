@@ -17,7 +17,6 @@ import {
 } from './AnovaConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
 } from './anovaConfig';
 import {
@@ -116,7 +115,6 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -204,7 +202,6 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
       alphaNumber,
       dataset.headers,
       dataset.groupOrder.length,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
     );
     const chartPresets = buildAnovaChartPresetsForOutput(engineOutput);
 
@@ -237,7 +234,7 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
         />
       </div>
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, alpha]);
 
   return (
     <FlowSteps
@@ -264,8 +261,6 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onRoleAdjust={handleRoleAdjust}
             onConfirm={handleConfigureConfirm}

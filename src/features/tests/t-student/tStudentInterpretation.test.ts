@@ -55,18 +55,17 @@ describe('tStudentInterpretation', () => {
     const result = runIndependentWelch(dataset.g1, dataset.g2);
     const alpha = 0.05;
     const labels = dataset.labels;
-    const question = 'As médias dos dois grupos são diferentes?';
-
     const legacyHtml = buildManualInterpretation(
       safeWelch(dataset.g1, dataset.g2, legacyStatsOracle),
       alpha,
       labels,
-      question,
+      '',
       legacyUtils,
     );
-    const paragraphs = buildTStudentInterpretation(result, alpha, labels, question);
+    const paragraphs = buildTStudentInterpretation(result, alpha, labels);
 
     expect(sameSignificanceConclusion(legacyHtml, paragraphs, alpha, result.p)).toBe(true);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
   });
 
   it('includes key stats at display precision (D-08)', () => {
@@ -85,6 +84,7 @@ describe('tStudentInterpretation', () => {
     const paragraphs = buildTStudentInterpretation(result, 0.05, dataset.labels);
 
     const joined = paragraphs.join(' ');
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtP(result.p));
     expect(joined).toContain(fmtNumber(result.t, 3));
     expect(joined).toContain(fmtSigned(result.diff, 2));
@@ -105,7 +105,7 @@ describe('tStudentInterpretation', () => {
       mode: 'independent',
     });
     const result = runIndependentWelch(dataset.g1, dataset.g2);
-    const paragraphs = buildTStudentInterpretation(result, 0.05, dataset.labels, 'Teste?');
+    const paragraphs = buildTStudentInterpretation(result, 0.05, dataset.labels);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);
@@ -117,6 +117,7 @@ describe('tStudentInterpretation', () => {
     const paragraphs = buildTStudentInterpretation(result, 0.05, ['Antes', 'Depois']);
     expect(paragraphs.join(' ')).toContain('médias pareadas');
     expect(paragraphs.join(' ')).not.toContain('médias independentes');
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
   });
 });
 

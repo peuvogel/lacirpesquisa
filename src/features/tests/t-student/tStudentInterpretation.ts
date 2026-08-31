@@ -1,9 +1,6 @@
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import { classifyEffect, type TStudentResult } from './tStudentEngine';
 
-const DEFAULT_INDEPENDENT_QUESTION = 'Comparação entre duas médias independentes';
-const DEFAULT_PAIRED_QUESTION = 'Comparação entre duas médias pareadas';
-
 function stripHtml(value: string): string {
   return value.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '');
 }
@@ -15,24 +12,19 @@ export function buildTStudentInterpretation(
   result: TStudentResult,
   alpha: number,
   labels: [string, string],
-  question?: string,
 ): string[] {
   const effectClass = classifyEffect(result.d);
   const higherGroup = result.diff >= 0 ? labels[0] : labels[1];
   const diffAbs = Math.abs(result.diff);
   const significant = result.p < alpha;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
-  const defaultQuestion = result.testKind === 'paired'
-    ? DEFAULT_PAIRED_QUESTION
-    : DEFAULT_INDEPENDENT_QUESTION;
+  const comparisonKind = result.testKind === 'paired' ? 'médias pareadas' : 'médias independentes';
 
   const lead = significant
     ? `Observou-se diferença estatisticamente significativa entre a média de ${labels[0]} e ${labels[1]}. A média foi maior em ${higherGroup}, com diferença média de ${fmtNumber(diffAbs, 2)} unidades.`
     : `Não se observou diferença estatisticamente significativa entre as médias de ${labels[0]} e ${labels[1]}. Ainda assim, ${higherGroup} apresentou média numericamente maior, com diferença média de ${fmtNumber(diffAbs, 2)} unidades.`;
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || defaultQuestion}.`,
-    `Resultado principal: t = ${fmtNumber(result.t, 3)}, gl = ${fmtNumber(result.df, 2)}, p = ${fmtP(result.p)}.`,
+    `Resultado principal (${comparisonKind}): t = ${fmtNumber(result.t, 3)}, gl = ${fmtNumber(result.df, 2)}, p = ${fmtP(result.p)}.`,
     `Tamanho de efeito: ${effectClass}. Em termos práticos, isso indica uma magnitude ${effectClass} da diferença.`,
     `Grupo com maior média: ${higherGroup}.`,
     `Diferença observada: ${fmtSigned(result.diff, 2)} unidades.`,

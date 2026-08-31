@@ -97,11 +97,12 @@ describe('TStudentTest', () => {
     expect(screen.getByRole('button', { name: 'Editar Diferença de médias (IC95%)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Editar Distribuição por grupo' })).toBeInTheDocument();
 
-    const prose = screen.getAllByText(/Observou-se|Não se observou|Pergunta analisada/i);
+    const prose = screen.getAllByText(/Observou-se|Não se observou/i);
     expect(prose.length).toBeGreaterThan(0);
     prose.forEach((node) => {
       expect(node.textContent ?? '').not.toMatch(/<[^>]+>/);
     });
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows soft reset alert when switching to paired after confirm', async () => {

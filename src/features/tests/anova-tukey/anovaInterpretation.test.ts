@@ -32,6 +32,7 @@ describe('anovaInterpretation', () => {
     const paragraphs = buildAnovaInterpretation(result, 0.05, dataset.headers, dataset.groupOrder.length);
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtNumber(result.f, 3));
     expect(joined).toContain(fmtP(result.p));
     expect(joined).toContain(fmtNumber(result.eta2, 3));
@@ -42,6 +43,7 @@ describe('anovaInterpretation', () => {
     const paragraphs = buildAnovaInterpretation(result, 0.05, dataset.headers, dataset.groupOrder.length);
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     if (result.p < 0.05) {
       expect(joined).toMatch(/Tukey|par a par/i);
     }
@@ -49,7 +51,7 @@ describe('anovaInterpretation', () => {
 
   it('returns string[] with no HTML (T-03-03-01)', () => {
     const { dataset, result } = loadResult();
-    const paragraphs = buildAnovaInterpretation(result, 0.05, dataset.headers, dataset.groupOrder.length, 'Teste?');
+    const paragraphs = buildAnovaInterpretation(result, 0.05, dataset.headers, dataset.groupOrder.length);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);

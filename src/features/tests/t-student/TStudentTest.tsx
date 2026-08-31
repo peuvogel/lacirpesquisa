@@ -14,7 +14,6 @@ import {
 } from './TStudentConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
   type TStudentMode,
 } from './tStudentConfig';
@@ -71,7 +70,6 @@ export function TStudentTest() {
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [mode, setMode] = useState<TStudentMode>('independent');
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -153,12 +151,7 @@ export function TStudentTest() {
     const result = runAnalysis(mode, dataset);
     const engineOutput = toEngineOutput(dataset, result);
     const metrics = buildMetrics(engineOutput.result, engineOutput.labels);
-    const interpretation = buildTStudentInterpretation(
-      engineOutput.result,
-      alphaNumber,
-      engineOutput.labels,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildTStudentInterpretation(engineOutput.result, alphaNumber, engineOutput.labels);
 
     return (
       <ResultsPanelWithCustomizer
@@ -174,7 +167,7 @@ export function TStudentTest() {
         actions={<ClearDataButton onCleared={handleClearData} />}
       />
     );
-  }, [confirmedDataset, loadedInput, mode, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, mode, alpha]);
 
   return (
     <FlowSteps
@@ -203,8 +196,6 @@ export function TStudentTest() {
             onModeChange={handleModeChange}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onConfirm={handleConfigureConfirm}
             document={analysisTable.table ?? undefined}

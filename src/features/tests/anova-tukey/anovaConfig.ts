@@ -21,9 +21,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion =
-  'Há diferença entre as médias dos grupos para o desfecho analisado?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar ANOVA de uma via',
@@ -69,5 +66,3 @@ export const ANOVA_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showMeanValues', label: 'Mostrar valor das médias' },
   { id: 'showPValue', label: 'Mostrar p omnibus no gráfico' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

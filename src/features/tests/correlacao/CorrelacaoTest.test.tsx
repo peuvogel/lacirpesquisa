@@ -82,11 +82,12 @@ describe('CorrelacaoTest', () => {
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Baixar / }).length).toBeGreaterThanOrEqual(2);
 
-    const prose = screen.getAllByText(/Pearson|Spearman|Pergunta analisada/i);
+    const prose = screen.getAllByText(/Pearson indicou associação linear|Pearson não encontrou evidência estatística robusta/i);
     expect(prose.length).toBeGreaterThan(0);
     prose.forEach((node) => {
       expect(node.textContent ?? '').not.toMatch(/<[^>]+>/);
     });
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows soft reset alert when switching to Spearman after confirm', async () => {

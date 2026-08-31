@@ -52,7 +52,6 @@ describe('correlacaoInterpretation', () => {
   it('matches legacy significance conclusion at α=0.05 for Pearson (D-07, D-10)', () => {
     const output = loadOutput('pearson');
     const alpha = 0.05;
-    const question = 'As duas variáveis estão associadas?';
 
     const legacyHtml = buildPearsonInterpretationHtml(
       { headers: output.headers },
@@ -62,19 +61,19 @@ describe('correlacaoInterpretation', () => {
       [],
       legacyUtils,
       alpha,
-      question,
+      '',
     );
-    const paragraphs = buildCorrelacaoInterpretation(output, alpha, question);
+    const paragraphs = buildCorrelacaoInterpretation(output, alpha);
 
     expect(
       sameSignificanceConclusion(legacyHtml, paragraphs, alpha, output.pearson.p, 'pearson'),
     ).toBe(true);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
   });
 
   it('matches legacy significance conclusion at α=0.05 for Spearman (D-07, D-10)', () => {
     const output = loadOutput('spearman');
     const alpha = 0.05;
-    const question = 'As duas variáveis estão associadas?';
 
     const legacyHtml = buildSpearmanInterpretationHtml(
       { headers: output.headers },
@@ -84,13 +83,14 @@ describe('correlacaoInterpretation', () => {
       minimalRankSummary,
       legacyUtils,
       alpha,
-      question,
+      '',
     );
-    const paragraphs = buildCorrelacaoInterpretation(output, alpha, question);
+    const paragraphs = buildCorrelacaoInterpretation(output, alpha);
 
     expect(
       sameSignificanceConclusion(legacyHtml, paragraphs, alpha, output.spearman.p, 'spearman'),
     ).toBe(true);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
   });
 
   it('includes key stats at display precision (D-08)', () => {
@@ -98,6 +98,7 @@ describe('correlacaoInterpretation', () => {
     const paragraphs = buildCorrelacaoInterpretation(output, 0.05);
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtSigned(output.pearson.coef, 3));
     expect(joined).toContain(fmtP(output.pearson.p));
     expect(joined).toContain(String(output.pearson.n));
@@ -105,7 +106,7 @@ describe('correlacaoInterpretation', () => {
 
   it('returns string[] with no HTML tags or entities (T-02-01)', () => {
     const output = loadOutput('pearson');
-    const paragraphs = buildCorrelacaoInterpretation(output, 0.05, 'Teste?');
+    const paragraphs = buildCorrelacaoInterpretation(output, 0.05);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);

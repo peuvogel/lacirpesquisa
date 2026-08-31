@@ -19,7 +19,6 @@ import {
   exampleText,
   getMannWhitneyTabularOptions,
   LONG_TABULAR_OPTIONS,
-  MAX_RESEARCH_QUESTION_LENGTH,
   type MannWhitneyFormat,
 } from './mannWhitneyConfig';
 import {
@@ -82,7 +81,6 @@ export function MannWhitneyTest() {
   const [loadedInput, setLoadedInput] = useState<MannWhitneyLoadedInput | null>(() => initialLoadedFromSession(sessionDataset, 'long'));
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
   const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
   const formatTableIdRef = useRef<string | null>(null);
@@ -211,12 +209,7 @@ export function MannWhitneyTest() {
       );
     }
     const output = toEngineOutput(dataset, result);
-    const interpretation = buildMannWhitneyInterpretation(
-      result,
-      Number(alpha),
-      dataset.labels,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildMannWhitneyInterpretation(result, Number(alpha), dataset.labels);
     return (
       <ResultsPanelWithCustomizer
         title="Mann–Whitney: resultados"
@@ -231,7 +224,7 @@ export function MannWhitneyTest() {
         actions={<ClearDataButton onCleared={handleClearData} />}
       />
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion, format]);
+  }, [confirmedDataset, loadedInput, alpha, format]);
 
   return (
     <FlowSteps
@@ -257,8 +250,6 @@ export function MannWhitneyTest() {
           loadedInput={loadedInput}
           alpha={alpha}
           onAlphaChange={setAlpha}
-          researchQuestion={researchQuestion}
-          onResearchQuestionChange={setResearchQuestion}
           showSoftReset={showSoftReset}
           format={format}
           onFormatChange={handleFormatChange}

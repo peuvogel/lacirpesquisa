@@ -14,7 +14,6 @@ import {
 } from './CorrelacaoConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
   type CorrelacaoMethod,
 } from './correlacaoConfig';
@@ -70,7 +69,6 @@ export function CorrelacaoTest() {
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [method, setMethod] = useState<CorrelacaoMethod>('pearson');
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -150,11 +148,7 @@ export function CorrelacaoTest() {
 
     const engineOutput = toEngineOutput(dataset, method);
     const metrics = buildMetrics(engineOutput.result, method, engineOutput.headers);
-    const interpretation = buildCorrelacaoInterpretation(
-      engineOutput,
-      alphaNumber,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildCorrelacaoInterpretation(engineOutput, alphaNumber);
 
     return (
       <ResultsPanelWithCustomizer
@@ -174,7 +168,7 @@ export function CorrelacaoTest() {
         actions={<ClearDataButton onCleared={handleClearData} />}
       />
     );
-  }, [confirmedDataset, loadedInput, method, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, method, alpha]);
 
   return (
     <FlowSteps
@@ -203,8 +197,6 @@ export function CorrelacaoTest() {
             onMethodChange={handleMethodChange}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onConfirm={handleConfigureConfirm}
             document={analysisTable.table ?? undefined} testId="correlacao"

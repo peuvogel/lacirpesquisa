@@ -70,11 +70,12 @@ describe('KruskalDunnTest', () => {
     expect(screen.getByText('Tipos de gráfico')).toBeInTheDocument();
     expect(document.getElementById('chart-type-heatmap')).toBeInTheDocument();
 
-    const prose = screen.getAllByText(/Kruskal-Wallis|Pergunta analisada/i);
+    const prose = screen.getAllByText(/O teste de Kruskal-Wallis/i);
     expect(prose.length).toBeGreaterThan(0);
     prose.forEach((node) => {
       expect(node.textContent ?? '').not.toMatch(/<[^>]+>/);
     });
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows assumption nudge strip with rank-alternative info', async () => {

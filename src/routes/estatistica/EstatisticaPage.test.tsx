@@ -187,6 +187,25 @@ describe('EstatisticaPage', () => {
   });
 
   it.each([
+    ['t-student', /t de Student/i],
+    ['anova-tukey', /ANOVA de uma via/i],
+    ['kruskal-dunn', /Kruskal-Wallis/i],
+    ['mann-whitney', /Mann–Whitney|Mann-Whitney/i],
+    ['correlacao', /Correlação/i],
+  ] as const)('does not render a research-question field in %s', async (testId, accessibleName) => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    if (testId !== 't-student') {
+      await user.click(screen.getByRole('button', { name: accessibleName }));
+    }
+
+    expect(
+      screen.queryByRole('textbox', { name: 'Pergunta de pesquisa' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
     ['qui-quadrado', /Qui-quadrado/i],
     ['anova-tukey', /ANOVA de uma via/i],
     ['kruskal-dunn', /Kruskal-Wallis/i],

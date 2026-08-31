@@ -2,8 +2,6 @@ import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import { classifyDirection, classifyStrength } from './correlacaoEngineHelpers';
 import type { CorrelacaoEngineOutput } from './correlacaoEngine';
 
-const DEFAULT_QUESTION = 'As duas variáveis estão associadas?';
-
 function formatCi(ci: [number, number]): string {
   if (!ci.every(Number.isFinite)) return 'IC95% indisponível';
   return `${fmtNumber(ci[0], 3)} a ${fmtNumber(ci[1], 3)}`;
@@ -46,10 +44,8 @@ function stripHtml(value: string): string {
 export function buildCorrelacaoInterpretation(
   output: CorrelacaoEngineOutput,
   alpha: number,
-  question?: string,
 ): string[] {
   const { headers, pearson, spearman, method, labels, outlierFlags } = output;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
   const active = method === 'spearman' ? spearman : pearson;
   const direction = classifyDirection(active.coef);
   const strength = classifyStrength(active.coef);
@@ -62,7 +58,6 @@ export function buildCorrelacaoInterpretation(
       : `Spearman não encontrou evidência estatística robusta de associação monótona entre ${headers[0]} e ${headers[1]} (ρ = ${fmtSigned(spearman.coef, 3)}; p ${formatPValue(spearman.p)}).`;
 
     const bullets = [
-      `Pergunta analisada: ${trimmedQuestion || DEFAULT_QUESTION}.`,
       `Força e direção monótona: ${strength}, ${direction}, com IC95% de ρ em ${formatCi(spearman.ci)}.`,
       `Comparação didática: ${compareMessage(pearson, spearman)}`,
       `Amostra: n = ${spearman.n} pares válidos.`,
@@ -80,7 +75,6 @@ export function buildCorrelacaoInterpretation(
     : 'Não apareceram outliers fortes na triagem inicial.';
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || DEFAULT_QUESTION}.`,
     `Força e direção: ${strength}, ${direction}, com IC95% de r em ${formatCi(pearson.ci)}.`,
     `Inclinação linear estimada: ${fmtSigned(pearson.slope, 3)} em ${headers[1]} para cada 1 unidade em ${headers[0]}.`,
     `Comparação didática: ${compareMessage(pearson, spearman)}`,

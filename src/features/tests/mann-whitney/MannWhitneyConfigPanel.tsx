@@ -1,7 +1,6 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
-import { ResearchQuestionField } from '@/features/tests/shared/ResearchQuestionField';
 import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
 import { ModeChoiceCard } from '@/features/tests/shared/ModeChoiceCard';
 import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
@@ -10,7 +9,6 @@ import type { PreparedGroupedSamples } from '@/shared/data-input/groupedSamples'
 import type { TableDocument } from '@/shared/data-input/tableDocument';
 import type { ImportWarning } from '@/shared/data-input/types';
 import {
-  defaultQuestion,
   didacticCards,
   getMannWhitneyTabularOptions,
   MANN_WHITNEY_FORMAT_OPTIONS,
@@ -28,8 +26,6 @@ export interface MannWhitneyConfigPanelProps {
   loadedInput: MannWhitneyLoadedInput;
   alpha: AlphaValue;
   onAlphaChange: (value: AlphaValue) => void;
-  researchQuestion: string;
-  onResearchQuestionChange: (value: string) => void;
   showSoftReset: boolean;
   format: MannWhitneyFormat;
   onFormatChange: (format: MannWhitneyFormat) => void;
@@ -52,8 +48,6 @@ export function MannWhitneyConfigPanel({
   loadedInput,
   alpha,
   onAlphaChange,
-  researchQuestion,
-  onResearchQuestionChange,
   showSoftReset,
   format,
   onFormatChange,
@@ -85,14 +79,7 @@ export function MannWhitneyConfigPanel({
         value={format}
         onChange={(value) => onFormatChange(value as MannWhitneyFormat)}
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        <AlphaSelector value={alpha} onChange={onAlphaChange} />
-        <ResearchQuestionField
-          value={researchQuestion}
-          onChange={onResearchQuestionChange}
-          placeholder={defaultQuestion}
-        />
-      </div>
+      <AlphaSelector value={alpha} onChange={onAlphaChange} />
       <DidacticCards cards={didacticCards} />
       <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-foreground">
         <input

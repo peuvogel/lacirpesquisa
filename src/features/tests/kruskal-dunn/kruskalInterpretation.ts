@@ -1,25 +1,19 @@
 import { fmtNumber, fmtP } from '@/shared/format';
 import type { KruskalAnalysisResult } from './kruskalEngine';
 
-const DEFAULT_QUESTION =
-  'Há diferença na distribuição do desfecho entre os grupos (comparação por postos)?';
-
 export function buildKruskalInterpretation(
   result: KruskalAnalysisResult,
   alpha: number,
   headers: { outcome: string; group: string },
   groupCount: number,
-  question?: string,
 ): string[] {
   const significant = result.p < alpha;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
 
   const lead = significant
     ? `O teste de Kruskal-Wallis indicou diferença estatisticamente significativa na distribuição de ${headers.outcome} entre os grupos de ${headers.group} (comparação por postos).`
     : `O teste de Kruskal-Wallis não encontrou diferença estatisticamente significativa na distribuição de ${headers.outcome} entre os grupos de ${headers.group} (comparação por postos).`;
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || DEFAULT_QUESTION}.`,
     `Resultado omnibus: H = ${fmtNumber(result.h, 3)}, gl = ${result.df}, p = ${fmtP(result.p)}.`,
     `Grupos analisados: ${groupCount}.`,
   ];

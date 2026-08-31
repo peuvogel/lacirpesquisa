@@ -17,7 +17,6 @@ import {
 } from './KruskalConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
 } from './kruskalConfig';
 import {
@@ -116,7 +115,6 @@ export function KruskalDunnTest({
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -201,7 +199,6 @@ export function KruskalDunnTest({
       alphaNumber,
       dataset.headers,
       dataset.groupOrder.length,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
     );
     const chartPresets = buildKruskalChartPresetsForOutput(engineOutput);
 
@@ -234,7 +231,7 @@ export function KruskalDunnTest({
         />
       </div>
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, alpha]);
 
   return (
     <FlowSteps
@@ -261,8 +258,6 @@ export function KruskalDunnTest({
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onRoleAdjust={handleRoleAdjust}
             onConfirm={handleConfigureConfirm}

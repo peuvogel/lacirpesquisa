@@ -60,8 +60,6 @@ export function getMannWhitneyTabularOptions(format: MannWhitneyFormat): Tabular
   return format === 'wide' ? WIDE_TABULAR_OPTIONS : LONG_TABULAR_OPTIONS;
 }
 
-export const defaultQuestion = 'As distribuições do desfecho diferem entre os dois grupos independentes?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Mann–Whitney',
@@ -93,5 +91,3 @@ export const exampleText = `desfecho;grupo
 export const MANN_WHITNEY_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showPValue', label: 'Mostrar valor de p' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

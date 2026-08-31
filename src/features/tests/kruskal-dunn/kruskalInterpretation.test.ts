@@ -37,6 +37,7 @@ describe('kruskalInterpretation', () => {
     );
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtNumber(result.h, 3));
     expect(joined).toContain(fmtP(result.p));
     expect(joined).toContain(String(result.df));
@@ -52,6 +53,7 @@ describe('kruskalInterpretation', () => {
     );
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     if (result.p < 0.05) {
       expect(joined).toMatch(/Dunn|par a par/i);
     }
@@ -64,7 +66,6 @@ describe('kruskalInterpretation', () => {
       0.05,
       dataset.headers,
       dataset.groupOrder.length,
-      'Teste?',
     );
 
     expect(Array.isArray(paragraphs)).toBe(true);
