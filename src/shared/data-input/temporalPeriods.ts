@@ -168,6 +168,28 @@ function parseDecimalPeriod(raw: string): { year: number; slot: number } | null 
   return { year: Number(match[1]), slot: Number(match[2]) };
 }
 
+function parseCalendarCandidate(raw: string, frequency: CalendarFrequency): ParsedCalendarToken | null {
+  if (frequency === 'annual') return parseAnnual(raw);
+  if (frequency === 'monthly') return parseMonth(raw);
+
+  const decimal = parseDecimalPeriod(raw);
+  if (frequency === 'semiannual') {
+    const explicit = parseExplicitSemester(raw);
+    if (explicit) return explicit;
+    if (!decimal || decimal.slot > 2) return null;
+    return { ...decimal, frequency, canonicalLabel: `${decimal.year}.${decimal.slot}` };
+  }
+
+  const explicit = parseExplicitQuarter(raw);
+  if (explicit) return explicit;
+  if (!decimal) return null;
+  return { ...decimal, frequency, canonicalLabel: `${decimal.year}.Q${decimal.slot}` };
+}
+
+function parseCalendarColumn(rawValues: readonly string[], frequency: CalendarFrequency): ParsedCalendarToken[] | null {
+  return allParsed(rawValues, (raw) => parseCalendarCandidate(raw, frequency));
+}
+
 function parseNumeric(raw: string): number | null {
   const value = raw.trim();
   if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)) return null;
@@ -188,16 +210,19 @@ function isMonthEnd(parts: DateParts): boolean {
   return parts.day === new Date(Date.UTC(parts.year, parts.month, 0)).getUTCDate();
 }
 
-function isConfirmedMonthlyDateCadence(dates: readonly DateParts[]): boolean {
-  if (dates.length < 3) return false;
+function dateCadence(dates: readonly DateParts[]): CalendarFrequency | null {
+  if (dates.length < 2) return null;
   const day = dates[0].day;
   const equalDayOfMonth = dates.every((date) => date.day === day);
-  if (!equalDayOfMonth && !dates.every(isMonthEnd)) return false;
-  return dates.every((date, index) => {
-    if (index === 0) return true;
-    const previous = dates[index - 1];
-    return date.year * 12 + date.month === previous.year * 12 + previous.month + 1;
-  });
+  if (!equalDayOfMonth && !dates.every(isMonthEnd)) return null;
+
+  const monthIndexes = dates.map((date) => date.year * 12 + date.month - 1);
+  const step = monthIndexes[1] - monthIndexes[0];
+  const frequency = ({ 1: 'monthly', 3: 'quarterly', 6: 'semiannual', 12: 'annual' } as const)[step];
+  if (!frequency) return null;
+  return monthIndexes.slice(1).every((value, index) => value - monthIndexes[index] === step)
+    ? frequency
+    : null;
 }
 
 function issue(code: TemporalIssue['code'], severity: TemporalIssue['severity'], message: string, rowNumbers?: number[]): TemporalIssue {
@@ -248,11 +273,11 @@ function buildSequenceIssues(values: readonly ResolvedTemporalValue[], frequency
     const previous = ordered[index - 1];
     const current = ordered[index];
     const delta = current.periodIndex - previous.periodIndex;
-    if (delta === expectedStep) continue;
+    if (delta <= 0 || delta === expectedStep) continue;
     const missing = frequency === 'annual' || frequency === 'semiannual' || frequency === 'quarterly' || frequency === 'monthly'
       ? `Período ausente: ${calendarLabelForIndex(previous.periodIndex + 1, frequency)}.`
       : `Intervalo irregular entre ${issueLabel(previous, frequency)} e ${issueLabel(current, frequency)}.`;
-    issues.push(issue('missing_period', 'warning', missing, [previous.rowNumber, current.rowNumber]));
+    issues.push(issue('missing_period', 'error', missing, [previous.rowNumber, current.rowNumber]));
   }
 
   return issues;
@@ -280,7 +305,7 @@ function resolution(
   issues: TemporalIssue[],
 ): TemporalColumnResolution {
   return {
-    status,
+    status: status === 'resolved' && issues.some((item) => item.severity === 'error') ? 'invalid' : status,
     mode,
     frequency,
     frequencyLabel: frequency ? frequencyLabel(frequency) : 'Não reconhecida',
@@ -315,11 +340,17 @@ function resolveCalendar(
 }
 
 function resolveDaily(rawValues: readonly string[], mode: TemporalMode, dates: readonly DateParts[]): TemporalColumnResolution {
-  if (isConfirmedMonthlyDateCadence(dates)) {
+  const cadence = dateCadence(dates);
+  if (cadence) {
     const values = dates.map((date, index) => calendarValue(
-      rawValues[index], index + 1, 'monthly', date.year, date.month, `${date.year}-${padded(date.month)}`,
+      rawValues[index],
+      index + 1,
+      cadence,
+      date.year,
+      cadence === 'annual' ? 1 : cadence === 'semiannual' ? Math.floor((date.month - 1) / 6) + 1 : cadence === 'quarterly' ? Math.floor((date.month - 1) / 3) + 1 : date.month,
+      cadence === 'annual' ? String(date.year) : cadence === 'semiannual' ? `${date.year}.${Math.floor((date.month - 1) / 6) + 1}` : cadence === 'quarterly' ? `${date.year}.Q${Math.floor((date.month - 1) / 3) + 1}` : `${date.year}-${padded(date.month)}`,
     ));
-    return resolution('resolved', mode, 'monthly', 'annualized', values, buildSequenceIssues(values, 'monthly'));
+    return resolution('resolved', mode, cadence, 'annualized', values, buildSequenceIssues(values, cadence));
   }
 
   const values = dates.map((date, index) => {
@@ -369,6 +400,24 @@ export function detectTemporalColumn(
   mode: TemporalMode = 'auto',
 ): TemporalColumnResolution {
   if (mode === 'order') {
+    if (rawValues.length === 0) {
+      return resolution('invalid', mode, 'order', 'observed-interval', [], [
+        issue('invalid_token', 'error', 'A coluna temporal não contém valores.'),
+      ]);
+    }
+    const blankRows = rawValues.flatMap((raw, index) => raw.trim() ? [] : [index + 1]);
+    if (blankRows.length > 0) {
+      return resolution('invalid', mode, 'order', 'observed-interval', rawValues.map((raw, index) => (
+        raw.trim() ? {
+          raw,
+          label: raw.trim(),
+          canonicalLabel: raw.trim(),
+          periodIndex: index,
+          coordinate: index,
+          rowNumber: index + 1,
+        } : null
+      )), [issue('invalid_token', 'error', 'A coluna de ordem contém valores vazios.', blankRows)]);
+    }
     const values = rawValues.map((raw, index) => ({
       raw,
       label: raw.trim(),
@@ -395,19 +444,11 @@ export function detectTemporalColumn(
     return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('annual', 'annualized');
   }
   if (mode === 'semiannual') {
-    const explicit = allParsed(rawValues, parseExplicitSemester);
-    const decimal = allParsed(rawValues, parseDecimalPeriod);
-    const parsed = explicit ?? (decimal?.every((value) => value.slot <= 2)
-      ? decimal.map((value) => ({ ...value, frequency: 'semiannual' as const, canonicalLabel: `${value.year}.${value.slot}` }))
-      : null);
+    const parsed = parseCalendarColumn(rawValues, 'semiannual');
     return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('semiannual', 'annualized');
   }
   if (mode === 'quarterly') {
-    const explicit = allParsed(rawValues, parseExplicitQuarter);
-    const decimal = allParsed(rawValues, parseDecimalPeriod);
-    const parsed = explicit ?? (decimal
-      ? decimal.map((value) => ({ ...value, frequency: 'quarterly' as const, canonicalLabel: `${value.year}.Q${value.slot}` }))
-      : null);
+    const parsed = parseCalendarColumn(rawValues, 'quarterly');
     return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('quarterly', 'annualized');
   }
   if (mode === 'monthly') {
@@ -429,36 +470,35 @@ export function detectTemporalColumn(
   const months = allParsed(rawValues, parseMonth);
   if (months) return resolveCalendar(rawValues, mode, months);
 
-  const semesters = allParsed(rawValues, parseExplicitSemester);
-  if (semesters) return resolveCalendar(rawValues, mode, semesters);
-
-  const quarters = allParsed(rawValues, parseExplicitQuarter);
-  if (quarters) return resolveCalendar(rawValues, mode, quarters);
-
   const years = allParsed(rawValues, parseAnnual);
   if (years) return resolveCalendar(rawValues, mode, years);
 
+  const semesters = parseCalendarColumn(rawValues, 'semiannual');
+  const quarters = parseCalendarColumn(rawValues, 'quarterly');
   const decimals = allParsed(rawValues, parseDecimalPeriod);
-  if (decimals) {
-    if (decimals.every((value) => value.slot <= 2)) {
-      if (hasSemesterHint(header) || decimalSemesterHasRollover(decimals)) {
-        return resolveCalendar(rawValues, mode, decimals.map((value) => ({
-          ...value,
-          frequency: 'semiannual' as const,
-          canonicalLabel: `${value.year}.${value.slot}`,
-        })));
-      }
-      return resolution('ambiguous', mode, null, 'observed-interval', rawValues.map(() => null), [
-        issue('ambiguous_frequency', 'warning', 'Rótulos decimais podem indicar semestres ou valores numéricos.'),
-      ]);
-    }
-    if (hasQuarterHint(header)) {
-      return resolveCalendar(rawValues, mode, decimals.map((value) => ({
-        ...value,
-        frequency: 'quarterly' as const,
-        canonicalLabel: `${value.year}.Q${value.slot}`,
-      })));
-    }
+  const semesterAllowed = semesters !== null && (
+    rawValues.some((raw) => parseExplicitSemester(raw) !== null)
+    || hasSemesterHint(header)
+    || (decimals !== null && decimalSemesterHasRollover(decimals))
+  );
+  const quarterAllowed = quarters !== null && (
+    rawValues.some((raw) => parseExplicitQuarter(raw) !== null)
+    || hasQuarterHint(header)
+  );
+
+  if (hasQuarterHint(header) && quarterAllowed) return resolveCalendar(rawValues, mode, quarters!);
+  if (hasSemesterHint(header) && semesterAllowed) return resolveCalendar(rawValues, mode, semesters!);
+  if (semesterAllowed && !quarterAllowed) return resolveCalendar(rawValues, mode, semesters!);
+  if (quarterAllowed && !semesterAllowed) return resolveCalendar(rawValues, mode, quarters!);
+  if (semesterAllowed && quarterAllowed) {
+    return resolution('ambiguous', mode, null, 'observed-interval', rawValues.map(() => null), [
+      issue('ambiguous_frequency', 'warning', 'A coluna sustenta mais de uma frequência temporal.'),
+    ]);
+  }
+  if (semesters !== null && decimals !== null && decimals.every((value) => value.slot <= 2)) {
+    return resolution('ambiguous', mode, null, 'observed-interval', rawValues.map(() => null), [
+      issue('ambiguous_frequency', 'warning', 'Rótulos decimais podem indicar semestres ou valores numéricos.'),
+    ]);
   }
 
   const numbers = allParsed(rawValues, parseNumeric);
