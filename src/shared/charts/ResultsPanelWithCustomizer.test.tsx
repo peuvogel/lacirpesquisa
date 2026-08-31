@@ -133,6 +133,18 @@ describe('ResultsPanelWithCustomizer sizing and expansion', () => {
     expect(buttons.at(-1)).toHaveAccessibleName('Copiar tudo');
   });
 
+  it('keeps the main chart card focusable with editing controls inside it', () => {
+    renderPanel();
+
+    const chart = screen.getByRole('img', { name: 'Médias por grupo' });
+    const chartCard = chart.closest('.lacir-chart-card');
+    expect(chartCard).toHaveAttribute('tabindex', '0');
+    expect(chart.closest('.lacir-chart-focus')).not.toBeNull();
+    expect(within(chartCard as HTMLElement).getByRole('button', { name: 'Editar Médias por grupo' })).toBeInTheDocument();
+    expect(within(chartCard as HTMLElement).getByRole('button', { name: 'Ampliar Médias por grupo' })).toBeInTheDocument();
+    expect(within(chartCard as HTMLElement).getByRole('button', { name: 'Baixar Médias por grupo' })).toBeInTheDocument();
+  });
+
   it('keeps customization in the expanded dialog and restores focus on Escape', async () => {
     const user = userEvent.setup();
     renderPanel();

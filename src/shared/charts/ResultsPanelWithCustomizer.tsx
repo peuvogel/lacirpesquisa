@@ -351,6 +351,8 @@ export function ResultsPanelWithCustomizer<T>({
               return (
                 <article
                   key={item.id}
+                  aria-label={`Gráfico: ${displayChart.ariaLabel}`}
+                  tabIndex={0}
                   data-phase={item.phase}
                   data-chart-id={item.id}
                   className={cn(

@@ -171,6 +171,26 @@
     overflow: visible;
   }
 
+  .lacir-result-metric {
+    transform: translateZ(0);
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 180ms ease;
+  }
+
+  .lacir-result-metric:hover,
+  .lacir-result-metric:focus-visible {
+    z-index: 2;
+    border-color: color-mix(in srgb, var(--color-accent) 55%, var(--border));
+    transform: scale(1.02);
+    box-shadow: 0 10px 24px -16px rgba(15, 23, 42, 0.5);
+    outline: none;
+  }
+
+  .lacir-chart-card:hover .lacir-chart-focus:not(.lacir-chart-focus--editing),
+  .lacir-chart-card:focus-within .lacir-chart-focus:not(.lacir-chart-focus--editing) {
+    transform: scale(1.018);
+    box-shadow: 0 12px 30px -20px rgba(15, 23, 42, 0.55);
+  }
+
   .lacir-chart-card[data-phase='enter'],
   .lacir-chart-card[data-phase='shown'] {
     animation: lacirChartEnter 200ms ease-out both;
@@ -250,12 +270,20 @@
     }
 
     .lacir-chart-card--dimmed,
+    .lacir-result-metric,
     .lacir-chart-focus,
     .lacir-vis-thumb {
       transition: none;
     }
 
     .lacir-chart-focus--editing {
+      transform: none;
+    }
+
+    .lacir-result-metric:hover,
+    .lacir-result-metric:focus-visible,
+    .lacir-chart-card:hover .lacir-chart-focus:not(.lacir-chart-focus--editing),
+    .lacir-chart-card:focus-within .lacir-chart-focus:not(.lacir-chart-focus--editing) {
       transform: none;
     }
 

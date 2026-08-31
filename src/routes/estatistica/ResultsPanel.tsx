@@ -65,23 +65,37 @@ export function ResultsPanel({
       </div>
 
       <div className={additionalCharts.length > 0 ? 'grid gap-4 md:grid-cols-2' : undefined}>
-        <ChartCanvas
-          type={chart.type}
-          data={chart.data}
-          options={chart.options}
-          ariaLabel={chart.ariaLabel}
-          onCanvasReady={handleCanvasReady}
-          className="lacir-chart-card"
-        />
+        <article
+          aria-label={`Gráfico: ${chart.ariaLabel}`}
+          tabIndex={0}
+          className="lacir-chart-card min-w-0"
+        >
+          <div className="lacir-chart-focus">
+            <ChartCanvas
+              type={chart.type}
+              data={chart.data}
+              options={chart.options}
+              ariaLabel={chart.ariaLabel}
+              onCanvasReady={handleCanvasReady}
+            />
+          </div>
+        </article>
         {additionalCharts.map((additional) => (
-          <ChartCanvas
+          <article
             key={additional.ariaLabel}
-            type={additional.type}
-            data={additional.data}
-            options={additional.options}
-            ariaLabel={additional.ariaLabel}
-            className="lacir-chart-card"
-          />
+            aria-label={`Gráfico: ${additional.ariaLabel}`}
+            tabIndex={0}
+            className="lacir-chart-card min-w-0"
+          >
+            <div className="lacir-chart-focus">
+              <ChartCanvas
+                type={additional.type}
+                data={additional.data}
+                options={additional.options}
+                ariaLabel={additional.ariaLabel}
+              />
+            </div>
+          </article>
         ))}
       </div>
 

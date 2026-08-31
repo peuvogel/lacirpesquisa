@@ -140,6 +140,22 @@ describe('ResultsPanel', () => {
     expect(screen.getByRole('img', { name: 'Heatmap pós-hoc' })).toBeInTheDocument();
   });
 
+  it('keeps each chart in a separate keyboard-focusable visual card', () => {
+    render(
+      <ResultsPanel
+        title="ANOVA"
+        metrics={[{ label: 'Efeito', value: '0,30' }]}
+        chart={sampleChart}
+        interpretation={['Texto.']}
+      />,
+    );
+
+    const chart = screen.getByRole('img', { name: 'Médias por grupo' });
+    const chartCard = chart.closest('.lacir-chart-card');
+    expect(chartCard).toHaveAttribute('tabindex', '0');
+    expect(chart.closest('.lacir-chart-focus')).not.toBeNull();
+  });
+
   it('copies the formatted result report without raw table rows and announces success', async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
