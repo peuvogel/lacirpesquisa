@@ -41,6 +41,7 @@ describe('quiQuadradoInterpretation', () => {
     const output = loadOutput();
     const joined = buildQuiQuadradoInterpretation(output, 0.05).join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtP(output.result.p));
     expect(joined).toContain(fmtNumber(output.result.cramersV, 3));
     expect(joined).toContain(String(output.dataset.totalN));
@@ -48,10 +49,11 @@ describe('quiQuadradoInterpretation', () => {
 
   it('returns string[] with no HTML (T-03-02-01)', () => {
     const output = loadOutput();
-    const paragraphs = buildQuiQuadradoInterpretation(output, 0.05, 'Teste?');
+    const paragraphs = buildQuiQuadradoInterpretation(output, 0.05);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
     expect(paragraphsContainNoHtml(paragraphs)).toBe(true);
   });
 });

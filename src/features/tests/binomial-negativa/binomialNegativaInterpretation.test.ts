@@ -43,6 +43,7 @@ describe('binomialNegativaInterpretation', () => {
     const paragraphs = buildBinomialNegativaInterpretation(output, 0.05);
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtNumber(slope!.beta, 3));
     expect(joined).toContain(fmtP(slope!.p));
     expect(joined).toContain(fmtNumber(output.result.theta, 3));
@@ -51,10 +52,11 @@ describe('binomialNegativaInterpretation', () => {
 
   it('returns string[] with no HTML (T-03-07-03)', () => {
     const output = loadOutput();
-    const paragraphs = buildBinomialNegativaInterpretation(output, 0.05, 'Teste?');
+    const paragraphs = buildBinomialNegativaInterpretation(output, 0.05);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
     expect(paragraphsContainNoHtml(paragraphs)).toBe(true);
   });
 });

@@ -56,8 +56,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion = 'O indicador mudou ao longo do tempo?';
-
 export const didacticCards: DidacticCard[] = legacyConfig.didacticCards.map((card) => ({
   title: card.title,
   body: card.text,
@@ -88,5 +86,3 @@ export const PRAIS_TREND_ANNOTATIONS: AnnotationDefinition[] = [
 export const PRAIS_RESIDUAL_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showZeroLine', label: 'Linha zero nos resíduos' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

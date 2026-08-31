@@ -22,9 +22,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion =
-  'O preditor está associado à contagem de eventos após relaxar equidispersão com Binomial Negativa?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Binomial Negativa',
@@ -66,5 +63,3 @@ export const BINOMIAL_NEGATIVA_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showCoefficientValues', label: 'Mostrar valores dos coeficientes' },
   { id: 'showReferenceLine', label: 'Mostrar linha de referência (y = x)' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

@@ -66,6 +66,7 @@ describe('LogisticaTest', () => {
 
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
+    expect(screen.queryByRole('textbox', { name: 'Pergunta de pesquisa' })).not.toBeInTheDocument();
 
     await runToResultados(user);
 
@@ -76,6 +77,7 @@ describe('LogisticaTest', () => {
 
     const prose = screen.getAllByText(/indicou associação|não encontrou associação|Odds ratio/i);
     expect(prose.length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows rare events warning nudge on imbalanced paste', async () => {

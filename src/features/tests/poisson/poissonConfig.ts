@@ -22,9 +22,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion =
-  'O preditor está associado à contagem de eventos, após ajuste log-linear?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Poisson',
@@ -66,8 +63,6 @@ export const POISSON_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showCoefficientValues', label: 'Mostrar valores dos coeficientes' },
   { id: 'showReferenceLine', label: 'Mostrar linha de referência (y = x)' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;
 
 /** Poisson → NB handoff target (D-20). */
 export const NB_HANDOFF_TEST_ID = 'binomial-negativa' as const;

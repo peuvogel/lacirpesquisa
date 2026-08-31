@@ -59,6 +59,7 @@ describe('QuiQuadradoTest', () => {
 
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
+    expect(screen.queryByRole('textbox', { name: 'Pergunta de pesquisa' })).not.toBeInTheDocument();
 
     const resultados = await runToResultados(user);
 
@@ -67,11 +68,12 @@ describe('QuiQuadradoTest', () => {
     expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
     expect(within(resultados).getByText('Pressupostos')).toBeInTheDocument();
 
-    const prose = screen.getAllByText(/Observou-se|Não se observou|Pergunta analisada/i);
+    const prose = screen.getAllByText(/Observou-se|Não se observou|Resultado principal/i);
     expect(prose.length).toBeGreaterThan(0);
     prose.forEach((node) => {
       expect(node.textContent ?? '').not.toMatch(/<[^>]+>/);
     });
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows soft reset alert when column role is adjusted after confirm', async () => {

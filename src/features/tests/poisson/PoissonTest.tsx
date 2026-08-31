@@ -16,7 +16,6 @@ import {
 } from './PoissonConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   NB_HANDOFF_TEST_ID,
   TABULAR_OPTIONS,
 } from './poissonConfig';
@@ -78,7 +77,6 @@ export function PoissonTest({ onNavigateTest }: PoissonTestProps) {
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -170,11 +168,7 @@ export function PoissonTest({ onNavigateTest }: PoissonTestProps) {
     const result = runAnalysis(dataset);
     const engineOutput = toEngineOutput(dataset, result);
     const metrics = buildMetrics(result, dataset);
-    const interpretation = buildPoissonInterpretation(
-      engineOutput,
-      alphaNumber,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildPoissonInterpretation(engineOutput, alphaNumber);
     const showNbHandoff =
       result.overdispersionRatio > OVERDISPERSION_THRESHOLD && Boolean(onNavigateTest);
 
@@ -212,7 +206,7 @@ export function PoissonTest({ onNavigateTest }: PoissonTestProps) {
         />
       </>
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion, onNavigateTest]);
+  }, [confirmedDataset, loadedInput, alpha, onNavigateTest]);
 
   return (
     <FlowSteps
@@ -239,8 +233,6 @@ export function PoissonTest({ onNavigateTest }: PoissonTestProps) {
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onRoleAdjust={handleRoleAdjust}
             onConfirm={handleConfigureConfirm}

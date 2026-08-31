@@ -1,14 +1,12 @@
 import { fmtNumber, fmtP } from '@/shared/format';
-import { RARE_EVENTS_THRESHOLD, defaultQuestion } from './logisticaConfig';
+import { RARE_EVENTS_THRESHOLD } from './logisticaConfig';
 import type { LogisticaEngineOutput } from './logisticaEngine';
 
 export function buildLogisticaInterpretation(
   output: LogisticaEngineOutput,
   alpha: number,
-  question?: string,
 ): string[] {
   const { result, dataset } = output;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
   const slope = result.coefficients.find((coef) => coef.term !== '(Intercept)');
   const slopeOr = slope ? result.oddsRatios.find((row) => row.term === slope.term) : undefined;
   const significant = slope ? slope.p < alpha : false;
@@ -19,7 +17,6 @@ export function buildLogisticaInterpretation(
     : `A regressão logística não encontrou associação estatisticamente significativa entre ${predictorLabel} e ${dataset.outcomeHeader}.`;
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || defaultQuestion}.`,
     slope && slopeOr
       ? `Odds ratio de ${slope.term}: OR = ${fmtNumber(slopeOr.or, 3)} (IC95%: ${fmtNumber(slopeOr.ci95[0], 3)} a ${fmtNumber(slopeOr.ci95[1], 3)}), p = ${fmtP(slope.p)}.`
       : 'Modelo com intercepto apenas.',

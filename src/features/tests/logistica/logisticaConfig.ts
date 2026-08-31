@@ -30,9 +30,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion =
-  'O preditor está associado ao desfecho binário, após ajuste logístico?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Logística',
@@ -72,8 +69,6 @@ export const LOGISTICA_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showConfidenceIntervals', label: 'Mostrar intervalos de confiança' },
   { id: 'showCoefficientValues', label: 'Mostrar valores dos odds ratios' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;
 
 /** Minimum proportion in the minority class before rare-events nudge (D-06). */
 export const RARE_EVENTS_THRESHOLD = 0.05;

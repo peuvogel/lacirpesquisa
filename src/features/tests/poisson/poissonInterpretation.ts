@@ -1,14 +1,11 @@
 import { fmtNumber, fmtP } from '@/shared/format';
 import { OVERDISPERSION_THRESHOLD, type PoissonEngineOutput } from './poissonEngine';
-import { defaultQuestion } from './poissonConfig';
 
 export function buildPoissonInterpretation(
   output: PoissonEngineOutput,
   alpha: number,
-  question?: string,
 ): string[] {
   const { result, dataset } = output;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
   const slope = result.coefficients.find((coef) => coef.term !== '(Intercept)');
   const significant = slope ? slope.p < alpha : false;
   const predictorLabel = dataset.predictorHeaders[0] ?? 'preditor';
@@ -18,7 +15,6 @@ export function buildPoissonInterpretation(
     : `A regressão de Poisson não encontrou associação estatisticamente significativa entre ${predictorLabel} e ${dataset.outcomeHeader}.`;
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || defaultQuestion}.`,
     slope
       ? `Coeficiente de ${slope.term}: β = ${fmtNumber(slope.beta, 3)}, p = ${fmtP(slope.p)} (efeito log-linear na contagem).`
       : 'Modelo com intercepto apenas.',

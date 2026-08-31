@@ -1,8 +1,6 @@
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import type { PraisBuiltDataset, RunPraisOutput } from './praisEngine';
 
-const DEFAULT_CONTEXT = 'tendência temporal do indicador';
-
 function trendStrength(apc: number): string {
   const abs = Math.abs(apc);
   if (abs < 1) return 'muito discreta';
@@ -23,7 +21,6 @@ function directionText(classification: string): string {
 export function buildPraisInterpretation(
   output: RunPraisOutput,
   alpha: number,
-  researchQuestion?: string,
 ): string[] {
   const { model, dataset } = output;
   const significant = model.p < alpha;
@@ -32,12 +29,11 @@ export function buildPraisInterpretation(
     dataset.uniqueIds.length === 1
       ? ` para ${dataset.idHeaderLabel} = ${dataset.uniqueIds[0]}`
       : '';
-  const context = (researchQuestion ?? '').trim() || DEFAULT_CONTEXT;
   const scaleText = model.scale === 'log'
     ? 'A série foi analisada em escala log10, permitindo estimar a APC.'
     : 'Como a série contém zero, ela foi analisada na escala original, sem pseudocontagem; por isso o efeito é expresso como mudança absoluta, não APC.';
 
-  const lead = `Analisou-se a tendência temporal de ${dataset.yHeaderLabel}${idText}, usando ${dataset.timeHeaderLabel} como eixo temporal, em ${dataset.periodLabel || 'todo o período disponível'}, com ${dataset.validCount} pontos válidos. A série foi classificada como ${model.classification}, ${pText}; em termos práticos, ${directionText(model.classification)}. ${scaleText} Contexto informado: ${context}.`;
+  const lead = `Analisou-se a tendência temporal de ${dataset.yHeaderLabel}${idText}, usando ${dataset.timeHeaderLabel} como eixo temporal, em ${dataset.periodLabel || 'todo o período disponível'}, com ${dataset.validCount} pontos válidos. A série foi classificada como ${model.classification}, ${pText}; em termos práticos, ${directionText(model.classification)}. ${scaleText}`;
 
   const acText =
     Math.abs(model.rho) < 0.3

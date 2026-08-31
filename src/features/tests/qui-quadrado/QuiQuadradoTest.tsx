@@ -16,7 +16,6 @@ import {
 } from './QuiQuadradoConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
 } from './quiQuadradoConfig';
 import {
@@ -73,7 +72,6 @@ export function QuiQuadradoTest() {
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -163,11 +161,7 @@ export function QuiQuadradoTest() {
     const result = runAnalysis(dataset);
     const engineOutput = toEngineOutput(dataset, result);
     const metrics = buildMetrics(result, dataset);
-    const interpretation = buildQuiQuadradoInterpretation(
-      engineOutput,
-      alphaNumber,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildQuiQuadradoInterpretation(engineOutput, alphaNumber);
 
     return (
       <>
@@ -186,7 +180,7 @@ export function QuiQuadradoTest() {
         />
       </>
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, alpha]);
 
   return (
     <FlowSteps
@@ -213,8 +207,6 @@ export function QuiQuadradoTest() {
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onRoleAdjust={handleRoleAdjust}
             onConfirm={handleConfigureConfirm}

@@ -35,15 +35,14 @@ describe('praisInterpretation', () => {
 
     const output = runAnalysis(dataset);
     const alpha = 0.05;
-    const question = 'O indicador mudou ao longo do tempo?';
 
     const legacyParagraph = buildLegacyPraisInterpretation(
       output.model,
       legacyDatasetFromBuilt(dataset),
-      question,
+      'O indicador mudou ao longo do tempo?',
       String(alpha),
     );
-    const paragraphs = buildPraisInterpretation(output, alpha, question);
+    const paragraphs = buildPraisInterpretation(output, alpha);
 
     expect(
       sameTrendConclusion(
@@ -71,6 +70,7 @@ describe('praisInterpretation', () => {
     const paragraphs = buildPraisInterpretation(output, 0.05);
 
     const joined = paragraphs.join(' ');
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtP(output.model.p));
     expect(joined).toContain(fmtSigned(output.model.beta, 4));
     expect(joined).toContain(fmtSigned(output.model.rho, 3));
@@ -90,10 +90,11 @@ describe('praisInterpretation', () => {
       ),
     });
     const output = runAnalysis(dataset);
-    const paragraphs = buildPraisInterpretation(output, 0.05, 'Teste?');
+    const paragraphs = buildPraisInterpretation(output, 0.05);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
     expect(paragraphsContainNoHtml(paragraphs)).toBe(true);
   });
 
@@ -106,6 +107,7 @@ describe('praisInterpretation', () => {
     const output = runAnalysis(dataset);
     const joined = buildPraisInterpretation(output, 0.05).join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toMatch(/sem pseudocontagem/i);
     expect(joined).toMatch(/mudança absoluta/i);
     expect(joined).not.toMatch(/Resultado principal: APC/i);

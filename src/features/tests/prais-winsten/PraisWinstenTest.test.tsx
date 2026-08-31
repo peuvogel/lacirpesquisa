@@ -63,6 +63,7 @@ describe('PraisWinstenTest', () => {
     await screen.findByRole('button', { name: 'Analisar dados' });
 
     expect(screen.getByText('Prévia da série temporal')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Pergunta de pesquisa' })).not.toBeInTheDocument();
     expect(screen.getAllByText('2015').length).toBeGreaterThan(0);
     expect(screen.getAllByText('120,4').length).toBeGreaterThan(0);
   });
@@ -85,6 +86,7 @@ describe('PraisWinstenTest', () => {
     prose.forEach((node) => {
       expect(node.textContent ?? '').not.toMatch(/<[^>]+>/);
     });
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('can reach both trend and residual chart tabs in Resultados', async () => {

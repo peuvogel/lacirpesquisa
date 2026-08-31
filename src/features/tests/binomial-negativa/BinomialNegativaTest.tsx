@@ -15,7 +15,6 @@ import {
 } from './BinomialNegativaConfigPanel';
 import {
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
 } from './binomialNegativaConfig';
 import {
@@ -80,7 +79,6 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState('');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -165,11 +163,7 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
     const result = runAnalysis(dataset);
     const engineOutput = toEngineOutput(dataset, result);
     const metrics = buildMetrics(result, dataset);
-    const interpretation = buildBinomialNegativaInterpretation(
-      engineOutput,
-      alphaNumber,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildBinomialNegativaInterpretation(engineOutput, alphaNumber);
 
     return (
       <>
@@ -188,7 +182,7 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
         />
       </>
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion]);
+  }, [confirmedDataset, loadedInput, alpha]);
 
   return (
     <FlowSteps
@@ -215,8 +209,6 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onRoleAdjust={handleRoleAdjust}
             onConfirm={handleConfigureConfirm}

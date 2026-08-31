@@ -192,6 +192,11 @@ describe('EstatisticaPage', () => {
     ['kruskal-dunn', /Kruskal-Wallis/i],
     ['mann-whitney', /Mann–Whitney|Mann-Whitney/i],
     ['correlacao', /Correlação/i],
+    ['prais-winsten', /Prais–Winsten|Prais-Winsten/i],
+    ['qui-quadrado', /Qui-quadrado/i],
+    ['poisson', /Regressão de Poisson/i],
+    ['binomial-negativa', /Regressão Binomial Negativa/i],
+    ['logistica', /Regressão Logística/i],
   ] as const)('does not render a research-question field in %s', async (testId, accessibleName) => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPage();

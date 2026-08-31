@@ -37,9 +37,6 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
   },
 };
 
-export const defaultQuestion =
-  'Existe associação entre as duas variáveis categóricas?';
-
 export const didacticCards: DidacticCard[] = [
   {
     title: 'O que testa',
@@ -82,5 +79,3 @@ export const QUI_QUADRADO_ANNOTATIONS: AnnotationDefinition[] = [
   { id: 'showCellCounts', label: 'Mostrar contagens nas barras' },
   { id: 'showPValue', label: 'Mostrar valor de p no gráfico' },
 ];
-
-export const MAX_RESEARCH_QUESTION_LENGTH = 500;

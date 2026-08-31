@@ -14,9 +14,7 @@ import {
   type PraisWinstenLoadedInput,
 } from './PraisWinstenConfigPanel';
 import {
-  defaultQuestion,
   exampleText,
-  MAX_RESEARCH_QUESTION_LENGTH,
   TABULAR_OPTIONS,
 } from './praisConfig';
 import {
@@ -72,7 +70,6 @@ export function PraisWinstenTest() {
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
-  const [researchQuestion, setResearchQuestion] = useState(defaultQuestion);
   const [chartTab, setChartTab] = useState<'trend' | 'residual'>('trend');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
@@ -142,11 +139,7 @@ export function PraisWinstenTest() {
     const output = runAnalysis(dataset);
     const alphaNumber = Number(alpha);
     const metrics = buildMetrics(output.model, dataset);
-    const interpretation = buildPraisInterpretation(
-      output,
-      alphaNumber,
-      researchQuestion.trim().slice(0, MAX_RESEARCH_QUESTION_LENGTH),
-    );
+    const interpretation = buildPraisInterpretation(output, alphaNumber);
 
     const panelProps = {
       metrics,
@@ -191,7 +184,7 @@ export function PraisWinstenTest() {
         </Tabs>
       </div>
     );
-  }, [confirmedDataset, loadedInput, alpha, researchQuestion, chartTab]);
+  }, [confirmedDataset, loadedInput, alpha, chartTab]);
 
   return (
     <FlowSteps
@@ -218,8 +211,6 @@ export function PraisWinstenTest() {
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
-            researchQuestion={researchQuestion}
-            onResearchQuestionChange={setResearchQuestion}
             showSoftReset={showSoftReset}
             onConfirm={handleConfigureConfirm}
             document={analysisTable.table ?? undefined} testId="prais-winsten"

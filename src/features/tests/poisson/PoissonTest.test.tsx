@@ -73,6 +73,7 @@ describe('PoissonTest', () => {
 
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
+    expect(screen.queryByRole('textbox', { name: 'Pergunta de pesquisa' })).not.toBeInTheDocument();
 
     await runToResultados(user);
 
@@ -80,8 +81,9 @@ describe('PoissonTest', () => {
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
     expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
 
-    const prose = screen.getAllByText(/indicou associação|não encontrou associação|Pergunta analisada/i);
+    const prose = screen.getAllByText(/indicou associação|não encontrou associação|Coeficiente de|Modelo com intercepto apenas/i);
     expect(prose.length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Pergunta analisada:/i)).not.toBeInTheDocument();
   });
 
   it('shows overdispersion warning nudge on overdispersed paste', async () => {

@@ -44,6 +44,7 @@ describe('logisticaInterpretation', () => {
     const paragraphs = buildLogisticaInterpretation(output, 0.05);
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toContain(fmtNumber(slopeOr!.or, 3));
     expect(joined).toContain(fmtNumber(slopeOr!.ci95[0], 3));
     expect(joined).toContain(fmtNumber(slopeOr!.ci95[1], 3));
@@ -65,15 +66,17 @@ describe('logisticaInterpretation', () => {
     const paragraphs = buildLogisticaInterpretation(output, 0.05);
     const joined = paragraphs.join(' ');
 
+    expect(joined).not.toContain('Pergunta analisada:');
     expect(joined).toMatch(/eventos raros|classe minoritária/i);
   });
 
   it('returns string[] with no HTML (T-03-08-02)', () => {
     const output = loadOutput();
-    const paragraphs = buildLogisticaInterpretation(output, 0.05, 'Teste?');
+    const paragraphs = buildLogisticaInterpretation(output, 0.05);
 
     expect(Array.isArray(paragraphs)).toBe(true);
     expect(paragraphs.length).toBeGreaterThan(0);
+    expect(paragraphs.join(' ')).not.toContain('Pergunta analisada:');
     expect(paragraphsContainNoHtml(paragraphs)).toBe(true);
   });
 });

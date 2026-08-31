@@ -1,17 +1,13 @@
 import { fmtNumber, fmtP } from '@/shared/format';
 import { classifyCramersV, type QuiQuadradoEngineOutput } from './quiQuadradoEngine';
 
-const DEFAULT_QUESTION = 'Existe associação entre as duas variáveis categóricas?';
-
 export function buildQuiQuadradoInterpretation(
   output: QuiQuadradoEngineOutput,
   alpha: number,
-  question?: string,
 ): string[] {
   const { result, dataset } = output;
   const effectClass = classifyCramersV(result.cramersV);
   const significant = result.p < alpha;
-  const trimmedQuestion = (question ?? '').trim().slice(0, 500);
   const headers = dataset.columnHeaders;
 
   const lead = significant
@@ -19,7 +15,6 @@ export function buildQuiQuadradoInterpretation(
     : `Não se observou associação estatisticamente significativa entre ${headers[0]} e ${headers[1]}.`;
 
   const bullets = [
-    `Pergunta analisada: ${trimmedQuestion || DEFAULT_QUESTION}.`,
     `Resultado principal: χ² = ${fmtNumber(result.chi2, 3)}, gl = ${result.df}, p = ${fmtP(result.p)}.`,
     `Tamanho de efeito: Cramér's V = ${fmtNumber(result.cramersV, 3)} (associação ${effectClass}).`,
     `Total analisado: ${dataset.totalN} observações em tabela ${dataset.rowLabels.length}×${dataset.colLabels.length}.`,
