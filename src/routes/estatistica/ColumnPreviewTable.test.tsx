@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TABULAR_OPTIONS as tStudentOptions } from '@/features/tests/t-student/tStudentConfig';
+import { TABULAR_OPTIONS as praisOptions } from '@/features/tests/prais-winsten/praisConfig';
 import { createTableDocument, type TableDocument } from '@/shared/data-input/tableDocument';
 import { ColumnPreviewTable } from './ColumnPreviewTable';
 
@@ -170,6 +171,74 @@ describe('ColumnPreviewTable', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeDisabled();
+  });
+
+  it('classifies semantic semester values as temporal in the compatibility preview', () => {
+    render(
+      <ColumnPreviewTable
+        headers={['Semestre', 'Valor']}
+        bodyRows={[['2024-S1', '10'], ['2024-S2', '11']]}
+        recognizedColumns={{}}
+        onConfirm={() => {}}
+      />,
+    );
+
+    expect(screen.getByLabelText('Tipo da coluna Semestre')).toHaveValue('tempo');
+  });
+
+  it('shows unsupported temporal tokens as invalid rows before confirmation', () => {
+    function Harness() {
+      const [document, setDocument] = useState<TableDocument>(() => createTableDocument(
+        ['Semestre', 'Valor'],
+        [['2024-S1', '10'], ['2024-X9', '11']],
+        'colado',
+        () => 'doc-time',
+      ));
+      return (
+        <ColumnPreviewTable
+          document={document}
+          testId="prais-winsten"
+          tabularOptions={praisOptions}
+          onDocumentChange={setDocument}
+          onConfirm={() => {}}
+        />
+      );
+    }
+
+    render(<Harness />);
+    expect(screen.getByRole('region', { name: 'Validade das linhas' })).toHaveTextContent(
+      '1 válidas · 0 incompletas · 1 inválidas',
+    );
+  });
+
+  it('keeps explicit temporal type and role choices over automatic suggestions', async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [document, setDocument] = useState<TableDocument>(() => createTableDocument(
+        ['Semestre', 'Valor'],
+        [['2024-S1', '10'], ['2024-S2', '11']],
+        'colado',
+        () => 'doc-time',
+      ));
+      return (
+        <ColumnPreviewTable
+          document={document}
+          testId="prais-winsten"
+          tabularOptions={praisOptions}
+          onDocumentChange={setDocument}
+          onConfirm={() => {}}
+        />
+      );
+    }
+
+    render(<Harness />);
+    await user.selectOptions(screen.getByLabelText('Tipo da coluna Semestre'), 'categorica');
+    await user.selectOptions(screen.getByLabelText('Vincular tempo'), 'doc-time-col-2');
+
+    expect(screen.getByLabelText('Tipo da coluna Semestre')).toHaveValue('categorica');
+    expect(screen.getByText('tipo ajustado por você')).toBeInTheDocument();
+    expect(screen.getByLabelText('Vincular tempo')).toHaveValue('doc-time-col-2');
+    expect(screen.getAllByText('definido por você')).not.toHaveLength(0);
   });
 
   it('marks a role select as "ajustado" once the user changes it away from the detected value', async () => {

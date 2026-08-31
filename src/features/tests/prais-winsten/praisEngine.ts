@@ -312,7 +312,9 @@ function normalizedNumericPeriodIndexes(temporal: TemporalColumnResolution): Map
 }
 
 export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[] {
-  const issues = [...dataset.issues];
+  const issues = dataset.issues.filter((issue) => (
+    issue.code !== 'temporal_missing_period' && issue.code !== 'temporal_duplicate_period'
+  ));
 
   if (dataset.validCount < MIN_TEMPORAL_POINTS) {
     issues.push({
@@ -330,24 +332,44 @@ export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[
     });
   }
 
-  const temporalHasSequenceError = dataset.issues.some((issue) => (
-    issue.code === 'temporal_missing_period' || issue.code === 'temporal_duplicate_period'
-  ));
-  if (!temporalHasSequenceError && dataset.orderedRows.length >= 2) {
-    const missingIndex = dataset.orderedRows.findIndex((row, index) => (
-      index > 0 && row.timePeriodIndex - dataset.orderedRows[index - 1]!.timePeriodIndex !== 1
-    ));
-    if (missingIndex > 0) {
+  issues.push(...effectiveSequenceIssues(dataset.orderedRows));
+
+  return issues;
+}
+
+function effectiveSequenceIssues(rows: readonly PraisSeriesRow[]): AnalysisIssue[] {
+  const byPeriod = new Map<number, PraisSeriesRow[]>();
+  rows.forEach((row) => {
+    const matches = byPeriod.get(row.timePeriodIndex) ?? [];
+    matches.push(row);
+    byPeriod.set(row.timePeriodIndex, matches);
+  });
+
+  const issues: AnalysisIssue[] = [];
+  byPeriod.forEach((matches) => {
+    if (matches.length > 1) {
       issues.push({
-        code: 'missing_period',
+        code: 'duplicate_period',
         severity: 'error',
-        message: 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
-        rowNumbers: [
-          dataset.orderedRows[missingIndex - 1]!.index,
-          dataset.orderedRows[missingIndex]!.index,
-        ],
+        message: `Há tempos repetidos na série (${matches[0]!.timeLabel}). Mantenha um único valor por tempo.`,
+        rowNumbers: matches.map((row) => row.index),
       });
     }
+  });
+
+  const uniqueRows = [...byPeriod.values()]
+    .map((matches) => matches[0]!)
+    .sort((left, right) => left.timePeriodIndex - right.timePeriodIndex);
+  const missingIndex = uniqueRows.findIndex((row, index) => (
+    index > 0 && row.timePeriodIndex - uniqueRows[index - 1]!.timePeriodIndex !== 1
+  ));
+  if (missingIndex > 0) {
+    issues.push({
+      code: 'missing_period',
+      severity: 'error',
+      message: 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
+      rowNumbers: [uniqueRows[missingIndex - 1]!.index, uniqueRows[missingIndex]!.index],
+    });
   }
 
   return issues;
@@ -390,6 +412,9 @@ export function runPraisWinsten(time: number[], values: number[]): RunPraisOutpu
 }
 
 export function runAnalysis(dataset: PraisBuiltDataset): RunPraisOutput {
+  const blockingIssue = validateSeriesIssues(dataset).find((issue) => issue.severity === 'error');
+  if (blockingIssue) throw new Error(blockingIssue.message);
+
   const model = runPraisWinsten(dataset.time, dataset.values);
   const fitted = computeFitted(dataset.time, model);
   const residuals = computeResiduals(dataset.time, dataset.values, model);

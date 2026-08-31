@@ -65,3 +65,48 @@ Não foi executado `npm run gate`, em conformidade com a restrição de espaço 
 ## Concerns
 
 - A seleção de `temporalMode` já é aceita pelo motor, mas a interface para o usuário escolhê-la explicitamente pertence à migração posterior de UI; esta tarefa não a antecipou.
+
+## Fix round 1/5
+
+### Findings corrigidos
+
+- `runAnalysis` agora é a fronteira de autorização: consulta `validateSeriesIssues`, lança o primeiro erro bloqueante e não chama Prais–Winsten quando houver issue `error`.
+- Issues de sequência da coluna completa (`temporal_missing_period` e `temporal_duplicate_period`) são removidas da validação final e substituídas por gaps/duplicidades calculados somente com `orderedRows` e `timePeriodIndex` após a exclusão de desfechos inválidos.
+- `ColumnPreviewTable.test.tsx` agora cobre a classificação de `2024-S1`/`2024-S2`, a linha `2024-X9` inválida na validade e a precedência de tipo e vínculo explicitamente escolhidos pelo usuário.
+
+### Arquivos
+
+- `src/features/tests/prais-winsten/praisEngine.ts`
+- `src/features/tests/prais-winsten/praisEngine.test.ts`
+- `src/routes/estatistica/ColumnPreviewTable.test.tsx`
+- `.superpowers/sdd/2026-08-31-importacao-periodos-confiaveis/task-2-report.md`
+
+### RED / GREEN
+
+1. RED — três datasets bloqueantes (lacuna, duplicidade e desfecho inválido) ainda retornavam resultado de `runAnalysis`; o spy de `statsEngine.praisWinsten` registrava chamada.
+   GREEN — `runAnalysis` lança antes do cálculo e o spy não registra chamadas.
+2. RED — após excluir o desfecho da linha 2, a issue de lacuna ainda vinha da coluna completa (`temporal_missing_period`, linhas 2 e 3).
+   GREEN — a issue efetiva é `missing_period`, linhas 1 e 3; uma duplicidade cuja linha duplicada foi excluída não continua como issue de duplicidade.
+3. A primeira asserção de UI procurou texto dividido por elementos e falhou por seletor; foi corrigida para consultar a região semântica `Validade das linhas` e então verificou o conteúdo real.
+
+### Comandos e resultados
+
+```text
+npm exec vitest run -- src/features/tests/prais-winsten/praisEngine.test.ts -t "does not run Prais|reconciles temporal|does not retain a duplicate"
+RED: 2 falhas esperadas — `runAnalysis` não lançava e `temporal_missing_period` permanecia.
+
+npm exec vitest run -- src/features/tests/prais-winsten/praisEngine.test.ts
+GREEN: 14 testes aprovados.
+
+npm exec vitest run -- src/routes/estatistica/ColumnPreviewTable.test.tsx
+GREEN: 14 testes aprovados.
+
+npm run typecheck
+GREEN: `tsc --noEmit` concluído sem erros.
+```
+
+### Self-review
+
+- A guarda usa as mesmas `AnalysisIssue` estruturadas expostas pelo dataset e preserva `validateSeries` como adaptador legado de mensagens bloqueantes.
+- A reconciliação deixa intactos erros temporais que não são de sequência, como token inválido ou frequência mista, e remove somente lacuna/duplicidade calculadas na coluna bruta.
+- Não foram incluídas mudanças de higiene, gate, Docker, pipeline ou o Minor ledgerado para etapa posterior.

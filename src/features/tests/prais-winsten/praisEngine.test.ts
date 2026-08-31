@@ -3,7 +3,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
 import * as portImporter from '@/shared/data-input/datasusImporter';
 import * as portNormalizer from '@/shared/data-input/datasusNormalizer';
@@ -11,6 +11,7 @@ import { legacyStats, legacyUtils } from '@/shared/data-input/legacyAdapters';
 import type { DatasusSource } from '@/shared/data-input/types';
 import { readTabularPasteState } from '@/shared/data-input/parseTabular';
 import { loadLegacyStatsOracle } from '@/test/legacyStatsOracle';
+import { statsEngine } from '@/shared/stats/statsEngine';
 import { TABULAR_OPTIONS } from './praisConfig';
 import {
   buildDatasetFromConfirmed,
@@ -174,6 +175,31 @@ describe('praisEngine differential parity', () => {
     expect(validateSeries(dataset)).toContainEqual(expect.stringMatching(/intervalos regulares|lacuna/i));
   });
 
+  it('does not run Prais-Winsten when dataset issues block analysis', () => {
+    const calculation = vi.spyOn(statsEngine, 'praisWinsten');
+    const blockedDatasets = [
+      buildDatasetFromConfirmed({
+        headers: ['Ano', 'Valor'],
+        rows: [['2021', '1'], ['2022', '2'], ['2024', '4']],
+        recognizedColumns: { tempo: 0, variavel_y: 1 },
+      }),
+      buildDatasetFromConfirmed({
+        headers: ['Ano', 'Valor'],
+        rows: [['2021', '1'], ['2022', '2'], ['2022', '3'], ['2023', '4']],
+        recognizedColumns: { tempo: 0, variavel_y: 1 },
+      }),
+      buildDatasetFromConfirmed({
+        headers: ['Ano', 'Valor'],
+        rows: [['2021', '1'], ['2022', 'inválido'], ['2023', '3'], ['2024', '4']],
+        recognizedColumns: { tempo: 0, variavel_y: 1 },
+      }),
+    ];
+
+    blockedDatasets.forEach((dataset) => expect(() => runAnalysis(dataset)).toThrow());
+    expect(calculation).not.toHaveBeenCalled();
+    calculation.mockRestore();
+  });
+
   it('reports an invalid outcome and preserves the gap created by excluding its period', () => {
     const dataset = buildDatasetFromConfirmed({
       headers: ['Ano', 'Valor'],
@@ -186,6 +212,37 @@ describe('praisEngine differential parity', () => {
     expect(validateSeriesIssues(dataset)).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'invalid_outcome', severity: 'error', rowNumbers: [2] }),
       expect.objectContaining({ code: 'missing_period', severity: 'error', rowNumbers: [1, 3] }),
+    ]));
+  });
+
+  it('reconciles temporal gaps against rows retained after an invalid outcome', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2021', '1'], ['2022', 'inválido'], ['2024', '4'], ['2025', '5']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    const issues = validateSeriesIssues(dataset);
+    expect(issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'temporal_missing_period' }),
+    ]));
+    expect(issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'missing_period', rowNumbers: [1, 3] }),
+    ]));
+  });
+
+  it('does not retain a duplicate-period issue when the duplicate outcome is excluded', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2021', '1'], ['2022', '2'], ['2022', 'inválido'], ['2023', '3']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    const issues = validateSeriesIssues(dataset);
+    expect(issues).not.toContainEqual(expect.objectContaining({ code: 'temporal_duplicate_period' }));
+    expect(issues).not.toContainEqual(expect.objectContaining({ code: 'duplicate_period' }));
+    expect(issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'invalid_outcome', rowNumbers: [3] }),
     ]));
   });
 
