@@ -29,4 +29,40 @@ describe('formatResultReport', () => {
     ].join('\n'));
     expect(report).not.toContain('linha bruta');
   });
+
+  it('always emits both section headers and preserves empty interpretation paragraphs', () => {
+    const report = formatResultReport(
+      'Resumo',
+      [],
+      ['Primeiro parágrafo.', '', 'Terceiro parágrafo.'],
+    );
+
+    expect(report).toBe([
+      'Resumo',
+      '',
+      'Resultados',
+      '',
+      '',
+      'Interpretação',
+      'Primeiro parágrafo.',
+      '',
+      '',
+      '',
+      'Terceiro parágrafo.',
+    ].join('\n'));
+  });
+
+  it('keeps the full section structure even when metrics and interpretation are empty', () => {
+    const report = formatResultReport('Resumo', [], []);
+
+    expect(report).toBe([
+      'Resumo',
+      '',
+      'Resultados',
+      '',
+      '',
+      'Interpretação',
+      '',
+    ].join('\n'));
+  });
 });

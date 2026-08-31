@@ -8,26 +8,15 @@ export function formatResultReport(
   const metricBlocks = metrics.map(({ label, value, hint }) =>
     [`${label}: ${value}`, hint].filter(Boolean).join('\n'),
   );
-  const interpretationBlocks = interpretation.filter((paragraph) => paragraph.trim().length > 0);
-  const lines = [title];
-
-  if (metricBlocks.length > 0) {
-    lines.push('', 'Resultados');
-    for (const [index, block] of metricBlocks.entries()) {
-      lines.push(block);
-      if (index < metricBlocks.length - 1) lines.push('');
-    }
-  }
-
-  if (interpretationBlocks.length > 0) {
-    lines.push('', 'Interpretação');
-    for (const [index, paragraph] of interpretationBlocks.entries()) {
-      lines.push(paragraph);
-      if (index < interpretationBlocks.length - 1) lines.push('');
-    }
-  }
-
-  return lines.join('\n');
+  return [
+    title,
+    '',
+    'Resultados',
+    metricBlocks.join('\n\n'),
+    '',
+    'Interpretação',
+    interpretation.join('\n\n'),
+  ].join('\n');
 }
 
 export async function copyTextToClipboard(text: string): Promise<void> {
