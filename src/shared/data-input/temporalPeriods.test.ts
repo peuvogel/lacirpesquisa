@@ -60,6 +60,19 @@ describe('detectTemporalColumn', () => {
       .toContainEqual(expect.objectContaining({ code: 'mixed_frequency' }));
   });
 
+  it('keeps a reordered semantic sequence resolved with a warning', () => {
+    const result = detectTemporalColumn(['2024-S2', '2024-S1'], 'Semestre');
+
+    expect(result.status).toBe('resolved');
+    expect(result.values.map((item) => item?.periodIndex)).toEqual([4049, 4048]);
+    expect(result.issues).toContainEqual(expect.objectContaining({
+      code: 'reordered',
+      severity: 'warning',
+      rowNumbers: [1, 2],
+    }));
+    expect(result.issues.some((item) => item.severity === 'error')).toBe(false);
+  });
+
   it('uses original order only after an explicit order override', () => {
     const result = detectTemporalColumn(['onda B', 'onda A'], 'Onda', 'order');
 
