@@ -31,6 +31,8 @@ export async function copyTextToClipboard(text: string): Promise<void> {
   }
 
   const browserDocument = globalThis.document;
+  const previousActiveElement =
+    browserDocument.activeElement instanceof HTMLElement ? browserDocument.activeElement : null;
   const textarea = browserDocument.createElement('textarea');
   textarea.value = text;
   textarea.setAttribute('readonly', '');
@@ -49,5 +51,8 @@ export async function copyTextToClipboard(text: string): Promise<void> {
     }
   } finally {
     textarea.remove();
+    if (previousActiveElement?.isConnected) {
+      previousActiveElement.focus();
+    }
   }
 }

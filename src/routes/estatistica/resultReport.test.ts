@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { formatResultReport } from './resultReport';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { copyTextToClipboard, formatResultReport } from './resultReport';
 
 describe('formatResultReport', () => {
   it('copies title, metric details and every interpretation paragraph in order', () => {
@@ -64,5 +64,56 @@ describe('formatResultReport', () => {
       'Interpretação',
       '',
     ].join('\n'));
+  });
+});
+
+describe('copyTextToClipboard', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
+
+  it('restores focus to the previously active element after a successful fallback copy', async () => {
+    const clipboard = { writeText: vi.fn().mockRejectedValue(new Error('denied')) };
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: clipboard,
+    });
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(true),
+    });
+    const execCommandSpy = vi.spyOn(document, 'execCommand').mockReturnValue(true);
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    await copyTextToClipboard('resultado');
+
+    expect(execCommandSpy).toHaveBeenCalledWith('copy');
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('restores focus to the previously active element after a failed fallback copy', async () => {
+    const clipboard = { writeText: vi.fn().mockRejectedValue(new Error('denied')) };
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: clipboard,
+    });
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(false),
+    });
+    const execCommandSpy = vi.spyOn(document, 'execCommand').mockReturnValue(false);
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    await expect(copyTextToClipboard('resultado')).rejects.toThrow('clipboard unavailable');
+
+    expect(execCommandSpy).toHaveBeenCalledWith('copy');
+    expect(document.activeElement).toBe(trigger);
   });
 });

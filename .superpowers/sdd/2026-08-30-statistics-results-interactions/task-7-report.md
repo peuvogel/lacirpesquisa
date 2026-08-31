@@ -1,8 +1,8 @@
 # Task 7 — QA local e verificação de regressões
 
-Data: 2026-08-31  
-Branch: `codex/results-interactions`  
-URL local: http://127.0.0.1:5173/  
+Data: 2026-08-31
+Branch: `codex/results-interactions`
+URL local: http://127.0.0.1:5173/
 Servidor confirmado: PID 62999, Vite desta workspace (`--host 127.0.0.1`).
 
 ## Varredura estática

@@ -147,6 +147,14 @@ describe('Sidebar', () => {
     expect(list).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
   });
 
+  it('disables the width transition when reduced motion is requested', () => {
+    renderSidebar();
+
+    expect(screen.getByRole('complementary', { name: 'Testes disponíveis' })).toHaveClass(
+      'motion-reduce:transition-none',
+    );
+  });
+
   it('marks the sidebar for the mobile expanded overlay layout', () => {
     renderSidebar();
 
