@@ -10,6 +10,7 @@ export interface FlowStepsProps {
   dados: ReactNode;
   configurar: ReactNode;
   resultados: ReactNode;
+  resultadosAriaLabel?: string | null;
 }
 
 /**
@@ -17,7 +18,14 @@ export interface FlowStepsProps {
  * Fuses input (dados until loaded, then configurar) with results anchored
  * below after "Analisar dados".
  */
-export function FlowSteps({ active, canAdvance, dados, configurar, resultados }: FlowStepsProps) {
+export function FlowSteps({
+  active,
+  canAdvance,
+  dados,
+  configurar,
+  resultados,
+  resultadosAriaLabel = 'Resultados',
+}: FlowStepsProps) {
   const resultsRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -39,7 +47,7 @@ export function FlowSteps({ active, canAdvance, dados, configurar, resultados }:
       {showResults ? (
         <section
           ref={resultsRef}
-          aria-label="Resultados"
+          aria-label={resultadosAriaLabel ?? undefined}
           id="lacir-flow-results"
           className="scroll-mt-6 space-y-4 border-t border-border pt-8"
         >

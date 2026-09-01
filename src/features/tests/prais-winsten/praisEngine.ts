@@ -337,7 +337,13 @@ export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[
       candidate.code === `temporal_${issue.code}`
       && candidate.rowNumbers?.join(',') === issue.rowNumbers?.join(',')
     ));
-    return temporalIssue ? { ...issue, message: temporalIssue.message } : issue;
+    return temporalIssue
+      ? {
+          ...issue,
+          message: temporalIssue.message,
+          ...(temporalIssue.hint === undefined ? {} : { hint: temporalIssue.hint }),
+        }
+      : issue;
   }));
 
   return issues;
@@ -366,15 +372,15 @@ function effectiveSequenceIssues(rows: readonly PraisSeriesRow[]): AnalysisIssue
   const uniqueRows = [...byPeriod.values()]
     .map((matches) => matches[0]!)
     .sort((left, right) => left.timePeriodIndex - right.timePeriodIndex);
-  const missingIndex = uniqueRows.findIndex((row, index) => (
-    index > 0 && row.timePeriodIndex - uniqueRows[index - 1]!.timePeriodIndex !== 1
-  ));
-  if (missingIndex > 0) {
+  for (let index = 1; index < uniqueRows.length; index += 1) {
+    const previous = uniqueRows[index - 1]!;
+    const current = uniqueRows[index]!;
+    if (current.timePeriodIndex - previous.timePeriodIndex === 1) continue;
     issues.push({
       code: 'missing_period',
       severity: 'error',
       message: 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
-      rowNumbers: [uniqueRows[missingIndex - 1]!.index, uniqueRows[missingIndex]!.index],
+      rowNumbers: [previous.index, current.index],
     });
   }
 

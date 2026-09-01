@@ -197,10 +197,13 @@ export function PraisWinstenTest() {
     );
   }, [confirmedDataset, loadedInput, alpha, chartTab, temporalMode]);
 
+  const resultsBlocked = resultsContent?.type === PraisWinstenValidationAlert;
+
   return (
     <FlowSteps
       active={activeStep}
       canAdvance={canAdvance}
+      resultadosAriaLabel={resultsBlocked ? null : undefined}
       dados={
         <div className="space-y-3">
           <TabularInputPanel

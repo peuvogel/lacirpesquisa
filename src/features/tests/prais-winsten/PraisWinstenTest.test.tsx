@@ -98,7 +98,10 @@ describe('PraisWinstenTest', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
 
-    expect(await screen.findByText(/Período ausente: 2023\.2\./)).toBeInTheDocument();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Período ausente: 2023.2. Linhas: 5, 6.');
+    expect(screen.queryByRole('region', { name: 'Resultados' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Pontos temporais')).not.toBeInTheDocument();
     expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
   });
 

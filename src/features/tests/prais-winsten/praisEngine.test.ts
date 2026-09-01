@@ -231,6 +231,45 @@ describe('praisEngine differential parity', () => {
     ]));
   });
 
+  it('reports every effective gap and preserves matching temporal details', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [
+        ['2021', '1'],
+        ['2022', 'inválido'],
+        ['2023', '3'],
+        ['2025', '5'],
+        ['2026', '6'],
+        ['2028', '8'],
+      ],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    const gaps = validateSeriesIssues(dataset).filter((issue) => issue.code === 'missing_period');
+    expect(gaps).toEqual([
+      {
+        code: 'missing_period',
+        severity: 'error',
+        message: 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.',
+        rowNumbers: [1, 3],
+      },
+      {
+        code: 'missing_period',
+        severity: 'error',
+        message: 'Período ausente: 2024.',
+        rowNumbers: [3, 4],
+        hint: 'Corrija os períodos ou escolha explicitamente a periodicidade antes de analisar.',
+      },
+      {
+        code: 'missing_period',
+        severity: 'error',
+        message: 'Período ausente: 2027.',
+        rowNumbers: [5, 6],
+        hint: 'Corrija os períodos ou escolha explicitamente a periodicidade antes de analisar.',
+      },
+    ]);
+  });
+
   it('does not retain a duplicate-period issue when the duplicate outcome is excluded', () => {
     const dataset = buildDatasetFromConfirmed({
       headers: ['Ano', 'Valor'],
