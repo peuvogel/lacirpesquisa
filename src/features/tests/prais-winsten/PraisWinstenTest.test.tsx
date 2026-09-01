@@ -87,6 +87,21 @@ describe('PraisWinstenTest', () => {
     expect(screen.getAllByText(/2021\.1 a 2026\.2/i).length).toBeGreaterThan(0);
   });
 
+  it('names the missing semester when a temporal gap blocks analysis', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    fireEvent.change(
+      screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'),
+      { target: { value: pastedSemesters.replace('2023.2\t97\n', '') } },
+    );
+    await vi.advanceTimersByTimeAsync(200);
+
+    await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
+
+    expect(await screen.findByText(/Período ausente: 2023\.2\./)).toBeInTheDocument();
+    expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
+  });
+
   it('invalidates a confirmed result when the temporal interpretation changes', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPraisWinsten();

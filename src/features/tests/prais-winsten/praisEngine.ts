@@ -332,7 +332,13 @@ export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[
     });
   }
 
-  issues.push(...effectiveSequenceIssues(dataset.orderedRows));
+  issues.push(...effectiveSequenceIssues(dataset.orderedRows).map((issue) => {
+    const temporalIssue = dataset.issues.find((candidate) => (
+      candidate.code === `temporal_${issue.code}`
+      && candidate.rowNumbers?.join(',') === issue.rowNumbers?.join(',')
+    ));
+    return temporalIssue ? { ...issue, message: temporalIssue.message } : issue;
+  }));
 
   return issues;
 }
@@ -380,7 +386,7 @@ export function validateSeries(dataset: PraisBuiltDataset): string[] {
   return [...new Set(validateSeriesIssues(dataset)
     .filter((issue) => issue.severity === 'error')
     .map((issue) => (
-      issue.code === 'temporal_missing_period'
+      issue.code === 'temporal_missing_period' || issue.code === 'missing_period'
         ? 'A série possui lacuna temporal ou intervalos irregulares. Complete os períodos antes de analisar.'
         : issue.message
     )))];
