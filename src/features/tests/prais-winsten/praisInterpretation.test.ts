@@ -6,7 +6,7 @@ import { readTabularPasteState } from '@/shared/data-input/parseTabular';
 import { legacyStats } from '@/shared/data-input/legacyAdapters';
 import { buildLegacyPraisInterpretation } from '@/test/praisModuleOracle';
 import { TABULAR_OPTIONS } from './praisConfig';
-import { buildDatasetFromConfirmed, runAnalysis } from './praisEngine';
+import { buildDatasetFromConfirmed, buildMetrics, runAnalysis } from './praisEngine';
 import {
   buildPraisInterpretation,
   legacyDatasetFromBuilt,
@@ -111,6 +111,80 @@ describe('praisInterpretation', () => {
     expect(joined).toMatch(/sem pseudocontagem/i);
     expect(joined).toMatch(/mudança absoluta/i);
     expect(joined).not.toMatch(/Resultado principal: APC/i);
+  });
+
+  it('describes a semiannual calendar effect as annualized', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Semestre', 'Valor'],
+      rows: [
+        ['2021.1', '90'], ['2021.2', '92'], ['2022.1', '93'],
+        ['2022.2', '95'], ['2023.1', '97'], ['2023.2', '100'],
+      ],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+    const joined = buildPraisInterpretation(runAnalysis(dataset), 0.05).join(' ');
+
+    expect(joined).toContain('anualizada');
+  });
+
+  it('describes an explicit order effect by observed interval, never annual change', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Período', 'Valor'],
+      rows: [
+        ['Primeira coleta', '90'], ['Segunda coleta', '92'], ['Terceira coleta', '93'],
+        ['Quarta coleta', '95'], ['Quinta coleta', '97'], ['Sexta coleta', '100'],
+      ],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+      temporalMode: 'order',
+    });
+    const joined = buildPraisInterpretation(runAnalysis(dataset), 0.05).join(' ');
+
+    expect(joined).toContain('por intervalo observado');
+    expect(joined).not.toContain('mudança anual');
+  });
+
+  it('labels metric units from the resolved temporal effect basis', () => {
+    const cases = [
+      {
+        mode: 'auto' as const,
+        header: 'Semestre',
+        periods: ['2021.1', '2021.2', '2022.1', '2022.2'],
+        frequency: 'Semestral',
+        unit: 'por ano (anualizada)',
+      },
+      {
+        mode: 'numeric' as const,
+        header: 'Tempo',
+        periods: ['0', '0.5', '1', '1.5'],
+        frequency: 'Numérica',
+        unit: 'por unidade temporal informada',
+      },
+      {
+        mode: 'order' as const,
+        header: 'Coleta',
+        periods: ['A', 'B', 'C', 'D'],
+        frequency: 'Ordem observada',
+        unit: 'por intervalo observado',
+      },
+    ];
+
+    cases.forEach(({ mode, header, periods, frequency, unit }) => {
+      const dataset = buildDatasetFromConfirmed({
+        headers: [header, 'Valor'],
+        rows: periods.map((period, index) => [period, String(90 + index * 2)]),
+        recognizedColumns: { tempo: 0, variavel_y: 1 },
+        temporalMode: mode,
+      });
+      const metrics = buildMetrics(runAnalysis(dataset).model, dataset);
+      const base = metrics.find((metric) => metric.label === 'Base temporal');
+      const beta = metrics.find((metric) => metric.label === 'Coeficiente da tendência (β)');
+      const change = metrics.find((metric) => metric.label.startsWith('Variação percentual'));
+
+      expect(base).toMatchObject({ value: frequency });
+      expect(base?.hint).toContain(unit);
+      expect(beta?.hint).toContain(unit);
+      expect(change?.label).toContain(unit);
+    });
   });
 });
 

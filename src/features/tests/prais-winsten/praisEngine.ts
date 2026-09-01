@@ -189,10 +189,10 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
     issues,
     frequencyLabel: temporal.frequencyLabel,
     effectBasisLabel: temporal.effectBasis === 'annualized'
-      ? 'Variação anualizada'
+      ? 'Efeito anualizado por ano'
       : temporal.effectBasis === 'numeric-unit'
-        ? 'Variação por unidade numérica'
-        : 'Variação por intervalo observado',
+        ? 'Efeito por unidade temporal informada'
+        : 'Efeito por intervalo observado',
   };
 
   if (timeIndex === undefined) {
@@ -422,7 +422,14 @@ export function runAnalysis(dataset: PraisBuiltDataset): RunPraisOutput {
   return { model, fitted, residuals, dataset };
 }
 
+export function effectUnit(dataset: PraisBuiltDataset): string {
+  if (dataset.temporal.effectBasis === 'annualized') return 'por ano (anualizada)';
+  if (dataset.temporal.effectBasis === 'numeric-unit') return 'por unidade temporal informada';
+  return 'por intervalo observado';
+}
+
 export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDataset): ResultMetric[] {
+  const unit = effectUnit(dataset);
   const acText =
     Math.abs(model.rho) < 0.3
       ? 'autocorrelação fraca'
@@ -440,14 +447,14 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
 
   const changeMetric: ResultMetric = model.scale === 'log'
     ? {
-        label: 'Variação percentual (APC)',
+        label: `Variação percentual (APC) ${unit}`,
         value: `${fmtSigned(model.apc, 2)}%`,
-        hint: `IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)}`,
+        hint: `IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)} · efeito ${unit}`,
       }
     : {
-        label: 'Mudança absoluta por período',
+        label: `Mudança absoluta ${unit}`,
         value: fmtSigned(model.absoluteChange, 2),
-        hint: `IC95% ${fmtNumber(model.ciAbsoluteChange[0], 2)} a ${fmtNumber(model.ciAbsoluteChange[1], 2)} · escala original por conter zero`,
+        hint: `IC95% ${fmtNumber(model.ciAbsoluteChange[0], 2)} a ${fmtNumber(model.ciAbsoluteChange[1], 2)} · escala original por conter zero · efeito ${unit}`,
       };
 
   return [
@@ -457,11 +464,16 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
       hint: `Período analisado: ${dataset.periodLabel || 'não informado'}`,
     },
     {
+      label: 'Base temporal',
+      value: dataset.frequencyLabel || 'Não definida',
+      hint: `Efeito ${unit}.`,
+    },
+    {
       label: 'Coeficiente da tendência (β)',
       value: fmtSigned(model.beta, 4),
       hint: model.scale === 'log'
-        ? 'Estimado na escala log10 do indicador.'
-        : 'Estimado na escala original; nenhum valor artificial foi somado aos zeros.',
+        ? `Estimado na escala log10 do indicador, ${unit}.`
+        : `Estimado na escala original, ${unit}; nenhum valor artificial foi somado aos zeros.`,
     },
     {
       label: 'Erro-padrão (β)',

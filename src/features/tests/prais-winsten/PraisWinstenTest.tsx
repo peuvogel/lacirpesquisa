@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
+import type { TemporalMode } from '@/shared/data-input/temporalPeriods';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useSession } from '@/shared/session/SessionProvider';
@@ -28,7 +29,7 @@ import {
   buildDatasetFromConfirmed,
   buildMetrics,
   runAnalysis,
-  validateSeries,
+  validateSeriesIssues,
 } from './praisEngine';
 import { buildPraisInterpretation } from './praisInterpretation';
 
@@ -70,6 +71,7 @@ export function PraisWinstenTest() {
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [alpha, setAlpha] = useState<AlphaValue>('0.05');
+  const [temporalMode, setTemporalMode] = useState<TemporalMode>('auto');
   const [chartTab, setChartTab] = useState<'trend' | 'residual'>('trend');
   const [showSoftReset, setShowSoftReset] = useState(false);
 
@@ -113,6 +115,13 @@ export function PraisWinstenTest() {
     });
   }
 
+  function handleTemporalModeChange(mode: TemporalMode) {
+    setTemporalMode(mode);
+    setConfirmedDataset(null);
+    setShowSoftReset(true);
+    setActiveStep('configurar');
+  }
+
   const canAdvance = useMemo(
     () => ({
       dados: true,
@@ -129,11 +138,12 @@ export function PraisWinstenTest() {
       headers: confirmedDataset.headers,
       rows: confirmedDataset.rows,
       recognizedColumns: confirmedDataset.recognizedColumns,
+      temporalMode,
     });
 
-    const validationErrors = validateSeries(dataset);
-    if (validationErrors.length) {
-      return <PraisWinstenValidationAlert message={validationErrors[0]} />;
+    const issues = validateSeriesIssues(dataset);
+    if (issues.some((issue) => issue.severity === 'error')) {
+      return <PraisWinstenValidationAlert issues={issues} />;
     }
 
     const output = runAnalysis(dataset);
@@ -151,6 +161,7 @@ export function PraisWinstenTest() {
 
     return (
       <div className="space-y-4">
+        <PraisWinstenValidationAlert issues={issues} />
         <Tabs value={chartTab} onValueChange={(value) => setChartTab(value as 'trend' | 'residual')}>
           <TabsList aria-label="Gráficos Prais-Winsten">
             <TabsTrigger value="trend">Tendência</TabsTrigger>
@@ -184,7 +195,7 @@ export function PraisWinstenTest() {
         </Tabs>
       </div>
     );
-  }, [confirmedDataset, loadedInput, alpha, chartTab]);
+  }, [confirmedDataset, loadedInput, alpha, chartTab, temporalMode]);
 
   return (
     <FlowSteps
@@ -211,6 +222,8 @@ export function PraisWinstenTest() {
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}
+            temporalMode={temporalMode}
+            onTemporalModeChange={handleTemporalModeChange}
             showSoftReset={showSoftReset}
             onConfirm={handleConfigureConfirm}
             document={analysisTable.table ?? undefined} testId="prais-winsten"

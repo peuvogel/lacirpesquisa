@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
+import { PraisWinstenValidationAlert } from './PraisWinstenConfigPanel';
 import { PraisWinstenTest } from './PraisWinstenTest';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
@@ -42,6 +43,20 @@ function renderPraisWinsten() {
   );
 }
 
+const pastedSemesters = `Semestre\tN de inscritos
+2021.1\t90
+2021.2\t92
+2022.1\t93
+2022.2\t95
+2023.1\t95
+2023.2\t97
+2024.1\t98
+2024.2\t100
+2025.1\t102
+2025.2\t105
+2026.1\t108
+2026.2\t114`;
+
 describe('PraisWinstenTest', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -51,6 +66,104 @@ describe('PraisWinstenTest', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('detects pasted semesters, exposes an override and reaches results', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    fireEvent.change(
+      screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'),
+      { target: { value: pastedSemesters } },
+    );
+    await vi.advanceTimersByTimeAsync(200);
+
+    expect(await screen.findByText(/Periodicidade detectada: Semestral/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Interpretar períodos como')).toHaveValue('auto');
+    expect(screen.getByText(/efeito anualizado/i)).toBeInTheDocument();
+
+    await runToResultados(user);
+    expect(screen.queryByText(/intervalos irregulares/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Semestral/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/2021\.1 a 2026\.2/i).length).toBeGreaterThan(0);
+  });
+
+  it('invalidates a confirmed result when the temporal interpretation changes', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await runToResultados(user);
+
+    await user.selectOptions(screen.getByLabelText('Interpretar períodos como'), 'order');
+
+    expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Interpretar períodos como')).toHaveValue('order');
+    expect(screen.getByText(/Periodicidade detectada: Ordem observada/i)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Resultados' })).not.toBeInTheDocument();
+    expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
+  });
+
+  it('keeps a reordered-series warning visible above successful results', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    fireEvent.change(
+      screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'),
+      {
+        target: {
+          value: `Semestre\tValor
+2021.2\t92
+2021.1\t90
+2022.1\t93
+2022.2\t95
+2023.1\t97
+2023.2\t100`,
+        },
+      },
+    );
+    await vi.advanceTimersByTimeAsync(200);
+    await runToResultados(user);
+
+    const warningTitle = screen.getByText('Observações sobre a série temporal');
+    const warningAlert = warningTitle.closest('[role="alert"]');
+    expect(warningAlert).not.toHaveClass('text-destructive');
+    expect(warningAlert).toHaveTextContent('Os períodos não estão na ordem temporal original.');
+    expect(warningAlert).toHaveTextContent('Linhas: 1, 2.');
+    expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
+  });
+
+  it('shows every blocking issue with affected rows and separates warnings', () => {
+    render(
+      <PraisWinstenValidationAlert
+        issues={[
+          {
+            code: 'missing_period',
+            severity: 'error',
+            message: 'Período ausente: 2022.1.',
+            rowNumbers: [2, 3],
+          },
+          {
+            code: 'duplicate_period',
+            severity: 'error',
+            message: 'Período duplicado: 2023.1.',
+            rowNumbers: [4, 5],
+          },
+          {
+            code: 'temporal_reordered',
+            severity: 'warning',
+            message: 'Os períodos não estão na ordem temporal original.',
+            rowNumbers: [1, 2],
+          },
+        ]}
+      />,
+    );
+
+    const primaryIssue = screen.getByText(/Período ausente: 2022\.1\./);
+    expect(primaryIssue.tagName).toBe('P');
+    expect(primaryIssue).toHaveTextContent('Linhas: 2, 3.');
+    expect(screen.getByText('Ver outros problemas encontrados')).toBeInTheDocument();
+    expect(screen.getByText(/Período duplicado: 2023\.1\./)).toHaveTextContent('Linhas: 4, 5.');
+    const warningTitle = screen.getByText('Observações sobre a série temporal');
+    expect(warningTitle.closest('[role="alert"]')).toHaveTextContent('Linhas: 1, 2.');
   });
 
   it('shows series preview on Configurar after Usar exemplo', async () => {
