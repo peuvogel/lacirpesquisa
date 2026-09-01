@@ -32,6 +32,7 @@ describe('detectTemporalColumn', () => {
   it.each([
     [['2022', '2023'], 'Ano', 'annual'],
     [['2024-S1', '2024-S2'], 'Semestre', 'semiannual'],
+    [['S1 2024', 'S2 2024'], 'Semestre', 'semiannual'],
     [['T1 2024', '2024-T2'], 'Trimestre', 'quarterly'],
     [['2024-01', '02/2024'], 'Mês', 'monthly'],
     [['2024-01-01', '02/01/2024'], 'Data', 'daily'],
@@ -40,6 +41,76 @@ describe('detectTemporalColumn', () => {
 
     expect(result.status).toBe('resolved');
     expect(result.frequency).toBe(frequency);
+  });
+
+  it('treats slash slots as semesters only with strong context', () => {
+    expect(detectTemporalColumn(['2024/1', '2024/2'], 'Semestre')).toMatchObject({
+      status: 'resolved', frequency: 'semiannual',
+    });
+    expect(detectTemporalColumn(['2024/1', '2024/2'], 'Período')).toMatchObject({
+      status: 'invalid', frequency: null,
+    });
+    expect(detectTemporalColumn(['2024/1', '2024/2'], 'Período', 'semiannual')).toMatchObject({
+      status: 'resolved', frequency: 'semiannual',
+    });
+  });
+
+  it('maps full dates to monthly competences only under a monthly override', () => {
+    const result = detectTemporalColumn(
+      ['2024-01-15', '20/02/2024', '2024-03-02'], 'Data', 'monthly',
+    );
+
+    expect(result).toMatchObject({ status: 'resolved', frequency: 'monthly' });
+    expect(result.values.map((value) => value?.label)).toEqual([
+      '2024-01-15', '20/02/2024', '2024-03-02',
+    ]);
+    expect(result.values.map((value) => value?.canonicalLabel)).toEqual([
+      '2024-01', '2024-02', '2024-03',
+    ]);
+  });
+
+  it('reports duplicate month competences from full dates in monthly mode', () => {
+    const result = detectTemporalColumn(
+      ['2024-01-02', '31/01/2024', '2024-02-01'], 'Data', 'monthly',
+    );
+
+    expect(result.issues).toContainEqual(expect.objectContaining({
+      code: 'duplicate_period', rowNumbers: [1, 2],
+    }));
+  });
+
+  it('retains valid forced-mode cells and identifies bounded invalid values and rows', () => {
+    const result = detectTemporalColumn(
+      ['2024-S1', 'fora-do-formato', '2024-S2'], 'Semestre', 'semiannual',
+    );
+
+    expect(result.values.map((value) => value?.canonicalLabel ?? null)).toEqual([
+      '2024.1', null, '2024.2',
+    ]);
+    expect(result.issues).toContainEqual(expect.objectContaining({
+      code: 'invalid_token', severity: 'error', rowNumbers: [2],
+      message: expect.stringMatching(/fora-do-formato.*2024-S1/i),
+    }));
+  });
+
+  it('identifies offending rows and bounded values in automatic mixed input', () => {
+    const result = detectTemporalColumn(
+      ['2024-S1', '2024-Q2', 'texto inválido'], 'Período',
+    );
+
+    expect(result.issues[0]).toMatchObject({
+      code: 'mixed_frequency', severity: 'error', rowNumbers: [1, 2, 3],
+    });
+    expect(result.issues[0]?.message).toMatch(/2024-S1.*2024-Q2.*texto inválido/i);
+  });
+
+  it('makes unresolved automatic ambiguity explicitly blocking', () => {
+    const result = detectTemporalColumn(['2021.1', '2022.1'], 'Tempo');
+
+    expect(result.status).toBe('ambiguous');
+    expect(result.issues).toContainEqual(expect.objectContaining({
+      code: 'ambiguous_frequency', severity: 'error', rowNumbers: [1, 2],
+    }));
   });
 
   it('reports an exact missing semester', () => {

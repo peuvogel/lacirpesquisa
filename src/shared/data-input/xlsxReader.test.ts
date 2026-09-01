@@ -203,6 +203,25 @@ describe('bounded XLSX import', () => {
     }
   });
 
+  it('warns about a remaining raw serial beside a converted styled date', async () => {
+    const items = datedEntries();
+    items[2].text = items[2].text.replace(
+      '</sheetData>',
+      '<row r="3"><c r="A3"><v>45293</v></c></row></sheetData>',
+    );
+    const result = await readTabularFileState(file(zip(items)), legacyUtils, legacyStats, {
+      aliases: { data: ['Data'] }, requiredKeys: ['data'], temporalKeys: ['data'],
+    });
+
+    expect(result).toMatchObject({ status: 'loaded', bodyRows: [['2024-01-01'], ['45293']] });
+    if (result.status === 'loaded') {
+      expect(result.summary.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'excel_dates_converted' }),
+        expect.objectContaining({ code: 'possible_excel_serial', rowNumbers: [2] }),
+      ]));
+    }
+  });
+
   it('rejects legacy xls before reading binary contents', async () => {
     const legacy = new File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0])], 'dados.xls');
     const readBuffer = vi.spyOn(legacy, 'arrayBuffer');

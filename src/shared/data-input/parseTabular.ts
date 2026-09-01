@@ -9,6 +9,7 @@ import { detectTemporalColumn, isSupportedTemporalToken } from './temporalPeriod
 import type {
   LegacyStatsAdapter,
   LegacyUtilsAdapter,
+  DuplicateHeaderMatch,
   MatchTabularColumnsResult,
   ParsedDelimitedRows,
   PositionFallbackOptions,
@@ -257,7 +258,7 @@ export function matchTabularColumns(
   requiredKeys: string[] = [],
 ): MatchTabularColumnsResult {
   const recognizedColumns: Record<string, RecognizedColumn> = {};
-  const duplicates: string[] = [];
+  const duplicates: DuplicateHeaderMatch[] = [];
 
   headers.forEach((header, index) => {
     const normalized = normalizeHeaderToken(header);
@@ -269,7 +270,13 @@ export function matchTabularColumns(
 
     if (!matchedKey) return;
     if (recognizedColumns[matchedKey]) {
-      duplicates.push(`${recognizedColumns[matchedKey].header} / ${normalizeTabularSpaces(header) || `Coluna ${index + 1}`}`);
+      duplicates.push({
+        key: matchedKey,
+        firstLabel: recognizedColumns[matchedKey].header,
+        secondLabel: normalizeTabularSpaces(header) || `Coluna ${index + 1}`,
+        firstIndex: recognizedColumns[matchedKey].index,
+        secondIndex: index,
+      });
       return;
     }
 
@@ -609,7 +616,6 @@ function analyzeNumericFormatting(
   numericKeys: string[],
   temporalKeys: string[],
   stats: LegacyStatsAdapter | undefined,
-  hasExcelDateConversions: boolean,
 ): {
   decimalCommaDetected: boolean;
   numericCellCount: number;
@@ -649,8 +655,7 @@ function analyzeNumericFormatting(
       if (parseTabularNumber(raw, stats) === null) return;
       const numericValue = Number(normalized);
       if (
-        !hasExcelDateConversions
-        && temporalKeys.includes(key)
+        temporalKeys.includes(key)
         && Number.isInteger(numericValue)
         && numericValue >= 20_000
         && numericValue <= 80_000
@@ -708,13 +713,8 @@ function analyzeNumericFormatting(
   };
 }
 
-function duplicateHeaderDiagnostics(headers: string[], duplicates: string[]): ImportDiagnostic[] {
-  return duplicates.map((duplicate) => {
-    const [firstLabel = '', secondLabel = ''] = duplicate.split(' / ');
-    const firstIndex = headers.findIndex((header) => normalizeTabularSpaces(header) === firstLabel);
-    const secondIndex = headers.findIndex((header, index) => (
-      index > firstIndex && normalizeTabularSpaces(header) === secondLabel
-    ));
+function duplicateHeaderDiagnostics(duplicates: readonly DuplicateHeaderMatch[]): ImportDiagnostic[] {
+  return duplicates.map(({ firstLabel, secondLabel, firstIndex, secondIndex }) => {
     const firstColumn = firstIndex + 1;
     const secondColumn = secondIndex + 1;
     return {
@@ -748,7 +748,6 @@ function buildLoadedTabularState(
     numericKeys,
     temporalKeys,
     stats,
-    sourceDiagnostics.some((item) => item.code === 'excel_dates_converted'),
   );
   const sourceType = extra.sourceType || 'file';
   const recognitionMode = candidate.recognitionMode || 'aliases';
@@ -756,7 +755,7 @@ function buildLoadedTabularState(
   const diagnostics: ImportDiagnostic[] = [
     ...normalized.diagnostics,
     ...sourceDiagnostics,
-    ...duplicateHeaderDiagnostics(normalized.headers, candidate.duplicates),
+    ...duplicateHeaderDiagnostics(candidate.duplicates),
     ...(recognitionMode === 'position' ? [{
       code: 'positional_mapping' as const,
       severity: 'info' as const,

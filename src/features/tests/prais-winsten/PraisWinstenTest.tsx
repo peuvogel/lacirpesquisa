@@ -117,8 +117,8 @@ export function PraisWinstenTest() {
 
   function handleTemporalModeChange(mode: TemporalMode) {
     setTemporalMode(mode);
+    if (confirmedDataset) setShowSoftReset(true);
     setConfirmedDataset(null);
-    setShowSoftReset(true);
     setActiveStep('configurar');
   }
 

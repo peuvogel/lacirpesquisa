@@ -138,7 +138,17 @@ function parseMonth(raw: string): ParsedCalendarToken | null {
 }
 
 function parseExplicitSemester(raw: string): ParsedCalendarToken | null {
-  const match = /^(\d{4})\s*-?\s*[sS]([12])$/.exec(raw.trim());
+  const value = raw.trim();
+  const suffix = /^(\d{4})\s*-?\s*[sS]([12])$/.exec(value);
+  const prefix = /^[sS]([12])\s+(\d{4})$/.exec(value);
+  if (!suffix && !prefix) return null;
+  const year = Number(suffix?.[1] ?? prefix?.[2]);
+  const slot = Number(suffix?.[2] ?? prefix?.[1]);
+  return { frequency: 'semiannual', year, slot, canonicalLabel: `${year}.${slot}` };
+}
+
+function parseSlashSemester(raw: string): ParsedCalendarToken | null {
+  const match = /^(\d{4})\/([12])$/.exec(raw.trim());
   if (!match) return null;
   const year = Number(match[1]);
   const slot = Number(match[2]);
@@ -176,6 +186,8 @@ function parseCalendarCandidate(raw: string, frequency: CalendarFrequency): Pars
   if (frequency === 'semiannual') {
     const explicit = parseExplicitSemester(raw);
     if (explicit) return explicit;
+    const slash = parseSlashSemester(raw);
+    if (slash) return slash;
     if (!decimal || decimal.slot > 2) return null;
     return { ...decimal, frequency, canonicalLabel: `${decimal.year}.${decimal.slot}` };
   }
@@ -379,6 +391,106 @@ function resolveNumeric(rawValues: readonly string[], mode: TemporalMode, number
   return resolution('resolved', mode, 'numeric', 'numeric-unit', values, buildSequenceIssues(values, 'numeric'));
 }
 
+const MAX_DIAGNOSTIC_ROWS = 100;
+const MAX_DIAGNOSTIC_VALUES = 8;
+const MAX_DIAGNOSTIC_TOKEN_LENGTH = 40;
+
+function boundedToken(raw: string): string {
+  const token = raw.trim() || '(vazio)';
+  return token.length <= MAX_DIAGNOSTIC_TOKEN_LENGTH
+    ? token
+    : `${token.slice(0, MAX_DIAGNOSTIC_TOKEN_LENGTH - 1)}…`;
+}
+
+function invalidTokenIssue(
+  rawValues: readonly string[],
+  invalidIndexes: readonly number[],
+  expectedFormats: string,
+): TemporalIssue {
+  const displayed = invalidIndexes.slice(0, MAX_DIAGNOSTIC_VALUES)
+    .map((index) => `“${boundedToken(rawValues[index] ?? '')}”`);
+  const remaining = invalidIndexes.length - displayed.length;
+  return issue(
+    'invalid_token',
+    'error',
+    `Valores temporais inválidos: ${displayed.join(', ')}${remaining > 0 ? ` e mais ${remaining}` : ''}. Formatos aceitos: ${expectedFormats}.`,
+    invalidIndexes.slice(0, MAX_DIAGNOSTIC_ROWS).map((index) => index + 1),
+  );
+}
+
+function resolvePartialCalendar(
+  rawValues: readonly string[],
+  mode: TemporalMode,
+  frequency: CalendarFrequency,
+  parser: (raw: string) => ParsedCalendarToken | null,
+  expectedFormats: string,
+): TemporalColumnResolution {
+  const parsed = rawValues.map(parser);
+  const invalidIndexes = parsed.flatMap((value, index) => value === null ? [index] : []);
+  const values = parsed.map((token, index) => token === null ? null : calendarValue(
+    rawValues[index] ?? '', index + 1, frequency, token.year, token.slot, token.canonicalLabel,
+  ));
+  const validValues = values.filter((value): value is ResolvedTemporalValue => value !== null);
+  const issues = [
+    ...(invalidIndexes.length ? [invalidTokenIssue(rawValues, invalidIndexes, expectedFormats)] : []),
+    ...buildSequenceIssues(validValues, frequency),
+  ];
+  return resolution(invalidIndexes.length ? 'invalid' : 'resolved', mode, frequency, 'annualized', values, issues);
+}
+
+function monthlyOverrideToken(raw: string): ParsedCalendarToken | null {
+  const month = parseMonth(raw);
+  if (month) return month;
+  const date = parseDateParts(raw);
+  return date ? {
+    frequency: 'monthly',
+    year: date.year,
+    slot: date.month,
+    canonicalLabel: `${date.year}-${padded(date.month)}`,
+  } : null;
+}
+
+function resolvePartialDates(rawValues: readonly string[], mode: TemporalMode): TemporalColumnResolution {
+  const dates = rawValues.map(parseDateParts);
+  const invalidIndexes = dates.flatMap((value, index) => value === null ? [index] : []);
+  if (!invalidIndexes.length) return resolveDaily(rawValues, mode, dates as DateParts[]);
+  const values = dates.map((date, index): ResolvedTemporalValue | null => {
+    if (!date) return null;
+    const periodIndex = utcDayIndex(date.year, date.month, date.day);
+    return {
+      raw: rawValues[index] ?? '',
+      label: (rawValues[index] ?? '').trim(),
+      canonicalLabel: `${date.year}-${padded(date.month)}-${padded(date.day)}`,
+      periodIndex,
+      coordinate: periodIndex / 365.2425,
+      rowNumber: index + 1,
+    };
+  });
+  const validValues = values.filter((value): value is ResolvedTemporalValue => value !== null);
+  return resolution('invalid', mode, 'daily', 'annualized', values, [
+    invalidTokenIssue(rawValues, invalidIndexes, 'AAAA-MM-DD ou DD/MM/AAAA'),
+    ...buildSequenceIssues(validValues, 'daily'),
+  ]);
+}
+
+function resolvePartialNumeric(rawValues: readonly string[], mode: TemporalMode): TemporalColumnResolution {
+  const numbers = rawValues.map(parseNumeric);
+  const invalidIndexes = numbers.flatMap((value, index) => value === null ? [index] : []);
+  const values = numbers.map((number, index): ResolvedTemporalValue | null => number === null ? null : ({
+    raw: rawValues[index] ?? '',
+    label: (rawValues[index] ?? '').trim(),
+    canonicalLabel: String(number),
+    periodIndex: number,
+    coordinate: number,
+    rowNumber: index + 1,
+  }));
+  const validValues = values.filter((value): value is ResolvedTemporalValue => value !== null);
+  return resolution(invalidIndexes.length ? 'invalid' : 'resolved', mode, 'numeric', 'numeric-unit', values, [
+    ...(invalidIndexes.length ? [invalidTokenIssue(rawValues, invalidIndexes, 'números como 1, 2 ou 2024.5')] : []),
+    ...buildSequenceIssues(validValues, 'numeric'),
+  ]);
+}
+
 function allParsed<T>(values: readonly string[], parser: (value: string) => T | null): T[] | null {
   const parsed = values.map(parser);
   return parsed.every((value): value is T => value !== null) ? parsed : null;
@@ -388,6 +500,7 @@ export function isSupportedTemporalToken(raw: string): boolean {
   return parseDateParts(raw) !== null
     || parseMonth(raw) !== null
     || parseExplicitSemester(raw) !== null
+    || parseSlashSemester(raw) !== null
     || parseExplicitQuarter(raw) !== null
     || parseAnnual(raw) !== null
     || parseDecimalPeriod(raw) !== null
@@ -435,33 +548,32 @@ export function detectTemporalColumn(
     ]);
   }
 
-  const invalid = (frequency: TemporalFrequency | null, effectBasis: TemporalColumnResolution['effectBasis'], message = 'Há valores que não correspondem ao período selecionado.') => resolution(
-    'invalid', mode, frequency, effectBasis, rawValues.map(() => null), [issue('invalid_token', 'error', message)],
-  );
-
   if (mode === 'annual') {
-    const parsed = allParsed(rawValues, parseAnnual);
-    return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('annual', 'annualized');
+    return resolvePartialCalendar(rawValues, mode, 'annual', parseAnnual, 'AAAA');
   }
   if (mode === 'semiannual') {
-    const parsed = parseCalendarColumn(rawValues, 'semiannual');
-    return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('semiannual', 'annualized');
+    return resolvePartialCalendar(
+      rawValues, mode, 'semiannual', (raw) => parseCalendarCandidate(raw, 'semiannual'),
+      'AAAA-S1 (ex.: 2024-S1), S1 AAAA, AAAA.1 ou AAAA/1',
+    );
   }
   if (mode === 'quarterly') {
-    const parsed = parseCalendarColumn(rawValues, 'quarterly');
-    return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('quarterly', 'annualized');
+    return resolvePartialCalendar(
+      rawValues, mode, 'quarterly', (raw) => parseCalendarCandidate(raw, 'quarterly'),
+      'AAAA-T1, T1 AAAA, AAAA-Q1 ou AAAA.1',
+    );
   }
   if (mode === 'monthly') {
-    const parsed = allParsed(rawValues, parseMonth);
-    return parsed ? resolveCalendar(rawValues, mode, parsed) : invalid('monthly', 'annualized');
+    return resolvePartialCalendar(
+      rawValues, mode, 'monthly', monthlyOverrideToken,
+      'AAAA-MM, MM/AAAA, AAAA-MM-DD ou DD/MM/AAAA',
+    );
   }
   if (mode === 'dates') {
-    const dates = allParsed(rawValues, parseDateParts);
-    return dates ? resolveDaily(rawValues, mode, dates) : invalid('daily', 'annualized');
+    return resolvePartialDates(rawValues, mode);
   }
   if (mode === 'numeric') {
-    const numbers = allParsed(rawValues, parseNumeric);
-    return numbers ? resolveNumeric(rawValues, mode, numbers) : invalid('numeric', 'numeric-unit');
+    return resolvePartialNumeric(rawValues, mode);
   }
 
   const dates = allParsed(rawValues, parseDateParts);
@@ -492,12 +604,22 @@ export function detectTemporalColumn(
   if (quarterAllowed && !semesterAllowed) return resolveCalendar(rawValues, mode, quarters!);
   if (semesterAllowed && quarterAllowed) {
     return resolution('ambiguous', mode, null, 'observed-interval', rawValues.map(() => null), [
-      issue('ambiguous_frequency', 'warning', 'A coluna sustenta mais de uma frequência temporal.'),
+      issue(
+        'ambiguous_frequency',
+        'error',
+        'A coluna sustenta mais de uma frequência temporal. Escolha a interpretação no seletor antes de analisar.',
+        rawValues.slice(0, MAX_DIAGNOSTIC_ROWS).map((_, index) => index + 1),
+      ),
     ]);
   }
   if (semesters !== null && decimals !== null && decimals.every((value) => value.slot <= 2)) {
     return resolution('ambiguous', mode, null, 'observed-interval', rawValues.map(() => null), [
-      issue('ambiguous_frequency', 'warning', 'Rótulos decimais podem indicar semestres ou valores numéricos.'),
+      issue(
+        'ambiguous_frequency',
+        'error',
+        'Rótulos decimais podem indicar semestres ou valores numéricos. Escolha a interpretação no seletor antes de analisar.',
+        rawValues.slice(0, MAX_DIAGNOSTIC_ROWS).map((_, index) => index + 1),
+      ),
     ]);
   }
 
@@ -512,8 +634,24 @@ export function detectTemporalColumn(
     if (parseAnnual(value)) return 'annual';
     return null;
   }).filter((value): value is Exclude<TemporalFrequency, 'numeric' | 'order'> => value !== null);
-  const issues = explicitKinds.length > 1 && new Set(explicitKinds).size > 1
-    ? [issue('mixed_frequency', 'error', 'A coluna mistura frequências temporais diferentes.')]
-    : [issue('invalid_token', 'error', 'Há valores temporais inválidos ou não reconhecidos.')];
-  return resolution('invalid', mode, null, 'observed-interval', rawValues.map(() => null), issues);
+  const mixed = explicitKinds.length > 1 && new Set(explicitKinds).size > 1;
+  const invalidIndexes = mixed
+    ? rawValues.map((_, index) => index)
+    : rawValues.flatMap((value, index) => isSupportedTemporalToken(value) ? [] : [index]);
+  const displayed = invalidIndexes.slice(0, MAX_DIAGNOSTIC_VALUES)
+    .map((index) => `“${boundedToken(rawValues[index] ?? '')}”`);
+  const remaining = invalidIndexes.length - displayed.length;
+  const diagnostic = mixed
+    ? issue(
+        'mixed_frequency',
+        'error',
+        `A coluna mistura frequências ou formatos incompatíveis: ${displayed.join(', ')}${remaining > 0 ? ` e mais ${remaining}` : ''}.`,
+        invalidIndexes.slice(0, MAX_DIAGNOSTIC_ROWS).map((index) => index + 1),
+      )
+    : invalidTokenIssue(
+        rawValues,
+        invalidIndexes.length ? invalidIndexes : rawValues.map((_, index) => index),
+        'AAAA, AAAA-S1, AAAA-T1, AAAA-MM, MM/AAAA, AAAA-MM-DD ou DD/MM/AAAA',
+      );
+  return resolution('invalid', mode, null, 'observed-interval', rawValues.map(() => null), [diagnostic]);
 }

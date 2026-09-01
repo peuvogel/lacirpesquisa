@@ -89,6 +89,10 @@ function makeLoadedState(overrides: Partial<TabularLoadedState> = {}): TabularLo
   };
 }
 
+function importSummaryFor(fileName: string, tableName: string): TabularImportSummary {
+  return { ...TEST_IMPORT_SUMMARY, fileName, tableName };
+}
+
 function makeDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
   let reject!: (reason?: unknown) => void;
@@ -244,7 +248,10 @@ describe('useTabularInput', () => {
 
     vi.mocked(parseTabularModule.readTabularFileState)
       .mockImplementationOnce(() => slow)
-      .mockImplementationOnce(async () => makeLoadedState({ headers: ['FAST'] }));
+      .mockImplementationOnce(async () => makeLoadedState({
+        headers: ['FAST'],
+        summary: importSummaryFor('fast.csv', 'FAST_SUMMARY'),
+      }));
 
     const { result } = renderHook(() => useTabularInput(commaAmbiguousOptions));
     const slowFile = new File(['slow'], 'slow.csv');
@@ -257,16 +264,19 @@ describe('useTabularInput', () => {
     });
 
     expect(result.current.headers).toEqual(['FAST']);
-    expect(result.current.importSummary?.fileName).toBe('dados.csv');
+    expect(result.current.importSummary).toMatchObject({ fileName: 'fast.csv', tableName: 'FAST_SUMMARY' });
 
     await act(async () => {
-      resolveSlow(makeLoadedState({ headers: ['SLOW'] }));
+      resolveSlow(makeLoadedState({
+        headers: ['SLOW'],
+        summary: importSummaryFor('slow.csv', 'SLOW_SUMMARY'),
+      }));
       await slowPromise;
     });
 
     // The stale slow response must not overwrite the later fast one.
     expect(result.current.headers).toEqual(['FAST']);
-    expect(result.current.importSummary?.fileName).toBe('dados.csv');
+    expect(result.current.importSummary).toMatchObject({ fileName: 'fast.csv', tableName: 'FAST_SUMMARY' });
   });
 
   it('lets a file replace pasted input while the paste debounce is pending', async () => {
@@ -289,6 +299,7 @@ describe('useTabularInput', () => {
 
     expect(result.current.headers).toEqual(['Município', 'Taxa por 100k']);
     expect(result.current.bodyRows).toEqual([['Arquivo', '2']]);
+    expect(result.current.importSummary).toMatchObject({ sourceType: 'file', fileName: 'arquivo.csv' });
     expect(readFileTextSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -308,6 +319,7 @@ describe('useTabularInput', () => {
       await vi.advanceTimersByTimeAsync(150);
     });
     expect(result.current.bodyRows).toEqual([['Colado', '1']]);
+    expect(result.current.importSummary).toMatchObject({ sourceType: 'paste', fileName: 'dados-colados' });
 
     gate.resolve();
     await act(async () => {
@@ -316,6 +328,7 @@ describe('useTabularInput', () => {
 
     expect(result.current.headers).toEqual(['Município', 'Taxa por 100k']);
     expect(result.current.bodyRows).toEqual([['Colado', '1']]);
+    expect(result.current.importSummary).toMatchObject({ sourceType: 'paste', fileName: 'dados-colados' });
   });
 
   it('keeps the idle state when a deferred file resolves after reset', async () => {

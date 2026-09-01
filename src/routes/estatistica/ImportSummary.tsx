@@ -45,7 +45,9 @@ function worksheetSegment(summary: TabularImportSummary): string | null {
 
 /** Compact, reusable provenance and import-warning disclosure. */
 export function ImportSummary({ summary }: ImportSummaryProps) {
-  const hasWarnings = summary.diagnostics.length > 0 || summary.importWarnings.length > 0;
+  const hasWarnings = summary.recognitionDetails.length > 0
+    || summary.diagnostics.length > 0
+    || summary.importWarnings.length > 0;
   const segments = [
     worksheetSegment(summary),
     `${summary.rowCount} ${summary.rowCount === 1 ? 'linha' : 'linhas'}`,
@@ -69,13 +71,22 @@ export function ImportSummary({ summary }: ImportSummaryProps) {
           <summary className="cursor-pointer font-semibold text-foreground">
             Ver avisos da importação
           </summary>
-          <ul className="mt-2 space-y-1 text-muted-foreground">
+          <ul aria-label="Detalhes da importação" className="mt-2 space-y-1 text-muted-foreground">
+            {summary.recognitionDetails.map((detail, index) => (
+              <li key={`recognition-${index}`} className="flex gap-2">
+                <Info aria-label="Informação" className="mt-0.5 size-4 shrink-0 text-primary" />
+                <span>{detail}</span>
+              </li>
+            ))}
             {summary.diagnostics.map((diagnostic, index) => (
               <li key={`${diagnostic.code}-${index}`} className="flex gap-2">
                 {diagnostic.severity === 'warning'
                   ? <AlertTriangle aria-label="Aviso" className="mt-0.5 size-4 shrink-0 text-warning" />
                   : <Info aria-label="Informação" className="mt-0.5 size-4 shrink-0 text-primary" />}
-                <span>{diagnostic.message}</span>
+                <span>
+                  {diagnostic.message}
+                  {diagnostic.rowNumbers?.length ? ` Linhas: ${diagnostic.rowNumbers.join(', ')}.` : ''}
+                </span>
               </li>
             ))}
             {summary.importWarnings.map((warning) => (

@@ -37,6 +37,25 @@ describe('ImportSummary', () => {
     expect(screen.getByText(/cabeçalhos duplicados/i)).toBeInTheDocument();
   });
 
+  it('reveals recognition details and diagnostic rows accessibly without duplicate messages', async () => {
+    const user = userEvent.setup();
+    render(<ImportSummary summary={makeSummary({
+      recognitionDetails: ['Coluna 1 foi vinculada a Desfecho pela posição.'],
+      diagnostics: [{
+        code: 'missing_tokens',
+        severity: 'warning',
+        message: 'Foram identificados marcadores de ausência.',
+        rowNumbers: [2, 7],
+      }],
+    })} />);
+
+    await user.click(screen.getByText('Ver avisos da importação'));
+    const disclosure = screen.getByRole('list', { name: 'Detalhes da importação' });
+    expect(disclosure).toHaveTextContent('Coluna 1 foi vinculada a Desfecho pela posição.');
+    expect(disclosure).toHaveTextContent('Foram identificados marcadores de ausência. Linhas: 2, 7.');
+    expect(screen.getAllByText(/Foram identificados marcadores de ausência/)).toHaveLength(1);
+  });
+
   it('describes pasted singular data without inventing a worksheet or invisible separator', () => {
     render(<ImportSummary summary={makeSummary({
       sourceType: 'paste',

@@ -60,6 +60,14 @@ export interface RecognizedColumn {
   detection?: 'position';
 }
 
+export interface DuplicateHeaderMatch {
+  key: string;
+  firstLabel: string;
+  secondLabel: string;
+  firstIndex: number;
+  secondIndex: number;
+}
+
 export interface TabularRecognitionError {
   message: string;
   details: string[];
@@ -95,7 +103,7 @@ export interface ParsedDelimitedRows {
 
 export interface MatchTabularColumnsResult {
   recognizedColumns: Record<string, RecognizedColumn>;
-  duplicates: string[];
+  duplicates: DuplicateHeaderMatch[];
   requiredFound: boolean;
 }
 
@@ -130,7 +138,7 @@ export interface TabularCandidate {
   score: number;
   numericRows: number;
   recognizedColumns: Record<string, RecognizedColumn>;
-  duplicates: string[];
+  duplicates: DuplicateHeaderMatch[];
   recognitionMode: 'aliases' | 'position' | 'unmapped';
   recognitionDetails: string[];
 }
@@ -149,7 +157,7 @@ export interface TabularLoadedState {
   headers: string[];
   bodyRows: string[][];
   recognizedColumns: Record<string, RecognizedColumn>;
-  duplicates: string[];
+  duplicates: DuplicateHeaderMatch[];
   sheetNames: string[];
   decimalCommaDetected: boolean;
   numericCellCount: number;

@@ -82,9 +82,10 @@ describe('PraisWinstenTest', () => {
     expect(screen.getByText(/efeito anualizado/i)).toBeInTheDocument();
 
     await runToResultados(user);
-    expect(screen.queryByText(/intervalos irregulares/i)).not.toBeInTheDocument();
-    expect(screen.getAllByText(/Semestral/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/2021\.1 a 2026\.2/i).length).toBeGreaterThan(0);
+    const results = screen.getByRole('region', { name: 'Resultados' });
+    expect(within(results).queryByText(/intervalos irregulares/i)).not.toBeInTheDocument();
+    expect(within(results).getByText(/Semestral/i)).toBeInTheDocument();
+    expect(within(results).getAllByText(/2021\.1 a 2026\.2/i).length).toBeGreaterThan(0);
   });
 
   it('names the missing semester when a temporal gap blocks analysis', async () => {
@@ -119,6 +120,28 @@ describe('PraisWinstenTest', () => {
     expect(screen.getByText(/Periodicidade detectada: Ordem observada/i)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resultados' })).not.toBeInTheDocument();
     expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
+  });
+
+  it('does not claim a previous analysis was invalidated before any result existed', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await user.selectOptions(await screen.findByLabelText('Interpretar períodos como'), 'order');
+
+    expect(screen.queryByText('Análise anterior invalidada.')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Interpretar períodos como')).toHaveValue('order');
+  });
+
+  it('renders one import summary owner after Configurar becomes visible', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+
+    await screen.findByLabelText('Interpretar períodos como');
+    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
   });
 
   it('keeps a reordered-series warning visible above successful results', async () => {

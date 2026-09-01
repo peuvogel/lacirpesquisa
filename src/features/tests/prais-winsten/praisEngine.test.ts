@@ -91,6 +91,40 @@ describe('praisEngine differential parity', () => {
     expect(validateSeriesIssues(dataset).filter((issue) => issue.severity === 'error')).toEqual([]);
   });
 
+  it('blocks unresolved temporal ambiguity before reporting minimum points', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Tempo', 'Valor'],
+      rows: [['2021.1', '10'], ['2022.1', '12']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+    const blocking = validateSeriesIssues(dataset).filter((issue) => issue.severity === 'error');
+
+    expect(blocking[0]).toMatchObject({ code: 'temporal_ambiguous_frequency' });
+    expect(blocking[0]?.message).toMatch(/semestr|numéric|seletor/i);
+    expect(() => runAnalysis(dataset)).toThrow(/semestr|numéric|seletor/i);
+  });
+
+  it('integrates a monthly full-date override without changing raw period labels', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Data', 'Valor'],
+      rows: [
+        ['2024-01-15', '10'],
+        ['20/02/2024', '12'],
+        ['2024-03-02', '14'],
+        ['18/04/2024', '16'],
+      ],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+      temporalMode: 'monthly',
+    });
+
+    expect(dataset.orderedRows.map((row) => row.timeLabel)).toEqual([
+      '2024-01-15', '20/02/2024', '2024-03-02', '18/04/2024',
+    ]);
+    expect(dataset.time).toEqual([2024, 2024 + 1 / 12, 2024 + 2 / 12, 2024 + 3 / 12]);
+    expect(dataset.frequencyLabel).toBe('Mensal');
+    expect(validateSeriesIssues(dataset).filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
+
   it('runs a regular weekly daily-date series while preserving its labels and day coordinates', () => {
     const dataset = buildDatasetFromConfirmed({
       headers: ['Data', 'Valor'],
@@ -141,9 +175,49 @@ describe('praisEngine differential parity', () => {
 
     expect(dataset.orderedRows.map((row) => row.timePeriodIndex)).toEqual([0, 2, 3]);
     expect(validateSeriesIssues(dataset)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'invalid_outcome', rowNumbers: [2] }),
+      expect.objectContaining({ code: 'invalid_outcome', severity: 'warning', rowNumbers: [2] }),
       expect.objectContaining({ code: 'missing_period', rowNumbers: [1, 3] }),
     ]));
+    expect(() => runAnalysis(dataset)).toThrow(/intervalos? irregulares?/i);
+  });
+
+  it.each([
+    ['missing leading outcome', '', '2022 a 2024'],
+    ['nonnumeric leading outcome', 'inválido', '2022 a 2024'],
+    ['missing trailing outcome', '', '2021 a 2023'],
+    ['nonnumeric trailing outcome', 'inválido', '2021 a 2023'],
+  ])('runs after a %s exclusion with a visible warning and preserved effect', (_name, invalid, period) => {
+    const leading = period.startsWith('2022');
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: leading
+        ? [['2021', invalid], ['2022', '2'], ['2023', '3'], ['2024', '4']]
+        : [['2021', '1'], ['2022', '2'], ['2023', '3'], ['2024', invalid]],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(validateSeriesIssues(dataset)).toContainEqual(expect.objectContaining({
+      code: invalid ? 'invalid_outcome' : 'missing_outcome',
+      severity: 'warning',
+      rowNumbers: [leading ? 1 : 4],
+    }));
+    expect(dataset.periodLabel).toBe(period);
+    expect(dataset.effectBasisLabel).toBe('Efeito anualizado por ano');
+    expect(runAnalysis(dataset).model.n).toBe(3);
+  });
+
+  it('keeps the minimum-point error after trimming an invalid edge outcome', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2021', ''], ['2022', '2'], ['2023', '3']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(validateSeriesIssues(dataset)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'missing_outcome', severity: 'warning' }),
+      expect.objectContaining({ code: 'minimum_temporal_points', severity: 'error' }),
+    ]));
+    expect(() => runAnalysis(dataset)).toThrow(/pelo menos 3 pontos/i);
   });
 
   it('runPraisWinsten matches legacy Stats on prais-exemplo fixture', () => {
@@ -265,7 +339,7 @@ describe('praisEngine differential parity', () => {
     expect(dataset.validCount).toBe(3);
     expect(dataset.orderedRows.map((row) => row.timePeriodIndex)).toEqual([2021, 2023, 2024]);
     expect(validateSeriesIssues(dataset)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'invalid_outcome', severity: 'error', rowNumbers: [2] }),
+      expect.objectContaining({ code: 'invalid_outcome', severity: 'warning', rowNumbers: [2] }),
       expect.objectContaining({ code: 'missing_period', severity: 'error', rowNumbers: [1, 3] }),
     ]));
   });
@@ -338,6 +412,23 @@ describe('praisEngine differential parity', () => {
     expect(issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: 'invalid_outcome', rowNumbers: [3] }),
     ]));
+  });
+
+  it('matches temporal issue row numbers as normalized sets', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Ano', 'Valor'],
+      rows: [['2021', '1'], ['2023', '3'], ['2024', '4']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+    const sourceGap = dataset.issues.find((issue) => issue.code === 'temporal_missing_period');
+    if (!sourceGap) throw new Error('expected temporal source gap');
+    sourceGap.rowNumbers = [...(sourceGap.rowNumbers ?? [])].reverse();
+
+    expect(validateSeriesIssues(dataset)).toContainEqual(expect.objectContaining({
+      code: 'missing_period',
+      message: 'Período ausente: 2022.',
+      rowNumbers: [1, 2],
+    }));
   });
 
   it('rejects negative indicators instead of silently dropping them', () => {

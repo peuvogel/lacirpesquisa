@@ -125,7 +125,7 @@ export function TabularInputPanel({
         </div>
       ) : null}
 
-      {loadedOk && importSummary ? <ImportSummary summary={importSummary} /> : null}
+      {loadedOk && importSummary && showPreview ? <ImportSummary summary={importSummary} /> : null}
 
       <>
           <textarea

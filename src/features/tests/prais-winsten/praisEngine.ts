@@ -228,8 +228,8 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
     if (!yRaw) {
       issues.push({
         code: 'missing_outcome',
-        severity: 'error',
-        message: `A linha ${rowIndex + 1} não contém valor para o desfecho.`,
+        severity: 'warning',
+        message: `A linha ${rowIndex + 1} não contém valor para o desfecho e foi excluída da análise.`,
         rowNumbers: [rowIndex + 1],
       });
       return;
@@ -237,8 +237,8 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
     if (yValue === null) {
       issues.push({
         code: 'invalid_outcome',
-        severity: 'error',
-        message: `O desfecho da linha ${rowIndex + 1} não é numérico.`,
+        severity: 'warning',
+        message: `O desfecho da linha ${rowIndex + 1} não é numérico e foi excluído da análise.`,
         rowNumbers: [rowIndex + 1],
       });
       return;
@@ -352,7 +352,7 @@ export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[
   issues.push(...effectiveSequenceIssues(dataset.orderedRows).map((issue) => {
     const temporalIssue = dataset.issues.find((candidate) => (
       candidate.code === `temporal_${issue.code}`
-      && candidate.rowNumbers?.join(',') === issue.rowNumbers?.join(',')
+      && sameRowNumberSet(candidate.rowNumbers, issue.rowNumbers)
     ));
     return temporalIssue
       ? {
@@ -364,6 +364,13 @@ export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[
   }));
 
   return issues;
+}
+
+function sameRowNumberSet(left: readonly number[] | undefined, right: readonly number[] | undefined): boolean {
+  if (!left || !right || left.length !== right.length) return false;
+  const normalizedLeft = [...left].sort((a, b) => a - b);
+  const normalizedRight = [...right].sort((a, b) => a - b);
+  return normalizedLeft.every((value, index) => value === normalizedRight[index]);
 }
 
 function effectiveSequenceIssues(rows: readonly PraisSeriesRow[]): AnalysisIssue[] {

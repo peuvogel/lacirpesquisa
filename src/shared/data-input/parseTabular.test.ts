@@ -71,9 +71,9 @@ describe('readTabularPasteState preserves legacy values while normalizing import
 
       expect(actual.status).toBe(expected.status);
       if (actual.status === 'loaded' && expected.status === 'loaded') {
-        const { summary: _summary, headers: actualHeaders, bodyRows: actualRows, ...actualFlat } = actual;
+        const { summary: _summary, duplicates: _duplicates, headers: actualHeaders, bodyRows: actualRows, ...actualFlat } = actual;
         const expectedLoaded = expected as typeof actual;
-        const { headers: expectedHeaders, bodyRows: expectedRows, ...expectedFlat } = expectedLoaded;
+        const { duplicates: _expectedDuplicates, headers: expectedHeaders, bodyRows: expectedRows, ...expectedFlat } = expectedLoaded;
         expect(actualFlat).toEqual(expectedFlat);
         expect(actualHeaders).toEqual(expectedHeaders);
         expect(actualRows).toHaveLength(expectedRows.length);
@@ -270,6 +270,26 @@ describe('readTabularPasteState direct behavior (not just parity)', () => {
       expect(result.summary!.diagnostics).toEqual(expect.arrayContaining([
         expect.objectContaining({ code: 'duplicate_headers', message: expect.stringMatching(/desfecho.*coluna 1.*desfecho.*coluna 2/i) }),
       ]));
+    }
+  });
+
+  it('keeps duplicate-header labels and indexes when a legitimate header contains a slash separator', () => {
+    const result = port.readTabularPasteState(
+      'Desfecho / escore;Desfecho / escore;Grupo\n1;99;A\n2;98;B',
+      legacyStats,
+      {
+        aliases: { desfecho: ['Desfecho / escore'], grupo: ['Grupo'] },
+        requiredKeys: ['desfecho', 'grupo'],
+        numericKeys: ['desfecho'],
+      },
+    );
+
+    expect(result.status).toBe('loaded');
+    if (result.status === 'loaded') {
+      expect(result.summary.diagnostics).toContainEqual(expect.objectContaining({
+        code: 'duplicate_headers',
+        message: 'Os cabeçalhos "Desfecho / escore" (coluna 1) e "Desfecho / escore" (coluna 2) correspondem ao mesmo campo; a coluna 1 foi escolhida automaticamente, mantendo ambas editáveis.',
+      }));
     }
   });
 
