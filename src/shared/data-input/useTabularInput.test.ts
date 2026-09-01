@@ -120,6 +120,24 @@ describe('useTabularInput', () => {
     act(() => result.current.setRawText('A;B\n1;2'));
     expect(result.current.importWarnings ?? []).toEqual([]);
   });
+
+  it('keeps the winning import summary and clears it with new input', async () => {
+    vi.mocked(parseTabularModule.readTabularFileState).mockResolvedValueOnce(makeLoadedState());
+    const { result } = renderHook(() => useTabularInput());
+
+    await act(async () => result.current.setFile(new File(['x'], 'dados.csv')));
+
+    expect(result.current.importSummary).toMatchObject({
+      fileName: 'dados.csv',
+      tableName: 'Tabela',
+      rowCount: 1,
+      columnCount: 2,
+    });
+
+    act(() => result.current.setRawText(''));
+
+    expect(result.current.importSummary).toBeNull();
+  });
   it('surfaces a synchronous paste parser failure without escaping the debounce', () => {
     const { result } = renderHook(() => useTabularInput());
     act(() => result.current.setRawText('A;B\n"incompleto;2'));
@@ -239,6 +257,7 @@ describe('useTabularInput', () => {
     });
 
     expect(result.current.headers).toEqual(['FAST']);
+    expect(result.current.importSummary?.fileName).toBe('dados.csv');
 
     await act(async () => {
       resolveSlow(makeLoadedState({ headers: ['SLOW'] }));
@@ -247,6 +266,7 @@ describe('useTabularInput', () => {
 
     // The stale slow response must not overwrite the later fast one.
     expect(result.current.headers).toEqual(['FAST']);
+    expect(result.current.importSummary?.fileName).toBe('dados.csv');
   });
 
   it('lets a file replace pasted input while the paste debounce is pending', async () => {

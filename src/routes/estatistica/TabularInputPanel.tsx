@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { cn } from '@/lib/utils';
 import type { UseTabularInputResult } from '@/shared/data-input/useTabularInput';
 import { ColumnPreviewTable } from './ColumnPreviewTable';
+import { ImportSummary } from './ImportSummary';
 
 const ACCEPTED_FILE_TYPES = '.csv,.txt,.tsv,.xlsx';
 
@@ -34,6 +35,7 @@ export function TabularInputPanel({
   headers,
   bodyRows,
   recognizedColumns,
+  importSummary,
   error,
   onConfirm,
   onUseExample,
@@ -92,7 +94,7 @@ export function TabularInputPanel({
           <h2 className="text-lg font-bold text-foreground">Cole ou envie seus dados</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Cole uma tabela copiada do DataSUS/TABNET, digite valores separados por <code>;</code> ou envie um
-            arquivo <code>.csv</code>/<code>.xlsx</code>. Detectamos as colunas automaticamente.
+            arquivo CSV, TSV, TXT ou XLSX. Detectamos as colunas automaticamente.
           </p>
         </div>
       ) : null}
@@ -123,6 +125,8 @@ export function TabularInputPanel({
         </div>
       ) : null}
 
+      {loadedOk && importSummary ? <ImportSummary summary={importSummary} /> : null}
+
       <>
           <textarea
             aria-label="Cole aqui os dados copiados do DataSUS/TABNET"
@@ -150,7 +154,7 @@ export function TabularInputPanel({
               isDragOver && 'border-primary bg-primary/10 text-primary',
             )}
           >
-            <span>Arraste um arquivo .csv/.xlsx aqui ou clique para selecionar</span>
+            <span>Arraste um arquivo CSV, TSV, TXT ou XLSX aqui ou clique para selecionar</span>
             <input
               type="file"
               accept={ACCEPTED_FILE_TYPES}

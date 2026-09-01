@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { TABULAR_OPTIONS as tStudentOptions } from '@/features/tests/t-student/tStudentConfig';
 import { TABULAR_OPTIONS as praisOptions } from '@/features/tests/prais-winsten/praisConfig';
 import { createTableDocument, type TableDocument } from '@/shared/data-input/tableDocument';
+import type { TabularImportSummary } from '@/shared/data-input/importDiagnostics';
 import { ColumnPreviewTable } from './ColumnPreviewTable';
 
 const headers = ['Município', 'Taxa'];
@@ -42,6 +43,28 @@ describe('ColumnPreviewTable', () => {
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ rows: expect.arrayContaining([['SP', '51']]) }));
     expect(onConfirm.mock.calls[0][0].rows).toHaveLength(51);
+  });
+
+  it('uses document import warnings in preference to the legacy warning prop', async () => {
+    const user = userEvent.setup();
+    const summary: TabularImportSummary = {
+      sourceType: 'file', fileName: 'dados.xlsx', tableName: 'Dados', sheetNames: ['Dados'], formatLabel: 'XLSX', delimiter: '',
+      rowCount: 1, columnCount: 2, headerRowNumber: 1, recognitionMode: 'aliases', recognitionDetails: [], diagnostics: [],
+      importWarnings: [{ code: 'unusable-cell', message: 'Aviso do documento.', cellReference: 'B2', rowNumber: 2, columnIndex: 1 }],
+    };
+    const document = createTableDocument(['Grupo', 'Valor'], [['A', '1']], 'dados.xlsx', () => 'doc-warnings', summary);
+
+    render(
+      <ColumnPreviewTable
+        document={document}
+        importWarnings={[{ code: 'unusable-cell', message: 'Aviso legado.', cellReference: 'A2', rowNumber: 2, columnIndex: 0 }]}
+        onConfirm={() => {}}
+      />,
+    );
+
+    await user.click(screen.getByText('Ver avisos da importação'));
+    expect(screen.getByText(/Aviso do documento/)).toBeInTheDocument();
+    expect(screen.queryByText('Aviso legado.')).not.toBeInTheDocument();
   });
 
   it('disambiguates duplicate headers and keeps a manual role binding after a rename', async () => {

@@ -14,6 +14,7 @@ import {
 import { useTabularInput } from './useTabularInput';
 import type { TabularColumnRole } from './recognizedColumnsFromTabular';
 import type { TabularInputOptions } from './types';
+import type { TabularImportSummary } from './importDiagnostics';
 
 export interface AnalysisTableConfirmed {
   document: TableDocument;
@@ -112,8 +113,13 @@ export function useAnalysisTable(testId: string, options: UseAnalysisTableOption
     });
   }, [dataset?.confirmedAt, setDataset]);
 
-  const replaceTable = useCallback((headers: string[], rows: string[][], sourceLabel: string) => {
-    commitDocument(createTableDocument(headers, rows, sourceLabel, options.idFactory));
+  const replaceTable = useCallback((
+    headers: string[],
+    rows: string[][],
+    sourceLabel: string,
+    importSummary?: TabularImportSummary,
+  ) => {
+    commitDocument(createTableDocument(headers, rows, sourceLabel, options.idFactory, importSummary));
   }, [commitDocument, options.idFactory]);
 
   useEffect(() => {
@@ -122,8 +128,8 @@ export function useAnalysisTable(testId: string, options: UseAnalysisTableOption
     importedRequestRef.current = tabular.requestId;
     const sourceLabel = sourceOverrideRef.current ?? tabular.sourceLabel ?? 'colado';
     sourceOverrideRef.current = null;
-    replaceTable(tabular.headers, tabular.bodyRows, sourceLabel);
-  }, [replaceTable, tabular.bodyRows, tabular.headers, tabular.requestId, tabular.sourceLabel, tabular.status]);
+    replaceTable(tabular.headers, tabular.bodyRows, sourceLabel, tabular.importSummary ?? undefined);
+  }, [replaceTable, tabular.bodyRows, tabular.headers, tabular.importSummary, tabular.requestId, tabular.sourceLabel, tabular.status]);
 
   useEffect(() => {
     if (!table || !options.handoffRecognizedColumns || Object.keys(table.bindings[testId] ?? {}).length) return;

@@ -7,6 +7,13 @@ import {
   setTableRoleBinding,
   resolveBindings,
 } from './tableDocument';
+import type { TabularImportSummary } from './importDiagnostics';
+
+const importSummary: TabularImportSummary = {
+  sourceType: 'paste', fileName: '', tableName: 'Dados', sheetNames: [], formatLabel: 'CSV', delimiter: ';',
+  rowCount: 1, columnCount: 2, headerRowNumber: 1, recognitionMode: 'aliases', recognitionDetails: [],
+  diagnostics: [], importWarnings: [],
+};
 
 describe('TableDocument', () => {
   it('gives duplicate headers distinct stable identities', () => {
@@ -15,6 +22,13 @@ describe('TableDocument', () => {
     expect(document.id).toBe('doc-1');
     expect(document.columns.map((column) => column.id)).toEqual(['doc-1-col-1', 'doc-1-col-2']);
     expect(new Set(document.columns.map((column) => column.id)).size).toBe(2);
+  });
+
+  it('preserves optional import provenance through editable revisions', () => {
+    const document = createTableDocument(['Valor'], [['1']], 'colado', () => 'doc-1', importSummary);
+    const edited = setTableCell(document, 0, 0, '2');
+
+    expect(edited.importSummary).toEqual(importSummary);
   });
 
   it('suggests numeric and temporal types at creation without marking them user-explicit', () => {

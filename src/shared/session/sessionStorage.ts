@@ -1,6 +1,8 @@
 import type { SessionDataset } from './SessionProvider';
 import { IMPORT_LIMITS } from '@/shared/data-input/importLimits';
 import type { TableDocument } from '@/shared/data-input/tableDocument';
+import type { ImportDiagnostic, TabularImportSummary } from '@/shared/data-input/importDiagnostics';
+import type { ImportWarning } from '@/shared/data-input/types';
 
 export const SESSION_DATABASE_NAME = 'lacirstat-private-session';
 export const SESSION_STORE_NAME = 'session';
@@ -9,6 +11,13 @@ const SESSION_DATABASE_VERSION = 1;
 const SNAPSHOT_VERSION = 1;
 
 const TABLE_COLUMN_TYPES = new Set(['numerica', 'categorica', 'tempo', 'ignorar']);
+const IMPORT_DIAGNOSTIC_CODES = new Set<ImportDiagnostic['code']>([
+  'duplicate_headers', 'short_rows', 'extra_cells', 'positional_mapping', 'decimal_comma',
+  'excel_dates_converted', 'possible_excel_serial', 'mixed_numeric_format', 'missing_tokens',
+]);
+const IMPORT_WARNING_CODES = new Set<ImportWarning['code']>(['formula-without-cache', 'unusable-cell']);
+const IMPORT_RECOGNITION_MODES = new Set<TabularImportSummary['recognitionMode']>(['aliases', 'position', 'unmapped']);
+const MAX_IMPORT_STRING_LENGTH = 10_000;
 
 export interface SessionSnapshot {
   version: 1;
@@ -87,8 +96,80 @@ function isStringMatrix(value: unknown, maxColumns: number): value is string[][]
     ));
 }
 
+function isBoundedString(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= MAX_IMPORT_STRING_LENGTH;
+}
+
+function isBoundedStringList(value: unknown, maximum: number): value is string[] {
+  return Array.isArray(value) && value.length <= maximum && value.every(isBoundedString);
+}
+
+function isStrictImportDiagnostic(value: unknown): value is ImportDiagnostic {
+  if (!isRecord(value) || !hasOnlyKeys(value, ['code', 'severity', 'message', 'rowNumbers'])) return false;
+  if (
+    typeof value.code !== 'string' || !IMPORT_DIAGNOSTIC_CODES.has(value.code as ImportDiagnostic['code'])
+    || (value.severity !== 'info' && value.severity !== 'warning')
+    || !isBoundedString(value.message)
+  ) return false;
+  return value.rowNumbers === undefined || (
+    Array.isArray(value.rowNumbers)
+    && value.rowNumbers.length <= IMPORT_LIMITS.dataRows
+    && value.rowNumbers.every((rowNumber) => Number.isInteger(rowNumber) && rowNumber >= 1 && rowNumber <= IMPORT_LIMITS.dataRows)
+  );
+}
+
+function isStrictImportWarning(value: unknown, columnCount: number): value is ImportWarning {
+  return isRecord(value)
+    && hasOnlyKeys(value, ['code', 'message', 'cellReference', 'rowNumber', 'columnIndex'])
+    && typeof value.code === 'string'
+    && IMPORT_WARNING_CODES.has(value.code as ImportWarning['code'])
+    && isBoundedString(value.message)
+    && isBoundedString(value.cellReference)
+    && typeof value.rowNumber === 'number'
+    && Number.isInteger(value.rowNumber)
+    && value.rowNumber >= 1
+    && value.rowNumber <= IMPORT_LIMITS.dataRows
+    && typeof value.columnIndex === 'number'
+    && Number.isInteger(value.columnIndex)
+    && value.columnIndex >= 0
+    && value.columnIndex < columnCount;
+}
+
+function isStrictTabularImportSummary(value: unknown): value is TabularImportSummary {
+  if (!isRecord(value) || !hasOnlyKeys(value, [
+    'sourceType', 'fileName', 'tableName', 'sheetNames', 'formatLabel', 'delimiter', 'rowCount', 'columnCount',
+    'headerRowNumber', 'recognitionMode', 'recognitionDetails', 'diagnostics', 'importWarnings',
+  ])) return false;
+  if (
+    typeof value.rowCount !== 'number'
+    || typeof value.columnCount !== 'number'
+    || typeof value.headerRowNumber !== 'number'
+  ) return false;
+  const rowCount = value.rowCount;
+  const columnCount = value.columnCount;
+  const headerRowNumber = value.headerRowNumber;
+  if (
+    (value.sourceType !== 'paste' && value.sourceType !== 'file')
+    || !isBoundedString(value.fileName)
+    || !isBoundedString(value.tableName)
+    || !isBoundedString(value.formatLabel)
+    || !isBoundedString(value.delimiter)
+    || !isBoundedStringList(value.sheetNames, IMPORT_LIMITS.sheets)
+    || !isBoundedStringList(value.recognitionDetails, IMPORT_LIMITS.columns)
+    || !Number.isFinite(rowCount) || !Number.isInteger(rowCount) || rowCount < 0 || rowCount > IMPORT_LIMITS.dataRows
+    || !Number.isFinite(columnCount) || !Number.isInteger(columnCount) || columnCount < 1 || columnCount > IMPORT_LIMITS.columns
+    || !Number.isFinite(headerRowNumber) || !Number.isInteger(headerRowNumber) || headerRowNumber < 1 || headerRowNumber > IMPORT_LIMITS.dataRows
+    || !IMPORT_RECOGNITION_MODES.has(value.recognitionMode as TabularImportSummary['recognitionMode'])
+    || !Array.isArray(value.diagnostics) || value.diagnostics.length > IMPORT_LIMITS.dataRows || !value.diagnostics.every(isStrictImportDiagnostic)
+    || !Array.isArray(value.importWarnings) || value.importWarnings.length > IMPORT_LIMITS.cells
+    || !value.importWarnings.every((warning) => isStrictImportWarning(warning, columnCount))
+    || (rowCount + 1) * columnCount > IMPORT_LIMITS.cells
+  ) return false;
+  return true;
+}
+
 function isStrictTableDocument(value: unknown): value is TableDocument {
-  if (!isRecord(value) || !hasOnlyKeys(value, ['id', 'revision', 'columns', 'rows', 'bindings', 'sourceLabel'])) {
+  if (!isRecord(value) || !hasOnlyKeys(value, ['id', 'revision', 'columns', 'rows', 'bindings', 'sourceLabel', 'importSummary'])) {
     return false;
   }
   if (
@@ -119,7 +200,11 @@ function isStrictTableDocument(value: unknown): value is TableDocument {
     if (column.type === 'ignorar') ignoredColumnIds.add(column.id);
   }
 
-  if (!isStringMatrix(value.rows, value.columns.length) || !isRecord(value.bindings)) return false;
+  if (
+    !isStringMatrix(value.rows, value.columns.length)
+    || !isRecord(value.bindings)
+    || (value.importSummary !== undefined && !isStrictTabularImportSummary(value.importSummary))
+  ) return false;
   for (const roles of Object.values(value.bindings)) {
     if (!isRecord(roles)) return false;
     for (const boundColumnId of Object.values(roles)) {

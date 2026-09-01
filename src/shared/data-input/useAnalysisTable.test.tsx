@@ -113,6 +113,21 @@ describe('useAnalysisTable', () => {
     await waitFor(() => expect(result.current.table?.sourceLabel).toBe('dados-estudo.csv'));
   });
 
+  it('persists the rectangular import diagnostics with a ragged paste', () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useAnalysisTable('anova-tukey', { tabularOptions: options }), {
+      wrapper: ({ children }) => <SessionProvider>{children}</SessionProvider>,
+    });
+
+    act(() => {
+      result.current.requestPaste('Desfecho;Grupo\n10;A;extra\n20');
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(result.current.table?.importSummary?.diagnostics.map((diagnostic) => diagnostic.code)).toContain('extra_cells');
+    expect(result.current.table?.importSummary?.diagnostics.map((diagnostic) => diagnostic.code)).toContain('short_rows');
+  });
+
   it('confirms only the documented SessionDataset fields', () => {
     const { result } = renderHook(() => {
       const analysis = useAnalysisTable('anova-tukey', { tabularOptions: options });

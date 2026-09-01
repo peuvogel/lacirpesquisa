@@ -1,6 +1,7 @@
 import type { TabularColumnRole } from './recognizedColumnsFromTabular';
 import { parseNumber } from './legacyAdapters';
 import { isSupportedTemporalToken } from './temporalPeriods';
+import type { TabularImportSummary } from './importDiagnostics';
 
 export interface TableColumn {
   id: string;
@@ -19,6 +20,8 @@ export interface TableDocument {
   /** A null value records that the user deliberately rejected an automatic suggestion. */
   bindings: Record<string, TableRoleBindings>;
   sourceLabel: string;
+  /** Optional to retain compatibility with snapshots saved before import provenance. */
+  importSummary?: TabularImportSummary;
 }
 
 export type TableDocumentIdFactory = () => string;
@@ -72,6 +75,7 @@ export function createTableDocument(
   rows: readonly string[][],
   sourceLabel: string,
   idFactory: TableDocumentIdFactory = defaultDocumentId,
+  importSummary?: TabularImportSummary,
 ): TableDocument {
   const id = idFactory();
   return {
@@ -86,6 +90,7 @@ export function createTableDocument(
     rows: copyRows(rows),
     bindings: {},
     sourceLabel,
+    ...(importSummary ? { importSummary } : {}),
   };
 }
 

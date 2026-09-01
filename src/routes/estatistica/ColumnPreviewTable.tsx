@@ -18,6 +18,7 @@ import {
 import { parseNumber } from '@/shared/data-input/legacyAdapters';
 import { isSupportedTemporalToken } from '@/shared/data-input/temporalPeriods';
 import type { ImportWarning, TabularInputOptions } from '@/shared/data-input/types';
+import { ImportSummary } from './ImportSummary';
 
 export type ColumnRole = TabularColumnRole;
 
@@ -139,6 +140,8 @@ export function ColumnPreviewTable({
     ? document.columns.map((column) => column.name)
     : legacyHeaders;
   const bodyRows = document ? document.rows : legacyRows;
+  const importSummary = document?.importSummary;
+  const effectiveImportWarnings = importSummary ? importSummary.importWarnings : importWarnings;
   const detectedRoles = useMemo(
     () => headers.map((_, index) => detectColumnRole(index, bodyRows)),
     [headers, bodyRows],
@@ -267,6 +270,8 @@ export function ColumnPreviewTable({
           Origem: <strong className="text-foreground">{document.sourceLabel}</strong>
         </p>
       ) : null}
+
+      {importSummary ? <ImportSummary summary={importSummary} /> : null}
 
       {bindingKeys.length ? (
         <section
@@ -476,14 +481,14 @@ export function ColumnPreviewTable({
         </p>
       ) : null}
 
-      {importWarnings.length ? (
+      {!importSummary && effectiveImportWarnings.length ? (
         <section
           aria-label="Avisos da importação"
           className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm"
         >
           <p className="font-bold text-foreground">Avisos da importação</p>
           <ul className="mt-1 list-disc pl-5">
-            {importWarnings.map((warning) => (
+            {effectiveImportWarnings.map((warning) => (
               <li key={`${warning.cellReference}-${warning.rowNumber}-${warning.columnIndex}-${warning.code}`}>
                 {warning.cellReference} (linha original {warning.rowNumber}): {warning.message}
               </li>

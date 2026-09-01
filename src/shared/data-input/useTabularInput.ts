@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { legacyStats, legacyUtils } from './legacyAdapters';
 import { readTabularFileState, readTabularPasteState } from './parseTabular';
+import type { TabularImportSummary } from './importDiagnostics';
 import type { ImportWarning, RecognizedColumn, TabularInputOptions } from './types';
 
 const PASTE_DEBOUNCE_MS = 150;
@@ -18,6 +19,8 @@ export interface TabularInputError {
 export interface TabularInputState {
   /** Original worksheet coordinates, not current edited-table validity. */
   importWarnings?: ImportWarning[];
+  /** Import provenance from the most recent winning parser request. */
+  importSummary: TabularImportSummary | null;
   status: TabularInputStatus;
   headers: string[];
   bodyRows: string[][];
@@ -42,6 +45,7 @@ const IDLE_RESULT_FIELDS: Omit<TabularInputState, 'rawText'> = {
   headers: [],
   bodyRows: [],
   recognizedColumns: {},
+  importSummary: null,
   error: null,
   requestId: 0,
 };
@@ -95,6 +99,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
       setState({
         status: 'loaded',
         ...(result.importWarnings?.length ? { importWarnings: result.importWarnings } : {}),
+        importSummary: result.summary,
         headers: result.headers,
         bodyRows: result.bodyRows,
         recognizedColumns: toIndexMap(result.recognizedColumns),
@@ -111,6 +116,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         headers: [],
         bodyRows: [],
         recognizedColumns: {},
+        importSummary: null,
         error: { message: result.message, details: result.details },
         rawText: text,
         requestId,
@@ -163,6 +169,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         setState({
           status: 'loaded',
           ...(result.importWarnings?.length ? { importWarnings: result.importWarnings } : {}),
+          importSummary: result.summary,
           headers: result.headers,
           bodyRows: result.bodyRows,
           recognizedColumns: toIndexMap(result.recognizedColumns),
@@ -177,6 +184,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
           headers: [],
           bodyRows: [],
           recognizedColumns: {},
+          importSummary: null,
           error: { message: result.message, details: result.details },
           rawText: '',
           requestId,
@@ -190,6 +198,7 @@ export function useTabularInput(options: TabularInputOptions = {}): UseTabularIn
         headers: [],
         bodyRows: [],
         recognizedColumns: {},
+        importSummary: null,
         error: { message: FILE_READ_ERROR_MESSAGE, details: [reason] },
         rawText: '',
         requestId,

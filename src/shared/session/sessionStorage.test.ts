@@ -8,6 +8,7 @@ import {
   type SessionSnapshot,
 } from './sessionStorage';
 import { createTableDocument, setTableRoleBinding } from '@/shared/data-input/tableDocument';
+import type { TabularImportSummary } from '@/shared/data-input/importDiagnostics';
 
 const databaseNames: string[] = [];
 
@@ -18,11 +19,19 @@ function nextDatabaseName(): string {
 }
 
 function sampleSnapshot(): SessionSnapshot {
+  const importSummary: TabularImportSummary = {
+    sourceType: 'file', fileName: 'dados.xlsx', tableName: 'Dados', sheetNames: ['Dados', 'Notas'],
+    formatLabel: 'XLSX', delimiter: '', rowCount: 2, columnCount: 2, headerRowNumber: 1,
+    recognitionMode: 'aliases', recognitionDetails: ['Desfecho reconhecido'],
+    diagnostics: [{ code: 'short_rows', severity: 'warning', message: 'Linha incompleta.', rowNumbers: [2] }],
+    importWarnings: [{ code: 'unusable-cell', message: 'Célula indisponível.', cellReference: 'B3', rowNumber: 3, columnIndex: 1 }],
+  };
   let table = createTableDocument(
     ['desfecho', 'grupo'],
     [['10', 'A'], ['12', 'B']],
     'colado',
     () => 'stable-table',
+    importSummary,
   );
   table = setTableRoleBinding(table, 'mann-whitney', 'desfecho', 'stable-table-col-1');
   table = setTableRoleBinding(table, 'mann-whitney', 'grupo', 'stable-table-col-2');
@@ -78,6 +87,24 @@ describe('IndexedDB session storage', () => {
     await storage.write(snapshot);
 
     expect(await storage.read()).toEqual(snapshot);
+  });
+
+  it('accepts old snapshots without a summary and rejects malformed summary fields', async () => {
+    const oldSnapshot = sampleSnapshot();
+    if (!oldSnapshot.dataset?.table) throw new Error('O fixture exige uma tabela.');
+    delete oldSnapshot.dataset.table.importSummary;
+    const oldStorage = createIndexedDbSessionStorage({ dbName: nextDatabaseName() });
+    await oldStorage.write(oldSnapshot);
+    expect(await oldStorage.read()).toEqual(oldSnapshot);
+
+    const invalidSnapshot = sampleSnapshot() as unknown as { dataset: { table: { importSummary: Record<string, unknown> } } };
+    invalidSnapshot.dataset.table.importSummary = {
+      ...invalidSnapshot.dataset.table.importSummary,
+      unexpected: true,
+    };
+    const dbName = nextDatabaseName();
+    await putRaw(dbName, invalidSnapshot);
+    await expect(createIndexedDbSessionStorage({ dbName }).read()).rejects.toBeInstanceOf(SessionSnapshotValidationError);
   });
 
   it('clears the single persisted session record', async () => {

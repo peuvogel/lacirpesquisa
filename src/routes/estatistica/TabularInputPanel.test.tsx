@@ -33,6 +33,7 @@ describe('TabularInputPanel', () => {
   it('renders the empty-state heading and body copy before any input', () => {
     render(<Harness />);
     expect(screen.getByText('Cole ou envie seus dados')).toBeInTheDocument();
+    expect(screen.getAllByText(/CSV, TSV, TXT ou XLSX/)).toHaveLength(2);
   });
 
   it('renders the preview area (not the error alert) after pasting a recognizable table', async () => {
