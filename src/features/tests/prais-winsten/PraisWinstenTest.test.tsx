@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
@@ -125,6 +125,10 @@ describe('PraisWinstenTest', () => {
 
     const warningTitle = screen.getByText('Observações sobre a série temporal');
     const warningAlert = warningTitle.closest('[role="alert"]');
+    const resultsRegion = screen.getByRole('region', { name: 'Resultados' });
+    const activePanel = within(resultsRegion).getByRole('tabpanel');
+    expect(screen.getAllByText('Observações sobre a série temporal')).toHaveLength(1);
+    expect(warningAlert?.nextElementSibling).toBe(activePanel);
     expect(warningAlert).not.toHaveClass('text-destructive');
     expect(warningAlert).toHaveTextContent('Os períodos não estão na ordem temporal original.');
     expect(warningAlert).toHaveTextContent('Linhas: 1, 2.');
@@ -190,6 +194,7 @@ describe('PraisWinstenTest', () => {
 
     await runToResultados(user);
 
+    expect(screen.queryByText('Observações sobre a série temporal')).not.toBeInTheDocument();
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Baixar/i }).length).toBeGreaterThanOrEqual(1);

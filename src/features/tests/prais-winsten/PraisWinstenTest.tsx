@@ -161,7 +161,6 @@ export function PraisWinstenTest() {
 
     return (
       <div className="space-y-4">
-        <PraisWinstenValidationAlert issues={issues} />
         <Tabs value={chartTab} onValueChange={(value) => setChartTab(value as 'trend' | 'residual')}>
           <TabsList aria-label="Gráficos Prais-Winsten">
             <TabsTrigger value="trend">Tendência</TabsTrigger>
@@ -170,6 +169,7 @@ export function PraisWinstenTest() {
           <p className="mt-3 text-sm text-muted-foreground">
             As opções abaixo afetam o gráfico selecionado.
           </p>
+          <PraisWinstenValidationAlert issues={issues} />
           <TabsContent value="trend" className="mt-4">
             <ResultsPanelWithCustomizer
               key="trend"
