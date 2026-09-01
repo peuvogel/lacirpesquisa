@@ -25,7 +25,12 @@ function visibleDelimiter(delimiter: string): string {
   if (labels[delimiter]) return labels[delimiter];
   const safeText = Array.from(delimiter).map((character) => {
     const code = character.codePointAt(0)!;
-    return code < 32 || code === 127 ? `U+${code.toString(16).toUpperCase().padStart(4, '0')}` : character;
+    if (character === '\t') return 'tabulação';
+    if (character === '\n') return 'nova linha';
+    if (character === '\r') return 'retorno de carro';
+    return /^[\p{Cc}\p{Cf}\p{Cs}]$/u.test(character)
+      ? `U+${code.toString(16).toUpperCase().padStart(4, '0')}`
+      : character;
   }).join('');
   return `separador: “${safeText}”`;
 }

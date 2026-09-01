@@ -58,6 +58,23 @@ function rawSnapshot(): RawSnapshot {
   return structuredClone(sampleSnapshot()) as unknown as RawSnapshot;
 }
 
+function coherentDimensionSnapshot(dataRows: number, columnCount: number): RawSnapshot {
+  const headers = Array.from({ length: columnCount }, (_, index) => `coluna-${index + 1}`);
+  const rows = Array.from({ length: dataRows }, () => Array.from({ length: columnCount }, () => '1'));
+  const importSummary: TabularImportSummary = {
+    sourceType: 'file', fileName: 'limite.csv', tableName: 'Tabela', sheetNames: [], formatLabel: 'CSV', delimiter: ',',
+    rowCount: dataRows, columnCount, headerRowNumber: 1, recognitionMode: 'aliases', recognitionDetails: [],
+    diagnostics: [], importWarnings: [],
+  };
+  const table = createTableDocument(headers, rows, 'limite.csv', () => 'dimension-table', importSummary);
+  return structuredClone({
+    version: 1,
+    savedAt: 123,
+    dataset: { headers, rows, sourceLabel: 'limite.csv', confirmedAt: 100, table },
+    visualPreferences: {},
+  }) as unknown as RawSnapshot;
+}
+
 async function putRaw(dbName: string, value: unknown): Promise<void> {
   const request = indexedDB.open(dbName, 1);
   const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -123,7 +140,6 @@ describe('IndexedDB session storage', () => {
     ['negative header row', (summary: Record<string, unknown>) => { summary.headerRowNumber = -1; }],
     ['too many rows', (summary: Record<string, unknown>) => { summary.rowCount = 10_001; }],
     ['too many columns', (summary: Record<string, unknown>) => { summary.columnCount = 129; }],
-    ['too many cells', (summary: Record<string, unknown>) => { summary.rowCount = 1_600; summary.columnCount = 125; }],
     ['diagnostic row zero', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.rowNumbers = [0]; }],
     ['diagnostic row above limit', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.rowNumbers = [10_001]; }],
     ['warning row above limit', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.rowNumber = 10_001; }],
@@ -172,21 +188,27 @@ describe('IndexedDB session storage', () => {
     await expect(createIndexedDbSessionStorage({ dbName }).read()).resolves.toEqual(raw);
   });
 
-  it('accepts maximum columns and cells when each strict bound is met', async () => {
+  it('accepts maximum columns when the strict bound is met', async () => {
     const maxColumns = rawSnapshot();
     maxColumns.dataset.table.importSummary.columnCount = 128;
     (maxColumns.dataset.table.importSummary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = 127;
     const columnsDbName = nextDatabaseName();
     await putRaw(columnsDbName, maxColumns);
     await expect(createIndexedDbSessionStorage({ dbName: columnsDbName }).read()).resolves.toEqual(maxColumns);
+  });
 
-    const maxCells = rawSnapshot();
-    maxCells.dataset.table.importSummary.rowCount = 1_599;
-    maxCells.dataset.table.importSummary.columnCount = 125;
-    (maxCells.dataset.table.importSummary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = 124;
-    const cellsDbName = nextDatabaseName();
-    await putRaw(cellsDbName, maxCells);
-    await expect(createIndexedDbSessionStorage({ dbName: cellsDbName }).read()).resolves.toEqual(maxCells);
+  it('accepts exactly 200,000 cells and rejects the nearest larger representable matrix', async () => {
+    const exact = coherentDimensionSnapshot(1_599, 125); // (1,599 data rows + header) × 125 = 200,000
+    const exactDbName = nextDatabaseName();
+    await putRaw(exactDbName, exact);
+    await expect(createIndexedDbSessionStorage({ dbName: exactDbName }).read()).resolves.toEqual(exact);
+
+    // 200,001 has no factorization inside the 10,001-row and 128-column caps.
+    // 9,090 data rows + header and 22 columns is the nearest larger valid rectangle: 200,002 cells.
+    const over = coherentDimensionSnapshot(9_090, 22);
+    const overDbName = nextDatabaseName();
+    await putRaw(overDbName, over);
+    await expect(createIndexedDbSessionStorage({ dbName: overDbName }).read()).rejects.toBeInstanceOf(SessionSnapshotValidationError);
   });
 
   it('rejects summaries with a non-plain prototype at the public parser boundary', () => {

@@ -70,4 +70,15 @@ describe('ImportSummary', () => {
     expect(summary).toHaveTextContent('Arquivo dados.xlsx · Aba Dados · 2 linhas · 2 colunas · XLSX');
     expect(summary).not.toHaveTextContent('sem separador');
   });
+
+  it.each([
+    ['U+0085', '\u0085', 'separador: “U+0085”'],
+    ['U+200B', '\u200B', 'separador: “U+200B”'],
+    ['multi-code-point delimiter with a control', ',\u200B', 'separador: “,U+200B”'],
+    ['printable Unicode delimiter', '§', 'separador: “§”'],
+  ])('renders %s delimiters without injecting invisible formatting', (_label, delimiter, expected) => {
+    render(<ImportSummary summary={makeSummary({ delimiter })} />);
+
+    expect(screen.getByRole('region', { name: 'Resumo da importação' })).toHaveTextContent(expected);
+  });
 });
