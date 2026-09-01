@@ -31,28 +31,44 @@ export function normalizeImportedMatrix(
   headers: readonly string[],
   bodyRows: readonly (readonly string[])[],
 ): { headers: string[]; bodyRows: string[][]; diagnostics: ImportDiagnostic[] } {
-  const width = Math.max(headers.length, ...bodyRows.map((row) => row.length));
+  validateImportLimit('dataRows', bodyRows.length);
+  validateImportLimit('columns', headers.length);
+
+  let width = headers.length;
+  for (const row of bodyRows) {
+    validateImportLimit('columns', row.length);
+    if (row.length > width) width = row.length;
+  }
+
   validateImportLimit('columns', width);
   validateTableSize(bodyRows.length, width);
 
-  const widerRows = bodyRows
-    .map((row, index) => ({ width: row.length, rowNumber: index + 1 }))
-    .filter((item) => item.width > headers.length);
-  const shorterRows = bodyRows
-    .map((row, index) => ({ width: row.length, rowNumber: index + 1 }))
-    .filter((item) => item.width < width);
+  let widerRowCount = 0;
+  let shorterRowCount = 0;
+  const widerRowNumbers: number[] = [];
+  const shorterRowNumbers: number[] = [];
+  bodyRows.forEach((row, index) => {
+    if (row.length > headers.length) {
+      widerRowCount += 1;
+      if (widerRowNumbers.length < 100) widerRowNumbers.push(index + 1);
+    }
+    if (row.length < width) {
+      shorterRowCount += 1;
+      if (shorterRowNumbers.length < 100) shorterRowNumbers.push(index + 1);
+    }
+  });
   const diagnostics: ImportDiagnostic[] = [
-    ...(widerRows.length ? [{
+    ...(widerRowCount ? [{
       code: 'extra_cells' as const,
       severity: 'warning' as const,
-      message: `${widerRows.length} linha(s) tinham células além do cabeçalho; elas foram tornadas visíveis.`,
-      rowNumbers: widerRows.slice(0, 100).map((item) => item.rowNumber),
+      message: `${widerRowCount} linha(s) tinham células além do cabeçalho; elas foram tornadas visíveis.`,
+      rowNumbers: widerRowNumbers,
     }] : []),
-    ...(shorterRows.length ? [{
+    ...(shorterRowCount ? [{
       code: 'short_rows' as const,
       severity: 'warning' as const,
-      message: `${shorterRows.length} linha(s) tinham menos células e foram completadas como ausentes.`,
-      rowNumbers: shorterRows.slice(0, 100).map((item) => item.rowNumber),
+      message: `${shorterRowCount} linha(s) tinham menos células e foram completadas como ausentes.`,
+      rowNumbers: shorterRowNumbers,
     }] : []),
   ];
 

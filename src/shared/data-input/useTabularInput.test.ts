@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTabularInput } from './useTabularInput';
 import * as parseTabularModule from './parseTabular';
 import * as legacyAdaptersModule from './legacyAdapters';
+import type { TabularImportSummary } from './importDiagnostics';
 import type { TabularInputOptions, TabularLoadedState } from './types';
 
 // Wraps the real port with a spy so individual tests can override a single
@@ -46,9 +47,27 @@ const commaAmbiguousOptions: TabularInputOptions = {
   expectedFormatLabel: 'Município; Taxa por 100k; Situação',
 };
 
+const TEST_IMPORT_SUMMARY: TabularImportSummary = {
+  sourceType: 'file',
+  fileName: 'dados.csv',
+  tableName: 'Tabela',
+  sheetNames: [],
+  formatLabel: 'texto',
+  delimiter: ',',
+  rowCount: 1,
+  columnCount: 2,
+  headerRowNumber: 1,
+  recognitionMode: 'aliases',
+  recognitionDetails: [],
+  diagnostics: [],
+  importWarnings: [],
+};
+
 function makeLoadedState(overrides: Partial<TabularLoadedState> = {}): TabularLoadedState {
+  const { summary = TEST_IMPORT_SUMMARY, ...stateOverrides } = overrides;
   return {
     status: 'loaded',
+    summary,
     fileName: 'dados.csv',
     workbookKind: 'text',
     tableName: 'Tabela',
@@ -66,7 +85,7 @@ function makeLoadedState(overrides: Partial<TabularLoadedState> = {}): TabularLo
     recognitionMode: 'aliases',
     usedPositionalFallback: false,
     recognitionDetails: [],
-    ...overrides,
+    ...stateOverrides,
   };
 }
 

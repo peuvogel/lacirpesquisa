@@ -28,4 +28,23 @@ describe('normalizeImportedMatrix', () => {
       fromSpy.mockRestore();
     }
   });
+
+  it('rejects excess rows before iterating or normalizing the matrix', () => {
+    const bodyRows = Array.from({ length: 10_001 }, () => ['1']);
+    const mapSpy = vi.spyOn(bodyRows, 'map');
+
+    try {
+      expect(() => normalizeImportedMatrix(['A'], bodyRows)).toThrow(/10[. ]?000.*linhas/i);
+      expect(mapSpy).not.toHaveBeenCalled();
+    } finally {
+      mapSpy.mockRestore();
+    }
+  });
+
+  it('accepts a matrix at the row limit', () => {
+    const result = normalizeImportedMatrix(['A'], Array.from({ length: 10_000 }, () => ['1']));
+
+    expect(result.headers).toEqual(['A']);
+    expect(result.bodyRows).toHaveLength(10_000);
+  });
 });

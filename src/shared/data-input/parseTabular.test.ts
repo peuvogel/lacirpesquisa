@@ -179,6 +179,23 @@ describe('readTabularPasteState direct behavior (not just parity)', () => {
     }
   });
 
+  it('does not mix calendar semesters with decimal-comma numeric values from another column', () => {
+    const result = port.readTabularPasteState('Semestre;Taxa\n2024.1;1,25\n2024.2;2,50', legacyStats, {
+      aliases: { semestre: ['Semestre'], taxa: ['Taxa'] },
+      requiredKeys: ['semestre', 'taxa'],
+      numericKeys: ['taxa'],
+      temporalKeys: ['semestre'],
+    });
+
+    expect(result.status).toBe('loaded');
+    if (result.status === 'loaded') {
+      expect(result.summary).toBeDefined();
+      expect(result.summary!.diagnostics).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'mixed_numeric_format' }),
+      ]));
+    }
+  });
+
   it('scans missing tokens in recognized temporal columns', () => {
     const result = port.readTabularPasteState('periodo;grupo\n2024;A\nNA;B', legacyStats, {
       aliases: { periodo: ['periodo'], grupo: ['grupo'] },

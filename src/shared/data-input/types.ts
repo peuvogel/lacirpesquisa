@@ -137,7 +137,7 @@ export interface TabularCandidate {
 export interface TabularLoadedState {
   importWarnings?: ImportWarning[];
   /** New grouped import contract; flat parser fields remain available during migration. */
-  summary?: TabularImportSummary;
+  summary: TabularImportSummary;
   status: 'loaded';
   fileName: string;
   workbookKind: string;

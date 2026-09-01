@@ -4,7 +4,7 @@ import { validateImportLimit, validateTableSize } from './importLimits';
 import { normalizeImportedMatrix } from './importDiagnostics';
 import type { ImportDiagnostic, TabularImportSummary } from './importDiagnostics';
 import { readXlsxTables } from './xlsxReader';
-import { isSupportedTemporalToken } from './temporalPeriods';
+import { detectTemporalColumn, isSupportedTemporalToken } from './temporalPeriods';
 
 import type {
   LegacyStatsAdapter,
@@ -615,9 +615,19 @@ function analyzeNumericFormatting(
     .map((key) => ({ key, index: recognizedColumns?.[key]?.index }))
     .filter((column): column is { key: string; index: number } => Number.isInteger(column.index));
   let decimalCommaDetected = false;
-  let decimalPointDetected = false;
   let numericCellCount = 0;
   const missingByColumn = new Map<string, number[]>();
+  const numericFormatsByColumn = new Map<string, { comma: boolean; point: boolean }>();
+  const calendarTemporalKeys = new Set(columns.flatMap(({ key, index }) => {
+    if (!temporalKeys.includes(key)) return [];
+    const rawValues = bodyRows
+      .map((row) => normalizeTabularSpaces(row[index] || ''))
+      .filter((value) => value && !/^(?:NA|N\/A|NULL|-|—)$/i.test(value));
+    const resolution = detectTemporalColumn(rawValues, recognizedColumns[key].header);
+    return resolution.status === 'resolved' && resolution.frequency !== 'numeric' && resolution.frequency !== 'order'
+      ? [key]
+      : [];
+  }));
 
   (bodyRows || []).forEach((row, rowIndex) => {
     columns.forEach(({ key, index }) => {
@@ -631,12 +641,18 @@ function analyzeNumericFormatting(
         return;
       }
       if (parseTabularNumber(raw, stats) === null) return;
-      numericCellCount += 1;
+      if (numericKeys.includes(key)) numericCellCount += 1;
       const rawText = String(raw);
       const commaIndex = rawText.lastIndexOf(',');
       const pointIndex = rawText.lastIndexOf('.');
-      if (rawUsesDecimalComma(raw) && commaIndex > pointIndex) decimalCommaDetected = true;
-      if (/\.\d/.test(rawText) && pointIndex > commaIndex) decimalPointDetected = true;
+      const usesComma = rawUsesDecimalComma(raw) && commaIndex > pointIndex;
+      const usesPoint = /\.\d/.test(rawText) && pointIndex > commaIndex;
+      if (numericKeys.includes(key) && usesComma) decimalCommaDetected = true;
+      if (calendarTemporalKeys.has(key)) return;
+      const formats = numericFormatsByColumn.get(key) || { comma: false, point: false };
+      formats.comma ||= usesComma;
+      formats.point ||= usesPoint;
+      numericFormatsByColumn.set(key, formats);
     });
   });
 
@@ -646,11 +662,13 @@ function analyzeNumericFormatting(
       severity: 'info' as const,
       message: 'Foram identificados valores numéricos com vírgula decimal.',
     }] : []),
-    ...(decimalCommaDetected && decimalPointDetected ? [{
-      code: 'mixed_numeric_format' as const,
-      severity: 'warning' as const,
-      message: 'Foram identificados valores numéricos com vírgula e ponto decimal nas colunas reconhecidas.',
-    }] : []),
+    ...Array.from(numericFormatsByColumn.entries()).flatMap(([key, formats]) => (
+      formats.comma && formats.point ? [{
+        code: 'mixed_numeric_format' as const,
+        severity: 'warning' as const,
+        message: `Foram identificados valores numéricos com vírgula e ponto decimal na coluna reconhecida "${key}".`,
+      }] : []
+    )),
     ...Array.from(missingByColumn.entries()).map(([key, rowNumbers]) => ({
       code: 'missing_tokens' as const,
       severity: 'warning' as const,
