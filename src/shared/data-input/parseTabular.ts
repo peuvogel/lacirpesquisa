@@ -1,6 +1,8 @@
 /** Tabular import with bounded parsing. Numeric/DATASUS compatibility stays centralized here. */
 
 import { validateImportLimit, validateTableSize } from './importLimits';
+import { normalizeImportedMatrix } from './importDiagnostics';
+import type { ImportDiagnostic, TabularImportSummary } from './importDiagnostics';
 import { readXlsxTables } from './xlsxReader';
 import { isSupportedTemporalToken } from './temporalPeriods';
 
@@ -601,30 +603,84 @@ function analyzeNumericFormatting(
   bodyRows: string[][],
   recognizedColumns: Record<string, RecognizedColumn>,
   numericKeys: string[],
+  temporalKeys: string[],
   stats: LegacyStatsAdapter | undefined,
-): { decimalCommaDetected: boolean; numericCellCount: number } {
-  const indexes = (numericKeys || [])
-    .map((key) => recognizedColumns?.[key]?.index)
-    .filter((index): index is number => Number.isInteger(index));
-
+): {
+  decimalCommaDetected: boolean;
+  numericCellCount: number;
+  diagnostics: ImportDiagnostic[];
+} {
+  const recognizedKeys = [...new Set([...(numericKeys || []), ...(temporalKeys || [])])];
+  const columns = recognizedKeys
+    .map((key) => ({ key, index: recognizedColumns?.[key]?.index }))
+    .filter((column): column is { key: string; index: number } => Number.isInteger(column.index));
   let decimalCommaDetected = false;
+  let decimalPointDetected = false;
   let numericCellCount = 0;
+  const missingByColumn = new Map<string, number[]>();
 
-  (bodyRows || []).forEach((row) => {
-    indexes.forEach((index) => {
+  (bodyRows || []).forEach((row, rowIndex) => {
+    columns.forEach(({ key, index }) => {
       const raw = row?.[index] || '';
+      const normalized = normalizeTabularSpaces(raw);
+      if (!normalized) return;
+      if (/^(?:NA|N\/A|NULL|-|—)$/i.test(normalized)) {
+        const rowNumbers = missingByColumn.get(key) || [];
+        if (rowNumbers.length < 100) rowNumbers.push(rowIndex + 1);
+        missingByColumn.set(key, rowNumbers);
+        return;
+      }
       if (parseTabularNumber(raw, stats) === null) return;
       numericCellCount += 1;
-      if (rawUsesDecimalComma(raw)) {
-        decimalCommaDetected = true;
-      }
+      const rawText = String(raw);
+      const commaIndex = rawText.lastIndexOf(',');
+      const pointIndex = rawText.lastIndexOf('.');
+      if (rawUsesDecimalComma(raw) && commaIndex > pointIndex) decimalCommaDetected = true;
+      if (/\.\d/.test(rawText) && pointIndex > commaIndex) decimalPointDetected = true;
     });
   });
+
+  const diagnostics: ImportDiagnostic[] = [
+    ...(decimalCommaDetected ? [{
+      code: 'decimal_comma' as const,
+      severity: 'info' as const,
+      message: 'Foram identificados valores numéricos com vírgula decimal.',
+    }] : []),
+    ...(decimalCommaDetected && decimalPointDetected ? [{
+      code: 'mixed_numeric_format' as const,
+      severity: 'warning' as const,
+      message: 'Foram identificados valores numéricos com vírgula e ponto decimal nas colunas reconhecidas.',
+    }] : []),
+    ...Array.from(missingByColumn.entries()).map(([key, rowNumbers]) => ({
+      code: 'missing_tokens' as const,
+      severity: 'warning' as const,
+      message: `Foram identificados marcadores de ausência na coluna reconhecida "${key}"; os valores originais foram preservados.`,
+      rowNumbers,
+    })),
+  ];
 
   return {
     decimalCommaDetected,
     numericCellCount,
+    diagnostics,
   };
+}
+
+function duplicateHeaderDiagnostics(headers: string[], duplicates: string[]): ImportDiagnostic[] {
+  return duplicates.map((duplicate) => {
+    const [firstLabel = '', secondLabel = ''] = duplicate.split(' / ');
+    const firstIndex = headers.findIndex((header) => normalizeTabularSpaces(header) === firstLabel);
+    const secondIndex = headers.findIndex((header, index) => (
+      index > firstIndex && normalizeTabularSpaces(header) === secondLabel
+    ));
+    const firstColumn = firstIndex + 1;
+    const secondColumn = secondIndex + 1;
+    return {
+      code: 'duplicate_headers',
+      severity: 'warning',
+      message: `Os cabeçalhos "${firstLabel}" (coluna ${firstColumn}) e "${secondLabel}" (coluna ${secondColumn}) correspondem ao mesmo campo; a coluna ${firstColumn} foi escolhida automaticamente, mantendo ambas editáveis.`,
+    };
+  });
 }
 
 function buildLoadedTabularState(
@@ -636,33 +692,70 @@ function buildLoadedTabularState(
     formatLabel?: string;
     delimiter?: string;
     sheetNames?: string[];
-    sourceType?: string;
+    sourceType?: 'paste' | 'file';
   },
   numericKeys: string[],
+  temporalKeys: string[],
   stats: LegacyStatsAdapter | undefined,
 ): TabularLoadedState {
-  const formatting = analyzeNumericFormatting(candidate.bodyRows, candidate.recognizedColumns, numericKeys, stats);
+  const normalized = normalizeImportedMatrix(candidate.headers, candidate.bodyRows);
+  const formatting = analyzeNumericFormatting(
+    normalized.bodyRows,
+    candidate.recognizedColumns,
+    numericKeys,
+    temporalKeys,
+    stats,
+  );
+  const sourceType = extra.sourceType || 'file';
+  const recognitionMode = candidate.recognitionMode || 'aliases';
+  const importWarnings = candidate.table.importWarnings || [];
+  const diagnostics: ImportDiagnostic[] = [
+    ...normalized.diagnostics,
+    ...duplicateHeaderDiagnostics(normalized.headers, candidate.duplicates),
+    ...(recognitionMode === 'position' ? [{
+      code: 'positional_mapping' as const,
+      severity: 'info' as const,
+      message: 'As colunas foram reconhecidas pela posição e devem ser conferidas antes da análise.',
+    }] : []),
+    ...formatting.diagnostics,
+  ];
+  const summary: TabularImportSummary = {
+    sourceType,
+    fileName: extra.fileName || 'dados',
+    tableName: extra.tableName || candidate.table.name || 'Tabela principal',
+    sheetNames: [...(extra.sheetNames || [])],
+    formatLabel: extra.formatLabel || candidate.table.formatLabel || 'texto',
+    delimiter: extra.delimiter ?? candidate.table.delimiter ?? '',
+    rowCount: normalized.bodyRows.length,
+    columnCount: normalized.headers.length,
+    headerRowNumber: candidate.headerRowIndex + 1,
+    recognitionMode,
+    recognitionDetails: [...(candidate.recognitionDetails || [])],
+    diagnostics,
+    importWarnings: [...importWarnings],
+  };
 
   return {
     status: 'loaded',
-    ...(candidate.table.importWarnings?.length ? { importWarnings: candidate.table.importWarnings } : {}),
-    fileName: extra.fileName || 'dados',
+    ...(importWarnings.length ? { importWarnings } : {}),
+    summary,
+    fileName: summary.fileName,
     workbookKind: extra.workbookKind || 'text',
-    tableName: extra.tableName || candidate.table.name || 'Tabela principal',
-    formatLabel: extra.formatLabel || candidate.table.formatLabel || 'texto',
-    delimiter: extra.delimiter ?? candidate.table.delimiter ?? '',
+    tableName: summary.tableName,
+    formatLabel: summary.formatLabel,
+    delimiter: summary.delimiter,
     headerRowIndex: candidate.headerRowIndex,
-    headers: candidate.headers,
-    bodyRows: candidate.bodyRows,
+    headers: normalized.headers,
+    bodyRows: normalized.bodyRows,
     recognizedColumns: candidate.recognizedColumns,
     duplicates: candidate.duplicates,
-    sheetNames: extra.sheetNames || [],
+    sheetNames: summary.sheetNames,
     decimalCommaDetected: formatting.decimalCommaDetected,
     numericCellCount: formatting.numericCellCount,
-    sourceType: extra.sourceType || 'file',
-    recognitionMode: candidate.recognitionMode || 'aliases',
-    usedPositionalFallback: candidate.recognitionMode === 'position',
-    recognitionDetails: candidate.recognitionDetails || [],
+    sourceType,
+    recognitionMode,
+    usedPositionalFallback: recognitionMode === 'position',
+    recognitionDetails: summary.recognitionDetails,
   };
 }
 
@@ -711,7 +804,7 @@ export async function readTabularFileState(
       delimiter: candidate.table.delimiter || '',
       sheetNames: availableNames,
       sourceType: 'file',
-    }, numericKeys, stats);
+    }, numericKeys, temporalKeys, stats);
   } catch (error) {
     return {
       status: 'error',
@@ -770,5 +863,5 @@ export function readTabularPasteState(
     formatLabel: parsed.formatLabel,
     delimiter: parsed.delimiter,
     sourceType: 'paste',
-  }, numericKeys, stats);
+  }, numericKeys, temporalKeys, stats);
 }

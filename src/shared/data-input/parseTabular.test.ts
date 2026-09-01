@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as port from './parseTabular';
 // eslint-disable-next-line import/extensions -- differential parity import of the untouched legacy module
 import * as legacy from '../../../assets/js/tabular-data-input.js';
+import { TABULAR_OPTIONS as ANOVA_OPTIONS } from '../../features/tests/anova-tukey/anovaConfig';
 import { legacyStats } from './legacyAdapters';
 import type { TabularInputOptions } from './types';
 
@@ -61,13 +62,26 @@ const fixtureCases: Array<{ file: string; options: TabularInputOptions }> = [
   { file: 'tabnet-comma-ambiguous.txt', options: commaAmbiguousOptions },
 ];
 
-describe('readTabularPasteState differential parity (real TABNET fixtures)', () => {
+describe('readTabularPasteState preserves legacy values while normalizing imported matrices', () => {
   fixtureCases.forEach(({ file, options }) => {
-    it(`matches legacy output for ${file}`, () => {
+    it(`keeps legacy values visible for ${file}`, () => {
       const text = readFixture(file);
-      expect(port.readTabularPasteState(text, legacyStats, options)).toEqual(
-        legacy.readTabularPasteState(text, legacyStats, options),
-      );
+      const actual = port.readTabularPasteState(text, legacyStats, options);
+      const expected = legacy.readTabularPasteState(text, legacyStats, options);
+
+      expect(actual.status).toBe(expected.status);
+      if (actual.status === 'loaded' && expected.status === 'loaded') {
+        const { summary: _summary, headers: actualHeaders, bodyRows: actualRows, ...actualFlat } = actual;
+        const expectedLoaded = expected as typeof actual;
+        const { headers: expectedHeaders, bodyRows: expectedRows, ...expectedFlat } = expectedLoaded;
+        expect(actualFlat).toEqual(expectedFlat);
+        expect(actualHeaders).toEqual(expectedHeaders);
+        expect(actualRows).toHaveLength(expectedRows.length);
+        actualRows.forEach((row, index) => {
+          expect(row).toHaveLength(actualHeaders.length);
+          expect(row.slice(0, expectedRows[index]!.length)).toEqual(expectedRows[index]);
+        });
+      }
     });
   });
 });
@@ -132,6 +146,69 @@ describe('readTabularPasteState direct behavior (not just parity)', () => {
   it('opens a syntactically valid unmapped table for editing', () => {
     const result = port.readTabularPasteState('Pessoa;Medida\nAna;2\nBia;3', legacyStats, semicolonMetadataOptions);
     expect(result).toMatchObject({ status: 'loaded', headers: ['Pessoa', 'Medida'], bodyRows: [['Ana', '2'], ['Bia', '3']], recognizedColumns: {} });
+  });
+
+  it('keeps extra pasted cells editable by synthesizing their headers', () => {
+    const result = port.readTabularPasteState('A;B\n1;2;extra\n3', legacyStats);
+
+    expect(result).toMatchObject({
+      status: 'loaded',
+      headers: ['A', 'B', 'Coluna 3'],
+      bodyRows: [['1', '2', 'extra'], ['3', '', '']],
+    });
+    if (result.status === 'loaded') {
+      expect(result.summary).toBeDefined();
+      expect(result.summary!.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'extra_cells', rowNumbers: [1] }),
+        expect.objectContaining({ code: 'short_rows', rowNumbers: [2] }),
+      ]));
+    }
+  });
+
+  it('records numeric import diagnostics without treating categorical missing-like labels as missing', () => {
+    const result = port.readTabularPasteState('desfecho;grupo\n1,25;NA\n2.3;N/A\nNA;NULL', legacyStats, ANOVA_OPTIONS);
+
+    expect(result.status).toBe('loaded');
+    if (result.status === 'loaded') {
+      expect(result.summary).toBeDefined();
+      expect(result.summary!.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'mixed_numeric_format' }),
+        expect.objectContaining({ code: 'missing_tokens', rowNumbers: [3] }),
+      ]));
+      expect(result.summary!.diagnostics.find((item) => item.code === 'missing_tokens')?.message).toContain('desfecho');
+    }
+  });
+
+  it('scans missing tokens in recognized temporal columns', () => {
+    const result = port.readTabularPasteState('periodo;grupo\n2024;A\nNA;B', legacyStats, {
+      aliases: { periodo: ['periodo'], grupo: ['grupo'] },
+      requiredKeys: ['periodo', 'grupo'],
+      temporalKeys: ['periodo'],
+    });
+
+    expect(result.status).toBe('loaded');
+    if (result.status === 'loaded') {
+      expect(result.summary).toBeDefined();
+      expect(result.summary!.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'missing_tokens', rowNumbers: [2] }),
+      ]));
+    }
+  });
+
+  it('keeps duplicate columns stable while explicitly mapping the first match', () => {
+    const result = port.readTabularPasteState('desfecho;desfecho;grupo\n1;99;A\n2;98;B', legacyStats, ANOVA_OPTIONS);
+
+    expect(result).toMatchObject({
+      status: 'loaded',
+      headers: ['desfecho', 'desfecho', 'grupo'],
+      recognizedColumns: { desfecho: { index: 0 }, grupo: { index: 2 } },
+    });
+    if (result.status === 'loaded') {
+      expect(result.summary).toBeDefined();
+      expect(result.summary!.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'duplicate_headers', message: expect.stringMatching(/desfecho.*coluna 1.*desfecho.*coluna 2/i) }),
+      ]));
+    }
   });
 
   it('accepts non-empty categorical roles in a validated positional fallback', () => {

@@ -15,6 +15,7 @@ import type {
   PraisWinstenResult,
   WelchTResult,
 } from '../stats/statsEngine';
+import type { TabularImportSummary } from './importDiagnostics';
 
 // ---------------------------------------------------------------------------
 // Legacy adapter surface (the only legacy `utils`/`Stats` methods ported)
@@ -135,6 +136,8 @@ export interface TabularCandidate {
 
 export interface TabularLoadedState {
   importWarnings?: ImportWarning[];
+  /** New grouped import contract; flat parser fields remain available during migration. */
+  summary?: TabularImportSummary;
   status: 'loaded';
   fileName: string;
   workbookKind: string;
