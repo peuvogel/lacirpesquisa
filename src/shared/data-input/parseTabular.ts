@@ -492,7 +492,6 @@ export async function readWorkbookTablesFromFile(
   file: File,
   utils: LegacyUtilsAdapter,
 ): Promise<WorkbookTablesResult> {
-  validateImportLimit('fileBytes', file.size);
   const fileName = normalizeTabularSpaces(file?.name || 'arquivo');
   const dot = fileName.lastIndexOf('.');
   const extension = dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : '';
@@ -500,7 +499,7 @@ export async function readWorkbookTablesFromFile(
     const suffix = extension ? `.${extension}` : 'sem extensão';
     throw new Error(`Formato ${suffix} não suportado. Salve o arquivo como .xlsx ou CSV e tente novamente.`);
   }
-
+  validateImportLimit('fileBytes', file.size);
   if (extension === 'xlsx') {
     return {
       kind: 'xlsx',

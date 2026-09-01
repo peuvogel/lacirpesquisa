@@ -12,7 +12,7 @@ import * as port from './parseTabular';
 // eslint-disable-next-line import/extensions -- differential parity import of the untouched legacy module
 import * as legacy from '../../../assets/js/tabular-data-input.js';
 import { TABULAR_OPTIONS as ANOVA_OPTIONS } from '../../features/tests/anova-tukey/anovaConfig';
-import { legacyStats } from './legacyAdapters';
+import { legacyStats, legacyUtils } from './legacyAdapters';
 import type { TabularInputOptions } from './types';
 
 const fixtureDir = join(__dirname, '../../test/fixtures/tabnet');
@@ -131,6 +131,17 @@ describe('parseDelimitedRows differential parity', () => {
 });
 
 describe('readTabularPasteState direct behavior (not just parity)', () => {
+  it('rejects an unsupported file before reading its size', async () => {
+    const unsupported = new File(['conteúdo'], 'dados.xls');
+    const size = vi.fn(() => { throw new Error('size must not be read'); });
+    Object.defineProperty(unsupported, 'size', { configurable: true, get: size });
+
+    await expect(port.readWorkbookTablesFromFile(unsupported, legacyUtils)).rejects.toThrow(
+      'Formato .xls não suportado. Salve o arquivo como .xlsx ou CSV e tente novamente.',
+    );
+    expect(size).not.toHaveBeenCalled();
+  });
+
   it('preserves quoted delimiters, escaped quotes, spaces and embedded newlines', () => {
     expect(port.parseDelimitedRows('Nome,Valor\n"  A; B, ""C""  ",2\n"duas\nlinhas",3').rows).toEqual([
       ['Nome', 'Valor'], ['  A; B, "C"  ', '2'], ['duas\nlinhas', '3'],

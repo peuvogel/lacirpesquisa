@@ -128,8 +128,13 @@ describe('bounded XLSX import', () => {
     ['yyyy-mm-dd', true],
     ['[Red][&gt;=0]dd\\-mm\\-yyyy', true],
     ['mm/yyyy', true],
+    ['&quot;literal \\&quot; &quot; yyyy', true],
     ['&quot;day&quot; 0', false],
     ['\\d 0', false],
+    ['\\y 0', false],
+    ['_d 0', false],
+    ['*y 0', false],
+    ['[y]0', false],
     ['[Red][&gt;=0]0', false],
     ['[h]:mm', false],
     ['0.00E+00', false],
@@ -143,11 +148,28 @@ describe('bounded XLSX import', () => {
 
   it.each([
     ['fractional styled serial', '45292.5', '45292.5', false],
+    ['fractional styled serial below one', '0.5', '0.5', false],
     ['negative styled serial', '-1', '', true],
+    ['negative fractional styled serial', '-0.5', '', true],
+    ['another negative fractional styled serial', '-1.5', '', true],
   ])('handles %s without inventing a date', async (_name, serial, expected, warns) => {
     const table = (await read(datedEntries({ serial }))).tables[0];
     expect(table.rows[1][0]).toBe(expected);
     expect(table.importWarnings ?? []).toHaveLength(warns ? 1 : 0);
+    expect(table.importDiagnostics ?? []).toHaveLength(0);
+  });
+
+  it.each([
+    ['unclosed quoted literal', '&quot;day'],
+    ['unclosed bracket block', '[day'],
+    ['trailing escape', 'y\\'],
+    ['trailing underscore padding', 'y_'],
+    ['trailing asterisk padding', 'y*'],
+    ['unexpected closing bracket', ']y'],
+    ['escaped closing quote inside an unclosed literal', '&quot;literal \\&quot; yyyy'],
+  ])('rejects malformed custom number format with %s', async (_name, formatCode) => {
+    const table = (await read(datedEntries({ formatId: 164, formatCode }))).tables[0];
+    expect(table.rows[1][0]).toBe('45292');
     expect(table.importDiagnostics ?? []).toHaveLength(0);
   });
 
@@ -201,6 +223,22 @@ describe('bounded XLSX import', () => {
     );
     expect(readBuffer).not.toHaveBeenCalled();
     expect(readText).not.toHaveBeenCalled();
+  });
+
+  it.each(['xls', 'pdf'])('rejects .%s before accessing even file metadata', async (extension) => {
+    const unsupported = new File(['conteúdo'], `dados.${extension}`);
+    const size = vi.fn(() => { throw new Error('size must not be read'); });
+    Object.defineProperty(unsupported, 'size', { configurable: true, get: size });
+
+    await expect(readWorkbookTablesFromFile(unsupported, legacyUtils)).rejects.toThrow(
+      `Formato .${extension} não suportado. Salve o arquivo como .xlsx ou CSV e tente novamente.`,
+    );
+    expect(size).not.toHaveBeenCalled();
+  });
+
+  it.each(['CSV', 'TXT', 'TSV'])('accepts supported text extension case-insensitively (%s)', async (extension) => {
+    const result = await readWorkbookTablesFromFile(new File(['A\n1'], `dados.${extension}`), legacyUtils);
+    expect(result).toMatchObject({ kind: 'text', tables: [{ rows: [['A'], ['1']] }] });
   });
 
   it.each([false, true])('reads real stored/deflated XML (deflate=%s) with data descriptors', async (deflate) => {

@@ -278,12 +278,39 @@ const BUILT_IN_DATE_FORMATS = new Set([
 ]);
 
 function customFormatIsCalendarDate(formatCode: string): boolean {
-  const withoutLiterals = formatCode
-    .replace(/"(?:[^"]|"")*"/g, '')
-    .replace(/\\./g, '')
-    .replace(/_.|\*./g, '')
-    .replace(/\[[^\]]*\]/g, '');
-  return /[yd]/i.test(withoutLiterals);
+  let hasCalendarToken = false;
+  let state: 'plain' | 'quoted' | 'bracket' = 'plain';
+  for (let index = 0; index < formatCode.length; index++) {
+    const character = formatCode[index];
+    if (state === 'quoted') {
+      if (character === '\\') {
+        if (index + 1 >= formatCode.length) return false;
+        index++;
+      } else if (character === '"') {
+        if (formatCode[index + 1] === '"') index++;
+        else state = 'plain';
+      }
+      continue;
+    }
+    if (state === 'bracket') {
+      if (character === '\\') {
+        if (index + 1 >= formatCode.length) return false;
+        index++;
+      } else if (character === '[') return false;
+      else if (character === ']') state = 'plain';
+      continue;
+    }
+    if (character === '"') { state = 'quoted'; continue; }
+    if (character === '[') { state = 'bracket'; continue; }
+    if (character === ']') return false;
+    if (character === '\\' || character === '_' || character === '*') {
+      if (index + 1 >= formatCode.length) return false;
+      index++;
+      continue;
+    }
+    if (/[yd]/i.test(character)) hasCalendarToken = true;
+  }
+  return state === 'plain' && hasCalendarToken;
 }
 
 function readDateStyleIndexes(document: Document): ReadonlySet<number> {
@@ -363,7 +390,8 @@ async function readWorksheet(
       const styleIndex = cell.getAttribute('s') || '';
       if (!unusable && type === 'n' && value !== '' && /^\d+$/.test(styleIndex) && dateContext.dateStyleIndexes.has(Number(styleIndex))) {
         const serial = Number(value);
-        if (Number.isInteger(serial)) {
+        if (serial < 0) { raw = ''; unusable = true; }
+        else if (Number.isInteger(serial)) {
           const iso = excelSerialToIso(serial, dateContext.date1904);
           if (iso) { raw = iso; convertedDates++; }
           else { raw = ''; unusable = true; }
