@@ -49,12 +49,160 @@ function entries(sheet = worksheet): Entry[] {
     { name: 'xl/worksheets/sheet1.xml', text: sheet },
   ];
 }
+function datedEntries({
+  serial = '45292',
+  date1904 = false,
+  styleIndex = 1,
+  formatId = 14,
+  formatCode,
+  formula,
+}: {
+  serial?: string;
+  date1904?: boolean;
+  styleIndex?: number | null;
+  formatId?: number;
+  formatCode?: string;
+  formula?: string;
+} = {}): Entry[] {
+  const items = entries(
+    '<worksheet><sheetData>'
+      + '<row r="1"><c r="A1" t="inlineStr"><is><t>Data</t></is></c></row>'
+      + `<row r="2"><c r="A2"${styleIndex === null ? '' : ` s="${styleIndex}"`}>${formula ? `<f>${formula}</f>` : ''}<v>${serial}</v></c></row>`
+      + '</sheetData></worksheet>',
+  );
+  items[0].text = `<workbook xmlns:r="urn:r"><workbookPr${date1904 ? ' date1904="1"' : ''}/><sheets><sheet name="Dados" r:id="r1"/></sheets></workbook>`;
+  items[1].text = items[1].text.replace(
+    '</Relationships>',
+    '<Relationship Id="styles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
+  );
+  items.push({
+    name: 'xl/styles.xml',
+    text: '<styleSheet>'
+      + (formatCode === undefined ? '' : `<numFmts count="1"><numFmt numFmtId="${formatId}" formatCode="${formatCode}"/></numFmts>`)
+      + `<cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="${formatId}" applyNumberFormat="1"/></cellXfs>`
+      + '</styleSheet>',
+  });
+  return items;
+}
 function file(bytes: Uint8Array): File { return new File([bytes as BlobPart], 'dados.xlsx'); }
 function read(items: Entry[]) { return readWorkbookTablesFromFile(file(zip(items)), legacyUtils); }
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe('bounded XLSX import', () => {
+  it('converts a styled date in the 1900 date system and aggregates conversion metadata', async () => {
+    const items = datedEntries();
+    items[2].text = items[2].text.replace(
+      '</sheetData>',
+      '<row r="3"><c r="A3" s="1"><v>45293</v></c></row></sheetData>',
+    );
+    const result = await read(items);
+    expect(result.tables[0]).toMatchObject({
+      rows: [['Data'], ['2024-01-01'], ['2024-01-02']],
+      importDiagnostics: [{ code: 'excel_dates_converted', severity: 'info', message: expect.stringContaining('2') }],
+    });
+    expect(result.tables[0].importDiagnostics).toHaveLength(1);
+  });
+
+  it('converts a styled date in the 1904 date system using UTC calendar arithmetic', async () => {
+    expect((await read(datedEntries({ serial: '1', date1904: true }))).tables[0].rows).toEqual([
+      ['Data'], ['1904-01-02'],
+    ]);
+  });
+
+  it('does not fabricate Excel serial 60 as 1900-02-29', async () => {
+    expect((await read(datedEntries({ serial: '60' }))).tables[0]).toMatchObject({
+      rows: [['Data'], ['']],
+      importWarnings: [{ code: 'unusable-cell', cellReference: 'A2' }],
+    });
+  });
+
+  it.each([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47])(
+    'recognizes built-in date format %s',
+    async (formatId) => {
+      expect((await read(datedEntries({ formatId }))).tables[0].rows[1][0]).toBe('2024-01-01');
+    },
+  );
+
+  it.each([
+    ['yyyy-mm-dd', true],
+    ['[Red][&gt;=0]dd\\-mm\\-yyyy', true],
+    ['mm/yyyy', true],
+    ['&quot;day&quot; 0', false],
+    ['\\d 0', false],
+    ['[Red][&gt;=0]0', false],
+    ['[h]:mm', false],
+    ['0.00E+00', false],
+    ['0%', false],
+    ['0', false],
+  ])('classifies custom number format %s conservatively', async (formatCode, converts) => {
+    const table = (await read(datedEntries({ formatId: 164, formatCode }))).tables[0];
+    expect(table.rows[1][0]).toBe(converts ? '2024-01-01' : '45292');
+    expect(table.importDiagnostics ?? []).toHaveLength(converts ? 1 : 0);
+  });
+
+  it.each([
+    ['fractional styled serial', '45292.5', '45292.5', false],
+    ['negative styled serial', '-1', '', true],
+  ])('handles %s without inventing a date', async (_name, serial, expected, warns) => {
+    const table = (await read(datedEntries({ serial }))).tables[0];
+    expect(table.rows[1][0]).toBe(expected);
+    expect(table.importWarnings ?? []).toHaveLength(warns ? 1 : 0);
+    expect(table.importDiagnostics ?? []).toHaveLength(0);
+  });
+
+  it('preserves an unstyled Excel serial even when the archive contains an unused styles part', async () => {
+    const items = datedEntries({ styleIndex: null });
+    items[1].text = items[1].text.replace(/<Relationship Id="styles"[^>]+\/>/, '');
+    expect((await read(items)).tables[0]).toMatchObject({ rows: [['Data'], ['45292']] });
+  });
+
+  it.each([
+    ['external', 'TargetMode="External" Target="https://example.invalid/styles.xml"', /externo/i],
+    ['path traversal', 'Target="../styles.xml"', /caminho/i],
+  ])('rejects an unsafe %s styles relationship', async (_name, replacement, message) => {
+    const items = datedEntries();
+    items[1].text = items[1].text.replace('Target="styles.xml"', replacement);
+    await expect(read(items)).rejects.toThrow(message);
+  });
+
+  it('converts only the cached value of a styled formula and never evaluates it', async () => {
+    const result = await readTabularFileState(file(zip(datedEntries({ formula: 'DATE(2024,1,1)' }))), legacyUtils, legacyStats, {
+      aliases: { data: ['Data'] }, requiredKeys: ['data'], temporalKeys: ['data'],
+    });
+    expect(result).toMatchObject({ status: 'loaded', bodyRows: [['2024-01-01']] });
+    if (result.status === 'loaded') {
+      expect(result.summary.diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'excel_dates_converted' }),
+      ]));
+      expect(result.summary.diagnostics).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'possible_excel_serial' }),
+      ]));
+    }
+  });
+
+  it('rejects legacy xls before reading binary contents', async () => {
+    const legacy = new File([new Uint8Array([0xd0, 0xcf, 0x11, 0xe0])], 'dados.xls');
+    const readBuffer = vi.spyOn(legacy, 'arrayBuffer');
+    const readText = vi.spyOn(legacy, 'text');
+    await expect(readWorkbookTablesFromFile(legacy, legacyUtils)).rejects.toThrow(
+      'Formato .xls não suportado. Salve o arquivo como .xlsx ou CSV e tente novamente.',
+    );
+    expect(readBuffer).not.toHaveBeenCalled();
+    expect(readText).not.toHaveBeenCalled();
+  });
+
+  it('rejects another unsupported suffix before reading contents', async () => {
+    const unsupported = new File(['conteúdo'], 'dados.pdf');
+    const readBuffer = vi.spyOn(unsupported, 'arrayBuffer');
+    const readText = vi.spyOn(unsupported, 'text');
+    await expect(readWorkbookTablesFromFile(unsupported, legacyUtils)).rejects.toThrow(
+      'Formato .pdf não suportado. Salve o arquivo como .xlsx ou CSV e tente novamente.',
+    );
+    expect(readBuffer).not.toHaveBeenCalled();
+    expect(readText).not.toHaveBeenCalled();
+  });
+
   it.each([false, true])('reads real stored/deflated XML (deflate=%s) with data descriptors', async (deflate) => {
     const result = await read(entries().map((entry) => ({ ...entry, deflate, descriptor: true })));
     expect(result.tables[0]).toMatchObject({ name: 'Dados', rows: [['Valor'], ['7']] });

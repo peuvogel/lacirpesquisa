@@ -494,7 +494,12 @@ export async function readWorkbookTablesFromFile(
 ): Promise<WorkbookTablesResult> {
   validateImportLimit('fileBytes', file.size);
   const fileName = normalizeTabularSpaces(file?.name || 'arquivo');
-  const extension = fileName.toLowerCase().split('.').pop();
+  const dot = fileName.lastIndexOf('.');
+  const extension = dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : '';
+  if (!['csv', 'txt', 'tsv', 'xlsx'].includes(extension)) {
+    const suffix = extension ? `.${extension}` : 'sem extensão';
+    throw new Error(`Formato ${suffix} não suportado. Salve o arquivo como .xlsx ou CSV e tente novamente.`);
+  }
 
   if (extension === 'xlsx') {
     return {
@@ -605,6 +610,7 @@ function analyzeNumericFormatting(
   numericKeys: string[],
   temporalKeys: string[],
   stats: LegacyStatsAdapter | undefined,
+  hasExcelDateConversions: boolean,
 ): {
   decimalCommaDetected: boolean;
   numericCellCount: number;
@@ -618,6 +624,7 @@ function analyzeNumericFormatting(
   let numericCellCount = 0;
   const missingByColumn = new Map<string, number[]>();
   const numericFormatsByColumn = new Map<string, { comma: boolean; point: boolean }>();
+  const possibleSerialsByColumn = new Map<string, number[]>();
   const calendarTemporalKeys = new Set(columns.flatMap(({ key, index }) => {
     if (!temporalKeys.includes(key)) return [];
     const rawValues = bodyRows
@@ -641,6 +648,18 @@ function analyzeNumericFormatting(
         return;
       }
       if (parseTabularNumber(raw, stats) === null) return;
+      const numericValue = Number(normalized);
+      if (
+        !hasExcelDateConversions
+        && temporalKeys.includes(key)
+        && Number.isInteger(numericValue)
+        && numericValue >= 20_000
+        && numericValue <= 80_000
+      ) {
+        const rowNumbers = possibleSerialsByColumn.get(key) || [];
+        if (rowNumbers.length < 100) rowNumbers.push(rowIndex + 1);
+        possibleSerialsByColumn.set(key, rowNumbers);
+      }
       if (numericKeys.includes(key)) numericCellCount += 1;
       const rawText = String(raw);
       const commaIndex = rawText.lastIndexOf(',');
@@ -662,6 +681,12 @@ function analyzeNumericFormatting(
       severity: 'info' as const,
       message: 'Foram identificados valores numéricos com vírgula decimal.',
     }] : []),
+    ...Array.from(possibleSerialsByColumn.entries()).map(([key, rowNumbers]) => ({
+      code: 'possible_excel_serial' as const,
+      severity: 'warning' as const,
+      message: `A coluna temporal "${recognizedColumns[key].header}" contém números que podem ser seriais de data do Excel. Confirme a opção Datas ou corrija a formatação de data no Excel.`,
+      rowNumbers,
+    })),
     ...Array.from(numericFormatsByColumn.entries()).flatMap(([key, formats]) => (
       formats.comma && formats.point ? [{
         code: 'mixed_numeric_format' as const,
@@ -717,18 +742,21 @@ function buildLoadedTabularState(
   stats: LegacyStatsAdapter | undefined,
 ): TabularLoadedState {
   const normalized = normalizeImportedMatrix(candidate.headers, candidate.bodyRows);
+  const sourceDiagnostics = candidate.table.importDiagnostics || [];
   const formatting = analyzeNumericFormatting(
     normalized.bodyRows,
     candidate.recognizedColumns,
     numericKeys,
     temporalKeys,
     stats,
+    sourceDiagnostics.some((item) => item.code === 'excel_dates_converted'),
   );
   const sourceType = extra.sourceType || 'file';
   const recognitionMode = candidate.recognitionMode || 'aliases';
   const importWarnings = candidate.table.importWarnings || [];
   const diagnostics: ImportDiagnostic[] = [
     ...normalized.diagnostics,
+    ...sourceDiagnostics,
     ...duplicateHeaderDiagnostics(normalized.headers, candidate.duplicates),
     ...(recognitionMode === 'position' ? [{
       code: 'positional_mapping' as const,

@@ -1,8 +1,10 @@
 import { IMPORT_LIMITS, validateImportLimit, validateTableSize, validateXmlElementLimit } from './importLimits';
 import type { ImportLimits } from './importLimits';
+import type { ImportDiagnostic } from './importDiagnostics';
 import type { ImportWarning, WorkbookTable } from './types';
 
 interface ZipEntry { name: string; method: number; size: number; compressedSize: number; crc: number; start: number }
+interface XlsxDateContext { date1904: boolean; dateStyleIndexes: ReadonlySet<number> }
 const utf8 = new TextDecoder('utf-8', { fatal: true });
 
 function requireRange(offset: number, length: number, end: number): void {
@@ -270,7 +272,55 @@ function parseXml(text: string, root: string, previous?: { rows: number; cells: 
   return document;
 }
 
-async function readWorksheet(text: string, getShared: () => Promise<string[]>, name: string, previous: { rows: number; cells: number }): Promise<WorkbookTable> {
+const BUILT_IN_DATE_FORMATS = new Set([
+  14, 15, 16, 17, 18, 19, 20, 21, 22,
+  45, 46, 47,
+]);
+
+function customFormatIsCalendarDate(formatCode: string): boolean {
+  const withoutLiterals = formatCode
+    .replace(/"(?:[^"]|"")*"/g, '')
+    .replace(/\\./g, '')
+    .replace(/_.|\*./g, '')
+    .replace(/\[[^\]]*\]/g, '');
+  return /[yd]/i.test(withoutLiterals);
+}
+
+function readDateStyleIndexes(document: Document): ReadonlySet<number> {
+  const customDateFormats = new Set<number>();
+  for (const format of nodes(document, 'numFmt')) {
+    const id = format.getAttribute('numFmtId') || '';
+    const code = format.getAttribute('formatCode');
+    if (/^\d+$/.test(id) && code !== null && customFormatIsCalendarDate(code)) customDateFormats.add(Number(id));
+  }
+  const cellXfs = nodes(document, 'cellXfs')[0];
+  if (!cellXfs) return new Set();
+  const dateStyleIndexes = new Set<number>();
+  Array.from(cellXfs.children).filter((child) => child.localName === 'xf').forEach((style, index) => {
+    const rawId = style.getAttribute('numFmtId') || '0';
+    if (!/^\d+$/.test(rawId)) return;
+    const id = Number(rawId);
+    if (BUILT_IN_DATE_FORMATS.has(id) || customDateFormats.has(id)) dateStyleIndexes.add(index);
+  });
+  return dateStyleIndexes;
+}
+
+function excelSerialToIso(serial: number, date1904: boolean): string | null {
+  if (!Number.isInteger(serial) || serial < 0) return null;
+  if (!date1904 && serial === 60) return null;
+  const epoch = date1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 31);
+  const adjusted = date1904 ? serial : serial - (serial > 60 ? 1 : 0);
+  const date = new Date(epoch + adjusted * 86_400_000);
+  return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : null;
+}
+
+async function readWorksheet(
+  text: string,
+  getShared: () => Promise<string[]>,
+  name: string,
+  previous: { rows: number; cells: number },
+  dateContext: XlsxDateContext,
+): Promise<WorkbookTable> {
   const document = parseXml(text, 'worksheet', previous);
   const shared = nodes(document, 'c').some((cell) => cell.getAttribute('t') === 's') ? await getShared() : [];
   const dimensions = nodes(document, 'dimension')[0]?.getAttribute('ref');
@@ -281,7 +331,7 @@ async function readWorksheet(text: string, getShared: () => Promise<string[]>, n
     if (range[2]) cellPosition(range[2]);
   }
   const sparse = new Map<number, Map<number, string>>(), importWarnings: ImportWarning[] = [];
-  let maxRow = 0, columns = 0;
+  let maxRow = 0, columns = 0, convertedDates = 0;
   const validateSize = () => {
     validateTableSize(Math.max(0, maxRow - 1), columns);
     validateImportLimit('dataRows', previous.rows + Math.max(0, maxRow - 1));
@@ -310,6 +360,15 @@ async function readWorksheet(text: string, getShared: () => Promise<string[]>, n
       else if (type === 'b') { raw = value === '1' ? 'TRUE' : value === '0' ? 'FALSE' : ''; unusable = !raw; }
       else if (type === 'e' || (type === 'n' && value !== '' && !Number.isFinite(Number(value)))) { raw = ''; unusable = true; }
       if (formula && value === '') { raw = ''; unusable = true; }
+      const styleIndex = cell.getAttribute('s') || '';
+      if (!unusable && type === 'n' && value !== '' && /^\d+$/.test(styleIndex) && dateContext.dateStyleIndexes.has(Number(styleIndex))) {
+        const serial = Number(value);
+        if (Number.isInteger(serial)) {
+          const iso = excelSerialToIso(serial, dateContext.date1904);
+          if (iso) { raw = iso; convertedDates++; }
+          else { raw = ''; unusable = true; }
+        }
+      }
       if (unusable) importWarnings.push({
         code: formula && value === '' ? 'formula-without-cache' : 'unusable-cell',
         cellReference: reference, rowNumber: row, columnIndex: position.column,
@@ -322,7 +381,17 @@ async function readWorksheet(text: string, getShared: () => Promise<string[]>, n
   }
   validateSize();
   const rows = Array.from({ length: maxRow }, (_, index) => Array.from({ length: columns }, (_, column) => sparse.get(index + 1)?.get(column) ?? ''));
-  return { name, rows, ...(importWarnings.length ? { importWarnings } : {}) };
+  const importDiagnostics: ImportDiagnostic[] = convertedDates ? [{
+    code: 'excel_dates_converted',
+    severity: 'info',
+    message: `${convertedDates} data(s) formatada(s) no Excel foram convertidas para o padrão AAAA-MM-DD.`,
+  }] : [];
+  return {
+    name,
+    rows,
+    ...(importWarnings.length ? { importWarnings } : {}),
+    ...(importDiagnostics.length ? { importDiagnostics } : {}),
+  };
 }
 
 function relationshipPath(target: string): string {
@@ -347,6 +416,17 @@ export async function readXlsxTables(file: File): Promise<WorkbookTable[]> {
     if (!id || relations.has(id)) throw new Error('Relacionamento XLSX inválido ou duplicado.');
     relations.set(id, relation);
   }
+  const date1904Value = nodes(workbook, 'workbookPr')[0]?.getAttribute('date1904')?.toLowerCase();
+  const styleRelations = Array.from(relations.values()).filter((relation) => relation.getAttribute('Type')?.endsWith('/styles'));
+  if (styleRelations.length > 1) throw new Error('Relacionamento de estilos XLSX inválido ou duplicado.');
+  let dateStyleIndexes: ReadonlySet<number> = new Set();
+  if (styleRelations.length === 1) {
+    const relation = styleRelations[0];
+    if (relation.getAttribute('TargetMode') === 'External') throw new Error('Relacionamento externo XLSX não é suportado.');
+    const path = relationshipPath(relation.getAttribute('Target') || '');
+    dateStyleIndexes = readDateStyleIndexes(parseXml(await readXml(path), 'styleSheet'));
+  }
+  const dateContext: XlsxDateContext = { date1904: date1904Value === '1' || date1904Value === 'true', dateStyleIndexes };
   let shared: string[] | undefined;
   const getShared = async () => {
     if (!shared) shared = entries.has('xl/sharedStrings.xml')
@@ -365,7 +445,7 @@ export async function readXlsxTables(file: File): Promise<WorkbookTable[]> {
     const path = relationshipPath(relation.getAttribute('Target') || '');
     if (sheetPaths.has(path)) throw new Error('Referência de aba XLSX duplicada.');
     sheetPaths.add(path);
-    const table = await readWorksheet(await readXml(path), getShared, sheet.getAttribute('name') || 'Planilha', totals);
+    const table = await readWorksheet(await readXml(path), getShared, sheet.getAttribute('name') || 'Planilha', totals, dateContext);
     totals.cells += table.rows.length * (table.rows[0]?.length ?? 0);
     totals.rows += Math.max(0, table.rows.length - 1);
     tables.push(table);

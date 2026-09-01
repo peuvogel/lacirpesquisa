@@ -15,7 +15,7 @@ import type {
   PraisWinstenResult,
   WelchTResult,
 } from '../stats/statsEngine';
-import type { TabularImportSummary } from './importDiagnostics';
+import type { ImportDiagnostic, TabularImportSummary } from './importDiagnostics';
 
 // ---------------------------------------------------------------------------
 // Legacy adapter surface (the only legacy `utils`/`Stats` methods ported)
@@ -105,6 +105,7 @@ export interface WorkbookTable {
   delimiter?: string;
   formatLabel?: string;
   importWarnings?: ImportWarning[];
+  importDiagnostics?: ImportDiagnostic[];
 }
 
 /** Coordinates refer to the original worksheet: one-based row, zero-based column. */

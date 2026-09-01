@@ -212,6 +212,40 @@ describe('readTabularPasteState direct behavior (not just parity)', () => {
     }
   });
 
+  it('preserves possible Excel serials and warns only for a recognized temporal column', () => {
+    const result = port.readTabularPasteState('Data;Valor\n45292;45292\n45293;45293', legacyStats, {
+      aliases: { data: ['Data'], valor: ['Valor'] },
+      requiredKeys: ['data', 'valor'],
+      numericKeys: ['valor'],
+      temporalKeys: ['data'],
+    });
+
+    expect(result).toMatchObject({ status: 'loaded', bodyRows: [['45292', '45292'], ['45293', '45293']] });
+    if (result.status === 'loaded') {
+      const serialDiagnostics = result.summary.diagnostics.filter((item) => item.code === 'possible_excel_serial');
+      expect(serialDiagnostics).toEqual([expect.objectContaining({
+        severity: 'warning',
+        rowNumbers: [1, 2],
+        message: expect.stringMatching(/Datas.*formata/i),
+      })]);
+    }
+  });
+
+  it.each([
+    ['non-temporal binding', 'Data;Valor\n45292;45292\n45293;45293', { aliases: { data: ['Data'], valor: ['Valor'] }, requiredKeys: ['data'], numericKeys: ['data'], temporalKeys: [] }],
+    ['out-of-range values', 'Data\n19999\n80001', { aliases: { data: ['Data'] }, requiredKeys: ['data'], temporalKeys: ['data'] }],
+    ['fractional values', 'Data\n45292.5\n45293.5', { aliases: { data: ['Data'] }, requiredKeys: ['data'], temporalKeys: ['data'] }],
+    ['unrecognized temporal key', 'Outra\n45292\n45293', { aliases: { data: ['Data'] }, requiredKeys: [], temporalKeys: ['data'] }],
+  ])('does not report possible Excel serials for %s', (_name, text, options) => {
+    const result = port.readTabularPasteState(text, legacyStats, options);
+    expect(result.status).toBe('loaded');
+    if (result.status === 'loaded') {
+      expect(result.summary.diagnostics).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'possible_excel_serial' }),
+      ]));
+    }
+  });
+
   it('keeps duplicate columns stable while explicitly mapping the first match', () => {
     const result = port.readTabularPasteState('desfecho;desfecho;grupo\n1;99;A\n2;98;B', legacyStats, ANOVA_OPTIONS);
 
