@@ -215,7 +215,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
   }
 
   const validRows: PraisSeriesRow[] = [];
-  const numericPeriodIndexes = normalizedNumericPeriodIndexes(temporal);
+  const normalizedPeriodIndexes = normalizedSequencePeriodIndexes(temporal);
 
   rows.forEach((row, rowIndex) => {
     const idRaw = idIndex !== undefined ? normalizeSpaces(row[idIndex] ?? '') : '';
@@ -260,7 +260,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
         timeRaw,
         timeLabel: timeValue.label || timeRaw,
         timeValue: timeValue.coordinate,
-        timePeriodIndex: numericPeriodIndexes.get(timeValue.rowNumber) ?? timeValue.periodIndex,
+        timePeriodIndex: normalizedPeriodIndexes.get(timeValue.rowNumber) ?? timeValue.periodIndex,
         timeSortKey: String(timeValue.periodIndex),
         yRaw,
         yValue,
@@ -302,6 +302,11 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): PraisBuiltD
   return dataset;
 }
 
+function normalizedSequencePeriodIndexes(temporal: TemporalColumnResolution): Map<number, number> {
+  if (temporal.frequency === 'daily') return normalizedDailyPeriodIndexes(temporal);
+  return normalizedNumericPeriodIndexes(temporal);
+}
+
 function normalizedNumericPeriodIndexes(temporal: TemporalColumnResolution): Map<number, number> {
   if (temporal.frequency !== 'numeric' || temporal.issues.some((issue) => issue.severity === 'error')) {
     return new Map();
@@ -309,6 +314,18 @@ function normalizedNumericPeriodIndexes(temporal: TemporalColumnResolution): Map
   const values = temporal.values.filter((value): value is NonNullable<typeof value> => value !== null)
     .sort((left, right) => left.coordinate - right.coordinate);
   return new Map(values.map((value, index) => [value.rowNumber, index]));
+}
+
+function normalizedDailyPeriodIndexes(temporal: TemporalColumnResolution): Map<number, number> {
+  const values = temporal.values.filter((value): value is NonNullable<typeof value> => value !== null)
+    .sort((left, right) => left.periodIndex - right.periodIndex);
+  const positiveSteps = values.slice(1)
+    .map((value, index) => value.periodIndex - values[index]!.periodIndex)
+    .filter((step) => step > 0);
+  const cadence = Math.min(...positiveSteps);
+  if (!Number.isFinite(cadence)) return new Map();
+  const origin = values[0]!.periodIndex;
+  return new Map(values.map((value) => [value.rowNumber, (value.periodIndex - origin) / cadence]));
 }
 
 export function validateSeriesIssues(dataset: PraisBuiltDataset): AnalysisIssue[] {

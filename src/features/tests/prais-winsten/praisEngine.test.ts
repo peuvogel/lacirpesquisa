@@ -91,6 +91,61 @@ describe('praisEngine differential parity', () => {
     expect(validateSeriesIssues(dataset).filter((issue) => issue.severity === 'error')).toEqual([]);
   });
 
+  it('runs a regular weekly daily-date series while preserving its labels and day coordinates', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Data', 'Valor'],
+      rows: [['2024-01-01', '10'], ['2024-01-08', '12'], ['2024-01-15', '14']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(dataset.orderedRows.map((row) => row.timePeriodIndex)).toEqual([0, 1, 2]);
+    expect(dataset.orderedRows.map((row) => row.timeLabel)).toEqual([
+      '2024-01-01', '2024-01-08', '2024-01-15',
+    ]);
+    expect(dataset.time).toEqual([
+      53.999739898834335,
+      54.018905247883254,
+      54.03807059693217,
+    ]);
+    expect(validateSeriesIssues(dataset).filter((issue) => issue.severity === 'error')).toEqual([]);
+    expect(() => runAnalysis(dataset)).not.toThrow();
+  });
+
+  it('blocks a skipped weekly daily-date observation and keeps the detector interval detail', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Data', 'Valor'],
+      rows: [['2024-01-01', '10'], ['2024-01-08', '12'], ['2024-01-22', '14']],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(dataset.orderedRows.map((row) => row.timePeriodIndex)).toEqual([0, 1, 3]);
+    expect(validateSeriesIssues(dataset)).toContainEqual(expect.objectContaining({
+      code: 'missing_period',
+      rowNumbers: [2, 3],
+      message: 'Intervalo irregular entre 2024-01-08 e 2024-01-22.',
+    }));
+    expect(() => runAnalysis(dataset)).toThrow('Intervalo irregular entre 2024-01-08 e 2024-01-22.');
+  });
+
+  it('reports an effective weekly gap after an internal invalid outcome is filtered', () => {
+    const dataset = buildDatasetFromConfirmed({
+      headers: ['Data', 'Valor'],
+      rows: [
+        ['2024-01-01', '10'],
+        ['2024-01-08', 'inválido'],
+        ['2024-01-15', '14'],
+        ['2024-01-22', '16'],
+      ],
+      recognizedColumns: { tempo: 0, variavel_y: 1 },
+    });
+
+    expect(dataset.orderedRows.map((row) => row.timePeriodIndex)).toEqual([0, 2, 3]);
+    expect(validateSeriesIssues(dataset)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'invalid_outcome', rowNumbers: [2] }),
+      expect.objectContaining({ code: 'missing_period', rowNumbers: [1, 3] }),
+    ]));
+  });
+
   it('runPraisWinsten matches legacy Stats on prais-exemplo fixture', () => {
     const parsed = readTabularPasteState(exemploText, legacyStats, TABULAR_OPTIONS);
     expect(parsed.status).toBe('loaded');
