@@ -103,6 +103,12 @@ const delimiters = [
   { label: 'vírgula com ponto decimal', value: ',' },
 ] as const;
 
+const numericRequiredCases = contractCases.flatMap((caseDefinition) => (
+  caseDefinition.requiredKeys
+    .filter((requiredKey) => caseDefinition.options.numericKeys?.includes(requiredKey))
+    .map((numericRequiredKey) => ({ caseDefinition, numericRequiredKey }))
+));
+
 function serialize(headers: readonly string[], rows: readonly (readonly string[])[], delimiter = ';'): string {
   return [headers, ...rows].map((row) => row.join(delimiter)).join('\n');
 }
@@ -174,14 +180,20 @@ describe.each(contractCases)('$id tabular import contract', (caseDefinition) => 
     )).toEqual({ valid: caseDefinition.rows.length - 1, incomplete: [1], invalid: [] });
   });
 
-  const numericRequiredKey = caseDefinition.requiredKeys.find((key) => (
-    caseDefinition.options.numericKeys?.includes(key)
-  ));
-  if (numericRequiredKey) {
-    it(`characterization: reports non-numeric ${numericRequiredKey} as invalid`, () => {
-      const { document, recognized } = documentFrom(caseDefinition);
-      const edited = setTableCell(document, 0, recognized[numericRequiredKey]!, 'não-numérico');
+});
 
+describe.each(numericRequiredCases)(
+  '$caseDefinition.id numeric role $numericRequiredKey',
+  ({ caseDefinition, numericRequiredKey }) => {
+    it('characterization: reports a non-numeric required cell as invalid without changing another role', () => {
+      const { document, recognized } = documentFrom(caseDefinition);
+      const targetColumn = recognized[numericRequiredKey]!;
+      const originalRow = [...document.rows[0]!];
+      const edited = setTableCell(document, 0, targetColumn, 'não-numérico');
+
+      expect(edited.rows[0]).toEqual(originalRow.map((value, columnIndex) => (
+        columnIndex === targetColumn ? 'não-numérico' : value
+      )));
       expect(tableValiditySummary(
         edited,
         caseDefinition.id,
@@ -191,8 +203,8 @@ describe.each(contractCases)('$id tabular import contract', (caseDefinition) => 
         caseDefinition.options.temporalKeys,
       )).toEqual({ valid: caseDefinition.rows.length - 1, incomplete: [], invalid: [1] });
     });
-  }
-});
+  },
+);
 
 describe('cross-cutting import characterizations', () => {
   it.each([';', '\t'])('preserves decimal commas with %s separators', (delimiter) => {
