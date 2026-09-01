@@ -5,6 +5,7 @@ import {
   SESSION_STORE_NAME,
   SessionSnapshotValidationError,
   createIndexedDbSessionStorage,
+  parseSessionSnapshot,
   type SessionSnapshot,
 } from './sessionStorage';
 import { createTableDocument, setTableRoleBinding } from '@/shared/data-input/tableDocument';
@@ -47,6 +48,14 @@ function sampleSnapshot(): SessionSnapshot {
     },
     visualPreferences: { 'mann-whitney:rank': { height: 520 } },
   };
+}
+
+type RawSnapshot = {
+  dataset: { table: { importSummary: Record<string, unknown> } };
+};
+
+function rawSnapshot(): RawSnapshot {
+  return structuredClone(sampleSnapshot()) as unknown as RawSnapshot;
 }
 
 async function putRaw(dbName: string, value: unknown): Promise<void> {
@@ -105,6 +114,86 @@ describe('IndexedDB session storage', () => {
     const dbName = nextDatabaseName();
     await putRaw(dbName, invalidSnapshot);
     await expect(createIndexedDbSessionStorage({ dbName }).read()).rejects.toBeInstanceOf(SessionSnapshotValidationError);
+  });
+
+  it.each([
+    ['NaN row count', (summary: Record<string, unknown>) => { summary.rowCount = Number.NaN; }],
+    ['infinite column count', (summary: Record<string, unknown>) => { summary.columnCount = Infinity; }],
+    ['negative row count', (summary: Record<string, unknown>) => { summary.rowCount = -1; }],
+    ['negative header row', (summary: Record<string, unknown>) => { summary.headerRowNumber = -1; }],
+    ['too many rows', (summary: Record<string, unknown>) => { summary.rowCount = 10_001; }],
+    ['too many columns', (summary: Record<string, unknown>) => { summary.columnCount = 129; }],
+    ['too many cells', (summary: Record<string, unknown>) => { summary.rowCount = 1_600; summary.columnCount = 125; }],
+    ['diagnostic row zero', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.rowNumbers = [0]; }],
+    ['diagnostic row above limit', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.rowNumbers = [10_001]; }],
+    ['warning row above limit', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.rowNumber = 10_001; }],
+    ['warning row zero', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.rowNumber = 0; }],
+    ['warning column outside the import', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = 2; }],
+    ['negative warning column', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = -1; }],
+    ['too many sheets', (summary: Record<string, unknown>) => { summary.sheetNames = Array.from({ length: 33 }, () => 'Dados'); }],
+    ['too many recognition details', (summary: Record<string, unknown>) => { summary.recognitionDetails = Array.from({ length: 129 }, () => 'detalhe'); }],
+    ['too many diagnostics', (summary: Record<string, unknown>) => { summary.diagnostics = new Array(10_001); }],
+    ['too many cell warnings', (summary: Record<string, unknown>) => { summary.importWarnings = new Array(200_001); }],
+    ['oversized summary string', (summary: Record<string, unknown>) => { summary.fileName = 'a'.repeat(10_001); }],
+    ['oversized diagnostic message', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.message = 'a'.repeat(10_001); }],
+    ['oversized warning reference', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.cellReference = 'a'.repeat(10_001); }],
+    ['invalid source union', (summary: Record<string, unknown>) => { summary.sourceType = 'api'; }],
+    ['invalid recognition union', (summary: Record<string, unknown>) => { summary.recognitionMode = 'manual'; }],
+    ['invalid diagnostic code', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.code = 'other'; }],
+    ['invalid diagnostic severity', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.severity = 'error'; }],
+    ['invalid warning code', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.code = 'other'; }],
+    ['extra summary key', (summary: Record<string, unknown>) => { summary.unexpected = true; }],
+    ['extra diagnostic key', (summary: Record<string, unknown>) => { (summary.diagnostics as Array<Record<string, unknown>>)[0]!.unexpected = true; }],
+    ['extra warning key', (summary: Record<string, unknown>) => { (summary.importWarnings as Array<Record<string, unknown>>)[0]!.unexpected = true; }],
+  ])('rejects a persisted import summary with %s', async (_label, mutate) => {
+    const raw = rawSnapshot();
+    mutate(raw.dataset.table.importSummary);
+    const dbName = nextDatabaseName();
+    await putRaw(dbName, raw);
+
+    await expect(createIndexedDbSessionStorage({ dbName }).read()).rejects.toBeInstanceOf(SessionSnapshotValidationError);
+  });
+
+  it('accepts strict summary boundary values through the persisted snapshot entrypoint', async () => {
+    const raw = rawSnapshot();
+    const summary = raw.dataset.table.importSummary;
+    summary.delimiter = '';
+    summary.fileName = 'a'.repeat(10_000);
+    summary.sheetNames = Array.from({ length: 32 }, () => 'Dados');
+    summary.recognitionDetails = Array.from({ length: 128 }, () => 'detalhe');
+    summary.rowCount = 10_000;
+    summary.columnCount = 1;
+    summary.headerRowNumber = 10_000;
+    (summary.diagnostics as Array<Record<string, unknown>>)[0]!.rowNumbers = [10_000];
+    (summary.importWarnings as Array<Record<string, unknown>>)[0]!.rowNumber = 10_000;
+    (summary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = 0;
+    const dbName = nextDatabaseName();
+    await putRaw(dbName, raw);
+    await expect(createIndexedDbSessionStorage({ dbName }).read()).resolves.toEqual(raw);
+  });
+
+  it('accepts maximum columns and cells when each strict bound is met', async () => {
+    const maxColumns = rawSnapshot();
+    maxColumns.dataset.table.importSummary.columnCount = 128;
+    (maxColumns.dataset.table.importSummary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = 127;
+    const columnsDbName = nextDatabaseName();
+    await putRaw(columnsDbName, maxColumns);
+    await expect(createIndexedDbSessionStorage({ dbName: columnsDbName }).read()).resolves.toEqual(maxColumns);
+
+    const maxCells = rawSnapshot();
+    maxCells.dataset.table.importSummary.rowCount = 1_599;
+    maxCells.dataset.table.importSummary.columnCount = 125;
+    (maxCells.dataset.table.importSummary.importWarnings as Array<Record<string, unknown>>)[0]!.columnIndex = 124;
+    const cellsDbName = nextDatabaseName();
+    await putRaw(cellsDbName, maxCells);
+    await expect(createIndexedDbSessionStorage({ dbName: cellsDbName }).read()).resolves.toEqual(maxCells);
+  });
+
+  it('rejects summaries with a non-plain prototype at the public parser boundary', () => {
+    const raw = rawSnapshot() as unknown as { dataset: { table: { importSummary: object } } };
+    raw.dataset.table.importSummary = Object.assign(Object.create({ inherited: true }), raw.dataset.table.importSummary);
+
+    expect(() => parseSessionSnapshot(raw)).toThrow(SessionSnapshotValidationError);
   });
 
   it('clears the single persisted session record', async () => {

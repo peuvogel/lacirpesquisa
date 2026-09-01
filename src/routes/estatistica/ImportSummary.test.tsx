@@ -20,6 +20,10 @@ const summaryWithWarnings: TabularImportSummary = {
   importWarnings: [],
 };
 
+function makeSummary(overrides: Partial<TabularImportSummary> = {}): TabularImportSummary {
+  return { ...summaryWithWarnings, diagnostics: [], importWarnings: [], ...overrides };
+}
+
 describe('ImportSummary', () => {
   it('renders accessible provenance and reveals warnings on demand', async () => {
     const user = userEvent.setup();
@@ -31,5 +35,39 @@ describe('ImportSummary', () => {
 
     await user.click(screen.getByText('Ver avisos da importação'));
     expect(screen.getByText(/cabeçalhos duplicados/i)).toBeInTheDocument();
+  });
+
+  it('describes pasted singular data without inventing a worksheet or invisible separator', () => {
+    render(<ImportSummary summary={makeSummary({
+      sourceType: 'paste',
+      fileName: '',
+      tableName: 'Tabela principal',
+      sheetNames: [],
+      formatLabel: 'TSV',
+      delimiter: '\t',
+      rowCount: 1,
+      columnCount: 1,
+    })} />);
+
+    const summary = screen.getByRole('region', { name: 'Resumo da importação' });
+    expect(summary).toHaveTextContent('Dados colados');
+    expect(summary).toHaveTextContent('1 linha · 1 coluna · TSV · separador: tabulação');
+    expect(summary).not.toHaveTextContent(/Aba/);
+  });
+
+  it('shows an XLSX worksheet only when the imported sheet is available', () => {
+    render(<ImportSummary summary={makeSummary({
+      sourceType: 'file',
+      formatLabel: 'XLSX',
+      sheetNames: ['Dados'],
+      tableName: 'Dados',
+      delimiter: '',
+      rowCount: 2,
+      columnCount: 2,
+    })} />);
+
+    const summary = screen.getByRole('region', { name: 'Resumo da importação' });
+    expect(summary).toHaveTextContent('Arquivo dados.xlsx · Aba Dados · 2 linhas · 2 colunas · XLSX');
+    expect(summary).not.toHaveTextContent('sem separador');
   });
 });

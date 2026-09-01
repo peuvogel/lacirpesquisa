@@ -15,21 +15,49 @@ function sourceText(summary: TabularImportSummary): string {
   return summary.sourceType === 'file' ? `Arquivo ${summary.fileName}` : 'Dados colados';
 }
 
+function visibleDelimiter(delimiter: string): string {
+  const labels: Record<string, string> = {
+    '\t': 'separador: tabulação',
+    ',': 'separador: vírgula',
+    ';': 'separador: ponto e vírgula',
+    '|': 'separador: barra vertical',
+  };
+  if (labels[delimiter]) return labels[delimiter];
+  const safeText = Array.from(delimiter).map((character) => {
+    const code = character.codePointAt(0)!;
+    return code < 32 || code === 127 ? `U+${code.toString(16).toUpperCase().padStart(4, '0')}` : character;
+  }).join('');
+  return `separador: “${safeText}”`;
+}
+
+function worksheetSegment(summary: TabularImportSummary): string | null {
+  const isAvailableXlsxSheet = summary.sourceType === 'file'
+    && summary.formatLabel.trim().toUpperCase() === 'XLSX'
+    && Boolean(summary.tableName)
+    && summary.sheetNames.includes(summary.tableName);
+  return isAvailableXlsxSheet ? `Aba ${summary.tableName}` : null;
+}
+
 /** Compact, reusable provenance and import-warning disclosure. */
 export function ImportSummary({ summary }: ImportSummaryProps) {
   const hasWarnings = summary.diagnostics.length > 0 || summary.importWarnings.length > 0;
-  const separator = summary.delimiter ? `separador “${summary.delimiter}”` : 'sem separador';
+  const segments = [
+    worksheetSegment(summary),
+    `${summary.rowCount} ${summary.rowCount === 1 ? 'linha' : 'linhas'}`,
+    `${summary.columnCount} ${summary.columnCount === 1 ? 'coluna' : 'colunas'}`,
+    summary.formatLabel,
+    ...(summary.delimiter ? [visibleDelimiter(summary.delimiter)] : []),
+    mappingLabels[summary.recognitionMode],
+  ].filter((segment): segment is string => Boolean(segment));
 
   return (
     <section aria-label="Resumo da importação" className="rounded-lg border border-border bg-muted/20 p-3 text-sm">
       <div className="flex items-start gap-2 text-foreground">
         <FileSpreadsheet aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div className="min-w-0">
-          <p className="font-semibold">{sourceText(summary)}</p>
-          <p className="text-muted-foreground">
-            Aba {summary.tableName} · {summary.rowCount} linhas · {summary.columnCount} colunas · {summary.formatLabel} · {separator} · {mappingLabels[summary.recognitionMode]}
-          </p>
-        </div>
+        <p className="min-w-0 text-muted-foreground">
+          <span className="font-semibold text-foreground">{sourceText(summary)}</span>
+          {' · '}{segments.join(' · ')}
+        </p>
       </div>
       {hasWarnings ? (
         <details className="mt-2">
