@@ -245,6 +245,7 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
           <TabularInputPanel
             {...tabular}
             showPreview={false}
+            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}

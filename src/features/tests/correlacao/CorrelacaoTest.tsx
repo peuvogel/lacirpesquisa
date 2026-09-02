@@ -179,6 +179,7 @@ export function CorrelacaoTest() {
           <TabularInputPanel
             {...tabular}
             showPreview={false}
+            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}

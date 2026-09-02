@@ -60,6 +60,14 @@ describe('CorrelacaoTest', () => {
     vi.useRealTimers();
   });
 
+  it('renders exactly one import summary when configuration becomes visible', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderCorrelacao();
+    await loadExample(user);
+
+    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
+  });
+
   it('defaults to Pearson after loading example', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderCorrelacao();

@@ -43,6 +43,21 @@ describe('MannWhitneyTest', () => {
 
   afterEach(() => vi.useRealTimers());
 
+  it('renders exactly one import summary when configuration becomes visible', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(
+      <SessionProvider>
+        <MannWhitneyTest />
+      </SessionProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+    await screen.findByRole('button', { name: 'Analisar dados' });
+
+    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
+  });
+
   it('runs the example through inline results with U, effect and rank chart', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(

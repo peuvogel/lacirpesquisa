@@ -184,6 +184,7 @@ export function LogisticaTest() {
           <TabularInputPanel
             {...tabular}
             showPreview={false}
+            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}

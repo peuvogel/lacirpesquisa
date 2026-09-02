@@ -60,6 +60,17 @@ describe('LogisticaTest', () => {
     vi.useRealTimers();
   });
 
+  it('renders exactly one import summary when configuration becomes visible', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderLogistica();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await screen.findByRole('button', { name: 'Analisar dados' });
+
+    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
+  });
+
   it('runs exemplo flow through Resultados with OR metrics and interpretation', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderLogistica();
