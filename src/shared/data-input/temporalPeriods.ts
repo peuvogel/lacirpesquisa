@@ -627,7 +627,7 @@ export function detectTemporalColumn(
   if (numbers) return resolveNumeric(rawValues, mode, numbers);
 
   const explicitKinds = rawValues.map((value) => {
-    if (parseExplicitSemester(value)) return 'semiannual';
+    if (parseExplicitSemester(value) || (hasSemesterHint(header) && parseSlashSemester(value))) return 'semiannual';
     if (parseExplicitQuarter(value)) return 'quarterly';
     if (parseMonth(value)) return 'monthly';
     if (parseDateParts(value)) return 'daily';

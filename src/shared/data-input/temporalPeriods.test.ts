@@ -104,6 +104,19 @@ describe('detectTemporalColumn', () => {
     expect(result.issues[0]?.message).toMatch(/2024-S1.*2024-Q2.*texto inválido/i);
   });
 
+  it('classifies slash semesters as mixed only under a strong semester header', () => {
+    expect(detectTemporalColumn(['2024/1', '2024-Q2'], 'Semestre').issues).toContainEqual(
+      expect.objectContaining({
+        code: 'mixed_frequency',
+        severity: 'error',
+        rowNumbers: [1, 2],
+      }),
+    );
+    expect(detectTemporalColumn(['2024/1', '2024-Q2'], 'Período').issues).not.toContainEqual(
+      expect.objectContaining({ code: 'mixed_frequency' }),
+    );
+  });
+
   it('makes unresolved automatic ambiguity explicitly blocking', () => {
     const result = detectTemporalColumn(['2021.1', '2022.1'], 'Tempo');
 

@@ -52,6 +52,25 @@ describe('TabularInputPanel', () => {
     expect(screen.getByLabelText('Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)')).toBeInTheDocument();
   });
 
+  it('keeps the accessible import summary when preview rendering is disabled', async () => {
+    const user = userEvent.setup();
+    function SummaryOnlyHarness() {
+      const hook = useTabularInput(options);
+      return <TabularInputPanel {...hook} showPreview={false} />;
+    }
+
+    render(<SummaryOnlyHarness />);
+    fireEvent.change(screen.getByLabelText(TEXTAREA_LABEL), {
+      target: { value: 'Município;Taxa por 100k;Situação\nBA;NA;Alerta' },
+    });
+
+    const summary = await screen.findByRole('region', { name: 'Resumo da importação' });
+    expect(summary).toHaveTextContent(/Dados colados.*1 linha.*3 colunas/i);
+    expect(screen.queryByRole('button', { name: 'Analisar dados' })).not.toBeInTheDocument();
+    await user.click(screen.getByText('Ver avisos da importação'));
+    expect(summary).toHaveTextContent(/marcadores de ausência.*Linhas: 1/i);
+  });
+
   it('keeps example and clear actions reachable after load', async () => {
     const user = userEvent.setup();
     const onExample = vi.fn();

@@ -21,6 +21,8 @@ export interface TabularInputPanelProps extends UseTabularInputResult {
   onCancelPendingAction?: () => void;
   /** When false, loaded data is acknowledged without rendering ColumnPreviewTable (01-10 flow). */
   showPreview?: boolean;
+  /** Allows combined flows with a document-backed replacement to choose a single summary owner. */
+  showImportSummary?: boolean;
 }
 
 /**
@@ -46,6 +48,7 @@ export function TabularInputPanel({
   onConfirmPendingAction,
   onCancelPendingAction,
   showPreview = true,
+  showImportSummary = true,
 }: TabularInputPanelProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -125,7 +128,7 @@ export function TabularInputPanel({
         </div>
       ) : null}
 
-      {loadedOk && importSummary && showPreview ? <ImportSummary summary={importSummary} /> : null}
+      {loadedOk && importSummary && showImportSummary ? <ImportSummary summary={importSummary} /> : null}
 
       <>
           <textarea
