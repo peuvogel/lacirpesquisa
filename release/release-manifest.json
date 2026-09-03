@@ -1,0 +1,36 @@
+{
+  "pagesBase": "/lacirpesquisa/",
+  "offlineFilename": "bioestatistica-lacir-offline.html",
+  "pagesBudgetBytes": 1572864,
+  "offlineBudgetBytes": 2621440,
+  "routes": [
+    {
+      "id": "estatistica",
+      "path": "/",
+      "label": "Estatística",
+      "documentTitle": "Estatística — Bioestatística LACIR",
+      "availability": "active"
+    },
+    {
+      "id": "meta-analise",
+      "path": "/meta-analise",
+      "label": "Meta-análise",
+      "documentTitle": "Meta-análise — Bioestatística LACIR",
+      "availability": "coming-soon"
+    },
+    {
+      "id": "variaveis",
+      "path": "/variaveis",
+      "label": "Variáveis",
+      "documentTitle": "Variáveis — Bioestatística LACIR",
+      "availability": "coming-soon"
+    },
+    {
+      "id": "mapas",
+      "path": "/mapas",
+      "label": "Mapas",
+      "documentTitle": "Mapas — Bioestatística LACIR",
+      "availability": "coming-soon"
+    }
+  ]
+}
