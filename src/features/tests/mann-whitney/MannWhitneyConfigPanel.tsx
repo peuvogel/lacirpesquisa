@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
@@ -61,6 +63,22 @@ export function MannWhitneyConfigPanel({
   onDocumentChange,
   importWarnings,
 }: MannWhitneyConfigPanelProps) {
+  const independenceRef = useRef<HTMLLabelElement>(null);
+  const [independencePending, setIndependencePending] = useState(false);
+
+  function handleConfirm(confirmed: { headers: string[]; rows: string[][]; recognizedColumns: Record<string, number> }) {
+    if (!independenceConfirmed) {
+      setIndependencePending(true);
+      const independenceControl = independenceRef.current;
+      if (typeof independenceControl?.scrollIntoView === 'function') {
+        independenceControl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    setIndependencePending(false);
+    onConfirm(confirmed);
+  }
+
   const issues: AnalysisIssue[] = [
     ...(preparation?.issues ?? []),
     ...(!independenceConfirmed ? [{
@@ -81,11 +99,22 @@ export function MannWhitneyConfigPanel({
       />
       <AlphaSelector value={alpha} onChange={onAlphaChange} />
       <DidacticCards cards={didacticCards} />
-      <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-foreground">
+      <label
+        ref={independenceRef}
+        className={cn(
+          'flex items-start gap-3 rounded-lg border bg-muted/20 px-4 py-3 text-sm',
+          independencePending
+            ? 'animate-shake-lock border-destructive/60 text-destructive'
+            : 'border-border text-foreground',
+        )}
+      >
         <input
           type="checkbox"
           checked={independenceConfirmed}
-          onChange={(event) => onIndependenceConfirmedChange(event.target.checked)}
+          onChange={(event) => {
+            setIndependencePending(false);
+            onIndependenceConfirmedChange(event.target.checked);
+          }}
           className="mt-0.5 size-4 accent-[var(--color-primary)]"
         />
         <span>
@@ -127,8 +156,10 @@ export function MannWhitneyConfigPanel({
           recognizedColumns={loadedInput.recognizedColumns}
           tabularOptions={getMannWhitneyTabularOptions(format)}
           onRoleAdjust={onRoleAdjust}
-          onConfirm={onConfirm}
-          confirmDisabled={hasBlockingIssues(issues)}
+          onConfirm={handleConfirm}
+          confirmDisabled={hasBlockingIssues(
+            issues.filter((issue) => issue.code !== 'independence_not_confirmed'),
+          )}
           document={document}
           testId={testId}
           onDocumentChange={onDocumentChange}

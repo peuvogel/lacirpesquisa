@@ -68,7 +68,7 @@ describe('MannWhitneyTest', () => {
 
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await act(async () => vi.advanceTimersByTimeAsync(300));
-    expect(await screen.findByRole('button', { name: 'Analisar dados' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Analisar dados' })).toBeEnabled();
     await user.click(await screen.findByRole('checkbox', { name: /grupos são independentes/i }));
     await runToResultados(user);
 
@@ -149,5 +149,89 @@ describe('MannWhitneyTest', () => {
 
     await runToResultados(user);
     expect(screen.getByText('Estatística U')).toBeInTheDocument();
+  });
+
+  it('does not throw or advance when independence scrolling is unavailable', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(
+      <SessionProvider>
+        <MannWhitneyTest />
+      </SessionProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    const independence = await screen.findByRole('checkbox', { name: /grupos são independentes/i });
+    expect(typeof independence.closest('label')?.scrollIntoView).not.toBe('function');
+
+    await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
+
+    expect(screen.queryByText('Estatística U')).not.toBeInTheDocument();
+    expect(independence.closest('label')).toHaveClass('animate-shake-lock');
+  });
+
+  it('requests a smooth centered scroll when the independence control exposes the API', async () => {
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(
+        <SessionProvider>
+          <MannWhitneyTest />
+        </SessionProvider>,
+      );
+      await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+      await act(async () => vi.advanceTimersByTimeAsync(300));
+
+      await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+      expect(screen.queryByText('Estatística U')).not.toBeInTheDocument();
+    } finally {
+      if (original) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original);
+      } else {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      }
+    }
+  });
+
+  it('surfaces a failure from an available independence scroll implementation', async () => {
+    const original = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+    const scrollError = new Error('scroll failed');
+    const reportedErrors: ErrorEvent[] = [];
+    const captureError = (event: ErrorEvent) => {
+      reportedErrors.push(event);
+      event.preventDefault();
+    };
+    Element.prototype.scrollIntoView = () => {
+      throw scrollError;
+    };
+    window.addEventListener('error', captureError);
+
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      render(
+        <SessionProvider>
+          <MannWhitneyTest />
+        </SessionProvider>,
+      );
+      await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+      await act(async () => vi.advanceTimersByTimeAsync(300));
+
+      await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
+
+      expect(reportedErrors).toHaveLength(1);
+      expect(reportedErrors[0]?.error).toBe(scrollError);
+    } finally {
+      window.removeEventListener('error', captureError);
+      if (original) {
+        Object.defineProperty(Element.prototype, 'scrollIntoView', original);
+      } else {
+        delete (Element.prototype as Partial<Element>).scrollIntoView;
+      }
+    }
   });
 });
