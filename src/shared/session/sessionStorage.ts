@@ -1,4 +1,4 @@
-import type { SessionDataset } from './SessionProvider';
+import type { SessionDataset } from './StatisticsSessionProvider';
 import { IMPORT_LIMITS } from '@/shared/data-input/importLimits';
 import type { TableDocument } from '@/shared/data-input/tableDocument';
 import type { ImportDiagnostic, TabularImportSummary } from '@/shared/data-input/importDiagnostics';
@@ -19,11 +19,22 @@ const IMPORT_WARNING_CODES = new Set<ImportWarning['code']>(['formula-without-ca
 const IMPORT_RECOGNITION_MODES = new Set<TabularImportSummary['recognitionMode']>(['aliases', 'position', 'unmapped']);
 const MAX_IMPORT_STRING_LENGTH = 10_000;
 
+/** Arquivo de um teste: o que ele tinha quando o usuário saiu dele. */
+export interface SessionTestSlot {
+  dataset: SessionDataset;
+  /** revision do documento ao confirmar; se divergir, o resultado é descartado. */
+  confirmedRevision?: number;
+  /** blob opaco do módulo: alpha, mode, temporalMode, format… */
+  settings?: Record<string, unknown>;
+}
+
 export interface SessionSnapshot {
   version: 1;
   savedAt: number;
   dataset: SessionDataset | null;
   visualPreferences: Record<string, unknown>;
+  /** Opcional: snapshots gravados antes do arquivo por teste seguem válidos. */
+  testSlots?: Record<string, SessionTestSlot>;
 }
 
 export interface SessionStorageAdapter {
@@ -245,14 +256,30 @@ function isStrictSessionDataset(value: unknown): value is SessionDataset {
     && sameStringMatrix(value.rows, table.rows);
 }
 
+function isStrictTestSlot(value: unknown): value is SessionTestSlot {
+  if (!isRecord(value) || !hasOnlyKeys(value, ['dataset', 'confirmedRevision', 'settings'])) return false;
+  if (!isStrictSessionDataset(value.dataset)) return false;
+  if (
+    value.confirmedRevision !== undefined
+    && (!Number.isInteger(value.confirmedRevision) || (value.confirmedRevision as number) < 0)
+  ) return false;
+  // Blob opaco do módulo, validado igual a visualPreferences.
+  return value.settings === undefined || isSerializableVisualPreferences(value.settings);
+}
+
+function isStrictTestSlots(value: unknown): value is Record<string, SessionTestSlot> {
+  return isRecord(value) && Object.values(value).every(isStrictTestSlot);
+}
+
 export function parseSessionSnapshot(value: unknown): SessionSnapshot {
   if (
     !isRecord(value)
-    || !hasOnlyKeys(value, ['version', 'savedAt', 'dataset', 'visualPreferences'])
+    || !hasOnlyKeys(value, ['version', 'savedAt', 'dataset', 'visualPreferences', 'testSlots'])
     || value.version !== SNAPSHOT_VERSION
     || !isFiniteTimestamp(value.savedAt)
     || (value.dataset !== null && !isStrictSessionDataset(value.dataset))
     || !isSerializableVisualPreferences(value.visualPreferences)
+    || (value.testSlots !== undefined && !isStrictTestSlots(value.testSlots))
   ) {
     throw new SessionSnapshotValidationError();
   }

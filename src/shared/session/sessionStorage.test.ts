@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   SESSION_RECORD_KEY,
   SESSION_STORE_NAME,
@@ -97,6 +97,7 @@ async function putRaw(dbName: string, value: unknown): Promise<void> {
 }
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   await Promise.all(databaseNames.splice(0).map((name) => new Promise<void>((resolve) => {
     const request = indexedDB.deleteDatabase(name);
     request.onsuccess = () => resolve();
@@ -227,6 +228,14 @@ describe('IndexedDB session storage', () => {
     expect(await storage.read()).toBeNull();
   });
 
+  it('rejects access clearly when IndexedDB is absent', async () => {
+    vi.stubGlobal('indexedDB', undefined);
+
+    await expect(createIndexedDbSessionStorage().read()).rejects.toThrow(
+      'IndexedDB não está disponível neste navegador.',
+    );
+  });
+
   it.each([
     { version: 2, savedAt: 1, dataset: null, visualPreferences: {} },
     { version: 1, savedAt: 1, dataset: { headers: [], rows: [[42]] }, visualPreferences: {} },
@@ -237,5 +246,53 @@ describe('IndexedDB session storage', () => {
     await putRaw(dbName, raw);
 
     await expect(storage.read()).rejects.toBeInstanceOf(SessionSnapshotValidationError);
+  });
+});
+
+describe('per-test slots in snapshots', () => {
+  it('accepts a snapshot saved before testSlots existed', () => {
+    const raw = structuredClone(sampleSnapshot()) as unknown as Record<string, unknown>;
+    delete raw.testSlots;
+    expect(() => parseSessionSnapshot(raw)).not.toThrow();
+  });
+
+  it('round-trips a slot with its confirmed revision and settings', () => {
+    const snapshot = sampleSnapshot() as SessionSnapshot;
+    snapshot.testSlots = {
+      'mann-whitney': {
+        dataset: snapshot.dataset!,
+        confirmedRevision: 3,
+        settings: { alpha: 0.1, format: 'wide' },
+      },
+    };
+
+    const parsed = parseSessionSnapshot(structuredClone(snapshot));
+    expect(parsed.testSlots?.['mann-whitney']?.confirmedRevision).toBe(3);
+    expect(parsed.testSlots?.['mann-whitney']?.settings).toEqual({ alpha: 0.1, format: 'wide' });
+  });
+
+  it('rejects an invalid testSlots snapshot instead of restoring only its dataset', () => {
+    const snapshot = sampleSnapshot() as SessionSnapshot;
+    snapshot.testSlots = {
+      't-student': {
+        dataset: snapshot.dataset!,
+        confirmedRevision: -1,
+        settings: { alpha: 0.1 },
+      },
+    };
+
+    expect(() => parseSessionSnapshot(snapshot)).toThrow(SessionSnapshotValidationError);
+  });
+
+  it('rejects settings that are not plain serializable data', () => {
+    const snapshot = sampleSnapshot() as SessionSnapshot;
+    snapshot.testSlots = {
+      'mann-whitney': {
+        dataset: snapshot.dataset!,
+        settings: { onDone: (() => undefined) as unknown as string },
+      },
+    };
+
+    expect(() => parseSessionSnapshot(snapshot)).toThrow(SessionSnapshotValidationError);
   });
 });

@@ -12,6 +12,7 @@ import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
 import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
 import { getTestById, isTestAvailable, type TestId } from '@/features/tests/registry';
 import { useSession } from '@/shared/session/SessionProvider';
+import { PersistenceNotice } from '@/shared/session/PersistenceNotice';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
 import { QualTesteModal } from './QualTesteModal';
 import { Sidebar } from './Sidebar';
@@ -97,7 +98,12 @@ function renderActiveTest({
 // Deliberate two-column layout (D-05). Plan 01-10 mounts the active test
 // module into #lacir-test-module-mount below — no placeholder copy here.
 export function EstatisticaPage() {
-  const { hasData } = useSession();
+  const {
+    hasData,
+    persistenceMode,
+    persistenceStatus,
+    persistenceError,
+  } = useSession();
   const location = useLocation();
   const [activeTestId, setActiveTestId] = useState<TestId>('t-student');
   const [handoffRecognizedColumns, setHandoffRecognizedColumns] = useState<
@@ -137,6 +143,11 @@ export function EstatisticaPage() {
   return (
     <>
       <LeaveWarningGuard />
+      <PersistenceNotice
+        mode={persistenceMode}
+        status={persistenceStatus}
+        message={persistenceError}
+      />
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] min-w-0 max-w-[1600px] gap-0">
         <Sidebar
           activeTestId={activeTestId}

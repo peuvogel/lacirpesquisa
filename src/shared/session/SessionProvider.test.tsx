@@ -56,6 +56,19 @@ describe('SessionProvider / useSession', () => {
     expect(result.current.mapAnalysis).toBeNull();
   });
 
+  it('composes active persistence state with the historical session slices', () => {
+    const { result } = renderSession();
+
+    expect(result.current).toMatchObject({
+      testSlots: {},
+      persistenceMode: 'persistent',
+      mapSelection: null,
+      mapAnalysis: null,
+      researchDesign: null,
+      guidedAnalysis: null,
+    });
+  });
+
   it('flips hasData to true when a dataset is set', () => {
     const { result } = renderSession();
     act(() => {
