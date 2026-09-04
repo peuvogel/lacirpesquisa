@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import { TStudentTest } from './TStudentTest';
+import { TABULAR_OPTIONS } from './tStudentConfig';
+import * as tStudentInterpretation from './tStudentInterpretation';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -176,5 +179,51 @@ describe('TStudentTest', () => {
 
     expect(await screen.findByText(/erro padrão.*zero|variação suficiente/i)).toBeInTheDocument();
     expect(screen.queryByText('Estatística t')).not.toBeInTheDocument();
+  });
+  it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const interpretation = vi.spyOn(tStudentInterpretation, 'buildTStudentInterpretation');
+    renderTStudent();
+    await loadExample(user);
+
+    await user.click(screen.getByRole('button', { name: /desbloquear/i }));
+    await user.click(screen.getByRole('option', { name: '10,0' }));
+    expect(screen.getByText(/10%/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
+    await screen.findByText('O que isso significa?');
+
+    expect(interpretation).toHaveBeenCalled();
+    expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
+  });
+  it('adopts delayed restored alpha before any local choice', async () => {
+    let resolveRead: ((snapshot: {
+      version: 1; savedAt: number; dataset: { headers: string[]; rows: string[][]; sourceLabel: string; confirmedAt: number }; visualPreferences: Record<string, unknown>; testSlots: Record<string, { dataset: { headers: string[]; rows: string[][]; sourceLabel: string; confirmedAt: number }; settings: { alpha: number } }>
+    }) => void) | undefined;
+    const dataset = { headers: ['Grupo A', 'Grupo B'], rows: [['1', '2'], ['2', '3'], ['3', '4']], sourceLabel: 'restaurado', confirmedAt: 1 };
+    const storage = {
+      read: () => new Promise<any>((resolve) => { resolveRead = resolve; }),
+      write: async () => undefined,
+      clear: async () => undefined,
+    };
+    const interpretation = vi.spyOn(tStudentInterpretation, 'buildTStudentInterpretation');
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    function LaterSettingsUpdate() {
+      const { setSettings } = useAnalysisTable('t-student', { tabularOptions: TABULAR_OPTIONS });
+      return <button type="button" onClick={() => setSettings({ alpha: 0.1 })}>Atualizar alpha restaurado</button>;
+    }
+    render(<SessionProvider storage={storage}><LaterSettingsUpdate /><TStudentTest /></SessionProvider>);
+
+    await act(async () => resolveRead?.({ version: 1, savedAt: 1, dataset, visualPreferences: {}, testSlots: { 't-student': { dataset, settings: { alpha: 0.1 } } } }));
+    expect(await screen.findByText(/10%/)).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
+    await screen.findByText('O que isso significa?');
+    expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
+
+    await user.click(screen.getByRole('button', { name: /desbloquear/i }));
+    await user.click(screen.getByRole('option', { name: '1,0' }));
+    expect(screen.getByText(/1%/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Atualizar alpha restaurado' }));
+    expect(screen.getByText(/1%/)).toBeInTheDocument();
   });
 });

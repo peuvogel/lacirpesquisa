@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
+import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import type { TemporalMode } from '@/shared/data-input/temporalPeriods';
@@ -70,7 +70,13 @@ export function PraisWinstenTest() {
     initialLoadedFromSession(sessionDataset),
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [alpha, setAlpha] = useState<AlphaValue>('0.05');
+  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+
+  function setAlpha(next: AlphaValue) {
+    alphaChangedLocallyRef.current = true;
+    setAlphaState(next);
+    analysisTable.setSettings({ alpha: next });
+  }
   const [temporalMode, setTemporalMode] = useState<TemporalMode>('auto');
   const [chartTab, setChartTab] = useState<'trend' | 'residual'>('trend');
   const [showSoftReset, setShowSoftReset] = useState(false);
@@ -130,6 +136,10 @@ export function PraisWinstenTest() {
     }),
     [loadedInput, confirmedDataset],
   );
+  const alphaChangedLocallyRef = useRef(false);
+  useEffect(() => {
+    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
+  }, [analysisTable.settings.alpha]);
 
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
@@ -147,7 +157,7 @@ export function PraisWinstenTest() {
     }
 
     const output = runAnalysis(dataset);
-    const alphaNumber = Number(alpha);
+    const alphaNumber = alpha;
     const metrics = buildMetrics(output.model, dataset);
     const interpretation = buildPraisInterpretation(output, alphaNumber);
 

@@ -6,6 +6,7 @@ import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { exampleText as tStudentExampleText } from '@/features/tests/t-student/tStudentConfig';
 import { MannWhitneyTest } from './MannWhitneyTest';
+import * as mannWhitneyInterpretation from './mannWhitneyInterpretation';
 
 const { ChartMock } = vi.hoisted(() => {
   const ChartConstructorSpy = vi.fn().mockImplementation(function ChartConstructorMock() {
@@ -233,5 +234,20 @@ describe('MannWhitneyTest', () => {
         delete (Element.prototype as Partial<Element>).scrollIntoView;
       }
     }
+  });
+  it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const interpretation = vi.spyOn(mannWhitneyInterpretation, 'buildMannWhitneyInterpretation');
+    render(<SessionProvider><MannWhitneyTest /></SessionProvider>);
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    await user.click(screen.getByRole('button', { name: /desbloquear/i }));
+    await user.click(screen.getByRole('option', { name: '10,0' }));
+    expect(screen.getByText(/10%/)).toBeInTheDocument();
+    await user.click(await screen.findByRole('checkbox', { name: /grupos são independentes/i }));
+    await runToResultados(user);
+
+    expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
   });
 });

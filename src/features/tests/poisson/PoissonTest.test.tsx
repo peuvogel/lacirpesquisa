@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { PoissonTest } from './PoissonTest';
+import * as poissonInterpretation from './poissonInterpretation';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -151,5 +152,20 @@ describe('PoissonTest', () => {
     await user.selectOptions(screen.getByLabelText(/Tipo da coluna contagem/i), 'ignorar');
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
+  });
+  it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const interpretation = vi.spyOn(poissonInterpretation, 'buildPoissonInterpretation');
+    renderPoisson();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await screen.findByRole('button', { name: 'Analisar dados' });
+
+    await user.click(screen.getByRole('button', { name: /desbloquear/i }));
+    await user.click(screen.getByRole('option', { name: '10,0' }));
+    expect(screen.getByText(/10%/)).toBeInTheDocument();
+    await runToResultados(user);
+
+    expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
   });
 });

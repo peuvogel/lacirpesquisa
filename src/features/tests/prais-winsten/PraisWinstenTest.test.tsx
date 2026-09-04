@@ -5,6 +5,7 @@ import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { PraisWinstenValidationAlert } from './PraisWinstenConfigPanel';
 import { PraisWinstenTest } from './PraisWinstenTest';
+import * as praisInterpretation from './praisInterpretation';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -282,5 +283,20 @@ describe('PraisWinstenTest', () => {
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
     expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
+  });
+  it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const interpretation = vi.spyOn(praisInterpretation, 'buildPraisInterpretation');
+    renderPraisWinsten();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await screen.findByRole('button', { name: 'Analisar dados' });
+
+    await user.click(screen.getByRole('button', { name: /desbloquear/i }));
+    await user.click(screen.getByRole('option', { name: '10,0' }));
+    expect(screen.getByText(/10%/)).toBeInTheDocument();
+    await runToResultados(user);
+
+    expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
   });
 });

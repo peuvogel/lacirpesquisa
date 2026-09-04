@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
@@ -68,7 +68,13 @@ export function CorrelacaoTest() {
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
   const [method, setMethod] = useState<CorrelacaoMethod>('pearson');
-  const [alpha, setAlpha] = useState<AlphaValue>('0.05');
+  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+
+  function setAlpha(next: AlphaValue) {
+    alphaChangedLocallyRef.current = true;
+    setAlphaState(next);
+    analysisTable.setSettings({ alpha: next });
+  }
   const [showSoftReset, setShowSoftReset] = useState(false);
 
   useEffect(() => {
@@ -130,11 +136,15 @@ export function CorrelacaoTest() {
     }),
     [loadedInput, confirmedDataset],
   );
+  const alphaChangedLocallyRef = useRef(false);
+  useEffect(() => {
+    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
+  }, [analysisTable.settings.alpha]);
 
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
 
-    const alphaNumber = Number(alpha);
+    const alphaNumber = alpha;
     const dataset = buildDatasetFromConfirmed({
       headers: confirmedDataset.headers,
       rows: confirmedDataset.rows,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { AlphaValue } from '@/features/tests/shared/AlphaSelector';
+import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
@@ -80,7 +80,17 @@ export function MannWhitneyTest() {
   const [activeStep, setActiveStep] = useState<FlowStep>(() => sessionDataset ? 'configurar' : 'dados');
   const [loadedInput, setLoadedInput] = useState<MannWhitneyLoadedInput | null>(() => initialLoadedFromSession(sessionDataset, 'long'));
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [alpha, setAlpha] = useState<AlphaValue>('0.05');
+  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+  const alphaChangedLocallyRef = useRef(false);
+  useEffect(() => {
+    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
+  }, [analysisTable.settings.alpha]);
+
+  function setAlpha(next: AlphaValue) {
+    alphaChangedLocallyRef.current = true;
+    setAlphaState(next);
+    analysisTable.setSettings({ alpha: next });
+  }
   const [showSoftReset, setShowSoftReset] = useState(false);
   const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
   const formatTableIdRef = useRef<string | null>(null);
@@ -209,7 +219,7 @@ export function MannWhitneyTest() {
       );
     }
     const output = toEngineOutput(dataset, result);
-    const interpretation = buildMannWhitneyInterpretation(result, Number(alpha), dataset.labels);
+    const interpretation = buildMannWhitneyInterpretation(result, alpha, dataset.labels);
     return (
       <ResultsPanelWithCustomizer
         title="Mann–Whitney: resultados"
