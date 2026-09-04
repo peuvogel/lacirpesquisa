@@ -46,7 +46,7 @@ async function loadExample(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
   await vi.advanceTimersByTimeAsync(200);
   await waitFor(() => {
-    expect(screen.getByText('Tabela pronta para configurar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
   });
 }
 
@@ -61,13 +61,6 @@ describe('CorrelacaoTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderCorrelacao();
-    await loadExample(user);
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('defaults to Pearson after loading example', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -117,6 +110,7 @@ describe('CorrelacaoTest', () => {
       screen.getByText(/Os dados ou a configuração foram alterados/i),
     ).toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(correlacaoInterpretation, 'buildCorrelacaoInterpretation');

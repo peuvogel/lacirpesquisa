@@ -31,3 +31,46 @@ const contextStub = new Proxy({}, { get: () => noop });
 proto.getContext = ((contextId: string) =>
   contextId === '2d' ? contextStub : null) as unknown as typeof proto.getContext;
 proto.toDataURL = (() => 'data:image/png;base64,stub') as typeof proto.toDataURL;
+
+// jsdom nao implementa IntersectionObserver, e `useInView` (motion/react) o
+// instancia direto no efeito de montagem — sem isto, qualquer componente que
+// observe visibilidade estoura com ReferenceError. O stub e' inerte de
+// proposito: ele nunca dispara sozinho, entao nada "entra em cena"
+// acidentalmente durante um teste. Quem precisa exercitar o caminho de
+// visibilidade pega a instancia em `intersectionObservers` e chama o callback.
+export const intersectionObservers: Array<{
+  callback: IntersectionObserverCallback;
+  instance: IntersectionObserver;
+  elements: Element[];
+}> = [];
+
+class IntersectionObserverStub implements IntersectionObserver {
+  readonly root: Document | Element | null = null;
+  readonly rootMargin: string = '0px';
+  readonly thresholds: ReadonlyArray<number> = [0];
+  private readonly elements: Element[] = [];
+
+  constructor(callback: IntersectionObserverCallback) {
+    intersectionObservers.push({ callback, instance: this, elements: this.elements });
+  }
+
+  observe(element: Element) {
+    this.elements.push(element);
+  }
+
+  unobserve(element: Element) {
+    const index = this.elements.indexOf(element);
+    if (index >= 0) this.elements.splice(index, 1);
+  }
+
+  disconnect() {
+    this.elements.length = 0;
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
+globalThis.IntersectionObserver =
+  IntersectionObserverStub as unknown as typeof IntersectionObserver;

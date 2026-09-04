@@ -180,7 +180,9 @@ function isStrictTabularImportSummary(value: unknown): value is TabularImportSum
 }
 
 function isStrictTableDocument(value: unknown): value is TableDocument {
-  if (!isRecord(value) || !hasOnlyKeys(value, ['id', 'revision', 'columns', 'rows', 'bindings', 'sourceLabel', 'importSummary'])) {
+  // `rowsEnabled` e `nextColumnSeq` entram como opcionais, igual a
+  // `importSummary`: snapshots gravados antes deles precisam continuar válidos.
+  if (!isRecord(value) || !hasOnlyKeys(value, ['id', 'revision', 'columns', 'rows', 'bindings', 'sourceLabel', 'importSummary', 'rowsEnabled', 'nextColumnSeq'])) {
     return false;
   }
   if (
@@ -198,7 +200,7 @@ function isStrictTableDocument(value: unknown): value is TableDocument {
   for (const column of value.columns) {
     if (
       !isRecord(column)
-      || !hasOnlyKeys(column, ['id', 'name', 'type', 'explicitType'])
+      || !hasOnlyKeys(column, ['id', 'name', 'type', 'explicitType', 'enabled'])
       || typeof column.id !== 'string'
       || !column.id
       || columnIds.has(column.id)
@@ -206,15 +208,25 @@ function isStrictTableDocument(value: unknown): value is TableDocument {
       || typeof column.type !== 'string'
       || !TABLE_COLUMN_TYPES.has(column.type)
       || typeof column.explicitType !== 'boolean'
+      || (column.enabled !== undefined && typeof column.enabled !== 'boolean')
     ) return false;
     columnIds.add(column.id);
-    if (column.type === 'ignorar') ignoredColumnIds.add(column.id);
+    // Coluna desligada não pode reter vínculo, pelo mesmo motivo de 'ignorar'.
+    if (column.type === 'ignorar' || column.enabled === false) ignoredColumnIds.add(column.id);
   }
 
   if (
     !isStringMatrix(value.rows, value.columns.length)
     || !isRecord(value.bindings)
     || (value.importSummary !== undefined && !isStrictTabularImportSummary(value.importSummary))
+    || (value.nextColumnSeq !== undefined
+      && (!Number.isInteger(value.nextColumnSeq) || (value.nextColumnSeq as number) < 1))
+    // Paralelo a `rows`: comprimento diferente significaria flags desalinhadas.
+    || (value.rowsEnabled !== undefined && (
+      !Array.isArray(value.rowsEnabled)
+      || value.rowsEnabled.length !== (value.rows as string[][]).length
+      || !value.rowsEnabled.every((flag) => typeof flag === 'boolean')
+    ))
   ) return false;
   for (const roles of Object.values(value.bindings)) {
     if (!isRecord(roles)) return false;

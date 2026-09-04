@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createTableDocument, setTableColumnType, setTableRoleBinding } from './tableDocument';
+import {
+  createTableDocument,
+  setTableColumnEnabled,
+  setTableColumnType,
+  setTableRoleBinding,
+  setTableRowEnabled,
+} from './tableDocument';
 import { deriveRecognizedColumnsFromDocument, tableValiditySummary } from './analysisTable';
 
 describe('analysis table helpers', () => {
@@ -142,5 +148,51 @@ describe('analysis table helpers', () => {
       undefined,
       ['tempo'],
     )).toEqual({ valid: 1, incomplete: [], invalid: [2] });
+  });
+});
+
+describe('disabled rows and columns', () => {
+  const options = {
+    aliases: { desfecho: ['valor'], grupo: ['grupo'] },
+    requiredKeys: ['desfecho', 'grupo'],
+    numericKeys: ['desfecho'],
+  };
+  // Sem vínculos explícitos, resolveBindings devolve {} e toda linha contaria
+  // como incompleta — o mapa vai direto.
+  const RESOLVED = { desfecho: 0, grupo: 1 };
+  const base = () => createTableDocument(
+    ['valor', 'grupo'],
+    [['1', 'A'], ['2', 'B'], ['x', 'C'], ['4', 'D']],
+    'colado',
+    () => 'doc-off',
+  );
+
+  it('drops a switched-off column from recognizedColumns', () => {
+    const document = setTableColumnEnabled(base(), 'doc-off-col-2', false);
+    const recognized = deriveRecognizedColumnsFromDocument(document, 'teste', options);
+
+    expect(recognized.grupo).toBeUndefined();
+    // A coluna continua nas linhas, então o índice do que sobrou não desloca.
+    expect(recognized.desfecho).toBe(0);
+  });
+
+  it('skips disabled rows while keeping the reported numbers original', () => {
+    const before = tableValiditySummary(base(), 'teste', ['desfecho', 'grupo'], ['desfecho'], RESOLVED);
+    expect(before.valid).toBe(3);
+    expect(before.invalid).toEqual([3]);
+
+    // Desliga a linha 2, que é válida: a inválida continua sendo a de número 3.
+    const document = setTableRowEnabled(base(), 1, false);
+    const after = tableValiditySummary(document, 'teste', ['desfecho', 'grupo'], ['desfecho'], RESOLVED);
+    expect(after.valid).toBe(2);
+    expect(after.invalid).toEqual([3]);
+  });
+
+  it('stops counting a disabled row as invalid', () => {
+    const document = setTableRowEnabled(base(), 2, false);
+    const summary = tableValiditySummary(document, 'teste', ['desfecho', 'grupo'], ['desfecho'], RESOLVED);
+
+    expect(summary.invalid).toEqual([]);
+    expect(summary.valid).toBe(3);
   });
 });

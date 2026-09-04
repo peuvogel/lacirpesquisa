@@ -73,13 +73,29 @@ function withCoefAnnotation(
   } as Parameters<typeof mergeChartOptions>[1]);
 }
 
+/** Onde a anotação de coeficiente encosta: meio do eixo x, base do eixo y. */
+function coefAnchor(output: CorrelacaoEngineOutput) {
+  return {
+    midX: (Math.min(...output.x) + Math.max(...output.x)) / 2,
+    minY: Math.min(...output.y),
+  };
+}
+
+/** Só o coeficiente e o p, sem a equação da reta — para o gráfico sem reta. */
+function withCoefOnly(
+  output: CorrelacaoEngineOutput,
+  options: ReturnType<typeof buildScatterChartData>['options'],
+) {
+  const { midX, minY } = coefAnchor(output);
+  return withCoefAnnotation(output, options, midX, minY);
+}
+
 function withPearsonEquation(
   output: CorrelacaoEngineOutput,
   options: ReturnType<typeof buildScatterChartData>['options'],
 ) {
-  const { headers, x, y } = output;
-  const midX = (Math.min(...x) + Math.max(...x)) / 2;
-  const minY = Math.min(...y);
+  const { headers } = output;
+  const { midX, minY } = coefAnchor(output);
   const extra: string[] = [];
 
   if (output.method === 'pearson') {
@@ -102,28 +118,24 @@ export function buildCorrelacaoChartPresets(
     label: CHART_PRESET_LABELS.scatter,
     visualType: 'scatter',
     buildChart: (output) => {
+      // Nuvem pura: reta e equação são justamente o que distingue o preset
+      // "Dispersão + linha de ajuste". Desenhá-las aqui fazia, no Pearson, os
+      // dois tipos de gráfico saírem idênticos.
       const { data, options } = buildScatterChartData(
         scatterDataset(output),
-        output.method === 'pearson' ? output.pearson : null,
+        null,
         output.outlierFlags,
-        { includeRegressionLine: output.method === 'pearson' },
+        { includeRegressionLine: false },
       );
       return {
         type: 'scatter',
         data,
-        options: withPearsonEquation(output, options),
+        options: withCoefOnly(output, options),
         ariaLabel: CHART_PRESET_LABELS.scatter,
       };
     },
     defaultAxisLabels: { x: '', y: '' },
     capabilities: [
-      ...(method === 'pearson'
-        ? [{
-            id: 'showRegressionLine',
-            kind: 'datasetVisibility' as const,
-            datasetIds: ['regression-fit'],
-          }]
-        : []),
       ...(hasOutliers
         ? [{
             id: 'highlightOutliers',

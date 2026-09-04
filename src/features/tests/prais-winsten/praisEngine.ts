@@ -484,11 +484,13 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
   const changeMetric: ResultMetric = model.scale === 'log'
     ? {
         label: `Variação percentual (APC) ${unit}`,
+        helpKey: 'apc',
         value: `${fmtSigned(model.apc, 2)}%`,
         hint: `IC95% ${fmtNumber(model.ciApc[0], 2)} a ${fmtNumber(model.ciApc[1], 2)} · efeito ${unit}`,
       }
     : {
         label: `Mudança absoluta ${unit}`,
+        helpKey: 'mudanca-absoluta',
         value: fmtSigned(model.absoluteChange, 2),
         hint: `IC95% ${fmtNumber(model.ciAbsoluteChange[0], 2)} a ${fmtNumber(model.ciAbsoluteChange[1], 2)} · escala original por conter zero · efeito ${unit}`,
       };
@@ -496,16 +498,19 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
   return [
     {
       label: 'Pontos temporais',
+      helpKey: 'pontos-temporais',
       value: String(model.n),
       hint: `Período analisado: ${dataset.periodLabel || 'não informado'}`,
     },
     {
       label: 'Base temporal',
+      helpKey: 'base-temporal',
       value: dataset.frequencyLabel || 'Não definida',
       hint: `Efeito ${unit}.`,
     },
     {
       label: 'Coeficiente da tendência (β)',
+      helpKey: 'beta-tendencia',
       value: fmtSigned(model.beta, 4),
       hint: model.scale === 'log'
         ? `Estimado na escala log10 do indicador, ${unit}.`
@@ -513,22 +518,26 @@ export function buildMetrics(model: PraisWinstenResult, dataset: PraisBuiltDatas
     },
     {
       label: 'Erro-padrão (β)',
+      helpKey: 'erro-padrao-beta',
       value: Number.isFinite(model.seBeta) ? fmtNumber(model.seBeta, 4) : 'n/d',
       hint: 'Usado no teste t e no intervalo de confiança.',
     },
     {
       label: 'p-valor',
+      helpKey: 'p-valor',
       value: fmtP(model.p),
       hint: `t = ${fmtNumber(model.t, 3)} · gl = ${model.df}`,
     },
     {
       label: 'Classificação',
+      helpKey: 'classificacao-tendencia',
       value: model.classification,
       hint: model.scale === 'log' ? `Mudança ${trendStrength}.` : 'Tendência na unidade original do indicador.',
     },
     changeMetric,
     {
       label: 'Autocorrelação (ρ)',
+      helpKey: 'autocorrelacao-rho',
       value: fmtSigned(model.rho, 3),
       hint: acText,
     },

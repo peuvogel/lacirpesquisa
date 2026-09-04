@@ -319,31 +319,37 @@ export function buildMetrics(result: TStudentResult, labels: [string, string]): 
   return [
     {
       label: `Média de ${labels[0]}`,
+      helpKey: 'media-grupo',
       value: fmtNumber(result.m1, 2),
       hint: `n = ${result.n1} · desvio-padrão = ${fmtNumber(result.s1, 2)}`,
     },
     {
       label: `Média de ${labels[1]}`,
+      helpKey: 'media-grupo',
       value: fmtNumber(result.m2, 2),
       hint: `n = ${result.n2} · desvio-padrão = ${fmtNumber(result.s2, 2)}`,
     },
     {
       label: 'Diferença entre médias',
+      helpKey: 'diferenca-medias',
       value: fmtSigned(result.diff, 2),
       hint: `IC95%: ${fmtNumber(result.ci[0], 2)} a ${fmtNumber(result.ci[1], 2)}`,
     },
     {
-      label: 'Evidência estatística',
+      label: 'p-valor',
+      helpKey: 'p-valor',
       value: fmtP(result.p),
       hint: `t = ${fmtNumber(result.t, 3)} · graus de liberdade = ${fmtNumber(result.df, 2)}`,
     },
     {
       label: "Tamanho de efeito (Cohen's d)",
+      helpKey: 'cohen-d',
       value: fmtSigned(result.d, 2),
       hint: `Classificação: ${effectClass}`,
     },
     {
       label: 'Intervalo de confiança de 95%',
+      helpKey: 'ic95',
       value: `${fmtNumber(result.ci[0], 2)} a ${fmtNumber(result.ci[1], 2)}`,
       hint: 'Faixa plausível para a diferença entre as médias.',
     },

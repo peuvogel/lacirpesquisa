@@ -54,7 +54,7 @@ async function loadExample(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
   await vi.advanceTimersByTimeAsync(200);
   await waitFor(() => {
-    expect(screen.getByText('Tabela pronta para configurar')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
   });
 }
 
@@ -69,13 +69,6 @@ describe('TStudentTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderTStudent();
-    await loadExample(user);
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('defaults to independent Welch mode after loading example', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -180,6 +173,7 @@ describe('TStudentTest', () => {
     expect(await screen.findByText(/erro padrão.*zero|variação suficiente/i)).toBeInTheDocument();
     expect(screen.queryByText('Estatística t')).not.toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(tStudentInterpretation, 'buildTStudentInterpretation');
@@ -196,6 +190,7 @@ describe('TStudentTest', () => {
     expect(interpretation).toHaveBeenCalled();
     expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
   });
+
   it('adopts delayed restored alpha before any local choice', async () => {
     let resolveRead: ((snapshot: {
       version: 1; savedAt: number; dataset: { headers: string[]; rows: string[][]; sourceLabel: string; confirmedAt: number }; visualPreferences: Record<string, unknown>; testSlots: Record<string, { dataset: { headers: string[]; rows: string[][]; sourceLabel: string; confirmedAt: number }; settings: { alpha: number } }>

@@ -174,16 +174,19 @@ export function buildMetrics(result: KruskalAnalysisResult, dataset: KruskalBuil
   return [
     {
       label: 'Estatística H',
+      helpKey: 'estatistica-h',
       value: fmtNumber(result.h, 3),
       hint: `gl = ${result.df}`,
     },
     {
-      label: 'Evidência estatística',
+      label: 'p-valor',
+      helpKey: 'p-valor',
       value: fmtP(result.p),
       hint: 'Teste omnibus Kruskal-Wallis (postos)',
     },
     {
       label: 'Grupos',
+      helpKey: 'grupos',
       value: String(dataset.groupOrder.length),
       hint: groupSummary,
     },
@@ -200,7 +203,7 @@ export function computeAssumptionNudges(
   nudges.push({
     severity: 'info',
     message:
-      'Kruskal-Wallis compara grupos pelos postos (ranks) — alternativa não paramétrica quando a normalidade dentro dos grupos é duvidosa ou os dados são assimétricos.',
+      'Kruskal-Wallis compara grupos pelos postos (ranks), alternativa não paramétrica quando a normalidade dentro dos grupos é duvidosa ou os dados são assimétricos.',
   });
 
   if (k === 2) {
@@ -212,7 +215,7 @@ export function computeAssumptionNudges(
     nudges.push({
       severity: 'info',
       message:
-        'Com dois grupos há apenas um contraste par a par — o pós-hoc Dunn equivale a essa única comparação.',
+        'Com dois grupos há apenas um contraste par a par, o pós-hoc Dunn equivale a essa única comparação.',
     });
   } else if (k >= 3) {
     nudges.push({

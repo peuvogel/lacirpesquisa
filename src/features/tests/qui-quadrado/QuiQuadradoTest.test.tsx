@@ -5,6 +5,8 @@ import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { QuiQuadradoTest } from './QuiQuadradoTest';
 import * as quiQuadradoInterpretation from './quiQuadradoInterpretation';
+import { findColumnTypeWheel, selectColumnType } from '@/test/columnTypeWheel';
+import { setColumnEnabled } from '@/test/columnToggle';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -54,16 +56,6 @@ describe('QuiQuadradoTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderQuiQuadrado();
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-    await screen.findByRole('button', { name: 'Analisar dados' });
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('runs exemplo flow through Resultados with interpretation and PNG export', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -77,8 +69,8 @@ describe('QuiQuadradoTest', () => {
 
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
-    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
-    expect(within(resultados).getByText('Pressupostos')).toBeInTheDocument();
+    await user.click(within(resultados).getByTestId('assumption-nudge-info'));
+    expect(await screen.findByText('Pressupostos')).toBeInTheDocument();
 
     const prose = screen.getAllByText(/Observou-se|Não se observou|Resultado principal/i);
     expect(prose.length).toBeGreaterThan(0);
@@ -97,7 +89,7 @@ describe('QuiQuadradoTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Tipo da coluna tratamento/i), 'ignorar');
+    await setColumnEnabled(user, 'tratamento', false);
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
@@ -110,13 +102,15 @@ describe('QuiQuadradoTest', () => {
     });
     await vi.advanceTimersByTimeAsync(200);
 
-    await user.selectOptions(await screen.findByLabelText('Tipo da coluna categoria_a'), 'categorica');
-    await user.selectOptions(screen.getByLabelText('Tipo da coluna categoria_b'), 'categorica');
+    await findColumnTypeWheel('categoria_a');
+    await selectColumnType(user, 'categoria_a', 'categorica');
+    await selectColumnType(user, 'categoria_b', 'categorica');
     await runToResultados(user);
 
     expect(screen.getByText('Qui-quadrado (χ²)')).toBeInTheDocument();
     expect(screen.queryByText(/parece numérica/i)).not.toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(quiQuadradoInterpretation, 'buildQuiQuadradoInterpretation');

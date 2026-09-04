@@ -8,7 +8,7 @@ import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { prepareGroupedSamples } from '@/shared/data-input/groupedSamples';
 import type { TableDocument } from '@/shared/data-input/tableDocument';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import {
   MannWhitneyConfigPanel,
   MannWhitneyIssueList,
@@ -58,7 +58,7 @@ function inferMannWhitneyFormat(document: TableDocument): MannWhitneyFormat {
 }
 
 function initialLoadedFromSession(
-  dataset: ReturnType<typeof useSession>['dataset'],
+  dataset: ReturnType<typeof useStatisticsSession>['dataset'],
   format: MannWhitneyFormat,
 ): MannWhitneyLoadedInput | null {
   if (!dataset) return null;
@@ -72,27 +72,47 @@ function initialLoadedFromSession(
 }
 
 export function MannWhitneyTest() {
-  const { dataset: sessionDataset } = useSession();
-  const [format, setFormat] = useState<MannWhitneyFormat>('long');
+  const { dataset: sessionDataset, testSlots } = useStatisticsSession();
+  // Lido direto da sessão, não de analysisTable.settings: o formato alimenta as
+  // opções tabulares que o próprio hook recebe, então não pode depender dele.
+  const [format, setFormatState] = useState<MannWhitneyFormat>(
+    () => (testSlots['mann-whitney']?.settings?.format as MannWhitneyFormat) ?? 'long',
+  );
   const tabularOptions = getMannWhitneyTabularOptions(format);
   const analysisTable = useAnalysisTable('mann-whitney', { tabularOptions });
+
+  function setFormat(next: MannWhitneyFormat) {
+    setFormatState(next);
+    analysisTable.setSettings({ format: next });
+  }
   const tabular = analysisTable.tabular;
   const [activeStep, setActiveStep] = useState<FlowStep>(() => sessionDataset ? 'configurar' : 'dados');
   const [loadedInput, setLoadedInput] = useState<MannWhitneyLoadedInput | null>(() => initialLoadedFromSession(sessionDataset, 'long'));
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+  const [alpha, setAlphaState] = useState<AlphaValue>(() =>
+    parseAlpha(analysisTable.settings.alpha),
+  );
   const alphaChangedLocallyRef = useRef(false);
   useEffect(() => {
     if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
   }, [analysisTable.settings.alpha]);
 
+  // A configuração viaja com a tabela: voltar ao teste e recalcular com um alfa
+  // diferente do que foi confirmado mostraria números de outro ajuste.
   function setAlpha(next: AlphaValue) {
     alphaChangedLocallyRef.current = true;
     setAlphaState(next);
     analysisTable.setSettings({ alpha: next });
   }
   const [showSoftReset, setShowSoftReset] = useState(false);
-  const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
+  const [independenceConfirmed, setIndependenceConfirmedState] = useState(
+    () => analysisTable.settings.independenceConfirmed === true,
+  );
+
+  function setIndependenceConfirmed(next: boolean) {
+    setIndependenceConfirmedState(next);
+    analysisTable.setSettings({ independenceConfirmed: next });
+  }
   const formatTableIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -119,6 +139,24 @@ export function MannWhitneyTest() {
   useEffect(() => {
     setIndependenceConfirmed(false);
   }, [analysisTable.table?.id]);
+
+  // Espelho do efeito abaixo: ao voltar ao teste, o resultado reconstruído pela
+  // sessão é adotado uma única vez, para cair direto nos resultados. Sem o
+  // guarda, ele reverteria toda invalidação local (trocar modo, α, período).
+  const adoptedConfirmedRef = useRef(false);
+  useEffect(() => {
+    if (adoptedConfirmedRef.current) return;
+    // Confirmar manualmente também consome a chance de adoção: sem isto, a
+    // próxima invalidação local seria revertida pelo confirmado da sessão.
+    if (confirmedDataset) {
+      adoptedConfirmedRef.current = true;
+      return;
+    }
+    if (!analysisTable.confirmed) return;
+    adoptedConfirmedRef.current = true;
+    setConfirmedDataset(analysisTable.confirmed);
+    setActiveStep('resultados');
+  }, [analysisTable.confirmed, confirmedDataset]);
 
   useEffect(() => {
     if (analysisTable.confirmed || !confirmedDataset) return;
@@ -222,7 +260,7 @@ export function MannWhitneyTest() {
     const interpretation = buildMannWhitneyInterpretation(result, alpha, dataset.labels);
     return (
       <ResultsPanelWithCustomizer
-        title="Mann–Whitney: resultados"
+        title="Resultados"
         metrics={buildMetrics(result, dataset.labels)}
         engineOutput={output}
         presets={mannWhitneyChartPresets}
@@ -245,7 +283,6 @@ export function MannWhitneyTest() {
           <TabularInputPanel
             {...tabular}
             showPreview={false}
-            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}
@@ -272,6 +309,7 @@ export function MannWhitneyTest() {
           document={analysisTable.table ?? undefined}
           testId="mann-whitney"
           onDocumentChange={analysisTable.setDocument}
+            onUndo={analysisTable.undo}
           importWarnings={analysisTable.importWarnings}
         />
       ) : <p className="text-sm text-muted-foreground">Carregue os dados para continuar.</p>}

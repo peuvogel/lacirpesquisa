@@ -44,20 +44,6 @@ describe('MannWhitneyTest', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(
-      <SessionProvider>
-        <MannWhitneyTest />
-      </SessionProvider>,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await act(async () => vi.advanceTimersByTimeAsync(300));
-    await screen.findByRole('button', { name: 'Analisar dados' });
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('runs the example through inline results with U, effect and rank chart', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -69,6 +55,8 @@ describe('MannWhitneyTest', () => {
 
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await act(async () => vi.advanceTimersByTimeAsync(300));
+    // O botão fica habilitado de propósito: clicar sem confirmar a independência
+    // devolve o usuário à caixa e a sinaliza, em vez de falhar em silêncio.
     expect(await screen.findByRole('button', { name: 'Analisar dados' })).toBeEnabled();
     await user.click(await screen.findByRole('checkbox', { name: /grupos são independentes/i }));
     await runToResultados(user);
@@ -139,8 +127,11 @@ describe('MannWhitneyTest', () => {
 
     const wideFormat = await screen.findByRole('radio', { name: /Uma coluna por grupo/i });
     expect(wideFormat).toBeChecked();
-    expect(await screen.findByText((_, node) => node?.textContent === 'Grupo A: n=7')).toBeInTheDocument();
-    expect(screen.getByText((_, node) => node?.textContent === 'Grupo B: n=7')).toBeInTheDocument();
+    // Rótulo e n passaram a ser <dt>/<dd> separados, em vez de uma pill única.
+    const groups = await screen.findByRole('region', { name: 'Prévia dos grupos' });
+    expect(groups).toHaveTextContent('Grupo A');
+    expect(groups).toHaveTextContent('Grupo B');
+    expect(groups.textContent?.match(/n = 7/g)).toHaveLength(2);
 
     const independence = screen.getByRole('checkbox', { name: /grupos são independentes/i });
     await user.click(independence);
@@ -152,7 +143,7 @@ describe('MannWhitneyTest', () => {
     expect(screen.getByText('Estatística U')).toBeInTheDocument();
   });
 
-  it('does not throw or advance when independence scrolling is unavailable', async () => {
+  it('refuses to analyse until independence is confirmed, flagging the checkbox', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(
       <SessionProvider>
@@ -163,12 +154,20 @@ describe('MannWhitneyTest', () => {
     await act(async () => vi.advanceTimersByTimeAsync(300));
 
     const independence = await screen.findByRole('checkbox', { name: /grupos são independentes/i });
+    expect(independence).not.toBeChecked();
     expect(typeof independence.closest('label')?.scrollIntoView).not.toBe('function');
 
     await user.click(await screen.findByRole('button', { name: 'Analisar dados' }));
 
+    // Não avança e marca a caixa como pendente.
     expect(screen.queryByText('Estatística U')).not.toBeInTheDocument();
     expect(independence.closest('label')).toHaveClass('animate-shake-lock');
+    expect(independence.closest('label')?.querySelector('.filter-check'))
+      .toHaveAttribute('data-invalid', 'true');
+
+    // Marcar limpa o alerta e libera a análise.
+    await user.click(independence);
+    expect(independence.closest('label')).not.toHaveClass('animate-shake-lock');
   });
 
   it('requests a smooth centered scroll when the independence control exposes the API', async () => {
@@ -235,6 +234,7 @@ describe('MannWhitneyTest', () => {
       }
     }
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(mannWhitneyInterpretation, 'buildMannWhitneyInterpretation');

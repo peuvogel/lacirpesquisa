@@ -127,7 +127,7 @@ describe('runGuidedTests', () => {
     const expected = runPairedT([10, 20, 35], [12, 25, 39]);
 
     expect(run.results[0]?.metrics).toContainEqual(
-      expect.objectContaining({ label: 'Evidência estatística', value: fmtP(expected.p) }),
+      expect.objectContaining({ label: 'p-valor', value: fmtP(expected.p) }),
     );
   });
 
@@ -260,7 +260,7 @@ describe('runGuidedTests', () => {
     expect(run.results[0]?.metrics.map((metric) => metric.label)).toEqual([
       'Efeito por postos',
       'Estatística U',
-      'Evidência estatística',
+      'p-valor',
     ]);
     expect(run.results[0]?.interpretation.at(-1)).toMatch(/não demonstra causalidade/i);
   });

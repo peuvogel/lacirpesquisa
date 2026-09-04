@@ -343,8 +343,8 @@ export function toEngineOutput(dataset: MannWhitneyBuiltDataset, result: MannWhi
 export function buildMetrics(result: MannWhitneyResult, labels: [string, string]): ResultMetric[] {
   const method = result.method === 'exact' ? 'Exato' : 'Aproximação normal com correção de empates';
   return [
-    { label: 'Estatística U', value: fmtNumber(result.u, 2), hint: `U1 = ${fmtNumber(result.u1, 2)} · U2 = ${fmtNumber(result.u2, 2)}` },
-    { label: 'Evidência estatística', value: fmtP(result.pValue), hint: method },
-    { label: 'Efeito por postos', value: fmtNumber(result.rankBiserial, 3), hint: `P(${labels[0]} > ${labels[1]}) + 0,5×empates = ${fmtNumber(result.probabilityOfSuperiority * 100, 1)}%` },
+    { label: 'Estatística U', helpKey: 'estatistica-u', value: fmtNumber(result.u, 2), hint: `U1 = ${fmtNumber(result.u1, 2)} · U2 = ${fmtNumber(result.u2, 2)}` },
+    { label: 'p-valor', helpKey: 'p-valor', value: fmtP(result.pValue), hint: method },
+    { label: 'Efeito por postos', helpKey: 'efeito-postos', value: fmtNumber(result.rankBiserial, 3), hint: `P(${labels[0]} > ${labels[1]}) + 0,5×empates = ${fmtNumber(result.probabilityOfSuperiority * 100, 1)}%` },
   ];
 }

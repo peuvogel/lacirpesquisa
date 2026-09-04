@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AssumptionNudgeStrip } from '@/features/tests/shared/AssumptionNudgeStrip';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { AssumptionNudgeInfo } from '@/features/tests/shared/AssumptionNudgeInfo';
 import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import {
@@ -45,7 +45,7 @@ export interface BinomialNegativaTestProps {
 }
 
 function initialLoadedFromSession(
-  sessionDataset: ReturnType<typeof useSession>['dataset'],
+  sessionDataset: ReturnType<typeof useStatisticsSession>['dataset'],
   handoffRecognizedColumns?: Record<string, number>,
 ): BinomialNegativaLoadedInput | null {
   if (!sessionDataset) return null;
@@ -64,12 +64,14 @@ function initialLoadedFromSession(
   };
 }
 
-function initialStepFromSession(sessionDataset: ReturnType<typeof useSession>['dataset']): FlowStep {
+function initialStepFromSession(
+  sessionDataset: ReturnType<typeof useStatisticsSession>['dataset'],
+): FlowStep {
   return sessionDataset ? 'configurar' : 'dados';
 }
 
 export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegativaTestProps) {
-  const { dataset: sessionDataset } = useSession();
+  const { dataset: sessionDataset } = useStatisticsSession();
   const analysisTable = useAnalysisTable('binomial-negativa', { tabularOptions: TABULAR_OPTIONS, handoffRecognizedColumns });
   const tabular = analysisTable.tabular;
 
@@ -78,8 +80,16 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
     initialLoadedFromSession(sessionDataset, handoffRecognizedColumns),
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+  const [alpha, setAlphaState] = useState<AlphaValue>(() =>
+    parseAlpha(analysisTable.settings.alpha),
+  );
+  const alphaChangedLocallyRef = useRef(false);
+  useEffect(() => {
+    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
+  }, [analysisTable.settings.alpha]);
 
+  // A configuração viaja com a tabela: voltar ao teste e recalcular com um alfa
+  // diferente do que foi confirmado mostraria números de outro ajuste.
   function setAlpha(next: AlphaValue) {
     alphaChangedLocallyRef.current = true;
     setAlphaState(next);
@@ -95,6 +105,24 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
     }
     setLoadedInput(analysisTable.loadedInput);
   }, [analysisTable.loadedInput]);
+
+  // Espelho do efeito abaixo: ao voltar ao teste, o resultado reconstruído pela
+  // sessão é adotado uma única vez, para cair direto nos resultados. Sem o
+  // guarda, ele reverteria toda invalidação local (trocar modo, α, período).
+  const adoptedConfirmedRef = useRef(false);
+  useEffect(() => {
+    if (adoptedConfirmedRef.current) return;
+    // Confirmar manualmente também consome a chance de adoção: sem isto, a
+    // próxima invalidação local seria revertida pelo confirmado da sessão.
+    if (confirmedDataset) {
+      adoptedConfirmedRef.current = true;
+      return;
+    }
+    if (!analysisTable.confirmed) return;
+    adoptedConfirmedRef.current = true;
+    setConfirmedDataset(analysisTable.confirmed);
+    setActiveStep('resultados');
+  }, [analysisTable.confirmed, confirmedDataset]);
 
   useEffect(() => {
     if (analysisTable.confirmed || !confirmedDataset) return;
@@ -142,10 +170,6 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
     }),
     [loadedInput, confirmedDataset],
   );
-  const alphaChangedLocallyRef = useRef(false);
-  useEffect(() => {
-    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
-  }, [analysisTable.settings.alpha]);
 
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
@@ -177,9 +201,9 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
 
     return (
       <>
-        <AssumptionNudgeStrip nudges={engineOutput.nudges} />
         <ResultsPanelWithCustomizer
-          title="Regressão Binomial Negativa: resultados"
+          title="Resultados"
+          titleInfo={<AssumptionNudgeInfo nudges={engineOutput.nudges} />}
           metrics={metrics}
           engineOutput={engineOutput}
           presets={binomialNegativaChartPresets}
@@ -203,7 +227,6 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
           <TabularInputPanel
             {...tabular}
             showPreview={false}
-            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}
@@ -225,6 +248,7 @@ export function BinomialNegativaTest({ handoffRecognizedColumns }: BinomialNegat
             onConfirm={handleConfigureConfirm}
             document={analysisTable.table ?? undefined} testId="binomial-negativa"
             onDocumentChange={analysisTable.setDocument}
+            onUndo={analysisTable.undo}
             importWarnings={analysisTable.importWarnings}
           />
         ) : (

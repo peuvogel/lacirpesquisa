@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import {
@@ -39,7 +39,7 @@ interface ConfirmedDataset {
 }
 
 function initialLoadedFromSession(
-  sessionDataset: ReturnType<typeof useSession>['dataset'],
+  sessionDataset: ReturnType<typeof useStatisticsSession>['dataset'],
 ): TStudentLoadedInput | null {
   if (!sessionDataset) return null;
   return {
@@ -54,12 +54,14 @@ function initialLoadedFromSession(
   };
 }
 
-function initialStepFromSession(sessionDataset: ReturnType<typeof useSession>['dataset']): FlowStep {
+function initialStepFromSession(
+  sessionDataset: ReturnType<typeof useStatisticsSession>['dataset'],
+): FlowStep {
   return sessionDataset ? 'configurar' : 'dados';
 }
 
 export function TStudentTest() {
-  const { dataset: sessionDataset } = useSession();
+  const { dataset: sessionDataset } = useStatisticsSession();
   const analysisTable = useAnalysisTable('t-student', { tabularOptions: TABULAR_OPTIONS });
   const tabular = analysisTable.tabular;
 
@@ -68,9 +70,19 @@ export function TStudentTest() {
     initialLoadedFromSession(sessionDataset),
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [mode, setMode] = useState<TStudentMode>('independent');
-  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+  const [mode, setMode] = useState<TStudentMode>(
+    () => (analysisTable.settings.mode as TStudentMode) ?? 'independent',
+  );
+  const [alpha, setAlphaState] = useState<AlphaValue>(() =>
+    parseAlpha(analysisTable.settings.alpha),
+  );
+  const alphaChangedLocallyRef = useRef(false);
+  useEffect(() => {
+    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
+  }, [analysisTable.settings.alpha]);
 
+  // A configuração viaja com a tabela: voltar ao teste e recalcular com um alfa
+  // diferente do que foi confirmado mostraria números de outro ajuste.
   function setAlpha(next: AlphaValue) {
     alphaChangedLocallyRef.current = true;
     setAlphaState(next);
@@ -87,6 +99,24 @@ export function TStudentTest() {
     setLoadedInput(analysisTable.loadedInput);
     setActiveStep((step) => (step === 'dados' ? 'configurar' : step));
   }, [analysisTable.loadedInput]);
+
+  // Espelho do efeito abaixo: ao voltar ao teste, o resultado reconstruído pela
+  // sessão é adotado uma única vez, para cair direto nos resultados. Sem o
+  // guarda, ele reverteria toda invalidação local (trocar modo, α, período).
+  const adoptedConfirmedRef = useRef(false);
+  useEffect(() => {
+    if (adoptedConfirmedRef.current) return;
+    // Confirmar manualmente também consome a chance de adoção: sem isto, a
+    // próxima invalidação local seria revertida pelo confirmado da sessão.
+    if (confirmedDataset) {
+      adoptedConfirmedRef.current = true;
+      return;
+    }
+    if (!analysisTable.confirmed) return;
+    adoptedConfirmedRef.current = true;
+    setConfirmedDataset(analysisTable.confirmed);
+    setActiveStep('resultados');
+  }, [analysisTable.confirmed, confirmedDataset]);
 
   useEffect(() => {
     if (analysisTable.confirmed || !confirmedDataset) return;
@@ -107,6 +137,7 @@ export function TStudentTest() {
       if (activeStep === 'resultados') setActiveStep('configurar');
     }
     setMode(nextMode);
+    analysisTable.setSettings({ mode: nextMode });
   }
 
   function handleConfigureConfirm(confirmed: {
@@ -138,10 +169,6 @@ export function TStudentTest() {
     }),
     [loadedInput, confirmedDataset],
   );
-  const alphaChangedLocallyRef = useRef(false);
-  useEffect(() => {
-    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
-  }, [analysisTable.settings.alpha]);
 
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
@@ -165,7 +192,7 @@ export function TStudentTest() {
 
     return (
       <ResultsPanelWithCustomizer
-        title="t de Student: resultados"
+        title="Resultados"
         metrics={metrics}
         engineOutput={engineOutput}
         presets={buildTStudentChartPresets(mode)}
@@ -188,7 +215,6 @@ export function TStudentTest() {
           <TabularInputPanel
             {...tabular}
             showPreview={false}
-            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}
@@ -212,6 +238,7 @@ export function TStudentTest() {
             document={analysisTable.table ?? undefined}
             testId="t-student"
             onDocumentChange={analysisTable.setDocument}
+            onUndo={analysisTable.undo}
             importWarnings={analysisTable.importWarnings}
           />
         ) : (

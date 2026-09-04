@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { useLocation } from 'react-router-dom';
 import { AnovaTukeyTest } from '@/features/tests/anova-tukey/AnovaTukeyTest';
 import { BinomialNegativaTest } from '@/features/tests/binomial-negativa/BinomialNegativaTest';
@@ -11,8 +12,11 @@ import { PraisWinstenTest } from '@/features/tests/prais-winsten/PraisWinstenTes
 import { QuiQuadradoTest } from '@/features/tests/qui-quadrado/QuiQuadradoTest';
 import { TStudentTest } from '@/features/tests/t-student/TStudentTest';
 import { getTestById, isTestAvailable, type TestId } from '@/features/tests/registry';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import { PersistenceNotice } from '@/shared/session/PersistenceNotice';
+import { Info } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AnimatedTestTitle } from './AnimatedTestTitle';
 import { LeaveWarningGuard } from './LeaveWarningGuard';
 import { QualTesteModal } from './QualTesteModal';
 import { Sidebar } from './Sidebar';
@@ -100,10 +104,13 @@ function renderActiveTest({
 export function EstatisticaPage() {
   const {
     hasData,
+    switchTest,
+    setTestSlotMeta,
     persistenceMode,
     persistenceStatus,
     persistenceError,
-  } = useSession();
+  } = useStatisticsSession();
+  const reduceMotion = useReducedMotion();
   const location = useLocation();
   const [activeTestId, setActiveTestId] = useState<TestId>('t-student');
   const [handoffRecognizedColumns, setHandoffRecognizedColumns] = useState<
@@ -125,20 +132,35 @@ export function EstatisticaPage() {
   }, [hasData, location.state]);
 
   function handleSelectTest(id: string) {
-    if (isTestAvailable(id)) {
-      setActiveTestId(id);
-    }
+    if (!isTestAvailable(id) || id === activeTestId) return;
+    // Cada teste guarda os seus: sair arquiva a tabela atual e entrar publica a
+    // que aquele teste tinha. O encaminhamento pelos resultados é outro caminho
+    // (handleCrossTestHandoff), que leva a tabela junto.
+    switchTest(activeTestId, id);
+    setHandoffRecognizedColumns(undefined);
+    setActiveTestId(id);
   }
 
+  // Trocar de teste recomeça a leitura do topo, em vez de abrir o novo teste na
+  // altura em que o anterior estava rolado.
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, [activeTestId]);
+
   function handleCrossTestHandoff(testId: string, recognizedColumns?: Record<string, number>) {
-    if (!isTestAvailable(testId)) return;
+    if (!isTestAvailable(testId) || testId === activeTestId) return;
+    // Encaminhamento leva a tabela: arquiva no destino antes de trocar.
+    setTestSlotMeta(testId, {});
+    switchTest(activeTestId, testId);
     setActiveTestId(testId);
     if (recognizedColumns) {
       setHandoffRecognizedColumns(recognizedColumns);
     }
   }
 
-  const pageTitle = getTestById(activeTestId).title;
+  const activeTest = getTestById(activeTestId);
 
   return (
     <>
@@ -158,16 +180,57 @@ export function EstatisticaPage() {
           className="lacir-estatistica-main min-w-0 flex-1 px-4 py-6 sm:px-6 sm:py-8"
           data-has-session-data={hasData}
         >
-          <div className="mb-6">
-            <h1 className="font-sans text-display font-bold text-text">{pageTitle}</h1>
+          <div className="mb-6 flex items-center gap-3">
+            <AnimatedTestTitle
+              key={activeTestId}
+              title={activeTest.title}
+              className="font-sans text-display font-bold text-text"
+            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Informações sobre ${activeTest.title}`}
+                  className="group inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-transparent text-white transition-opacity hover:opacity-70 focus-visible:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Info
+                    className="size-3.5 transition-transform group-hover:scale-110 group-focus-visible:scale-110"
+                    aria-hidden
+                  />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-80 space-y-2 rounded-xl border border-border bg-popover/95 p-4 shadow-lg backdrop-blur-md"
+                align="start"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                    {activeTest.group}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-foreground">{activeTest.title}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{activeTest.subtitle}</p>
+                {activeTest.example ? (
+                  <p className="mt-2 text-xs leading-relaxed text-foreground">{activeTest.example}</p>
+                ) : null}
+              </PopoverContent>
+            </Popover>
           </div>
-          <div id="lacir-test-module-mount" data-active-test-id={activeTestId}>
+          {/* A caixa do teste entra junto com o título, keyed para replay na troca. */}
+          <motion.div
+            key={activeTestId}
+            id="lacir-test-module-mount"
+            data-active-test-id={activeTestId}
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.28, ease: 'easeOut' }}
+          >
             {renderActiveTest({
               activeTestId,
               handoffRecognizedColumns,
               onCrossTestHandoff: handleCrossTestHandoff,
             })}
-          </div>
+          </motion.div>
         </section>
         <QualTesteModal
           open={qualTesteOpen}

@@ -1,4 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useInView } from 'motion/react';
+
+import { revealSticker } from '@/shared/sticker/stickerStore';
 
 export type FlowStep = 'dados' | 'configurar' | 'resultados';
 
@@ -27,6 +30,7 @@ export function FlowSteps({
   resultadosAriaLabel = 'Resultados',
 }: FlowStepsProps) {
   const resultsRef = useRef<HTMLElement | null>(null);
+  const resultsInView = useInView(resultsRef, { amount: 0.15 });
 
   useEffect(() => {
     if (active !== 'resultados') return;
@@ -35,6 +39,12 @@ export function FlowSteps({
       node.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [active]);
+
+  // O adesivo é renderizado pelo AppShell; aqui só sinalizamos que os
+  // resultados entraram em cena. Uma vez revelado, ele fica.
+  useEffect(() => {
+    if (resultsInView) revealSticker();
+  }, [resultsInView]);
 
   const showConfig = canAdvance.configurar;
   const showResults = canAdvance.resultados || active === 'resultados';

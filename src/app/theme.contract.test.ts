@@ -74,4 +74,18 @@ describe('LACIR theme token contract', () => {
       .filter((value) => value !== '400' && value !== '700' && value !== 'normal' && value !== 'bold');
     expect(disallowed).toEqual([]);
   });
+
+  it('gives every interactive control the pointer cursor', () => {
+    // O navegador só dá a mãozinha para <a href>; sem esta regra base, botões e
+    // controles com papel ARIA parecem não clicáveis.
+    const rule = indexCss.match(/button,[\s\S]*?\{\s*cursor:\s*pointer;\s*\}/);
+    expect(rule).not.toBeNull();
+    for (const selector of ["[role='button']", "[role='tab']", "[role='option']", 'select', 'summary']) {
+      expect(rule![0]).toContain(selector);
+    }
+  });
+
+  it('keeps the blocked cursor on disabled controls', () => {
+    expect(indexCss).toMatch(/button:disabled,[\s\S]*?cursor:\s*not-allowed/);
+  });
 });

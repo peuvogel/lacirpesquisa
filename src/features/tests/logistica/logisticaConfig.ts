@@ -41,7 +41,7 @@ export const didacticCards: DidacticCard[] = [
   },
   {
     title: 'Eventos raros e separação',
-    body: 'Desfechos muito desequilibrados ou coeficientes extremos podem indicar eventos raros ou separação quase perfeita — interpretar OR com cautela.',
+    body: 'Desfechos muito desequilibrados ou coeficientes extremos podem indicar eventos raros ou separação quase perfeita, interpretar OR com cautela.',
   },
 ];
 

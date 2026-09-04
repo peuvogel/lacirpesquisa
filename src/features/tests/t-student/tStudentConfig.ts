@@ -36,12 +36,21 @@ export const MODE_OPTIONS = [
   {
     id: 'independent',
     title: 't independente (Welch)',
-    description: 'Compare dois grupos distintos; cada coluna pode ter linhas válidas independentes.',
+    description:
+      'Dois conjuntos de unidades diferentes, sem ligação entre uma linha e outra. '
+      + 'Welch não exige que os grupos tenham o mesmo tamanho nem a mesma variabilidade, '
+      + 'por isso é a escolha segura na maioria dos casos reais. '
+      + 'Ex: comparar a taxa de internação dos municípios do Nordeste com a dos municípios do Sudeste. '
+      + 'São municípios distintos, e nada liga o 1º do Nordeste ao 1º do Sudeste.',
   },
   {
     id: 'paired',
     title: 't pareado',
-    description: 'Compare as mesmas unidades nas duas colunas, na mesma ordem.',
+    description:
+      'A mesma unidade medida duas vezes, uma em cada coluna, sempre na mesma linha. '
+      + 'O teste olha a diferença dentro de cada par, o que remove as diferenças entre unidades. '
+      + 'Ex: a taxa de cada município em 2019 e a do MESMO município em 2023. '
+      + 'A linha 1 é sempre o mesmo município nas duas colunas. Trocar a ordem de uma delas invalida o teste.',
   },
 ] as const;
 

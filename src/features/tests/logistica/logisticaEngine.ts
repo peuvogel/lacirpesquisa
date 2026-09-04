@@ -238,7 +238,7 @@ export function validateColumnTypes(
     const uniqueLevels = [...new Set(rawOutcomes)];
     if (uniqueLevels.length > 2) {
       errors.push(
-        `A coluna "${headers[indexOutcome] || 'desfecho_binario'}" possui mais de dois níveis — use um desfecho binário.`,
+        `A coluna "${headers[indexOutcome] || 'desfecho_binario'}" possui mais de dois níveis. Use um desfecho binário.`,
       );
     } else if (uniqueLevels.length < 2) {
       errors.push(
@@ -304,6 +304,7 @@ export function buildMetrics(result: LogisticFitResult, dataset: LogisticaBuiltD
   return [
     {
       label: slope && slopeOr ? `OR (${slope.term})` : 'Odds ratios',
+      helpKey: 'odds-ratio',
       value: slopeOr ? fmtNumber(slopeOr.or, 3) : formatOrSummary(result, result.coefficients),
       hint: slopeOr
         ? `IC95%: ${fmtNumber(slopeOr.ci95[0], 3)} a ${fmtNumber(slopeOr.ci95[1], 3)} · p = ${fmtP(slope!.p)}`
@@ -311,21 +312,25 @@ export function buildMetrics(result: LogisticFitResult, dataset: LogisticaBuiltD
     },
     {
       label: 'Desvio (residual)',
+      helpKey: 'desvio-residual',
       value: fmtNumber(result.deviance, 3),
       hint: `gl residual = ${result.dfResid}`,
     },
     {
       label: 'Proporção classe minoritária',
+      helpKey: 'proporcao-minoritaria',
       value: Number.isFinite(minorityProp) ? fmtNumber(minorityProp * 100, 1) + '%' : 'n/d',
       hint: `${dataset.classCounts.one} eventos · ${dataset.classCounts.zero} não eventos`,
     },
     {
       label: 'Observações',
+      helpKey: 'observacoes',
       value: String(dataset.n),
       hint: `${dataset.outcomeHeader} ~ ${dataset.predictorHeaders.join(' + ')}`,
     },
     {
       label: 'Convergência IRLS',
+      helpKey: 'convergencia-irls',
       value: result.converged ? 'Sim' : 'Não',
       hint: `${result.iterations} iteração(ões)`,
     },
@@ -345,7 +350,7 @@ export function computeAssumptionNudges(
   if (Number.isFinite(minorityProp) && minorityProp < RARE_EVENTS_THRESHOLD) {
     nudges.push({
       severity: 'warning',
-      message: `A classe minoritária representa ${fmtNumber(minorityProp * 100, 1)}% dos casos (< 5%) — eventos raros podem tornar os intervalos de confiança instáveis. Interprete os OR com cautela.`,
+      message: `A classe minoritária representa ${fmtNumber(minorityProp * 100, 1)}% dos casos (< 5%), eventos raros podem tornar os intervalos de confiança instáveis. Interprete os OR com cautela.`,
     });
   }
 
@@ -355,7 +360,7 @@ export function computeAssumptionNudges(
   if (extremeCoef) {
     nudges.push({
       severity: 'warning',
-      message: `Coeficiente extremo em ${extremeCoef.term} (|β| > ${SEPARATION_BETA_THRESHOLD}) sugere separação quase perfeita — os OR podem ser muito grandes ou instáveis.`,
+      message: `Coeficiente extremo em ${extremeCoef.term} (|β| > ${SEPARATION_BETA_THRESHOLD}) sugere separação quase perfeita, os OR podem ser muito grandes ou instáveis.`,
     });
   }
 
@@ -366,7 +371,7 @@ export function computeAssumptionNudges(
   ) {
     nudges.push({
       severity: 'info',
-      message: `Desfecho com ${fmtNumber(minorityProp * 100, 1)}% na classe minoritária — proporções equilibradas facilitam a interpretação dos odds ratios.`,
+      message: `Desfecho com ${fmtNumber(minorityProp * 100, 1)}% na classe minoritária, proporções equilibradas facilitam a interpretação dos odds ratios.`,
     });
   }
 

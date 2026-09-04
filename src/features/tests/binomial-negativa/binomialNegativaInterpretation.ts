@@ -18,7 +18,7 @@ export function buildBinomialNegativaInterpretation(
     slope
       ? `Coeficiente de ${slope.term}: β = ${fmtNumber(slope.beta, 3)}, p = ${fmtP(slope.p)} (efeito log-linear na contagem).`
       : 'Modelo com intercepto apenas.',
-    `Parâmetro de dispersão θ = ${fmtNumber(result.theta, 3)} — relaxa equidispersão do Poisson.`,
+    `Parâmetro de dispersão θ = ${fmtNumber(result.theta, 3)}, relaxa equidispersão do Poisson.`,
     `Desvio residual = ${fmtNumber(result.deviance, 3)}, gl = ${result.dfResid}.`,
     `Observações válidas: ${dataset.n}.`,
   ];

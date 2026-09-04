@@ -231,13 +231,13 @@ export function validateColumnTypes(
 
   if (negativeCount > 0) {
     errors.push(
-      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores negativos — contagens devem ser ≥ 0.`,
+      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores negativos, contagens devem ser ≥ 0.`,
     );
   }
 
   if (nonIntegerCount > 0) {
     errors.push(
-      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores não inteiros — use contagens discretas (0, 1, 2, …).`,
+      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores não inteiros. Use contagens discretas (0, 1, 2, …).`,
     );
   }
 
@@ -287,34 +287,40 @@ export function buildMetrics(result: PoissonAnalysisResult, dataset: PoissonBuil
   return [
     {
       label: 'Desvio (residual)',
+      helpKey: 'desvio-residual',
       value: fmtNumber(result.deviance, 3),
       hint: `gl residual = ${result.dfResid}`,
     },
     {
       label: 'χ² de Pearson',
+      helpKey: 'qui2-pearson',
       value: fmtNumber(result.pearsonChi2, 3),
       hint: `Razão χ²/gl = ${ratioLabel}`,
     },
     {
       label: 'Superdispersão (χ²/gl)',
+      helpKey: 'superdispersao',
       value: ratioLabel,
       hint:
         result.overdispersionRatio > OVERDISPERSION_THRESHOLD
-          ? 'Acima de 1,25 — variância maior que a prevista pelo Poisson.'
+          ? 'Acima de 1,25, variância maior que a prevista pelo Poisson.'
           : 'Próximo de 1 indica equidispersão aproximada.',
     },
     {
       label: slope ? `Coeficiente (${slope.term})` : 'Coeficientes',
+      helpKey: 'coeficiente-taxa',
       value: slope ? fmtNumber(slope.beta, 3) : formatCoefSummary(result.coefficients),
       hint: slope ? `p = ${fmtP(slope.p)} · efeito log-linear` : formatCoefSummary(result.coefficients),
     },
     {
       label: 'Observações',
+      helpKey: 'observacoes',
       value: String(dataset.n),
       hint: `${dataset.outcomeHeader} ~ ${dataset.predictorHeaders.join(' + ')}${dataset.exposureHeader ? ` · offset = log(${dataset.exposureHeader})` : ''}`,
     },
     {
       label: 'Convergência IRLS',
+      helpKey: 'convergencia-irls',
       value: result.converged ? 'Sim' : 'Não',
       hint: `${result.iterations} iteração(ões)`,
     },
@@ -330,13 +336,13 @@ export function computeAssumptionNudges(
   if (Number.isFinite(result.overdispersionRatio) && result.overdispersionRatio > OVERDISPERSION_THRESHOLD) {
     nudges.push({
       severity: 'warning',
-      message: `Razão χ²/gl = ${fmtNumber(result.overdispersionRatio, 3)} (> 1,25) sugere superdispersão — a variância observada excede a prevista pelo Poisson. Considere Binomial Negativa com os mesmos preditores.`,
+      message: `Razão χ²/gl = ${fmtNumber(result.overdispersionRatio, 3)} (> 1,25) sugere superdispersão, a variância observada excede a prevista pelo Poisson. Considere Binomial Negativa com os mesmos preditores.`,
       cta: NB_CTA,
     });
   } else if (Number.isFinite(result.overdispersionRatio) && result.overdispersionRatio <= OVERDISPERSION_THRESHOLD) {
     nudges.push({
       severity: 'info',
-      message: `Razão χ²/gl = ${fmtNumber(result.overdispersionRatio, 3)} indica equidispersão aproximada — o modelo de Poisson parece adequado para a variância observada.`,
+      message: `Razão χ²/gl = ${fmtNumber(result.overdispersionRatio, 3)} indica equidispersão aproximada, o modelo de Poisson parece adequado para a variância observada.`,
     });
   }
 

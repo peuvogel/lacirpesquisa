@@ -25,7 +25,7 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Binomial Negativa',
-    body: 'Modela contagens com variância maior que a média (superdispersão). Relaxa a equidispersão do Poisson via parâmetro θ — efeitos log-lineares nos preditores, como no Poisson.',
+    body: 'Modela contagens com variância maior que a média (superdispersão). Relaxa a equidispersão do Poisson via parâmetro θ, efeitos log-lineares nos preditores, como no Poisson.',
   },
   {
     title: 'Colunas esperadas',

@@ -171,31 +171,37 @@ export function buildMetrics(
   return [
     {
       label: 'Método',
+      helpKey: 'metodo-correlacao',
       value: methodLabel,
       hint: method === 'spearman' ? 'Associação monótona por ranks' : 'Associação linear',
     },
     {
       label: coefLabel,
+      helpKey: 'coeficiente-correlacao',
       value: fmtSigned(result.coef, 3),
       hint: `Entre ${labels[0]} e ${labels[1]}`,
     },
     {
       label: 'p-valor',
+      helpKey: 'p-valor',
       value: fmtP(result.p),
       hint: `n = ${result.n} pares válidos`,
     },
     {
       label: 'Amostra',
+      helpKey: 'amostra-pares',
       value: String(result.n),
       hint: 'Pares utilizados no cálculo',
     },
     {
       label: 'IC95% do coeficiente',
+      helpKey: 'ic95-coeficiente',
       value: `${fmtNumber(result.ci[0], 3)} a ${fmtNumber(result.ci[1], 3)}`,
       hint: 'Intervalo de confiança aproximado (transformação de Fisher)',
     },
     {
       label: 'R²',
+      helpKey: 'r2',
       value: fmtNumber(result.r2, 3),
       hint: method === 'pearson' ? 'Proporção da variação linear explicada' : 'Coeficiente ao quadrado',
     },

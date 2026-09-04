@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { LogisticaTest } from './LogisticaTest';
 import * as logisticaInterpretation from './logisticaInterpretation';
+import { selectColumnType } from '@/test/columnTypeWheel';
+import { setColumnEnabled } from '@/test/columnToggle';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -61,16 +63,6 @@ describe('LogisticaTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderLogistica();
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-    await screen.findByRole('button', { name: 'Analisar dados' });
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('runs exemplo flow through Resultados with OR metrics and interpretation', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -84,7 +76,8 @@ describe('LogisticaTest', () => {
 
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
-    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
+    await user.click(screen.getByTestId('assumption-nudge-info'));
+    expect(await screen.findByText('Pressupostos')).toBeInTheDocument();
     expect(screen.getByText(/OR \(dose\)/i)).toBeInTheDocument();
 
     const prose = screen.getAllByText(/indicou associação|não encontrou associação|Odds ratio/i);
@@ -103,10 +96,14 @@ describe('LogisticaTest', () => {
 
     await runToResultados(user);
 
-    await waitFor(() => {
-      const strip = screen.getByTestId('assumption-nudge-strip');
-      expect(strip.textContent).toMatch(/eventos raros/i);
-    });
+    // O aviso não pode se esconder atrás de um ícone neutro: o gatilho se
+    // marca como aviso antes mesmo de o texto ser aberto.
+    const trigger = await screen.findByTestId('assumption-nudge-info');
+    expect(trigger).toHaveAttribute('data-severity', 'warning');
+    await user.click(trigger);
+    // Dentro do popover: o mesmo termo também é rótulo de card de métrica.
+    const panel = await screen.findByRole('dialog');
+    expect(within(panel).getByText(/eventos raros/i)).toBeInTheDocument();
   });
 
   it('shows soft reset alert when column role is adjusted after confirm', async () => {
@@ -118,10 +115,11 @@ describe('LogisticaTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Tipo da coluna desfecho_binario/i), 'ignorar');
+    await setColumnEnabled(user, 'desfecho_binario', false);
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(logisticaInterpretation, 'buildLogisticaInterpretation');

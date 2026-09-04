@@ -25,7 +25,7 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Poisson',
-    body: 'Modela contagens (inteiros não negativos) em função de preditores com efeitos multiplicativos no desfecho. Efeitos principais apenas — sem interações nesta versão didática.',
+    body: 'Modela contagens (inteiros não negativos) em função de preditores com efeitos multiplicativos no desfecho. Efeitos principais apenas, sem interações nesta versão didática.',
   },
   {
     title: 'Colunas esperadas',
@@ -33,7 +33,7 @@ export const didacticCards: DidacticCard[] = [
   },
   {
     title: 'Superdispersão',
-    body: 'Se a variância observada excede a prevista pelo modelo (razão χ²/df > 1,25), aparece um aviso sugerindo Binomial Negativa — você decide se troca de teste.',
+    body: 'Se a variância observada excede a prevista pelo modelo (razão χ²/df > 1,25), aparece um aviso sugerindo Binomial Negativa, você decide se troca de teste.',
   },
 ];
 

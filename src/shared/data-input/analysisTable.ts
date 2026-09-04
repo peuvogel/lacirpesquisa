@@ -1,6 +1,12 @@
 import { legacyStats, parseNumber } from './legacyAdapters';
 import { matchStructuredPositionFallback, matchTabularColumns } from './parseTabular';
-import { resolveBindings, type TableDocument } from './tableDocument';
+import {
+  enabledRowEntries,
+  enabledRows,
+  isColumnActive,
+  resolveBindings,
+  type TableDocument,
+} from './tableDocument';
 import { isSupportedTemporalToken } from './temporalPeriods';
 import type { TabularInputOptions } from './types';
 
@@ -36,10 +42,13 @@ export function deriveRecognizedColumnsFromDocument(
   const requiredKeys = options.requiredKeys ?? [];
   const aliases = options.aliases ?? {};
   const matched = matchTabularColumns(document.columns.map((column) => column.name), aliases, requiredKeys);
+  // Um único conjunto de exclusão cobre tanto o tipo 'ignorar' quanto o
+  // interruptor de coluna — a coluna continua nas linhas (senão todo índice
+  // posicional dos engines deslocaria), só não é reconhecida.
   const ignoredIndexes = new Set(
     document.columns
       .map((column, index) => ({ column, index }))
-      .filter(({ column }) => column.type === 'ignorar')
+      .filter(({ column }) => !isColumnActive(column))
       .map(({ index }) => index),
   );
   const manuallyBoundRoles = new Set(Object.keys(document.bindings[testId] ?? {}));
@@ -59,7 +68,7 @@ export function deriveRecognizedColumnsFromDocument(
 
   const positional = matchStructuredPositionFallback(
     document.columns.map((column) => column.name),
-    document.rows,
+    enabledRows(document),
     options,
     legacyStats,
   );
@@ -106,7 +115,9 @@ export function tableValiditySummary(
   const incomplete: number[] = [];
   const invalid: number[] = [];
 
-  document.rows.forEach((row, index) => {
+  // Linhas desligadas não são contadas, mas as demais mantêm o número original:
+  // essas listas são exibidas ao usuário ("linha 7 incompleta").
+  enabledRowEntries(document).forEach(({ row, index }) => {
     const missing = requiredKeys.some((key) => !String(row[bindings[key] ?? -1] ?? '').trim());
     if (missing) {
       incomplete.push(index + 1);

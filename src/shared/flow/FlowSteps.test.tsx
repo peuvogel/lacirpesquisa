@@ -4,6 +4,14 @@ import { FlowSteps } from './FlowSteps';
 
 const baseCanAdvance = { dados: true, configurar: true, resultados: true };
 
+if (typeof window.IntersectionObserver === 'undefined') {
+  window.IntersectionObserver = class IntersectionObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof window.IntersectionObserver;
+}
+
 describe('FlowSteps', () => {
   it('keeps the data slot reachable while configuration is visible', () => {
     render(

@@ -24,7 +24,7 @@ export const TABULAR_OPTIONS: TabularInputOptions = {
 export const didacticCards: DidacticCard[] = [
   {
     title: 'Quando usar Kruskal-Wallis',
-    body: 'Alternativa não paramétrica à ANOVA: compara a distribuição (postos) de um desfecho numérico entre três ou mais grupos. Não exige normalidade dentro de cada grupo — útil quando os dados são assimétricos ou com outliers.',
+    body: 'Alternativa não paramétrica à ANOVA: compara a distribuição (postos) de um desfecho numérico entre três ou mais grupos. Não exige normalidade dentro de cada grupo, útil quando os dados são assimétricos ou com outliers.',
   },
   {
     title: 'Colunas esperadas',

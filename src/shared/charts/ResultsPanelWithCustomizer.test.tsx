@@ -22,8 +22,8 @@ const { exportCanvasPngMock, setVisualPreferencesMock, sessionState } = vi.hoist
   },
 }));
 
-vi.mock('@/shared/session/SessionProvider', () => ({
-  useSession: () => ({
+vi.mock('@/shared/session/StatisticsSessionProvider', () => ({
+  useStatisticsSession: () => ({
     dataset: sessionState.dataset,
     visualPreferences: sessionState.visualPreferences,
     setVisualPreferences: setVisualPreferencesMock,

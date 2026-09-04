@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import { deriveRecognizedColumnsFromDocument } from './analysisTable';
 import {
   createTableDocument,
+  enabledRows,
   resolveBindings,
   setTableCell,
   setTableColumnName,
@@ -30,6 +31,11 @@ export interface UseAnalysisTableOptions {
   idFactory?: TableDocumentIdFactory;
 }
 
+/** Teto do histórico de desfazer, para a pilha não crescer sem fim. */
+const UNDO_LIMIT = 50;
+
+const EMPTY_SETTINGS: Record<string, unknown> = {};
+
 interface PendingTableAction {
   label: 'Substituir dados' | 'Limpar tabela';
   run: () => void;
@@ -41,11 +47,13 @@ interface PendingTableAction {
  * a header/type/binding edit.
  */
 export function useAnalysisTable(testId: string, options: UseAnalysisTableOptions) {
-  const { dataset, setDataset } = useSession();
+  const { dataset, setDataset, testSlots, setTestSlotMeta } = useStatisticsSession();
   const tabular = useTabularInput(options.tabularOptions);
   const [confirmed, setConfirmed] = useState<AnalysisTableConfirmed | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingTableAction | null>(null);
   const importedRequestRef = useRef<number | null>(null);
+  const historyRef = useRef<TableDocument[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
   const sourceOverrideRef = useRef<string | null>(null);
   const table = dataset?.table ?? null;
   const previousTableRef = useRef<TableDocument | null>(table);
@@ -100,8 +108,14 @@ export function useAnalysisTable(testId: string, options: UseAnalysisTableOption
     tabular.reset();
   }, [table, tabular.requestId, tabular.reset]);
 
-  const commitDocument = useCallback((nextDocument: TableDocument) => {
+  const commitDocument = useCallback((nextDocument: TableDocument, options?: { history?: boolean }) => {
     if (nextDocument === tableRef.current) return;
+    if (options?.history !== false && tableRef.current) {
+      // Cada mutador devolve documento novo, então o histórico é só guardar a
+      // referência anterior. O teto evita crescer sem fim numa sessão longa.
+      historyRef.current = [...historyRef.current, tableRef.current].slice(-UNDO_LIMIT);
+      setCanUndo(true);
+    }
     tableRef.current = nextDocument;
     setConfirmed(null);
     setDataset({
@@ -112,6 +126,14 @@ export function useAnalysisTable(testId: string, options: UseAnalysisTableOption
       table: nextDocument,
     });
   }, [dataset?.confirmedAt, setDataset]);
+
+  const undo = useCallback(() => {
+    const previous = historyRef.current[historyRef.current.length - 1];
+    if (!previous) return;
+    historyRef.current = historyRef.current.slice(0, -1);
+    setCanUndo(historyRef.current.length > 0);
+    commitDocument(previous, { history: false });
+  }, [commitDocument]);
 
   const replaceTable = useCallback((
     headers: string[],
@@ -157,27 +179,49 @@ export function useAnalysisTable(testId: string, options: UseAnalysisTableOption
     if (tableRef.current) commitDocument(setTableCell(tableRef.current, rowIndex, columnIndex, value));
   }, [commitDocument]);
 
+  /** Deriva o payload dos engines a partir do documento. Igual em confirm() e na reidratação. */
+  const deriveConfirmed = useCallback((source: TableDocument): AnalysisTableConfirmed => ({
+    document: source,
+    headers: source.columns.map((column) => column.name),
+    // Filtrado uma vez aqui: todos os 10 engines consomem este `rows`.
+    rows: enabledRows(source),
+    sourceLabel: source.sourceLabel,
+    recognizedColumns: deriveRecognizedColumnsFromDocument(source, testId, options.tabularOptions),
+  }), [options.tabularOptions, testId]);
+
+  // Ao voltar para o teste, o resultado só ressurge se a revisão do documento
+  // for a mesma de quando foi confirmado. Reconstruir (em vez de guardar o
+  // payload) é o que impede um resultado de sobreviver a uma edição da tabela.
+  const rehydratedRef = useRef(false);
+  useEffect(() => {
+    if (rehydratedRef.current || confirmed || !table) return;
+    rehydratedRef.current = true;
+    if (testSlots[testId]?.confirmedRevision !== table.revision) return;
+    setConfirmed(deriveConfirmed(table));
+  }, [confirmed, deriveConfirmed, table, testId, testSlots]);
+
+  const settings = testSlots[testId]?.settings ?? EMPTY_SETTINGS;
+  const setSettings = useCallback((partial: Record<string, unknown>) => {
+    setTestSlotMeta(testId, { settings: { ...(testSlots[testId]?.settings ?? {}), ...partial } });
+  }, [setTestSlotMeta, testId, testSlots]);
+
   const confirm = useCallback(() => {
     const currentTable = tableRef.current;
     if (!currentTable) return null;
-    const currentRecognizedColumns = deriveRecognizedColumnsFromDocument(currentTable, testId, options.tabularOptions);
-    const next: AnalysisTableConfirmed = {
-      document: currentTable,
-      headers: currentTable.columns.map((column) => column.name),
-      rows: currentTable.rows,
-      sourceLabel: currentTable.sourceLabel,
-      recognizedColumns: currentRecognizedColumns,
-    };
+    const next = deriveConfirmed(currentTable);
     setConfirmed(next);
+    setTestSlotMeta(testId, { confirmedRevision: currentTable.revision });
     setDataset({
       headers: next.headers,
-      rows: next.rows,
+      // O snapshot exige rows idêntico a table.rows (sameStringMatrix), então o
+      // que é persistido segue sem filtro — o recorte é só para a análise.
+      rows: currentTable.rows,
       sourceLabel: next.sourceLabel,
       confirmedAt: Date.now(),
       table: currentTable,
     });
     return next;
-  }, [options.tabularOptions, setDataset, testId]);
+  }, [deriveConfirmed, setDataset, setTestSlotMeta, testId]);
 
   const clear = useCallback(() => {
     importedRequestRef.current = null;
@@ -240,6 +284,10 @@ export function useAnalysisTable(testId: string, options: UseAnalysisTableOption
     confirmPendingAction,
     confirm,
     clear,
+    undo,
+    canUndo,
+    settings,
+    setSettings,
     setBinding,
     setBindingForTest,
     setColumnType,

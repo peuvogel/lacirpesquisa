@@ -5,6 +5,7 @@ import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { KruskalDunnTest } from './KruskalDunnTest';
 import * as kruskalInterpretation from './kruskalInterpretation';
+import { selectColumnType } from '@/test/columnTypeWheel';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -54,16 +55,6 @@ describe('KruskalDunnTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderKruskal();
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-    await screen.findByRole('button', { name: 'Analisar dados' });
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('runs exemplo flow through Resultados with interpretation and PNG export', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -103,10 +94,11 @@ describe('KruskalDunnTest', () => {
       expect(screen.getByText('Comparações par a par')).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
+    // Os pressupostos agora moram no "i" ao lado do cabeçalho par a par.
+    await user.click(screen.getByTestId('assumption-nudge-info'));
     expect(
-      screen.getByText(
-        /Kruskal-Wallis compara grupos pelos postos \(ranks\) — alternativa não paramétrica/i,
+      await screen.findByText(
+        /Kruskal-Wallis compara grupos pelos postos \(ranks\), alternativa não paramétrica/i,
       ),
     ).toBeInTheDocument();
   });
@@ -120,10 +112,11 @@ describe('KruskalDunnTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Tipo da coluna desfecho/i), 'categorica');
+    await selectColumnType(user, 'desfecho', 'categorica');
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(kruskalInterpretation, 'buildKruskalInterpretation');

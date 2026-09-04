@@ -5,6 +5,7 @@ import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
 import { AnovaTukeyTest } from './AnovaTukeyTest';
 import * as anovaInterpretation from './anovaInterpretation';
+import { selectColumnType } from '@/test/columnTypeWheel';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -85,16 +86,6 @@ describe('AnovaTukeyTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderAnova();
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-    await screen.findByRole('button', { name: 'Analisar dados' });
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('runs exemplo flow through Resultados with interpretation and PNG export', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -130,7 +121,7 @@ describe('AnovaTukeyTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Tipo da coluna desfecho/i), 'categorica');
+    await selectColumnType(user, 'desfecho', 'categorica');
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
@@ -150,12 +141,14 @@ describe('AnovaTukeyTest', () => {
       expect(screen.getByText('Comparações par a par')).toBeInTheDocument();
     });
 
+    await user.click(await screen.findByTestId('assumption-nudge-info'));
     const kruskalButton = await screen.findByRole('button', {
       name: 'Abrir Kruskal-Wallis + Dunn',
     });
     await user.click(kruskalButton);
     expect(onNavigateTest).toHaveBeenCalledWith('kruskal-dunn', expect.any(Object));
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(anovaInterpretation, 'buildAnovaInterpretation');

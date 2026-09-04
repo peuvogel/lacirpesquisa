@@ -9,6 +9,7 @@ import {
   type SessionDataset,
 } from '@/shared/session/SessionProvider';
 import { EstatisticaPage } from './EstatisticaPage';
+import { expectColumnType } from '@/test/columnTypeWheel';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -242,10 +243,8 @@ describe('EstatisticaPage', () => {
       expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
 
-    const desfechoSelect = screen.getByLabelText(/Tipo da coluna desfecho/i);
-    const grupoSelect = screen.getByLabelText(/Tipo da coluna grupo/i);
-    expect(desfechoSelect).toHaveValue('numerica');
-    expect(grupoSelect).toHaveValue('categorica');
+    expectColumnType('desfecho', 'numerica');
+    expectColumnType('grupo', 'categorica');
 
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
@@ -253,19 +252,30 @@ describe('EstatisticaPage', () => {
       expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     });
 
-    const kruskalButton = screen.queryByRole('button', { name: /Kruskal/i });
-    if (!kruskalButton) return;
+    // O encaminhamento de verdade é a CTA do resultado ("Abrir Kruskal-Wallis +
+    // Dunn"); o item homônimo da barra lateral é outro caminho, que agora
+    // recomeça do zero. Antes o teste casava com o da barra lateral por acidente.
+    const kruskalHandoff = screen.queryByRole('button', { name: /^Abrir Kruskal/i });
+    if (kruskalHandoff) {
+      await user.click(kruskalHandoff);
+      const mount = document.getElementById('lacir-test-module-mount');
+      expect(mount).toHaveAttribute('data-active-test-id', 'kruskal-dunn');
+      await waitFor(() => {
+        expectColumnType('desfecho', 'numerica');
+      });
+      expectColumnType('grupo', 'categorica');
+      return;
+    }
 
-    await user.click(kruskalButton);
-
+    // Sem CTA disponível, exercita o outro contrato: a barra lateral troca de
+    // teste e zera os dados.
+    await user.click(screen.getByRole('button', { name: 'Kruskal-Wallis com Dunn' }));
     const mount = document.getElementById('lacir-test-module-mount');
     expect(mount).toHaveAttribute('data-active-test-id', 'kruskal-dunn');
-
     await waitFor(() => {
-      expect(screen.getByLabelText(/Tipo da coluna desfecho/i)).toHaveValue('numerica');
+      expect(screen.getByRole('button', { name: 'Usar exemplo' })).toBeInTheDocument();
     });
-
-    expect(screen.getByLabelText(/Tipo da coluna grupo/i)).toHaveValue('categorica');
+    expect(screen.queryByRole('button', { name: 'Analisar dados' })).not.toBeInTheDocument();
   });
 
   const OVERDISPERSED_PASTE = `contagem;exposicao
@@ -297,8 +307,8 @@ describe('EstatisticaPage', () => {
       expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/Tipo da coluna contagem/i)).toHaveValue('numerica');
-    expect(screen.getByLabelText(/Tipo da coluna exposicao/i)).toHaveValue('numerica');
+    expectColumnType('contagem', 'numerica');
+    expectColumnType('exposicao', 'numerica');
 
     await user.click(screen.getByRole('button', { name: 'Analisar dados' }));
 
@@ -313,10 +323,52 @@ describe('EstatisticaPage', () => {
     expect(mount).toHaveAttribute('data-active-test-id', 'binomial-negativa');
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/Tipo da coluna contagem/i)).toHaveValue('numerica');
+      expectColumnType('contagem', 'numerica');
     });
 
-    expect(screen.getByLabelText(/Tipo da coluna exposicao/i)).toHaveValue('numerica');
-    expect(screen.getAllByText('em uso').length).toBeGreaterThanOrEqual(2);
+    expectColumnType('exposicao', 'numerica');
+    // O chip "em uso" saiu; o vínculo agora se lê no painel de papéis.
+    expect(screen.getByLabelText('Vincular Contagem')).not.toHaveValue('');
+    expect(screen.getByLabelText('Vincular Preditor')).not.toHaveValue('');
+  });
+
+  it('gives each test its own table and brings it back on return', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
+    });
+
+    // Correlação começa vazia: a tabela do t de Student fica arquivada nele.
+    await user.click(screen.getByRole('button', { name: /Correlação/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Usar exemplo' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: 'Analisar dados' })).not.toBeInTheDocument();
+
+    // Voltar devolve a tabela de quem a tinha.
+    await user.click(screen.getByRole('button', { name: 't de Student' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
+    });
+  });
+
+  it('keeps the table when the same test is clicked again', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
+    });
+
+    // Nome exato: o /regex/ casaria também com o botão de info do cabeçalho.
+    await user.click(screen.getByRole('button', { name: 't de Student' }));
+
+    expect(screen.getByRole('button', { name: 'Analisar dados' })).toBeInTheDocument();
   });
 });

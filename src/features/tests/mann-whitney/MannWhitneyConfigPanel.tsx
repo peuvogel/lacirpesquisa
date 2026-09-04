@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { FilterCheck } from '@/components/ui/filterCheck/FilterCheck';
 import { cn } from '@/lib/utils';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
+import { RoleBindingPanel } from '@/features/tests/shared/RoleBindingPanel';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
 import { ModeChoiceCard } from '@/features/tests/shared/ModeChoiceCard';
@@ -43,6 +45,7 @@ export interface MannWhitneyConfigPanelProps {
   document?: TableDocument;
   testId?: string;
   onDocumentChange?: (document: TableDocument) => void;
+  onUndo?: () => void;
   importWarnings?: ImportWarning[];
 }
 
@@ -61,11 +64,16 @@ export function MannWhitneyConfigPanel({
   document,
   testId,
   onDocumentChange,
+  onUndo,
   importWarnings,
 }: MannWhitneyConfigPanelProps) {
   const independenceRef = useRef<HTMLLabelElement>(null);
   const [independencePending, setIndependencePending] = useState(false);
 
+  /**
+   * "Analisar dados" sem a confirmação de independência não avança: em vez de
+   * falhar em silêncio, traz a caixa de volta à tela e a marca em vermelho.
+   */
   function handleConfirm(confirmed: { headers: string[]; rows: string[][]; recognizedColumns: Record<string, number> }) {
     if (!independenceConfirmed) {
       setIndependencePending(true);
@@ -97,15 +105,25 @@ export function MannWhitneyConfigPanel({
         value={format}
         onChange={(value) => onFormatChange(value as MannWhitneyFormat)}
       />
-      <AlphaSelector value={alpha} onChange={onAlphaChange} />
+      {/* Significância e papéis lado a lado: as duas escolhas que governam a
+          análise, agora fora da tabela. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AlphaSelector value={alpha} onChange={onAlphaChange} />
+        <RoleBindingPanel
+          document={document}
+          testId={testId}
+          tabularOptions={getMannWhitneyTabularOptions(format)}
+          onDocumentChange={onDocumentChange}
+        />
+      </div>
       <DidacticCards cards={didacticCards} />
       <label
         ref={independenceRef}
         className={cn(
-          'flex items-start gap-3 rounded-lg border bg-muted/20 px-4 py-3 text-sm',
+          'flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 text-sm transition-colors',
           independencePending
             ? 'animate-shake-lock border-destructive/60 text-destructive'
-            : 'border-border text-foreground',
+            : 'border-border text-foreground hover:border-border-strong',
         )}
       >
         <input
@@ -115,30 +133,44 @@ export function MannWhitneyConfigPanel({
             setIndependencePending(false);
             onIndependenceConfirmedChange(event.target.checked);
           }}
-          className="mt-0.5 size-4 accent-[var(--color-primary)]"
+          className="peer sr-only"
+        />
+        <FilterCheck
+          checked={independenceConfirmed}
+          invalid={independencePending}
+          className="mt-0.5 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-[var(--color-accent)]"
         />
         <span>
           Confirmo que os dois grupos são independentes e que cada unidade aparece uma única vez.
         </span>
       </label>
       {preparation ? (
-        <section aria-label="Prévia dos grupos" className="rounded-lg border border-border bg-muted/20 p-4">
+        <section aria-label="Prévia dos grupos" className="rounded-lg border border-border p-4">
           <h2 className="text-base font-bold text-foreground">Grupos encontrados</h2>
           {preparation.groups.length ? (
-            <ul className="mt-2 flex flex-wrap gap-2 text-sm">
+            <dl className="mt-3 grid gap-x-8 sm:grid-cols-2">
               {preparation.groups.slice(0, 20).map((group, index) => (
-                <li key={`${group.columnId ?? 'grupo'}-${index}-${group.label}`} className="rounded-full border border-border bg-background px-3 py-1">
-                  <strong>{group.label}</strong>: n={group.values.length}
-                </li>
+                <div
+                  key={`${group.columnId ?? 'grupo'}-${index}-${group.label}`}
+                  className="flex items-baseline justify-between gap-4 rounded-md px-2 py-1.5 transition-colors hover:bg-white/[0.04]"
+                >
+                  <dt className="truncate text-base font-bold text-foreground">{group.label}</dt>
+                  <dd
+                    className="shrink-0 text-base text-muted-foreground"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                  >
+                    n = {group.values.length}
+                  </dd>
+                </div>
               ))}
               {preparation.groups.length > 20 ? (
-                <li className="rounded-full border border-border bg-background px-3 py-1">
+                <div className="px-2 py-1.5 text-base text-muted-foreground">
                   e mais {preparation.groups.length - 20} grupo(s)
-                </li>
+                </div>
               ) : null}
-            </ul>
-          ) : <p className="mt-2 text-sm text-muted-foreground">Nenhum grupo válido enquanto os papéis não estiverem vinculados.</p>}
-          <p className="mt-2 text-sm text-muted-foreground">
+            </dl>
+          ) : <p className="mt-3 text-base text-muted-foreground">Nenhum grupo válido enquanto os papéis não estiverem vinculados.</p>}
+          <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
             {preparation.invalidRowCount} linha(s) com ausência ou valor inválido.
             {preparation.invalidRowNumbers.length
               ? ` Linhas: ${preparation.invalidRowNumbers.slice(0, 20).join(', ')}${preparation.invalidRowNumbers.length > 20 ? '…' : ''}.`
@@ -156,6 +188,7 @@ export function MannWhitneyConfigPanel({
           recognizedColumns={loadedInput.recognizedColumns}
           tabularOptions={getMannWhitneyTabularOptions(format)}
           onRoleAdjust={onRoleAdjust}
+          onUndo={onUndo}
           onConfirm={handleConfirm}
           confirmDisabled={hasBlockingIssues(
             issues.filter((issue) => issue.code !== 'independence_not_confirmed'),

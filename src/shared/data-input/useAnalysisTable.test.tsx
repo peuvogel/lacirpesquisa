@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
 import { useAnalysisTable } from './useAnalysisTable';
+import { setTableRowEnabled } from './tableDocument';
 
 const options = {
   aliases: { desfecho: ['Desfecho'], grupo: ['Grupo'] },
@@ -181,6 +182,69 @@ describe('useAnalysisTable', () => {
     act(() => result.current.confirmPendingAction());
     act(() => vi.advanceTimersByTime(200));
     expect(result.current.table).toBeNull();
+    expect(result.current.confirmed).toBeNull();
+  });
+
+  it('hands the engines only enabled rows, while persisting the table intact', () => {
+    const { result } = renderHook(() => useAnalysisTable('t-student', { tabularOptions: options }), {
+      wrapper: ({ children }) => <SessionProvider>{children}</SessionProvider>,
+    });
+
+    act(() => result.current.replaceTable(
+      ['Desfecho', 'Grupo'],
+      [['10', 'A'], ['12', 'B'], ['14', 'C']],
+      'exemplo',
+    ));
+    act(() => {
+      result.current.setBinding('desfecho', result.current.table!.columns[0]!.id);
+      result.current.setBinding('grupo', result.current.table!.columns[1]!.id);
+    });
+
+    act(() => result.current.setDocument(setTableRowEnabled(result.current.table!, 1, false)));
+    act(() => { result.current.confirm(); });
+
+    // O payload da análise perde a linha desligada…
+    expect(result.current.confirmed!.rows).toEqual([['10', 'A'], ['14', 'C']]);
+    // …mas o documento (que é o que vai para o snapshot) mantém as três.
+    expect(result.current.table!.rows).toHaveLength(3);
+    expect(result.current.table!.rowsEnabled).toEqual([true, false, true]);
+  });
+
+  it('undoes the last table edit and stops at the oldest known state', () => {
+    const { result } = renderHook(() => useAnalysisTable('t-student', { tabularOptions: options }), {
+      wrapper: ({ children }) => <SessionProvider>{children}</SessionProvider>,
+    });
+
+    act(() => result.current.replaceTable(['Desfecho', 'Grupo'], [['10', 'A']], 'exemplo'));
+    const columnId = result.current.table!.columns[0]!.id;
+
+    act(() => result.current.setColumnName(columnId, 'Renomeada'));
+    expect(result.current.table!.columns[0]!.name).toBe('Renomeada');
+    expect(result.current.canUndo).toBe(true);
+
+    act(() => result.current.undo());
+    expect(result.current.table!.columns[0]!.name).toBe('Desfecho');
+
+    // Desfazer não pode ressuscitar um estado que nunca existiu.
+    act(() => result.current.undo());
+    expect(result.current.table).not.toBeNull();
+  });
+
+  it('drops the confirmed result as soon as the document changes', () => {
+    const { result } = renderHook(() => useAnalysisTable('t-student', { tabularOptions: options }), {
+      wrapper: ({ children }) => <SessionProvider>{children}</SessionProvider>,
+    });
+
+    act(() => result.current.replaceTable(['Desfecho', 'Grupo'], [['10', 'A']], 'exemplo'));
+    act(() => {
+      result.current.setBinding('desfecho', result.current.table!.columns[0]!.id);
+      result.current.setBinding('grupo', result.current.table!.columns[1]!.id);
+      result.current.confirm();
+    });
+    expect(result.current.confirmed).not.toBeNull();
+
+    // A revisão muda, então o resultado guardado deixa de valer.
+    act(() => result.current.setCell(0, 0, '11'));
     expect(result.current.confirmed).toBeNull();
   });
 });

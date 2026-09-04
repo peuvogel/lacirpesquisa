@@ -6,6 +6,8 @@ import { runToResultados } from '@/test/flowHelpers';
 import { PraisWinstenValidationAlert } from './PraisWinstenConfigPanel';
 import { PraisWinstenTest } from './PraisWinstenTest';
 import * as praisInterpretation from './praisInterpretation';
+import { expectWheelOption, findWheelByLabel, selectWheelOption } from '@/test/wheelPicker';
+import { TEMPORAL_MODE_HELP, TEMPORAL_MODE_OPTIONS } from './praisConfig';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -79,7 +81,7 @@ describe('PraisWinstenTest', () => {
     await vi.advanceTimersByTimeAsync(200);
 
     expect(await screen.findByText(/Periodicidade detectada: Semestral/i)).toBeInTheDocument();
-    expect(screen.getByLabelText('Interpretar períodos como')).toHaveValue('auto');
+    expectWheelOption('Interpretar períodos como', 'Automático');
     expect(screen.getByText(/efeito anualizado/i)).toBeInTheDocument();
 
     await runToResultados(user);
@@ -107,6 +109,26 @@ describe('PraisWinstenTest', () => {
     expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
   });
 
+  it('explains every period type, with the formats the parser really accepts', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPraisWinsten();
+    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
+    await vi.advanceTimersByTimeAsync(200);
+    await findWheelByLabel('Interpretar períodos como');
+
+    await user.click(screen.getByRole('button', { name: 'O que é cada tipo de período' }));
+
+    const panel = await screen.findByRole('dialog');
+    for (const option of TEMPORAL_MODE_OPTIONS) {
+      expect(within(panel).getByText(option.label)).toBeInTheDocument();
+    }
+    // Os exemplos existem para quem errou o formato: precisam ser os de verdade.
+    expect(within(panel).getByText(/2015-S1, S1 2015, 2015\/1 ou 2015\.1/)).toBeInTheDocument();
+    expect(within(panel).getByText(/2015-03 ou 03\/2015/)).toBeInTheDocument();
+    // E a nota que diz quando o efeito é anualizado e quando não é.
+    expect(within(panel).getByText(/Nos modos de calendário o efeito sai anualizado/)).toBeInTheDocument();
+  });
+
   it('invalidates a confirmed result when the temporal interpretation changes', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPraisWinsten();
@@ -114,10 +136,10 @@ describe('PraisWinstenTest', () => {
     await vi.advanceTimersByTimeAsync(200);
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText('Interpretar períodos como'), 'order');
+    await selectWheelOption(user, 'Interpretar períodos como', 'Ordem das linhas');
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Interpretar períodos como')).toHaveValue('order');
+    expectWheelOption('Interpretar períodos como', 'Ordem das linhas');
     expect(screen.getByText(/Periodicidade detectada: Ordem observada/i)).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Resultados' })).not.toBeInTheDocument();
     expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
@@ -129,21 +151,13 @@ describe('PraisWinstenTest', () => {
     await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
     await vi.advanceTimersByTimeAsync(200);
 
-    await user.selectOptions(await screen.findByLabelText('Interpretar períodos como'), 'order');
+    await findWheelByLabel('Interpretar períodos como');
+    await selectWheelOption(user, 'Interpretar períodos como', 'Ordem das linhas');
 
     expect(screen.queryByText('Análise anterior invalidada.')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Interpretar períodos como')).toHaveValue('order');
+    expectWheelOption('Interpretar períodos como', 'Ordem das linhas');
   });
 
-  it('renders one import summary owner after Configurar becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderPraisWinsten();
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-
-    await screen.findByLabelText('Interpretar períodos como');
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('keeps a reordered-series warning visible above successful results', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -284,6 +298,7 @@ describe('PraisWinstenTest', () => {
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
     expect(screen.queryByText('O que isso significa?')).not.toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(praisInterpretation, 'buildPraisInterpretation');
@@ -298,5 +313,17 @@ describe('PraisWinstenTest', () => {
     await runToResultados(user);
 
     expect(interpretation.mock.calls.at(-1)?.[1]).toBe(0.1);
+  });
+});
+
+describe('TEMPORAL_MODE_HELP', () => {
+  it('covers every wheel option with a concrete example', () => {
+    for (const option of TEMPORAL_MODE_OPTIONS) {
+      const help = TEMPORAL_MODE_HELP[option.value as keyof typeof TEMPORAL_MODE_HELP];
+      expect(help, option.label).toBeDefined();
+      expect(help.what.trim().length, option.label).toBeGreaterThan(30);
+      // Exemplo sem número vira definição repetida — e é o formato que faltava.
+      expect(help.example, option.label).toMatch(/\d/);
+    }
   });
 });

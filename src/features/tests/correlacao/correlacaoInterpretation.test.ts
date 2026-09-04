@@ -128,7 +128,7 @@ describe('correlacaoCharts presets', () => {
     expect(spearman.map((preset) => preset.label)).toContain(CHART_PRESET_LABELS.rankScatter);
   });
 
-  it('regression overlay toggle produces annotation config when enabled', async () => {
+  it('keeps the plain scatter a bare cloud and the fit preset the one with the line', async () => {
     const { buildCorrelacaoChartPresets } = await import('./correlacaoCharts');
     const { buildDatasetFromConfirmed, toEngineOutput } = await import('./correlacaoEngine');
     const exemploText = readFileSync(
@@ -146,15 +146,32 @@ describe('correlacaoCharts presets', () => {
       method: 'pearson',
     });
     const output = toEngineOutput(dataset, 'pearson');
-    const preset = buildCorrelacaoChartPresets('pearson').find((item) => item.id === 'scatter');
-    expect(preset).toBeDefined();
-    const chart = preset!.buildChart(output);
-    const annotations = (chart.options as { plugins?: { annotation?: { annotations?: Record<string, unknown> } } })
-      ?.plugins?.annotation?.annotations;
-    expect(annotations?.showEquation).toBeDefined();
-    expect(chart.data.datasets.some((dataset) => String(dataset.label).includes('regressão'))).toBe(
-      true,
-    );
+    const presets = buildCorrelacaoChartPresets('pearson');
+    const scatter = presets.find((item) => item.id === 'scatter');
+    const withFit = presets.find((item) => item.id === 'scatter-with-fit');
+    expect(scatter).toBeDefined();
+    expect(withFit).toBeDefined();
+
+    type BuiltChart = ReturnType<(typeof presets)[number]['buildChart']>;
+    const readAnnotations = (chart: BuiltChart) =>
+      (chart.options as { plugins?: { annotation?: { annotations?: Record<string, unknown> } } })
+        ?.plugins?.annotation?.annotations;
+    const hasFitLine = (chart: BuiltChart) =>
+      chart.data.datasets.some((dataset) => String(dataset.label).includes('regressão'));
+
+    // "Dispersão" é só a nuvem: com a reta aqui, os dois tipos de gráfico
+    // saíam idênticos no Pearson.
+    const bare = scatter!.buildChart(output);
+    expect(hasFitLine(bare)).toBe(false);
+    expect(scatter!.capabilities?.some((capability) => capability.id === 'showRegressionLine')).toBeFalsy();
+    // O coeficiente continua anotado, sem a equação da reta.
+    const bareContent = String((readAnnotations(bare)?.showEquation as { content?: string })?.content);
+    expect(bareContent).toContain('r =');
+    expect(bareContent).not.toContain('×');
+
+    const fitted = withFit!.buildChart(output);
+    expect(hasFitLine(fitted)).toBe(true);
+    expect(String((readAnnotations(fitted)?.showEquation as { content?: string[] })?.content)).toContain('×');
   });
 
   it('Spearman rank chart uses tied ranks and does not draw an OLS line', async () => {

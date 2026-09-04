@@ -184,6 +184,10 @@ describe('praisInterpretation', () => {
       expect(base?.hint).toContain(unit);
       expect(beta?.hint).toContain(unit);
       expect(change?.label).toContain(unit);
+      // Métrica nova sem verbete no glossário fica sem o "i" no card.
+      for (const metric of metrics) {
+        expect(metric.helpKey, metric.label).toBeDefined();
+      }
     });
   });
 });

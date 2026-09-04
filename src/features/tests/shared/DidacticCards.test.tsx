@@ -23,35 +23,10 @@ function installReducedMotion(matches: boolean) {
 describe('DidacticCards', () => {
   beforeEach(() => installReducedMotion(false));
 
-  it('opens and closes from the keyboard with explicit expanded state', async () => {
-    const user = userEvent.setup();
-    render(<DidacticCards cards={[{ title: 'Quando usar', body: 'Use com grupos independentes.' }]} />);
-    const trigger = screen.getByRole('button', { name: 'Quando usar' });
-
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    trigger.focus();
-    await user.keyboard('{Enter}');
-
-    expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    const content = screen.getByText('Use com grupos independentes.').closest(
-      '[data-slot="collapsible-content"]',
+  it('returns null and does not render didactic section', () => {
+    const { container } = render(
+      <DidacticCards cards={[{ title: 'Quando usar', body: 'Use com grupos independentes.' }]} />,
     );
-    expect(content).toHaveAttribute('data-motion', 'animated');
-
-    await user.keyboard(' ');
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('disables nonessential content animation when reduced motion is requested', async () => {
-    installReducedMotion(true);
-    const user = userEvent.setup();
-    render(<DidacticCards cards={[{ title: 'Cuidado', body: 'Revise os pressupostos.' }]} />);
-
-    await user.click(screen.getByRole('button', { name: 'Cuidado' }));
-    const content = screen.getByText('Revise os pressupostos.').closest(
-      '[data-slot="collapsible-content"]',
-    );
-    expect(content).toHaveAttribute('data-motion', 'reduced');
-    expect(content).toHaveStyle({ animationDuration: '0ms' });
+    expect(container.firstChild).toBeNull();
   });
 });

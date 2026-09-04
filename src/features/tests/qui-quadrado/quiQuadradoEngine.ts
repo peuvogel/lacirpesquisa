@@ -196,13 +196,13 @@ export function validateColumnTypes(
   const categoricalIndexes = new Set(explicitlyCategoricalIndexes);
   if (isNumericOnlyColumn(valuesA) && !categoricalIndexes.has(indexA)) {
     errors.push(
-      `A coluna "${headers[indexA] || 'categoria_a'}" parece numérica — use categorias em texto (ex.: sim/não, A/B/C).`,
+      `A coluna "${headers[indexA] || 'categoria_a'}" parece numérica. Use categorias em texto (ex.: sim/não, A/B/C).`,
     );
   }
 
   if (isNumericOnlyColumn(valuesB) && !categoricalIndexes.has(indexB)) {
     errors.push(
-      `A coluna "${headers[indexB] || 'categoria_b'}" parece numérica — use categorias em texto (ex.: sim/não, A/B/C).`,
+      `A coluna "${headers[indexB] || 'categoria_b'}" parece numérica. Use categorias em texto (ex.: sim/não, A/B/C).`,
     );
   }
 
@@ -231,26 +231,31 @@ export function buildMetrics(
   return [
     {
       label: 'Qui-quadrado (χ²)',
+      helpKey: 'qui2',
       value: fmtNumber(result.chi2, 3),
       hint: `Graus de liberdade = ${result.df}`,
     },
     {
-      label: 'Evidência estatística',
+      label: 'p-valor',
+      helpKey: 'p-valor',
       value: fmtP(result.p),
       hint: `χ² = ${fmtNumber(result.chi2, 3)} · gl = ${result.df}`,
     },
     {
       label: "Tamanho de efeito (Cramér's V)",
+      helpKey: 'cramer-v',
       value: fmtNumber(result.cramersV, 3),
       hint: `Associação ${effectClass} entre as categorias.`,
     },
     {
       label: 'Total de observações',
+      helpKey: 'total-observacoes',
       value: String(totalN),
       hint: `Tabela ${dataset.rowLabels.length}×${dataset.colLabels.length}.`,
     },
     {
       label: 'Células com esperado < 5',
+      helpKey: 'celulas-esperado-baixo',
       value: String(result.cellsBelow5),
       hint: `${fmtNumber(result.pctBelow5, 1)}% das células da tabela.`,
     },
@@ -269,7 +274,7 @@ export function computeAssumptionNudges(
   if (result.cellsBelow5 > 0) {
     nudges.push({
       severity: 'warning',
-      message: `${result.cellsBelow5} de ${rows * cols} células (${fmtNumber(result.pctBelow5, 1)}%) têm contagem esperada menor que 5. O qui-quadrado pode ser menos confiável — interprete o p com cautela.`,
+      message: `${result.cellsBelow5} de ${rows * cols} células (${fmtNumber(result.pctBelow5, 1)}%) têm contagem esperada menor que 5. O qui-quadrado pode ser menos confiável. Interprete o p com cautela.`,
     });
   }
 

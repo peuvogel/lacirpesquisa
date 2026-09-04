@@ -25,6 +25,14 @@
   --color-destructive: #ef4444;
   --color-warning: #f59e0b;
 
+  /* Tipos de variável — única família categórica do app, usada no cabeçalho da
+     prévia de dados. Calibrados para contrastar sobre --color-bg e para não
+     depender do par verde/vermelho (daltonismo). */
+  --color-type-numerica: #38bdf8;
+  --color-type-categorica: #a78bfa;
+  --color-type-tempo: #fbbf24;
+  --color-type-ignorar: #71717a;
+
   /* Borders */
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.14);
@@ -176,6 +184,391 @@
     transition: transform 160ms ease, border-color 160ms ease, box-shadow 180ms ease;
   }
 
+  /* Odômetro de contagem dos valores de métrica (src/routes/estatistica/CountUpValue.tsx).
+     A altura do dígito acompanha o leading-tight do card; a proteção de
+     movimento reduzido é feita em JS via useReducedMotion(). */
+  /* O host existe para o observador de entrada em tela ter um alvo estável,
+     inclusive enquanto o valor está estático. */
+  .lacir-count-host {
+    display: inline-flex;
+    align-items: center;
+    /* Vale para os dois estados: com o texto estático em largura proporcional,
+       o dígito largo era cortado pelo `1ch` do odômetro e o número mudava de
+       largura na troca. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lacir-count-value {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.25;
+  }
+
+  /* Alinhamento por centro, não por baseline: um inline-block com
+     overflow:hidden sintetiza a baseline na borda inferior, o que desalinharia
+     os dígitos em relação a "<", "%" e à vírgula. Como todos os itens têm a
+     mesma altura de linha, centro e baseline coincidem. */
+  .lacir-count-value > span {
+    height: 1.25em;
+    display: flex;
+    align-items: center;
+  }
+
+  .lacir-count-digit {
+    position: relative;
+    width: 1ch;
+    overflow: hidden;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lacir-count-digit > span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* ===== Adesivo da logo (src/shared/sticker/StickerPeel.tsx) =====
+     O "descolar" é só clip-path: a face recorta de cima para baixo enquanto a
+     aba (flap) espelhada cresce no sentido inverso. O arrasto fica por conta do
+     motion; aqui não há nada dependente de JS. */
+  .lacir-sticker {
+    --lacir-sticker-width: 132px;
+    --lacir-sticker-rotate: 8deg;
+    --lacir-sticker-peel-hover: 22%;
+    --lacir-sticker-peel-active: 42%;
+    --lacir-sticker-shadow-opacity: 0.6;
+    --lacir-sticker-pad: 10px;
+    --lacir-sticker-start: calc(-1 * var(--lacir-sticker-pad));
+    --lacir-sticker-end: calc(100% + var(--lacir-sticker-pad));
+
+    cursor: grab;
+    transform: translateZ(0);
+    touch-action: none;
+  }
+
+  .lacir-sticker:active {
+    cursor: grabbing;
+  }
+
+  .lacir-sticker-container {
+    position: relative;
+  }
+
+  /* Roda compacta: no cabeçalho da prévia há uma por coluna, e a altura padrão
+     de 132px multiplicada por N colunas inutilizaria o cabeçalho.
+     --view-h casa com a extensão real do tambor: o raio sai de
+     face-h / (2·tan(π/24)) ≈ 84px, e 4 opções a 15° por passo ocupam só
+     2·84·sen(22,5°) ≈ 64px. Qualquer valor acima disso vira espaço morto —
+     listas mais longas simplesmente rolam dentro da mesma janela. */
+  .lacir-wheel-compact {
+    --item-h: 30px;
+    --face-h: 22px;
+    --view-h: 64px;
+  }
+
+  /* Prévia de dados: só a célula sob o cursor acende — e só cor e brilho,
+     nunca tamanho nem posição, porque as células são inputs e qualquer reflow
+     moveria o cursor de digitação no meio da edição. */
+  .lacir-preview-row > td,
+  .lacir-preview-row > td input {
+    transition:
+      background-color 160ms ease,
+      color 160ms ease,
+      -webkit-text-stroke-width 160ms ease,
+      text-shadow 160ms ease;
+  }
+
+  /* Fora da análise: o fundo apaga junto com o texto. Só clarear a letra
+     deixava a linha desmarcada com o mesmo peso visual das ativas. */
+  .lacir-preview-row > td[data-disabled='true'],
+  .lacir-preview-head[data-disabled='true'] {
+    background-color: color-mix(in srgb, var(--color-muted) 55%, transparent);
+  }
+
+  .lacir-preview-row > td[data-disabled='true'],
+  .lacir-preview-row > td[data-disabled='true'] input {
+    color: var(--color-text-muted);
+  }
+
+  .lacir-preview-row:not([data-removing='true']) > td:not([data-disabled='true']):focus-within {
+    background-color: color-mix(in srgb, var(--color-accent) 9%, transparent);
+  }
+
+  .lacir-preview-row:not([data-removing='true']) > td:not([data-disabled='true']):focus-within,
+  .lacir-preview-row:not([data-removing='true']) > td:not([data-disabled='true']):focus-within input {
+    color: #ffffff;
+    -webkit-text-stroke-width: 0.3px;
+    text-shadow:
+      0 0 4px color-mix(in srgb, var(--color-accent) 55%, transparent),
+      0 0 12px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .lacir-preview-row:not([data-removing='true']) > td:not([data-disabled='true']):hover {
+      background-color: color-mix(in srgb, var(--color-accent) 9%, transparent);
+    }
+
+    .lacir-preview-row:not([data-removing='true']) > td:not([data-disabled='true']):hover,
+    .lacir-preview-row:not([data-removing='true']) > td:not([data-disabled='true']):hover input {
+      color: #ffffff;
+      /* text-stroke engrossa o glifo sem ocupar espaço: um bold real reflowaria
+         a célula e moveria o cursor no meio da digitação. */
+      -webkit-text-stroke-width: 0.3px;
+      text-shadow:
+        0 0 4px color-mix(in srgb, var(--color-accent) 55%, transparent),
+        0 0 12px color-mix(in srgb, var(--color-accent) 35%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lacir-preview-row > td,
+    .lacir-preview-row > td input {
+      transition: none;
+    }
+  }
+
+  /* Caixa de seleção com o tique traçado (src/components/ui/filterCheck).
+     As cores vêm do accent do app, não da paleta roxa da origem — o contrato de
+     tema proíbe #8b5cf6 e reserva o verde para estado ativo, que é o caso. */
+  /* Entrada da coluna: o espelho da saída, partindo do colapso. */
+  @keyframes lacirColEnter {
+    from { opacity: 0; max-width: 0; padding-inline: 0; transform: scaleX(0.9); }
+    to { opacity: 1; max-width: 20rem; padding-inline: 0.75rem; transform: scaleX(1); }
+  }
+
+  .lacir-col-entering {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: lacirColEnter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Saída da linha: colapsa a altura pelo padding e pela entrelinha das células,
+     porque a altura de um <tr> não é animável de forma confiável. */
+  .lacir-row-leaving {
+    overflow: hidden;
+    opacity: 0;
+    padding-block: 0 !important;
+    line-height: 0;
+    border-bottom-width: 0;
+    transform: translateX(-10px);
+    transition:
+      opacity 190ms ease-in,
+      padding-block 190ms ease-in,
+      line-height 190ms ease-in,
+      transform 190ms ease-in;
+  }
+
+  @keyframes lacirRowEnter {
+    from { opacity: 0; padding-block: 0; line-height: 0; transform: translateX(-10px); }
+    to { opacity: 1; padding-block: 0.25rem; line-height: inherit; transform: translateX(0); }
+  }
+
+  .lacir-row-entering {
+    overflow: hidden;
+    animation: lacirRowEnter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Saída da coluna: as células daquele índice encolhem e apagam juntas.
+     Aplicado ao <th> e a todos os <td> do índice, porque uma coluna de tabela
+     não é um nó único que se possa animar de uma vez. */
+  .lacir-col-leaving {
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 0;
+    max-width: 0;
+    padding-inline: 0;
+    transform: scaleX(0.9);
+    transition:
+      opacity 190ms ease-in,
+      max-width 190ms ease-in,
+      padding-inline 190ms ease-in,
+      transform 190ms ease-in;
+    will-change: max-width, opacity;
+  }
+
+  /* Alvo do check: a linha inteira acende em neutro, mostrando o alcance da
+     inclusão/exclusão. Declarada ANTES da regra de exclusão, para o vermelho
+     vencer quando os dois estados coincidem. */
+  .lacir-preview-row[data-row-hover='true'] > td {
+    background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
+
+  /* Alvo da lixeira: a linha inteira acende, deixando claro que não é a célula. */
+  .lacir-preview-row[data-removing='true'] > td {
+    background-color: color-mix(in srgb, var(--color-destructive) 14%, transparent);
+    color: var(--color-destructive);
+  }
+
+  .filter-check {
+    --fc-size: 16px;
+    --fc-idle-border: var(--color-border-strong);
+    --fc-idle-fill: rgba(0, 0, 0, 0.4);
+    --fc-active: var(--color-accent);
+    --fc-active-border: var(--color-accent-border);
+    --fc-mark: #ffffff;
+    --fc-partial-fill: var(--color-accent-soft);
+    --fc-partial-border: var(--color-accent-border);
+
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: var(--fc-size);
+    height: var(--fc-size);
+    pointer-events: none;
+  }
+
+  .filter-check svg {
+    position: absolute;
+    display: block;
+    overflow: hidden;
+  }
+
+  .filter-check .fc-box {
+    left: 0;
+    top: 0;
+    height: var(--fc-size);
+    width: var(--fc-size);
+    color: var(--fc-active);
+  }
+
+  .filter-check .fc-shape {
+    stroke-width: 1.5px;
+    stroke: var(--fc-idle-border);
+    fill: var(--fc-idle-fill);
+    transition: fill 0.25s linear, stroke 0.25s linear;
+  }
+
+  .filter-check .fc-tick {
+    stroke: var(--fc-mark);
+    stroke-dasharray: 20;
+    stroke-dashoffset: var(--fc-tick-offset, 20px);
+    transition: stroke-dashoffset var(--fc-tick-duration, 0.15s) var(--fc-tick-easing, ease);
+  }
+
+  .filter-check[data-checked='true'] .fc-box,
+  .filter-check[data-checked='mixed'] .fc-box {
+    --fc-tick-duration: 0.2s;
+    --fc-tick-easing: cubic-bezier(0, 0.45, 1, 0.5);
+    --fc-tick-offset: 0;
+  }
+
+  .filter-check[data-checked='true'] .fc-shape {
+    stroke: var(--fc-active-border);
+    fill: var(--fc-active);
+  }
+
+  .filter-check[data-checked='mixed'] .fc-shape {
+    stroke: var(--fc-partial-border);
+    fill: var(--fc-partial-fill);
+  }
+
+  /* Estado de erro: o check treme e fica vermelho ao ser exigido. */
+  .filter-check[data-invalid='true'] .fc-shape {
+    stroke: var(--color-destructive);
+    fill: color-mix(in srgb, var(--color-destructive) 18%, transparent);
+  }
+
+  .lacir-sticker-container * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .lacir-sticker-main {
+    clip-path: polygon(
+      var(--lacir-sticker-start) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-end),
+      var(--lacir-sticker-start) var(--lacir-sticker-end)
+    );
+    transition: clip-path 0.28s ease-out;
+    filter: var(--lacir-sticker-filter-shadow);
+  }
+
+  .lacir-sticker-lighting {
+    filter: var(--lacir-sticker-filter-light);
+  }
+
+  .lacir-sticker-container:hover .lacir-sticker-main,
+  .lacir-sticker-container:focus-within .lacir-sticker-main {
+    clip-path: polygon(
+      var(--lacir-sticker-start) var(--lacir-sticker-peel-hover),
+      var(--lacir-sticker-end) var(--lacir-sticker-peel-hover),
+      var(--lacir-sticker-end) var(--lacir-sticker-end),
+      var(--lacir-sticker-start) var(--lacir-sticker-end)
+    );
+  }
+
+  .lacir-sticker-container:active .lacir-sticker-main {
+    clip-path: polygon(
+      var(--lacir-sticker-start) var(--lacir-sticker-peel-active),
+      var(--lacir-sticker-end) var(--lacir-sticker-peel-active),
+      var(--lacir-sticker-end) var(--lacir-sticker-end),
+      var(--lacir-sticker-start) var(--lacir-sticker-end)
+    );
+  }
+
+  .lacir-sticker-image,
+  .lacir-sticker-flap-image {
+    width: var(--lacir-sticker-width);
+    height: auto;
+    transform: rotate(var(--lacir-sticker-rotate));
+  }
+
+  .lacir-sticker-flap {
+    position: absolute;
+    left: 0;
+    top: calc(-100% - var(--lacir-sticker-pad) - var(--lacir-sticker-pad));
+    width: 100%;
+    height: 100%;
+    transform: scaleY(-1);
+    transition: all 0.28s ease-out;
+    clip-path: polygon(
+      var(--lacir-sticker-start) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-start),
+      var(--lacir-sticker-start) var(--lacir-sticker-start)
+    );
+  }
+
+  .lacir-sticker-container:hover .lacir-sticker-flap,
+  .lacir-sticker-container:focus-within .lacir-sticker-flap {
+    clip-path: polygon(
+      var(--lacir-sticker-start) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-peel-hover),
+      var(--lacir-sticker-start) var(--lacir-sticker-peel-hover)
+    );
+    top: calc(-100% + 2 * var(--lacir-sticker-peel-hover) - 1px);
+  }
+
+  .lacir-sticker-container:active .lacir-sticker-flap {
+    clip-path: polygon(
+      var(--lacir-sticker-start) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-start),
+      var(--lacir-sticker-end) var(--lacir-sticker-peel-active),
+      var(--lacir-sticker-start) var(--lacir-sticker-peel-active)
+    );
+    top: calc(-100% + 2 * var(--lacir-sticker-peel-active) - 1px);
+  }
+
+  .lacir-sticker-flap-lighting {
+    filter: var(--lacir-sticker-filter-light-flipped);
+  }
+
+  .lacir-sticker-flap-image {
+    filter: var(--lacir-sticker-filter-back);
+  }
+
+  .lacir-sticker-main,
+  .lacir-sticker-flap {
+    will-change: clip-path, transform;
+  }
+
   .lacir-result-metric:hover,
   .lacir-result-metric:focus-visible {
     z-index: 2;
@@ -269,8 +662,21 @@
       animation: none;
     }
 
+    .lacir-sticker-main,
+    .lacir-sticker-flap,
+    .lacir-col-leaving,
+    .lacir-col-entering,
+    .lacir-row-leaving,
+    .lacir-row-entering,
+    .filter-check .fc-shape,
+    .filter-check .fc-tick {
+      transition: none;
+      animation: none;
+    }
+
     .lacir-chart-card--dimmed,
     .lacir-result-metric,
+    .lacir-count-value,
     .lacir-chart-focus,
     .lacir-vis-thumb {
       transition: none;
@@ -346,12 +752,14 @@
     fill: #64748b;
   }
 
-  .lacir-dl-btn:hover {
+  .lacir-dl-btn:hover,
+  .lacir-dl-btn:focus-visible {
     background: #ffffff;
     border-color: rgba(15, 23, 42, 0.18);
   }
 
-  .lacir-dl-btn:hover .lacir-dl-btn__svg {
+  .lacir-dl-btn:hover .lacir-dl-btn__svg,
+  .lacir-dl-btn:focus-visible .lacir-dl-btn__svg {
     fill: #334155;
   }
 
@@ -397,7 +805,8 @@
     fill: #fff;
   }
 
-  .lacir-dl-btn--wide:hover {
+  .lacir-dl-btn--wide:hover,
+  .lacir-dl-btn--wide:focus-visible {
     background: #17795e;
   }
 
@@ -427,7 +836,8 @@
       background-color 0.15s ease;
   }
 
-  .lacir-vis-thumb:hover {
+  .lacir-vis-thumb:hover,
+  .lacir-vis-thumb:focus-visible {
     border-color: rgba(32, 153, 120, 0.45);
     background: #1f1f23;
     box-shadow: 0 0 0 1px rgba(32, 153, 120, 0.12);
@@ -445,7 +855,8 @@
     background: #121214;
   }
 
-  .lacir-vis-thumb--disabled:hover {
+  .lacir-vis-thumb--disabled:hover,
+  .lacir-vis-thumb--disabled:focus-visible {
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: none;
     background: #121214;
@@ -486,7 +897,8 @@
     color: #64748b;
   }
 
-  .lacir-dl-btn:hover .lacir-dl-btn__svg--stroke {
+  .lacir-dl-btn:hover .lacir-dl-btn__svg--stroke,
+  .lacir-dl-btn:focus-visible .lacir-dl-btn__svg--stroke {
     stroke: #334155;
     color: #334155;
   }

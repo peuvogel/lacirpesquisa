@@ -85,7 +85,7 @@ describe('router', () => {
   it('renders the Estatística page at / (landing route, D-04)', () => {
     const { container } = renderAt('/');
     expect(container.querySelector('#lacir-test-module-mount')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Qual teste usar?' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Qual teste usar?' })).not.toBeInTheDocument();
   });
 
   it('defaults the active test to t-student at / (D-10/D-12)', () => {

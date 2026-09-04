@@ -72,26 +72,28 @@ export function SidebarTestLink({
         type="button"
         onClick={() => onSelect(entry.id)}
         aria-current={active ? 'true' : undefined}
-        title={entry.title}
+        title={collapsed ? entry.title : undefined}
         className={cn(
-          'flex h-8 w-full items-center gap-2 overflow-hidden rounded-md px-2 text-left',
-          'hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]',
-          active &&
-            'bg-[var(--sidebar-accent)] font-medium text-[var(--sidebar-accent-foreground)] shadow-[inset_2px_0_0_var(--color-accent)]',
-          collapsed && 'justify-center px-0',
+          'group relative flex h-9 w-full items-center gap-2.5 overflow-hidden rounded-xl text-left transition-all duration-150',
+          collapsed ? 'justify-center p-2' : 'px-3 py-2',
+          active
+            ? 'bg-white/10 text-white font-semibold'
+            : 'text-white/60 hover:bg-white/[0.04] hover:text-white font-medium',
         )}
       >
+        {active ? (
+          <span className="absolute left-0 top-1/2 h-4.5 w-0.5 -translate-y-1/2 rounded-r-full bg-white" />
+        ) : null}
         <Icon
           aria-hidden="true"
           className={cn(
-            'size-4 shrink-0',
-            active ? 'text-[var(--color-accent)]' : 'text-muted-foreground',
+            'size-4 shrink-0 transition-transform duration-150',
+            active ? 'text-white' : 'text-white/60 group-hover:scale-110 group-hover:text-white',
           )}
         />
         <span
           className={cn(
-            'min-w-0 flex-1 truncate text-sm font-medium text-text',
-            'transition-opacity duration-100',
+            'min-w-0 flex-1 truncate text-sm transition-opacity duration-150',
             collapsed ? 'pointer-events-none w-0 flex-none overflow-hidden opacity-0' : 'opacity-100',
           )}
         >
@@ -100,7 +102,7 @@ export function SidebarTestLink({
         {showBadge && !collapsed ? (
           <Badge
             variant="outline"
-            className="shrink-0 border-border px-1.5 py-0 text-[10px] text-text-muted"
+            className="shrink-0 border-white/10 px-1.5 py-0 text-[10px] text-white/40"
           >
             Em breve
           </Badge>
@@ -110,17 +112,17 @@ export function SidebarTestLink({
     ) : (
       <div
         aria-disabled="true"
-        title={entry.title}
+        title={collapsed ? entry.title : undefined}
         className={cn(
-          'flex h-8 w-full items-center gap-2 overflow-hidden rounded-md px-2 opacity-50',
-          collapsed && 'justify-center px-0',
+          'flex h-9 w-full items-center gap-2.5 overflow-hidden rounded-xl px-3 py-2 opacity-40',
+          collapsed && 'justify-center p-2',
         )}
       >
-        <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+        <Icon aria-hidden="true" className="size-4 shrink-0 text-white/40" />
         <span
           className={cn(
-            'min-w-0 flex-1 truncate text-sm font-medium text-text',
-            'transition-opacity duration-100',
+            'min-w-0 flex-1 truncate text-sm font-medium text-white/40',
+            'transition-opacity duration-150',
             collapsed ? 'pointer-events-none w-0 flex-none overflow-hidden opacity-0' : 'opacity-100',
           )}
         >
@@ -129,7 +131,7 @@ export function SidebarTestLink({
         {showBadge && !collapsed ? (
           <Badge
             variant="outline"
-            className="shrink-0 border-border px-1.5 py-0 text-[10px] text-text-muted"
+            className="shrink-0 border-white/10 px-1.5 py-0 text-[10px] text-white/40"
           >
             Em breve
           </Badge>

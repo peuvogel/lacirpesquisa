@@ -32,8 +32,9 @@ import { InterpretationText } from '@/routes/estatistica/InterpretationText';
 import { CopyResultsButton } from '@/routes/estatistica/CopyResultsButton';
 import type { ResultMetric } from '@/routes/estatistica/ResultsPanel';
 import { ResultMetricCard } from '@/routes/estatistica/ResultMetricCard';
+import { RevealOnScroll } from '@/shared/flow/RevealOnScroll';
 import { cn } from '@/lib/utils';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import {
   Dialog,
   DialogClose,
@@ -47,6 +48,8 @@ import { Button } from '@/components/ui/button';
 
 export interface ResultsPanelWithCustomizerProps<T> {
   title: string;
+  /** Encaixe ao lado do título — hoje o "i" de pressupostos. */
+  titleInfo?: ReactNode;
   metrics: ResultMetric[];
   engineOutput: T;
   presets: ChartPreset<T>[];
@@ -114,6 +117,7 @@ function isInsideEditChrome(target: EventTarget | null): boolean {
  */
 export function ResultsPanelWithCustomizer<T>({
   title,
+  titleInfo,
   metrics,
   engineOutput,
   presets,
@@ -124,7 +128,7 @@ export function ResultsPanelWithCustomizer<T>({
   actions,
   preferenceScopeId,
 }: ResultsPanelWithCustomizerProps<T>) {
-  const { dataset, visualPreferences, setVisualPreferences } = useSession();
+  const { dataset, visualPreferences, setVisualPreferences } = useStatisticsSession();
   const canvasRefs = useRef<Map<string, HTMLCanvasElement>>(new Map());
   const expandedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const expandButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -311,15 +315,23 @@ export function ResultsPanelWithCustomizer<T>({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      {/* Cada bloco entra quando a rolagem chega nele, uma vez só: o resultado
+          inteiro aparecendo de uma vez era um muro de números. Nada é
+          desmontado — só a opacidade muda. */}
+      <RevealOnScroll className="flex items-center gap-2">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          {title.includes(': resultados') ? 'Resultados' : title}
+        </h2>
+        {titleInfo}
+      </RevealOnScroll>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <RevealOnScroll className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((metric) => (
           <ResultMetricCard key={metric.label} metric={metric} />
         ))}
-      </div>
+      </RevealOnScroll>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <RevealOnScroll className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div>
           {customizer.visibleCharts.length === 0 && presenceCharts.length === 0 ? (
             <p className="rounded-lg border border-border bg-[var(--color-surface)] px-4 py-6 text-sm text-muted-foreground">
@@ -429,7 +441,7 @@ export function ResultsPanelWithCustomizer<T>({
             onPresetVisibleChange={customizer.setPresetVisible}
           />
         </div>
-      </div>
+      </RevealOnScroll>
 
       {exportError ? (
         <p
@@ -440,9 +452,11 @@ export function ResultsPanelWithCustomizer<T>({
         </p>
       ) : null}
 
-      <InterpretationText paragraphs={interpretation} />
+      <RevealOnScroll>
+        <InterpretationText paragraphs={interpretation} />
+      </RevealOnScroll>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <RevealOnScroll className="flex flex-wrap items-center gap-3">
         <DownloadPngButton
           wide
           label="Baixar todos"
@@ -455,7 +469,7 @@ export function ResultsPanelWithCustomizer<T>({
         />
         {actions}
         <CopyResultsButton title={title} metrics={metrics} interpretation={interpretation} />
-      </div>
+      </RevealOnScroll>
 
       {editingItem ? (
         <ChartEditPanel

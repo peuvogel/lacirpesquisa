@@ -118,6 +118,14 @@ describe('binomialNegativaEngine metrics', () => {
     expect(thetaMetric).toBeDefined();
     expect(thetaMetric?.value).toBe(fmtNumber(result.theta, 3));
   });
+
+  it('gives every card a glossary entry, so none fica sem o "i"', () => {
+    const dataset = loadExemploDataset();
+    const metrics = buildMetrics(runAnalysis(dataset), dataset);
+    for (const metric of metrics) {
+      expect(metric.helpKey, metric.label).toBeDefined();
+    }
+  });
 });
 
 describe('binomialNegativaEngine validation', () => {

@@ -234,13 +234,13 @@ export function validateColumnTypes(
 
   if (negativeCount > 0) {
     errors.push(
-      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores negativos — contagens devem ser ≥ 0.`,
+      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores negativos, contagens devem ser ≥ 0.`,
     );
   }
 
   if (nonIntegerCount > 0) {
     errors.push(
-      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores não inteiros — use contagens discretas (0, 1, 2, …).`,
+      `A coluna "${headers[indexOutcome] || 'contagem'}" contém valores não inteiros. Use contagens discretas (0, 1, 2, …).`,
     );
   }
 
@@ -288,31 +288,37 @@ export function buildMetrics(
   return [
     {
       label: 'θ (dispersão)',
+      helpKey: 'theta-dispersao',
       value: thetaLabel,
-      hint: 'Parâmetro de superdispersão — valores menores indicam variância extra maior.',
+      hint: 'Parâmetro de superdispersão, valores menores indicam variância extra maior.',
     },
     {
       label: 'Desvio (residual)',
+      helpKey: 'desvio-residual',
       value: fmtNumber(result.deviance, 3),
       hint: `gl residual = ${result.dfResid}`,
     },
     {
       label: 'χ² de Pearson',
+      helpKey: 'qui2-pearson',
       value: fmtNumber(result.pearsonChi2, 3),
       hint: `gl = ${result.dfResid}`,
     },
     {
       label: slope ? `Coeficiente (${slope.term})` : 'Coeficientes',
+      helpKey: 'coeficiente-taxa',
       value: slope ? fmtNumber(slope.beta, 3) : formatCoefSummary(result.coefficients),
       hint: slope ? `p = ${fmtP(slope.p)} · efeito log-linear` : formatCoefSummary(result.coefficients),
     },
     {
       label: 'Observações',
+      helpKey: 'observacoes',
       value: String(dataset.n),
       hint: `${dataset.outcomeHeader} ~ ${dataset.predictorHeaders.join(' + ')}${dataset.exposureHeader ? ` · offset = log(${dataset.exposureHeader})` : ''}`,
     },
     {
       label: 'Convergência IRLS',
+      helpKey: 'convergencia-irls',
       value: result.converged ? 'Sim' : 'Não',
       hint: `${result.iterations} iteração(ões)`,
     },
@@ -328,7 +334,7 @@ export function computeAssumptionNudges(
   if (Number.isFinite(result.theta)) {
     nudges.push({
       severity: 'info',
-      message: `A Binomial Negativa relaxa a equidispersão do Poisson — o parâmetro θ = ${fmtNumber(result.theta, 3)} captura variância extra além da média (Var = μ + μ²/θ).`,
+      message: `A Binomial Negativa relaxa a equidispersão do Poisson, o parâmetro θ = ${fmtNumber(result.theta, 3)} captura variância extra além da média (Var = μ + μ²/θ).`,
     });
   }
 

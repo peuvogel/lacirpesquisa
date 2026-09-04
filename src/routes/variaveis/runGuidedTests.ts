@@ -432,6 +432,7 @@ function runGroupTest(
     ...buildKruskalMetrics(result, dataset),
     ...(epsilonSquared === null ? [] : [{
       label: 'Tamanho de efeito (ε²)',
+      helpKey: 'epsilon2' as const,
       value: epsilonSquared.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
       hint: 'Magnitude global da separação entre os grupos por postos',
     }]),
@@ -654,7 +655,7 @@ function applyHolmToPrimaryFamily(results: GuidedTestResult[], alpha: number): G
     const metrics = [
       ...result.metrics.filter((metric) => metric !== rawMetric),
       ...(rawMetric ? [{ ...rawMetric, label: 'p bruto (sem ajuste)' }] : []),
-      { label: 'p ajustado por Holm', value: formatPValue(adjustedP), hint: `${family.length} desfechos na família confirmatória` },
+      { label: 'p ajustado por Holm', helpKey: 'p-ajustado-holm' as const, value: formatPValue(adjustedP), hint: `${family.length} desfechos na família confirmatória` },
     ];
     const effectParagraphs = result.interpretation.filter((paragraph) =>
       !/estatisticamente significativ|encontrou evidência|não encontrou evidência|\bp\s*=/.test(paragraph.toLowerCase()));

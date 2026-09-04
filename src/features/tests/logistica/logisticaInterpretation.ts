@@ -31,7 +31,7 @@ export function buildLogisticaInterpretation(
 
   if (Number.isFinite(minorityProp) && minorityProp < RARE_EVENTS_THRESHOLD) {
     bullets.push(
-      'A classe minoritária representa menos de 5% dos casos — eventos raros podem tornar os intervalos de confiança instáveis.',
+      'A classe minoritária representa menos de 5% dos casos, eventos raros podem tornar os intervalos de confiança instáveis.',
     );
   }
 
@@ -40,7 +40,7 @@ export function buildLogisticaInterpretation(
   );
   if (extremeCoef) {
     bullets.push(
-      `Coeficiente extremo em ${extremeCoef.term} sugere separação quase perfeita — interprete os OR com cautela.`,
+      `Coeficiente extremo em ${extremeCoef.term} sugere separação quase perfeita. Interprete os OR com cautela.`,
     );
   }
 

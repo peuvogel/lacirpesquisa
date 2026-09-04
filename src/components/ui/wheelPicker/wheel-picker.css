@@ -1,0 +1,179 @@
+/* ─── Roda de Seleção Estilo iOS (Visor + Tambor 3D) ───────────────────────── */
+
+.mn-wheel {
+  --item-h: 44px;
+  --face-h: 34px;
+  --view-h: 132px;
+  --visor-bleed: 12px;
+  position: relative;
+  width: calc(var(--wheel-w, 104px) + var(--visor-bleed) * 2);
+  margin-inline: calc(var(--visor-bleed) * -1);
+  height: var(--view-h);
+  perspective: 300px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 32%, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 32%, #000 68%, transparent 100%);
+  /* Travar e destravar é o mesmo elemento mudando de cor, não um elemento
+     novo: sem esta transição a roda dava um salto de opacidade a cada clique
+     no cadeado. Longa e suave de propósito — a mudança tem de ser percebida
+     como um esmaecer, não como um piscar. */
+  transition:
+    opacity 320ms cubic-bezier(.22, 1, .36, 1),
+    filter 320ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.mn-wheel[data-disabled='true'] {
+  opacity: 0.5;
+  filter: saturate(0.5);
+  pointer-events: none;
+}
+
+/* 1. Scroller nativo transparente (captura gestos, inércia e scroll) */
+.mn-wheel-scroller {
+  position: absolute;
+  inset: 0 var(--visor-bleed);
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  padding-block: calc((var(--view-h) - var(--item-h)) / 2);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  outline: none;
+}
+
+.mn-wheel-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.mn-wheel-scroller li {
+  height: var(--item-h);
+  scroll-snap-align: center;
+  color: transparent;
+  user-select: none;
+  display: grid;
+  place-items: center;
+  font-size: 0;
+}
+
+.mn-wheel-scroller:focus-visible ~ .mn-wheel-visor {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 1px;
+}
+
+/* 2. Tambor 3D com rotação por cilindro */
+/* Tambor e visor repetem os rótulos só para o olho (são aria-hidden). Sem
+   isto, copiar a tela trazia "Numérica/Categórica/Tempo" três vezes. */
+.mn-wheel-stage,
+.mn-wheel-visor {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mn-wheel-stage {
+  position: absolute;
+  top: 50%;
+  left: var(--visor-bleed);
+  right: var(--visor-bleed);
+  height: var(--face-h);
+  margin-top: calc(var(--face-h) / -2);
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.mn-wheel-drum {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(calc(var(--radius) * -1))
+    rotateX(calc(var(--progress, 0) * var(--step, 36deg)));
+}
+
+.mn-wheel-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  transform: rotateX(calc(var(--i) * var(--step, 36deg) * -1)) translateZ(var(--radius));
+}
+
+/* 3. Visor central (Moldura com Glassmorphism) */
+.mn-wheel-visor {
+  position: absolute;
+  top: 50%;
+  left: var(--visor-bleed);
+  right: var(--visor-bleed);
+  z-index: 2;
+  height: var(--face-h);
+  margin-top: calc(var(--face-h) / -2);
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(24, 24, 28, 0.98);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  transform: scale(1);
+  transform-origin: center;
+  transition:
+    transform 220ms cubic-bezier(.22, 1, .36, 1),
+    background-color 220ms cubic-bezier(.22, 1, .36, 1),
+    box-shadow 220ms cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Efeito ao HOVER: Incha suavemente e ganha iluminação e brilho halo */
+@media (hover: hover) and (pointer: fine) {
+  .mn-wheel-scroller:hover ~ .mn-wheel-visor {
+    transform: scale(1.045);
+    background-color: rgba(36, 36, 42, 0.98);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      inset 0 0 12px rgba(255, 255, 255, 0.12),
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 1px 6px rgba(255, 255, 255, 0.1);
+  }
+}
+
+.mn-wheel-visor[data-selected='true'],
+.mn-wheel[data-selected='true'] .mn-wheel-visor {
+  transform: scale(1.045);
+  background-color: rgba(38, 38, 44, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 14px rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 1px 8px rgba(255, 255, 255, 0.1);
+}
+
+.mn-wheel-track {
+  transform: translateY(calc(var(--progress, 0) * var(--face-h) * -1));
+}
+
+.mn-wheel-track > span {
+  display: grid;
+  place-items: center;
+  height: var(--face-h);
+  white-space: nowrap;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-wheel-scroller {
+    scroll-behavior: auto;
+  }
+  .mn-wheel,
+  .mn-wheel-visor {
+    transition: none;
+  }
+}

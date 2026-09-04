@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AssumptionNudgeStrip } from '@/features/tests/shared/AssumptionNudgeStrip';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { AssumptionNudgeInfo } from '@/features/tests/shared/AssumptionNudgeInfo';
 import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { fmtNumber, fmtP, fmtSigned } from '@/shared/format';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import type { PairwiseRow } from '@/shared/stats/statsEngine';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
+import { RevealOnScroll } from '@/shared/flow/RevealOnScroll';
 import { TabularInputPanel } from '@/routes/estatistica/TabularInputPanel';
 import {
   AnovaConfigPanel,
@@ -45,7 +46,7 @@ export interface AnovaTukeyTestProps {
 }
 
 function initialLoadedFromSession(
-  sessionDataset: ReturnType<typeof useSession>['dataset'],
+  sessionDataset: ReturnType<typeof useStatisticsSession>['dataset'],
 ): AnovaLoadedInput | null {
   if (!sessionDataset) return null;
   return {
@@ -60,7 +61,9 @@ function initialLoadedFromSession(
   };
 }
 
-function initialStepFromSession(sessionDataset: ReturnType<typeof useSession>['dataset']): FlowStep {
+function initialStepFromSession(
+  sessionDataset: ReturnType<typeof useStatisticsSession>['dataset'],
+): FlowStep {
   return sessionDataset ? 'configurar' : 'dados';
 }
 
@@ -105,7 +108,7 @@ function PairwiseResultsTable({ rows }: { rows: PairwiseRow[] }) {
 }
 
 export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
-  const { dataset: sessionDataset } = useSession();
+  const { dataset: sessionDataset } = useStatisticsSession();
   const analysisTable = useAnalysisTable('anova-tukey', { tabularOptions: TABULAR_OPTIONS });
   const tabular = analysisTable.tabular;
 
@@ -114,8 +117,16 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
     initialLoadedFromSession(sessionDataset),
   );
   const [confirmedDataset, setConfirmedDataset] = useState<ConfirmedDataset | null>(null);
-  const [alpha, setAlphaState] = useState<AlphaValue>(() => parseAlpha(analysisTable.settings.alpha));
+  const [alpha, setAlphaState] = useState<AlphaValue>(() =>
+    parseAlpha(analysisTable.settings.alpha),
+  );
+  const alphaChangedLocallyRef = useRef(false);
+  useEffect(() => {
+    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
+  }, [analysisTable.settings.alpha]);
 
+  // A configuração viaja com a tabela: voltar ao teste e recalcular com um alfa
+  // diferente do que foi confirmado mostraria números de outro ajuste.
   function setAlpha(next: AlphaValue) {
     alphaChangedLocallyRef.current = true;
     setAlphaState(next);
@@ -131,6 +142,24 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
     }
     setLoadedInput(analysisTable.loadedInput);
   }, [analysisTable.loadedInput]);
+
+  // Espelho do efeito abaixo: ao voltar ao teste, o resultado reconstruído pela
+  // sessão é adotado uma única vez, para cair direto nos resultados. Sem o
+  // guarda, ele reverteria toda invalidação local (trocar modo, α, período).
+  const adoptedConfirmedRef = useRef(false);
+  useEffect(() => {
+    if (adoptedConfirmedRef.current) return;
+    // Confirmar manualmente também consome a chance de adoção: sem isto, a
+    // próxima invalidação local seria revertida pelo confirmado da sessão.
+    if (confirmedDataset) {
+      adoptedConfirmedRef.current = true;
+      return;
+    }
+    if (!analysisTable.confirmed) return;
+    adoptedConfirmedRef.current = true;
+    setConfirmedDataset(analysisTable.confirmed);
+    setActiveStep('resultados');
+  }, [analysisTable.confirmed, confirmedDataset]);
 
   useEffect(() => {
     if (analysisTable.confirmed || !confirmedDataset) return;
@@ -185,10 +214,6 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
     }),
     [loadedInput, confirmedDataset],
   );
-  const alphaChangedLocallyRef = useRef(false);
-  useEffect(() => {
-    if (!alphaChangedLocallyRef.current) setAlphaState(parseAlpha(analysisTable.settings.alpha));
-  }, [analysisTable.settings.alpha]);
 
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
@@ -217,21 +242,29 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
 
     return (
       <div className="space-y-6">
-        <AssumptionNudgeStrip
-          nudges={engineOutput.nudges}
-          onNavigateTest={handleCrossTestHandoff}
-        />
+        {/* A tabela par a par vem antes do painel e é alta: entra na rolagem
+            como qualquer outro bloco de resultado. */}
+        <RevealOnScroll>
         <section className="space-y-3" aria-labelledby="anova-pairwise-heading">
-          <h2 id="anova-pairwise-heading" className="text-lg font-bold text-foreground">
-            Comparações par a par
-          </h2>
+          {/* Os pressupostos moram no "i" do cabeçalho: como tarja, eles
+              empurravam a tabela par a par para fora da tela. */}
+          <div className="flex items-center gap-2">
+            <h2 id="anova-pairwise-heading" className="text-lg font-bold text-foreground">
+              Comparações par a par
+            </h2>
+            <AssumptionNudgeInfo
+              nudges={engineOutput.nudges}
+              onNavigateTest={handleCrossTestHandoff}
+            />
+          </div>
           <p className="text-sm text-muted-foreground">
-            Pós-hoc Tukey HSD — ordenado por p ajustado crescente.
+            Pós-hoc Tukey HSD, ordenado por p ajustado crescente.
           </p>
           <PairwiseResultsTable rows={engineOutput.pairwise} />
         </section>
+        </RevealOnScroll>
         <ResultsPanelWithCustomizer
-          title="ANOVA + Tukey: resultados"
+          title="Resultados"
           metrics={metrics}
           engineOutput={engineOutput}
           presets={chartPresets}
@@ -255,7 +288,6 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
           <TabularInputPanel
             {...tabular}
             showPreview={false}
-            showImportSummary={false}
             onUseExample={handleUseExample}
             onClear={handleClearData}
             onRawTextChange={analysisTable.requestPaste}
@@ -277,6 +309,7 @@ export function AnovaTukeyTest({ onNavigateTest }: AnovaTukeyTestProps) {
             onConfirm={handleConfigureConfirm}
             document={analysisTable.table ?? undefined} testId="anova-tukey"
             onDocumentChange={analysisTable.setDocument}
+            onUndo={analysisTable.undo}
             importWarnings={analysisTable.importWarnings}
           />
         ) : (

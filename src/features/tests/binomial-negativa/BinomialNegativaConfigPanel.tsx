@@ -3,6 +3,7 @@ import { ColumnPreviewTable } from '@/routes/estatistica/ColumnPreviewTable';
 import type { TableDocument } from '@/shared/data-input/tableDocument';
 import type { ImportWarning } from '@/shared/data-input/types';
 import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSelector';
+import { RoleBindingPanel } from '@/features/tests/shared/RoleBindingPanel';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
 import {
@@ -31,6 +32,7 @@ export interface BinomialNegativaConfigPanelProps {
   document?: TableDocument;
   testId?: string;
   onDocumentChange?: (document: TableDocument) => void;
+  onUndo?: () => void;
   importWarnings?: ImportWarning[];
 }
 
@@ -44,13 +46,24 @@ export function BinomialNegativaConfigPanel({
   document,
   testId,
   onDocumentChange,
+  onUndo,
   importWarnings,
 }: BinomialNegativaConfigPanelProps) {
   return (
     <div className="space-y-4">
       {showSoftReset ? <SoftResetAlert /> : null}
 
-      <AlphaSelector value={alpha} onChange={onAlphaChange} />
+      {/* Significância e papéis lado a lado: as duas escolhas que governam a
+          análise, agora fora da tabela. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AlphaSelector value={alpha} onChange={onAlphaChange} />
+        <RoleBindingPanel
+          document={document}
+          testId={testId}
+          tabularOptions={TABULAR_OPTIONS}
+          onDocumentChange={onDocumentChange}
+        />
+      </div>
 
       <DidacticCards cards={didacticCards} />
 
@@ -63,6 +76,7 @@ export function BinomialNegativaConfigPanel({
           recognizedColumns={loadedInput.recognizedColumns}
           tabularOptions={TABULAR_OPTIONS}
           onRoleAdjust={onRoleAdjust}
+          onUndo={onUndo}
           onConfirm={onConfirm}
           document={document}
           testId={testId}

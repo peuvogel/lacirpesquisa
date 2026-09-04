@@ -6,6 +6,8 @@ import { SessionProvider, useSession, type SessionDataset } from '@/shared/sessi
 import { runToResultados } from '@/test/flowHelpers';
 import { BinomialNegativaTest } from './BinomialNegativaTest';
 import * as binomialNegativaInterpretation from './binomialNegativaInterpretation';
+import { selectColumnType } from '@/test/columnTypeWheel';
+import { setColumnEnabled } from '@/test/columnToggle';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -74,16 +76,6 @@ describe('BinomialNegativaTest', () => {
     vi.useRealTimers();
   });
 
-  it('renders exactly one import summary when configuration becomes visible', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderBinomialNegativa();
-
-    await user.click(screen.getByRole('button', { name: 'Usar exemplo' }));
-    await vi.advanceTimersByTimeAsync(200);
-    await screen.findByRole('button', { name: 'Analisar dados' });
-
-    expect(screen.getAllByRole('region', { name: 'Resumo da importação' })).toHaveLength(1);
-  });
 
   it('runs exemplo flow through Resultados with interpretation and PNG export', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -97,7 +89,8 @@ describe('BinomialNegativaTest', () => {
 
     expect(screen.getByText('O que isso significa?')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Baixar todos' })).toBeInTheDocument();
-    expect(screen.getByTestId('assumption-nudge-strip')).toBeInTheDocument();
+    await user.click(screen.getByTestId('assumption-nudge-info'));
+    expect(await screen.findByText('Pressupostos')).toBeInTheDocument();
     expect(within(resultados).getByText(/θ \(dispersão\)/i)).toBeInTheDocument();
 
     const prose = screen.getAllByText(/indicou associação|não encontrou associação|Parâmetro de dispersão/i);
@@ -138,8 +131,9 @@ describe('BinomialNegativaTest', () => {
 
     await screen.findByRole('button', { name: 'Analisar dados' });
 
-    const detectedBadges = screen.getAllByText('em uso');
-    expect(detectedBadges.length).toBe(2);
+    // O encaminhamento vinculou os dois papéis — lido no painel, não mais no chip.
+    expect(screen.getByLabelText('Vincular Contagem')).not.toHaveValue('');
+    expect(screen.getByLabelText('Vincular Preditor')).not.toHaveValue('');
     expect(screen.queryByRole('textbox', { name: 'Pergunta de pesquisa' })).not.toBeInTheDocument();
 
     const resultados = await runToResultados(user);
@@ -157,10 +151,11 @@ describe('BinomialNegativaTest', () => {
 
     await runToResultados(user);
 
-    await user.selectOptions(screen.getByLabelText(/Tipo da coluna contagem/i), 'ignorar');
+    await setColumnEnabled(user, 'contagem', false);
 
     expect(screen.getByText('Análise anterior invalidada.')).toBeInTheDocument();
   });
+
   it('keeps decimal alpha 0.1 for the interpretation and shows 10%', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const interpretation = vi.spyOn(binomialNegativaInterpretation, 'buildBinomialNegativaInterpretation');

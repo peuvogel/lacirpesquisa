@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import './index.css';
-import { SessionProvider } from './shared/session/SessionProvider';
+import { StatisticsSessionProvider } from './shared/session/StatisticsSessionProvider';
 import { createAppRouter } from './app/router';
 
 const router = createAppRouter({
@@ -12,8 +12,8 @@ const router = createAppRouter({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SessionProvider>
+    <StatisticsSessionProvider>
       <RouterProvider router={router} />
-    </SessionProvider>
+    </StatisticsSessionProvider>
   </StrictMode>,
 );

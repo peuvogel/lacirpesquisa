@@ -25,7 +25,7 @@ export function buildPoissonInterpretation(
 
   if (result.overdispersionRatio > OVERDISPERSION_THRESHOLD) {
     bullets.push(
-      'A razão χ²/gl acima de 1,25 sugere variância maior que a prevista pelo Poisson — considere Binomial Negativa se a superdispersão persistir.',
+      'A razão χ²/gl acima de 1,25 sugere variância maior que a prevista pelo Poisson. Considere Binomial Negativa se a superdispersão persistir.',
     );
   }
 

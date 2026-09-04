@@ -249,6 +249,50 @@ describe('IndexedDB session storage', () => {
   });
 });
 
+describe('row and column enablement in snapshots', () => {
+  it('accepts a snapshot saved before rowsEnabled existed', () => {
+    const raw = structuredClone(sampleSnapshot()) as unknown as {
+      dataset: { table: Record<string, unknown> };
+    };
+    delete raw.dataset.table.rowsEnabled;
+    delete raw.dataset.table.nextColumnSeq;
+
+    expect(() => parseSessionSnapshot(raw)).not.toThrow();
+  });
+
+  it('round-trips disabled rows and columns', () => {
+    const snapshot = sampleSnapshot();
+    const table = snapshot.dataset!.table!;
+    table.rowsEnabled = [true, false];
+    table.columns[1] = { ...table.columns[1]!, enabled: false };
+    // Coluna desligada não pode reter vínculo, igual a 'ignorar'.
+    delete table.bindings['mann-whitney']!.grupo;
+
+    const parsed = parseSessionSnapshot(structuredClone(snapshot));
+    expect(parsed.dataset?.table?.rowsEnabled).toEqual([true, false]);
+    expect(parsed.dataset?.table?.columns[1]?.enabled).toBe(false);
+  });
+
+  it('rejects rowsEnabled whose length does not match rows', () => {
+    const snapshot = sampleSnapshot();
+    snapshot.dataset!.table!.rowsEnabled = [true];
+
+    expect(() => parseSessionSnapshot(structuredClone(snapshot)))
+      .toThrow(SessionSnapshotValidationError);
+  });
+
+  it('rejects a binding that points at a switched-off column', () => {
+    const snapshot = sampleSnapshot();
+    snapshot.dataset!.table!.columns[1] = {
+      ...snapshot.dataset!.table!.columns[1]!,
+      enabled: false,
+    };
+
+    expect(() => parseSessionSnapshot(structuredClone(snapshot)))
+      .toThrow(SessionSnapshotValidationError);
+  });
+});
+
 describe('per-test slots in snapshots', () => {
   it('accepts a snapshot saved before testSlots existed', () => {
     const raw = structuredClone(sampleSnapshot()) as unknown as Record<string, unknown>;

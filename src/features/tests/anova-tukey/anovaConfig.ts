@@ -28,7 +28,7 @@ export const didacticCards: DidacticCard[] = [
   },
   {
     title: 'Colunas esperadas',
-    body: 'Uma coluna numérica (desfecho) e uma coluna categórica (grupo). Cada linha é uma observação. Grupos com poucas repetições ou tamanhos muito desiguais merecem cautela — veja os avisos de pressupostos.',
+    body: 'Uma coluna numérica (desfecho) e uma coluna categórica (grupo). Cada linha é uma observação. Grupos com poucas repetições ou tamanhos muito desiguais merecem cautela, veja os avisos de pressupostos.',
   },
   {
     title: 'Pós-hoc Tukey',

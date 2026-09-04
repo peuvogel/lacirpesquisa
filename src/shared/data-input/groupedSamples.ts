@@ -1,5 +1,5 @@
 import { parseNumber } from './legacyAdapters';
-import { resolveBindings, type TableDocument } from './tableDocument';
+import { enabledRowEntries, resolveBindings, type TableDocument } from './tableDocument';
 import type { AnalysisIssue } from './analysisIssues';
 
 export type GroupedSampleFormat = 'wide' | 'long';
@@ -134,7 +134,7 @@ export function prepareGroupedSamples(
         columnId: document.columns[index]?.id,
       });
     });
-    document.rows.forEach((row, rowIndex) => {
+    enabledRowEntries(document).forEach(({ row, index: rowIndex }) => {
       indexes.forEach((columnIndex, groupIndex) => {
         const value = parseNumber(row[columnIndex] ?? '');
         if (value === null) invalidRows.push(rowIndex + 1);
@@ -163,7 +163,7 @@ export function prepareGroupedSamples(
       };
     }
     const byLabel = new Map<string, PreparedSampleGroup>();
-    document.rows.forEach((row, rowIndex) => {
+    enabledRowEntries(document).forEach(({ row, index: rowIndex }) => {
       const label = String(row[groupIndex] ?? '').trim();
       const value = parseNumber(row[outcomeIndex] ?? '');
       if (!label || value === null) {

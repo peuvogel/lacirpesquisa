@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useSession } from '@/shared/session/SessionProvider';
+import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 
 const CONFIRM_BODY =
   'Limpar os dados desta análise? Essa ação apaga o que foi colado ou importado nesta sessão e não pode ser desfeita.';
@@ -18,7 +18,7 @@ export interface ClearDataButtonProps {
 }
 
 export function ClearDataButton({ onCleared }: ClearDataButtonProps) {
-  const { clearSession } = useSession();
+  const { clearSession } = useStatisticsSession();
   const [open, setOpen] = useState(false);
 
   function handleConfirm() {
@@ -29,9 +29,13 @@ export function ClearDataButton({ onCleared }: ClearDataButtonProps) {
 
   return (
     <>
-      <Button type="button" variant="destructive" onClick={() => setOpen(true)}>
-        Limpar dados
-      </Button>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="lacir-danger-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Limpar tabela
+      </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>

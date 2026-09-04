@@ -3,6 +3,7 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import { Button } from '@/components/ui/button';
 import { ChartCanvas, type ChartCanvasType } from '@/shared/charts/ChartCanvas';
 import { useChartExport } from '@/shared/charts/useChartExport';
+import { RevealOnScroll } from '@/shared/flow/RevealOnScroll';
 import { CopyResultsButton } from './CopyResultsButton';
 import { InterpretationText } from './InterpretationText';
 import { ResultMetricCard, type ResultMetric } from './ResultMetricCard';
@@ -48,23 +49,27 @@ export function ResultsPanel({
     canvasRef.current = canvas;
   }, []);
 
+  const displayTitle = title.includes(': resultados') ? 'Resultados' : title;
+
   return (
     <div className="space-y-6">
       {headingLevel === 4 ? (
-        <h4 className="text-lg font-bold text-foreground">{title}</h4>
+        <h4 className="text-xl font-bold text-foreground">{displayTitle}</h4>
       ) : headingLevel === 3 ? (
-        <h3 className="text-lg font-bold text-foreground">{title}</h3>
+        <h3 className="text-2xl font-bold text-foreground">{displayTitle}</h3>
       ) : (
-        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">{displayTitle}</h2>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Mesmo ritmo do painel com personalização: um bloco por vez, conforme
+          a rolagem chega. Nada é desmontado — só a opacidade muda. */}
+      <RevealOnScroll className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metrics.map((metric) => (
           <ResultMetricCard key={metric.label} metric={metric} />
         ))}
-      </div>
+      </RevealOnScroll>
 
-      <div className={additionalCharts.length > 0 ? 'grid gap-4 md:grid-cols-2' : undefined}>
+      <RevealOnScroll className={additionalCharts.length > 0 ? 'grid gap-4 md:grid-cols-2' : undefined}>
         <article
           aria-label={`Gráfico: ${chart.ariaLabel}`}
           tabIndex={0}
@@ -97,17 +102,19 @@ export function ResultsPanel({
             </div>
           </article>
         ))}
-      </div>
+      </RevealOnScroll>
 
-      <InterpretationText paragraphs={interpretation} />
+      <RevealOnScroll>
+        <InterpretationText paragraphs={interpretation} />
+      </RevealOnScroll>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <RevealOnScroll className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="secondary" onClick={() => exportChart(exportFilename)}>
           Baixar gráfico (PNG)
         </Button>
         {actions}
         <CopyResultsButton title={title} metrics={metrics} interpretation={interpretation} />
-      </div>
+      </RevealOnScroll>
     </div>
   );
 }

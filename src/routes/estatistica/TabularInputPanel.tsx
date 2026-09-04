@@ -1,14 +1,41 @@
-import { useState, type ChangeEvent, type DragEvent } from 'react';
-import { Check } from 'lucide-react';
+import { useRef, useState, type ChangeEvent, type DragEvent, type ReactElement } from 'react';
+import { Check, Copy, Eraser, FileText, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { UseTabularInputResult } from '@/shared/data-input/useTabularInput';
 import { ColumnPreviewTable } from './ColumnPreviewTable';
-import { ImportSummary } from './ImportSummary';
+import { PastePreviewTable } from './PastePreviewTable';
 
 const ACCEPTED_FILE_TYPES = '.csv,.txt,.tsv,.xlsx';
+
+/** Ação sobre a caixa de dados: ícone de dois quadradinhos + rótulo simples sem fundos nem pílulas. */
+function TableActionButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactElement;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group/action flex items-center gap-1.5 px-2 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer select-none"
+    >
+      <span
+        aria-hidden
+        className="text-muted-foreground transition-colors duration-150 group-hover/action:text-foreground [&>svg]:size-4"
+      >
+        {icon}
+      </span>
+      <span>{label}</span>
+    </button>
+  );
+}
 
 export interface TabularInputPanelProps extends UseTabularInputResult {
   onConfirm?: (confirmed: { headers: string[]; rows: string[][] }) => void;
@@ -21,8 +48,6 @@ export interface TabularInputPanelProps extends UseTabularInputResult {
   onCancelPendingAction?: () => void;
   /** When false, loaded data is acknowledged without rendering ColumnPreviewTable (01-10 flow). */
   showPreview?: boolean;
-  /** Allows combined flows with a document-backed replacement to choose a single summary owner. */
-  showImportSummary?: boolean;
 }
 
 /**
@@ -48,12 +73,41 @@ export function TabularInputPanel({
   onConfirmPendingAction,
   onCancelPendingAction,
   showPreview = true,
-  showImportSummary = true,
 }: TabularInputPanelProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  // Enquanto a caixa está focada o usuário está editando o texto, então as
+  // ações saem da frente. O estado é da textarea, não do wrapper: com
+  // `focus-within` os botões sumiriam ao receberem o próprio clique.
+  const [isEditing, setIsEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Colar traz uma tabela nova e passa pelo guarda de "Substituir dados";
+  // digitar é edição do próprio texto e não pode virar uma pergunta a cada
+  // tecla — era o que fazia o Enter abrir a confirmação em vez de quebrar linha.
+  const pastedRef = useRef(false);
+
+  function handleTextareaPaste() {
+    pastedRef.current = true;
+  }
 
   function handleTextareaChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    (onRawTextChange ?? setRawText)(event.target.value);
+    const camePasted = pastedRef.current;
+    pastedRef.current = false;
+    if (camePasted && onRawTextChange) onRawTextChange(event.target.value);
+    else setRawText(event.target.value);
+  }
+
+  async function handlePasteClick() {
+    try {
+      const text = await navigator.clipboard?.readText();
+      if (text?.trim()) {
+        (onRawTextChange ?? setRawText)(text);
+        return;
+      }
+    } catch {
+      // Permissão negada ou API indisponível — cai no fallback abaixo.
+    }
+    textareaRef.current?.focus();
   }
 
   function handleFileInputChange(event: ChangeEvent<HTMLInputElement>) {
@@ -65,22 +119,36 @@ export function TabularInputPanel({
     event.target.value = '';
   }
 
-  function handleDrop(event: DragEvent<HTMLLabelElement>) {
+  // A caixa inteira (textarea + rodapé de upload) é a zona de soltura, então o
+  // arrasto só é interceptado quando traz arquivos — largar texto dentro da
+  // textarea continua funcionando como antes.
+  function isFileDrag(event: DragEvent<HTMLDivElement>) {
+    const types = event.dataTransfer?.types;
+    return !types || Array.from(types).includes('Files');
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    if (!isFileDrag(event)) return;
     event.preventDefault();
     setIsDragOver(false);
-    const file = event.dataTransfer.files?.[0];
+    const file = event.dataTransfer?.files?.[0];
     if (file) {
       if (onFileSelect) onFileSelect(file);
       else void setFile(file);
     }
   }
 
-  function handleDragOver(event: DragEvent<HTMLLabelElement>) {
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    if (!isFileDrag(event)) return;
     event.preventDefault();
     setIsDragOver(true);
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(event: DragEvent<HTMLDivElement>) {
+    // Passar de um filho para outro dispara dragleave no container; sem esta
+    // checagem o destaque piscaria ao cruzar textarea → rodapé.
+    const next = event.relatedTarget as Node | null;
+    if (next && event.currentTarget.contains(next)) return;
     setIsDragOver(false);
   }
 
@@ -94,7 +162,10 @@ export function TabularInputPanel({
     <div className="space-y-4">
       {status === 'idle' ? (
         <div>
-          <h2 className="text-lg font-bold text-foreground">Cole ou envie seus dados</h2>
+          <div className="flex items-center gap-2">
+            <Copy className="size-4 text-foreground shrink-0" aria-hidden />
+            <h2 className="text-lg font-bold text-foreground">Cole ou envie seus dados</h2>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Cole uma tabela copiada do DataSUS/TABNET, digite valores separados por <code>;</code> ou envie um
             arquivo CSV, TSV, TXT ou XLSX. Detectamos as colunas automaticamente.
@@ -102,44 +173,38 @@ export function TabularInputPanel({
         </div>
       ) : null}
 
-      {onUseExample || onClear ? (
-        <div aria-label="Ações da tabela" className="flex flex-wrap gap-2">
-          {onUseExample ? <Button type="button" variant="outline" onClick={onUseExample}>Usar exemplo</Button> : null}
-          {onClear ? <Button type="button" variant="outline" onClick={onClear}>Limpar tabela</Button> : null}
-        </div>
-      ) : null}
 
-      {loadedOk ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3"
-        >
-          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <Check aria-hidden="true" className="size-4" />
-          </span>
-          <div>
-            <p className="text-sm font-bold text-foreground">Dados reconhecidos</p>
-            <p className="text-sm text-muted-foreground">
-              {bodyRows.length} linhas · {headers.length} colunas. Ajuste a tabela abaixo e clique em Analisar
-              dados.
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {loadedOk && importSummary && showImportSummary ? <ImportSummary summary={importSummary} /> : null}
-
-      <>
+      {/* Colar e enviar arquivo moram na MESMA caixa tracejada: a textarea é o
+          corpo, o rodapé é o atalho de upload e a borda pontilhada envolve os
+          dois. Soltar um arquivo em qualquer ponto da caixa importa os dados. */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        data-dropzone="true"
+        data-drag-over={isDragOver ? 'true' : undefined}
+        className={cn(
+          'overflow-hidden rounded-lg border-2 border-dashed transition-all duration-300',
+          status === 'loaded'
+            ? 'animate-pulse-input-green border-emerald-500/50 bg-emerald-500/[0.02]'
+            : status === 'error'
+            ? 'animate-pulse-input-red border-red-500/50 bg-red-500/[0.02]'
+            : 'border-border bg-background hover:border-white/40',
+          isDragOver &&
+            'border-primary bg-primary/10 shadow-[0_0_24px_rgba(32,153,120,0.35),inset_0_0_16px_rgba(32,153,120,0.12)]',
+        )}
+      >
+        <div className="relative">
           <textarea
+            ref={textareaRef}
             aria-label="Cole aqui os dados copiados do DataSUS/TABNET"
             value={rawText}
             onChange={handleTextareaChange}
+            onPaste={handleTextareaPaste}
+            onFocus={() => setIsEditing(true)}
+            onBlur={() => setIsEditing(false)}
             rows={10}
-            className={cn(
-              'w-full rounded-lg border bg-background px-3 py-2 text-foreground transition-colors',
-              status === 'error' ? 'border-destructive' : 'border-border',
-            )}
+            className="block w-full resize-y border-0 bg-transparent px-3 py-2 text-foreground outline-none"
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 'var(--text-data)',
@@ -147,26 +212,80 @@ export function TabularInputPanel({
             }}
           />
 
-          <label
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            data-drag-over={isDragOver ? 'true' : undefined}
+          {/* Permanece montado mesmo escondido: alternar opacidade (e não
+              desmontar) mantém os botões consultáveis por nome acessível. */}
+          <div
+            data-editing={isEditing ? 'true' : undefined}
             className={cn(
-              'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground transition-colors',
-              isDragOver && 'border-primary bg-primary/10 text-primary',
+              'pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200',
+              isEditing ? 'opacity-0' : 'opacity-100',
             )}
           >
-            <span>Arraste um arquivo CSV, TSV, TXT ou XLSX aqui ou clique para selecionar</span>
-            <input
-              type="file"
-              accept={ACCEPTED_FILE_TYPES}
-              onChange={handleFileInputChange}
-              className="sr-only"
-              aria-label="Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)"
-            />
-          </label>
-      </>
+            <div
+              role="group"
+              aria-label="Ações da tabela"
+              className={cn(
+                'flex flex-wrap items-center justify-center gap-2',
+                isEditing ? 'pointer-events-none' : 'pointer-events-auto',
+              )}
+            >
+              <TableActionButton
+                icon={<Copy />}
+                label="Colar dados"
+                onClick={handlePasteClick}
+              />
+              {onClear ? (
+                <TableActionButton
+                  icon={<Eraser />}
+                  label="Apagar"
+                  onClick={onClear}
+                />
+              ) : null}
+              {onUseExample ? (
+                <TableActionButton
+                  icon={<FileText />}
+                  label="Usar exemplo"
+                  onClick={onUseExample}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* A conferência acontece aqui dentro, colada ao texto que a gerou: sem
+            isto os dados só viravam tabela no passo seguinte, e era preciso
+            confiar na leitura do parser sem ver nada. Enquanto analisa ou dá
+            erro não aparece — o aviso abaixo já diz o que houve. */}
+        {loadedOk && headers.length ? (
+          <div className="border-t-2 border-dashed border-inherit">
+            <PastePreviewTable headers={headers} bodyRows={bodyRows} />
+          </div>
+        ) : null}
+
+        {/* Divisória pontilhada: separa o corpo do rodapé sem quebrar a caixa
+            em dois cartões. `border-inherit` acompanha a cor de cada estado. */}
+        <label
+          className={cn(
+            'group/upload flex cursor-pointer flex-col items-center justify-center gap-1.5 border-t-2 border-dashed border-inherit px-4 py-4 text-center text-sm transition-colors duration-300',
+            isDragOver ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Upload
+            className={cn(
+              'h-5 w-5 transition-all duration-300 group-hover/upload:scale-105',
+              isDragOver ? 'text-primary' : 'text-muted-foreground/70 group-hover/upload:text-white',
+            )}
+          />
+          <span>Arraste um arquivo CSV, TSV, TXT ou XLSX aqui ou clique para selecionar</span>
+          <input
+            type="file"
+            accept={ACCEPTED_FILE_TYPES}
+            onChange={handleFileInputChange}
+            className="sr-only"
+            aria-label="Selecionar arquivo de dados (.csv, .txt, .tsv, .xlsx)"
+          />
+        </label>
+      </div>
 
       {status === 'parsing' ? (
         <div
@@ -207,6 +326,7 @@ export function TabularInputPanel({
           bodyRows={bodyRows}
           recognizedColumns={recognizedColumns}
           onConfirm={handleConfirm}
+          onClear={onClear}
         />
       ) : null}
       <Dialog open={Boolean(pendingAction)} onOpenChange={(open) => { if (!open) onCancelPendingAction?.(); }}>

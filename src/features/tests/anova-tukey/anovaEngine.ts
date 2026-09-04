@@ -132,21 +132,25 @@ export function buildMetrics(result: AnovaAnalysisResult, dataset: AnovaBuiltDat
   return [
     {
       label: 'Estatística F',
+      helpKey: 'estatistica-f',
       value: fmtNumber(result.f, 3),
       hint: `gl entre = ${result.dfBetween}, gl dentro = ${result.dfWithin}`,
     },
     {
-      label: 'Evidência estatística',
+      label: 'p-valor',
+      helpKey: 'p-valor',
       value: fmtP(result.p),
       hint: 'Teste omnibus ANOVA de uma via',
     },
     {
       label: 'Tamanho de efeito (η²)',
+      helpKey: 'eta2',
       value: fmtNumber(result.eta2, 3),
       hint: 'Proporção da variância explicada pelo fator',
     },
     {
       label: 'Grupos',
+      helpKey: 'grupos',
       value: String(dataset.groupOrder.length),
       hint: groupSummary,
     },
@@ -181,7 +185,7 @@ export function computeAssumptionNudges(
     nudges.push({
       severity: 'warning',
       message:
-        'Os tamanhos amostrais dos grupos estão bem desiguais. A ANOVA fica sensível a heterogeneidade de variâncias — considere Kruskal-Wallis como alternativa não paramétrica.',
+        'Os tamanhos amostrais dos grupos estão bem desiguais. A ANOVA fica sensível a heterogeneidade de variâncias. Considere Kruskal-Wallis como alternativa não paramétrica.',
       cta: KRUSKAL_CTA,
     });
   }
@@ -217,7 +221,7 @@ export function computeAssumptionNudges(
     nudges.push({
       severity: 'info',
       message:
-        'Alguns grupos parecem assimétricos (média e mediana distantes). A ANOVA assume aproximadamente normalidade dentro de cada grupo — interprete com cautela.',
+        'Alguns grupos parecem assimétricos (média e mediana distantes). A ANOVA assume aproximadamente normalidade dentro de cada grupo. Interprete com cautela.',
     });
   }
 

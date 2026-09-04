@@ -22,7 +22,7 @@ export function buildQuiQuadradoInterpretation(
 
   if (result.cellsBelow5 > 0) {
     bullets.push(
-      `Atenção: ${result.cellsBelow5} célula(s) (${fmtNumber(result.pctBelow5, 1)}%) têm contagem esperada < 5 — interprete o p com cautela.`,
+      `Atenção: ${result.cellsBelow5} célula(s) (${fmtNumber(result.pctBelow5, 1)}%) têm contagem esperada < 5. Interprete o p com cautela.`,
     );
   }
 

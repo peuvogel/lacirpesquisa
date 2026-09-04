@@ -5,10 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { useEffect } from 'react';
 import { AppShell } from '@/app/AppShell';
 import { RouteError } from '@/app/RouteError';
-import { EstatisticaPage } from '@/routes/estatistica/EstatisticaPage';
-import { MetaAnalisePage } from '@/routes/meta-analise/MetaAnalisePage';
-import { VariaveisPage } from '@/routes/variaveis/VariaveisPage';
-import { MapasPage } from '@/routes/mapas/MapasPage';
+import { appRouteChildren } from '@/app/router';
 import {
   SessionProvider,
   useSession,
@@ -51,12 +48,7 @@ function buildRouter(initialPath: string) {
       {
         element: <AppShell />,
         errorElement: <RouteError />,
-        children: [
-          { path: '/', element: <EstatisticaPage /> },
-          { path: '/meta-analise', element: <MetaAnalisePage /> },
-          { path: '/variaveis', element: <VariaveisPage /> },
-          { path: '/mapas', element: <MapasPage /> },
-        ],
+        children: appRouteChildren,
       },
     ],
     { initialEntries: [initialPath] },
@@ -88,7 +80,7 @@ describe('ClearDataButton', () => {
         <ClearDataButton />
       </SessionProvider>,
     );
-    expect(screen.getByRole('button', { name: 'Limpar dados' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Limpar tabela' })).toBeInTheDocument();
   });
 
   it('opens the dialog with exact body copy and action labels', async () => {
@@ -99,7 +91,7 @@ describe('ClearDataButton', () => {
       </SessionProvider>,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Limpar dados' }));
+    await user.click(screen.getByRole('button', { name: 'Limpar tabela' }));
 
     expect(screen.getByText(CONFIRM_BODY)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sim, limpar' })).toBeInTheDocument();
@@ -121,7 +113,7 @@ describe('ClearDataButton', () => {
       expect(screen.getByTestId('has-data')).toHaveTextContent('true');
     });
 
-    await user.click(screen.getByRole('button', { name: 'Limpar dados' }));
+    await user.click(screen.getByRole('button', { name: 'Limpar tabela' }));
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
 
     expect(screen.getByTestId('has-data')).toHaveTextContent('true');
@@ -144,7 +136,7 @@ describe('ClearDataButton', () => {
       expect(screen.getByTestId('has-data')).toHaveTextContent('true');
     });
 
-    await user.click(screen.getByRole('button', { name: 'Limpar dados' }));
+    await user.click(screen.getByRole('button', { name: 'Limpar tabela' }));
     await user.click(screen.getByRole('button', { name: 'Sim, limpar' }));
 
     expect(onCleared).toHaveBeenCalledTimes(1);

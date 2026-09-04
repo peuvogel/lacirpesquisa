@@ -115,13 +115,10 @@ describe('Sidebar', () => {
     expect(screen.queryByText(/Prova de conceito do fluxo/i)).not.toBeInTheDocument();
   });
 
-  it('calls onOpenQualTeste when Qual teste usar? is clicked', async () => {
-    const user = userEvent.setup();
-    const { onOpenQualTeste } = renderSidebar();
+  it('does not render Qual teste usar? button', () => {
+    renderSidebar();
 
-    await user.click(screen.getByRole('button', { name: 'Qual teste usar?' }));
-
-    expect(onOpenQualTeste).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Qual teste usar?' })).not.toBeInTheDocument();
   });
 
   it('toggles aria-expanded and accessible name on the collapse button', async () => {

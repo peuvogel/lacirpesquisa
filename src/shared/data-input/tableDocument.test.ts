@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addTableColumn,
+  addTableRow,
   createTableDocument,
+  enabledRowEntries,
+  enabledRows,
+  isColumnActive,
+  removeTableColumn,
+  removeTableRow,
   setTableCell,
+  setTableColumnEnabled,
+  setTableRowEnabled,
   setTableColumnName,
   setTableColumnType,
+  clearTableRoleBindings,
   setTableRoleBinding,
   resolveBindings,
 } from './tableDocument';
@@ -111,6 +121,35 @@ describe('TableDocument', () => {
     expect(ignored.revision).toBe(bound.revision + 1);
   });
 
+  it('clears every role of one test without touching the other tests', () => {
+    const document = createTableDocument(['X', 'Y', 'Grupo'], [['1', '2', 'A']], 'colado', () => 'doc-1');
+    const bound = setTableRoleBinding(
+      setTableRoleBinding(document, 'correlacao', 'variavel_x', document.columns[0]!.id),
+      'anova-tukey',
+      'grupo',
+      document.columns[2]!.id,
+    );
+
+    const cleared = clearTableRoleBindings(bound, 'correlacao');
+
+    expect(cleared.bindings.correlacao).toBeUndefined();
+    expect(resolveBindings(cleared, 'anova-tukey')).toEqual({ grupo: 2 });
+    expect(cleared.revision).toBe(bound.revision + 1);
+  });
+
+  it('also forgets a deliberate rejection, which is what setTableRoleBinding cannot undo', () => {
+    const document = createTableDocument(['Grupo A', 'Grupo B'], [['1', '2']], 'exemplo', () => 'doc-1');
+    const rejected = setTableRoleBinding(document, 't-student', 'grupo_b', null);
+
+    expect(clearTableRoleBindings(rejected, 't-student').bindings['t-student']).toBeUndefined();
+  });
+
+  it('keeps the document identity when there is nothing to restore', () => {
+    const document = createTableDocument(['X', 'Y'], [['1', '2']], 'colado', () => 'doc-1');
+
+    expect(clearTableRoleBindings(document, 'correlacao')).toBe(document);
+  });
+
   it('does not let two roles in one test bind the same column', () => {
     const document = createTableDocument(['X', 'Y'], [['1', '2']], 'colado', () => 'doc-1');
     const first = setTableRoleBinding(document, 'correlacao', 'variavel_x', document.columns[0]!.id);
@@ -118,5 +157,81 @@ describe('TableDocument', () => {
 
     expect(duplicate).toBe(first);
     expect(resolveBindings(duplicate, 'correlacao')).toEqual({ variavel_x: 0 });
+  });
+});
+describe('structural editing', () => {
+  const base = () => createTableDocument(
+    ['Grupo', 'Valor'],
+    [['A', '1'], ['B', '2'], ['C', '3']],
+    'colado',
+    () => 'doc-edit',
+  );
+
+  it('adds a row enabled by default and keeps the flags parallel', () => {
+    const next = addTableRow(base());
+    expect(next.rows).toHaveLength(4);
+    expect(next.rows[3]).toEqual(['', '']);
+    expect(next.rowsEnabled).toEqual([true, true, true, true]);
+    expect(next.revision).toBe(1);
+  });
+
+  it('removes a row and realigns the enabled flags', () => {
+    const disabled = setTableRowEnabled(base(), 2, false);
+    expect(disabled.rowsEnabled).toEqual([true, true, false]);
+
+    const next = removeTableRow(disabled, 0);
+    expect(next.rows).toEqual([['B', '2'], ['C', '3']]);
+    // A linha desligada continua sendo a última, não deslocou.
+    expect(next.rowsEnabled).toEqual([true, false]);
+    expect(enabledRows(next)).toEqual([['B', '2']]);
+  });
+
+  it('keeps original row indexes when listing enabled rows', () => {
+    const next = setTableRowEnabled(base(), 1, false);
+    expect(enabledRowEntries(next).map((entry) => entry.index)).toEqual([0, 2]);
+  });
+
+  it('never reuses a column id after a delete', () => {
+    const withExtra = addTableColumn(base(), 'Extra');
+    const ids = withExtra.columns.map((column) => column.id);
+    expect(new Set(ids).size).toBe(3);
+
+    const afterRemoval = removeTableColumn(withExtra, ids[1]!);
+    const readded = addTableColumn(afterRemoval, 'Outra');
+    const finalIds = readded.columns.map((column) => column.id);
+    expect(new Set(finalIds).size).toBe(finalIds.length);
+    expect(finalIds).not.toContain(ids[1]);
+  });
+
+  it('drops the cell of a removed column from every row', () => {
+    const next = removeTableColumn(base(), `${base().columns[0]!.id}`);
+    expect(next.columns.map((column) => column.name)).toEqual(['Valor']);
+    expect(next.rows).toEqual([['1'], ['2'], ['3']]);
+  });
+
+  it('purges bindings when a column is removed or switched off', () => {
+    const bound = setTableRoleBinding(base(), 'teste', 'desfecho', 'doc-edit-col-2');
+    expect(bound.bindings.teste?.desfecho).toBe('doc-edit-col-2');
+
+    expect(removeTableColumn(bound, 'doc-edit-col-2').bindings).toEqual({});
+    expect(setTableColumnEnabled(bound, 'doc-edit-col-2', false).bindings).toEqual({});
+  });
+
+  it('keeps the column type when the column is switched off and back on', () => {
+    const typed = setTableColumnType(base(), 'doc-edit-col-2', 'numerica');
+    const off = setTableColumnEnabled(typed, 'doc-edit-col-2', false);
+    expect(off.columns[1]!.type).toBe('numerica');
+    expect(isColumnActive(off.columns[1]!)).toBe(false);
+
+    const on = setTableColumnEnabled(off, 'doc-edit-col-2', true);
+    expect(on.columns[1]!.type).toBe('numerica');
+    expect(isColumnActive(on.columns[1]!)).toBe(true);
+  });
+
+  it('is a no-op for out-of-range rows and unchanged flags', () => {
+    const document = base();
+    expect(removeTableRow(document, 9)).toBe(document);
+    expect(setTableRowEnabled(document, 9, false)).toBe(document);
+    expect(setTableRowEnabled(document, 0, true)).toBe(document);
   });
 });
