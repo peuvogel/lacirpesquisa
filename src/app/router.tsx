@@ -1,10 +1,20 @@
-import { createBrowserRouter } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  createHashRouter,
+  type RouteObject,
+} from 'react-router-dom';
+import { RELEASE_MANIFEST, type ReleaseRoute } from '@/release/releaseManifest';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { EstatisticaPage } from '../routes/estatistica/EstatisticaPage';
-import { MetaAnalisePage } from '../routes/meta-analise/MetaAnalisePage';
-import { VariaveisPage } from '../routes/variaveis/VariaveisPage';
-import { MapasPage } from '../routes/mapas/MapasPage';
+import { ComingSoonPage } from '../routes/ComingSoonPage';
+
+export type DistributionMode = 'pages' | 'offline';
+
+export interface AppRouterOptions {
+  distribution: DistributionMode;
+  baseUrl: string;
+}
 
 export function resolveRouterBasename(baseUrl: string): string {
   const trimmed = baseUrl.trim();
@@ -13,17 +23,28 @@ export function resolveRouterBasename(baseUrl: string): string {
   return rooted.replace(/\/+$/, '') || '/';
 }
 
-export const router = createBrowserRouter([
-  {
-    element: <AppShell />,
-    errorElement: <RouteError />,
-    children: [
-      { path: '/', element: <EstatisticaPage /> }, // D-04: landing = Estatística
-      { path: '/meta-analise', element: <MetaAnalisePage /> },
-      { path: '/variaveis', element: <VariaveisPage /> },
-      { path: '/mapas', element: <MapasPage /> },
-    ],
-  },
-], {
-  basename: resolveRouterBasename(import.meta.env.BASE_URL),
-});
+function createRouteElement(route: ReleaseRoute) {
+  return route.availability === 'active' ? <EstatisticaPage /> : <ComingSoonPage />;
+}
+
+export const appRouteChildren: RouteObject[] = RELEASE_MANIFEST.routes.map((route) => ({
+  path: route.path,
+  element: createRouteElement(route),
+}));
+
+export function createAppRouter({
+  distribution,
+  baseUrl,
+}: AppRouterOptions): ReturnType<typeof createBrowserRouter> {
+  const routes: RouteObject[] = [
+    {
+      element: <AppShell />,
+      errorElement: <RouteError />,
+      children: appRouteChildren,
+    },
+  ];
+
+  return distribution === 'offline'
+    ? createHashRouter(routes)
+    : createBrowserRouter(routes, { basename: resolveRouterBasename(baseUrl) });
+}

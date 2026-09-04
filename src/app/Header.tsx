@@ -1,13 +1,11 @@
 import { NavLink } from 'react-router-dom';
+import { RELEASE_MANIFEST } from '@/release/releaseManifest';
 import { LogoLockup } from './LogoLockup';
 
-// Locked order and labels (D-01). No version badge (D-02).
-export const NAV_ITEMS = [
-  { to: '/', label: 'Estatística' },
-  { to: '/meta-analise', label: 'Meta-análise' },
-  { to: '/variaveis', label: 'Variáveis' },
-  { to: '/mapas', label: 'Mapas' },
-] as const;
+export const NAV_ITEMS = RELEASE_MANIFEST.routes.map(({ path, label }) => ({
+  to: path,
+  label,
+}));
 
 const BLUR_CHROME = {
   backdropFilter: 'blur(20px) saturate(180%)',

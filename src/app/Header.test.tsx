@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Header } from './Header';
 import { resolvePublicAssetUrl } from './LogoLockup';
 
-function renderHeader() {
+function renderHeader(initialEntry = '/') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Header />
     </MemoryRouter>,
   );
@@ -23,6 +23,26 @@ describe('Header', () => {
       'Variáveis',
       'Mapas',
     ]);
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/',
+      '/meta-analise',
+      '/variaveis',
+      '/mapas',
+    ]);
+  });
+
+  it('marks the current release route and navigates through the header', () => {
+    renderHeader('/meta-analise');
+    const metaLink = screen.getByRole('link', { name: 'Meta-análise' });
+    const mapasLink = screen.getByRole('link', { name: 'Mapas' });
+
+    expect(metaLink).toHaveAttribute('aria-current', 'page');
+    expect(mapasLink).not.toHaveAttribute('aria-current');
+
+    fireEvent.click(mapasLink);
+
+    expect(metaLink).not.toHaveAttribute('aria-current');
+    expect(mapasLink).toHaveAttribute('aria-current', 'page');
   });
 
   it('exposes the nav with accessible name Navegação principal', () => {
