@@ -6,6 +6,7 @@ import { AlphaSelector, type AlphaValue } from '@/features/tests/shared/AlphaSel
 import { RoleBindingPanel } from '@/features/tests/shared/RoleBindingPanel';
 import { DidacticCards } from '@/features/tests/shared/DidacticCards';
 import { SoftResetAlert } from '@/features/tests/shared/SoftResetAlert';
+import type { QuiQuadradoInputFormat } from './quiQuadradoEngine';
 import {
   didacticCards,
   TABULAR_OPTIONS,
@@ -19,6 +20,9 @@ export interface QuiQuadradoLoadedInput {
 }
 
 export interface QuiQuadradoConfigPanelProps {
+  inputFormat: QuiQuadradoInputFormat;
+  resolvedFormat: 'individual' | 'counts';
+  onInputFormatChange: (format: QuiQuadradoInputFormat) => void;
   loadedInput: QuiQuadradoLoadedInput;
   alpha: AlphaValue;
   onAlphaChange: (value: AlphaValue) => void;
@@ -37,6 +41,9 @@ export interface QuiQuadradoConfigPanelProps {
 }
 
 export function QuiQuadradoConfigPanel({
+  inputFormat,
+  resolvedFormat,
+  onInputFormatChange,
   loadedInput,
   alpha,
   onAlphaChange,
@@ -53,16 +60,32 @@ export function QuiQuadradoConfigPanel({
     <div className="space-y-4">
       {showSoftReset ? <SoftResetAlert /> : null}
 
+      <label className="block space-y-2 text-sm font-medium">
+        <span>Formato dos dados</span>
+        <select className="block w-full rounded-md border border-border bg-background p-2 text-foreground"
+          value={inputFormat} onChange={(event) => onInputFormatChange(event.target.value as QuiQuadradoInputFormat)}>
+          <option value="auto">Detectar automaticamente</option>
+          <option value="counts">Tabela de contagens (DATASUS)</option>
+          <option value="individual">Dados individuais (duas categorias)</option>
+        </select>
+      </label>
+      {resolvedFormat === 'counts' ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          Tabela de contagens: a primeira coluna identifica as linhas; as demais colunas ativas contêm as frequências.
+          A linha e a coluna Total e as notas da fonte não entram no cálculo. Nenhuma contagem é transformada em categoria.
+        </p>
+      ) : <p className="text-sm text-muted-foreground">Uma observação por linha. Se os dados já são frequências sem uma linha ou coluna Total, selecione Tabela de contagens (DATASUS).</p>}
+
       {/* Significância e papéis lado a lado: as duas escolhas que governam a
           análise, agora fora da tabela. */}
       <div className="grid gap-4 lg:grid-cols-2">
         <AlphaSelector value={alpha} onChange={onAlphaChange} />
-        <RoleBindingPanel
+        {resolvedFormat === 'individual' ? <RoleBindingPanel
           document={document}
           testId={testId}
           tabularOptions={TABULAR_OPTIONS}
           onDocumentChange={onDocumentChange}
-        />
+        /> : null}
       </div>
 
       <DidacticCards cards={didacticCards} />
@@ -74,7 +97,7 @@ export function QuiQuadradoConfigPanel({
           headers={loadedInput.headers}
           bodyRows={loadedInput.rows}
           recognizedColumns={loadedInput.recognizedColumns}
-          tabularOptions={TABULAR_OPTIONS}
+          tabularOptions={resolvedFormat === 'counts' ? { requiredKeys: [] } : TABULAR_OPTIONS}
           confirmMode="categorical-pair"
           onRoleAdjust={onRoleAdjust}
           onUndo={onUndo}

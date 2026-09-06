@@ -4,7 +4,7 @@ import { parseAlpha, type AlphaValue } from '@/features/tests/shared/alpha';
 import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCustomizer';
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
-import type { TableDocument } from '@/shared/data-input/tableDocument';
+import { enabledRows, isColumnActive, type TableDocument } from '@/shared/data-input/tableDocument';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import { ClearDataButton } from '@/routes/estatistica/ClearDataButton';
@@ -30,6 +30,8 @@ import {
   toEngineOutput,
   validateColumnTypes,
   validateDataset,
+  resolveQuiQuadradoInputFormat,
+  type QuiQuadradoInputFormat,
 } from './quiQuadradoEngine';
 import { buildQuiQuadradoInterpretation } from './quiQuadradoInterpretation';
 
@@ -89,6 +91,18 @@ export function QuiQuadradoTest() {
     analysisTable.setSettings({ alpha: next });
   }
   const [showSoftReset, setShowSoftReset] = useState(false);
+  const inputFormat = (['individual', 'counts'].includes(String(analysisTable.settings.inputFormat))
+    ? analysisTable.settings.inputFormat : 'auto') as QuiQuadradoInputFormat;
+  const resolvedFormat = resolveQuiQuadradoInputFormat({
+    headers: loadedInput?.headers ?? [], rows: analysisTable.table ? enabledRows(analysisTable.table) : loadedInput?.rows ?? [],
+    recognizedColumns: loadedInput?.recognizedColumns ?? {}, inputFormat,
+    excludedColumnIndexes: analysisTable.table?.columns.flatMap((column, index) => isColumnActive(column) ? [] : [index]),
+  });
+
+  function setInputFormat(format: QuiQuadradoInputFormat) {
+    analysisTable.setSettings({ inputFormat: format });
+    handleRoleAdjust();
+  }
 
   useEffect(() => {
     if (!analysisTable.loadedInput) {
@@ -169,7 +183,7 @@ export function QuiQuadradoTest() {
     if (!confirmedDataset || !loadedInput) return null;
 
     const alphaNumber = alpha;
-    const typeErrors = validateColumnTypes(
+    const typeErrors = resolvedFormat === 'counts' ? [] : validateColumnTypes(
       confirmedDataset.headers,
       confirmedDataset.rows,
       confirmedDataset.recognizedColumns,
@@ -183,6 +197,8 @@ export function QuiQuadradoTest() {
     }
 
     const dataset = buildDatasetFromConfirmed({
+      inputFormat: resolvedFormat,
+      excludedColumnIndexes: confirmedDataset.document.columns.flatMap((column, index) => isColumnActive(column) ? [] : [index]),
       headers: confirmedDataset.headers,
       rows: confirmedDataset.rows,
       recognizedColumns: confirmedDataset.recognizedColumns,
@@ -214,7 +230,7 @@ export function QuiQuadradoTest() {
         />
       </>
     );
-  }, [confirmedDataset, loadedInput, alpha]);
+  }, [confirmedDataset, loadedInput, alpha, resolvedFormat]);
 
   return (
     <FlowSteps
@@ -238,6 +254,9 @@ export function QuiQuadradoTest() {
       configurar={
         loadedInput ? (
           <QuiQuadradoConfigPanel
+            inputFormat={inputFormat}
+            resolvedFormat={resolvedFormat}
+            onInputFormatChange={setInputFormat}
             loadedInput={loadedInput}
             alpha={alpha}
             onAlphaChange={setAlpha}

@@ -78,13 +78,12 @@ export function PraisWinstenConfigPanel({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <AlphaSelector value={alpha} onChange={onAlphaChange} />
 
-        <section aria-label="Configuração temporal" className="group/temporal relative space-y-2">
+        <section aria-label="Configuração temporal" className="relative space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-bold text-foreground">Interpretar períodos como</p>
             <div className="flex shrink-0 items-center gap-0.5">
-            {/* Sempre visível, ao contrário do cadeado: é ajuda, não ação. Cada
-                modo espera um formato próprio, e errar o formato custa a
-                análise inteira. */}
+            {/* Cada modo espera um formato próprio; a ajuda explica como
+                informar os períodos antes de alterar a interpretação. */}
             <Popover>
               <PopoverTrigger asChild>
                 <button
@@ -127,7 +126,7 @@ export function PraisWinstenConfigPanel({
               onClick={() => setTemporalUnlocked((previous) => !previous)}
               aria-pressed={!temporalUnlocked}
               aria-label={temporalUnlocked ? 'Travar a periodicidade' : 'Destravar a periodicidade'}
-              className="rounded-md p-0.5 text-white opacity-0 transition-opacity hover:opacity-70 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/temporal:opacity-100"
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {temporalUnlocked ? <Unlock className="size-3.5" aria-hidden /> : <Lock className="size-3.5" aria-hidden />}
             </button>

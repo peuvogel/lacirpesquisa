@@ -13,6 +13,8 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   test: {
+    // Bound concurrent jsdom instances to avoid memory pressure and UI-test timeouts.
+    maxWorkers: 1,
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],

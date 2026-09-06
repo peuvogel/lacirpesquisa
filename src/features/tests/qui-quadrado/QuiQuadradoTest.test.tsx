@@ -7,6 +7,7 @@ import { QuiQuadradoTest } from './QuiQuadradoTest';
 import * as quiQuadradoInterpretation from './quiQuadradoInterpretation';
 import { findColumnTypeWheel, selectColumnType } from '@/test/columnTypeWheel';
 import { setColumnEnabled } from '@/test/columnToggle';
+import datasusText from '@/test/fixtures/tests/qui-quadrado-datasus.csv?raw';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -46,6 +47,20 @@ function renderQuiQuadrado() {
 }
 
 describe('QuiQuadradoTest', () => {
+  it('analyzes the pasted DATASUS age-by-sex frequency table without recoding counts as categories', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderQuiQuadrado();
+    const input = screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET');
+    fireEvent.change(input, { target: { value: datasusText } });
+    await vi.advanceTimersByTimeAsync(200);
+    await runToResultados(user);
+    expect(screen.queryByText(/parece numérica/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Qui-quadrado (χ²)')).toBeInTheDocument();
+    expect(screen.getAllByText(/Tabela 12×2/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('761164')).toBeInTheDocument();
+    expect(input).toHaveValue(datasusText);
+  });
+
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     ChartMock.mockClear();

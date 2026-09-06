@@ -44,7 +44,7 @@ export const didacticCards: DidacticCard[] = [
   },
   {
     title: 'Como colar os dados',
-    body: 'Use duas colunas categóricas (texto), uma observação por linha. O sistema monta a tabela de contingência automaticamente.',
+    body: 'Cole uma tabela de contagens do DATASUS (categorias nas linhas e colunas) ou duas colunas categóricas, uma observação por linha. No formato de contagens, os totais são excluídos do cálculo.',
   },
   {
     title: 'Pressupostos',

@@ -17,12 +17,17 @@ export interface QuiQuadradoBuiltDataset {
   columnHeaders: [string, string];
   totalN: number;
   categoryLimitExceeded?: boolean;
+  inputErrors?: string[];
 }
+
+export type QuiQuadradoInputFormat = 'auto' | 'individual' | 'counts';
 
 export interface BuildDatasetInput {
   headers: string[];
   rows: string[][];
   recognizedColumns: Record<string, number>;
+  inputFormat?: QuiQuadradoInputFormat;
+  excludedColumnIndexes?: number[];
 }
 
 export type QuiQuadradoAnalysisResult = ChiSquareIndependenceResult;
@@ -50,10 +55,80 @@ function isNumericOnlyColumn(values: string[]): boolean {
   return values.every((value) => statsEngine.parseNumber(value) !== null);
 }
 
+function isTotal(value: string): boolean {
+  return /^total(?: geral)?$/i.test(value.trim());
+}
+
+function countRows(rows: string[][]): string[][] {
+  const footer = rows.findIndex((row) => /^(?:fonte\s*:|notas?\s*:)/i.test(row[0]?.trim() ?? '')
+    && row.slice(1).every((cell) => !cell.trim()));
+  return (footer < 0 ? rows : rows.slice(0, footer))
+    .filter((row) => row.some((cell) => cell.trim()) && !isTotal(row[0] ?? ''));
+}
+
+// TABNET count tables use dots/spaces as thousands separators. A decimal
+// fraction, missing marker or suppressed value must never silently become zero.
+function parseCount(raw: string): number | null {
+  const value = raw.trim();
+  const normalized = /^\d{1,3}(?:\.\d{3})+$/.test(value)
+    ? value.replace(/\./g, '')
+    : /^\d{1,3}(?:[ \u00a0]\d{3})+$/.test(value) ? value.replace(/[ \u00a0]/g, '') : value;
+  if (!/^\d+(?:[,.]0+)?$/.test(normalized)) return null;
+  const count = Number(normalized.replace(',', '.'));
+  return Number.isSafeInteger(count) && count >= 0 ? count : null;
+}
+
+export function resolveQuiQuadradoInputFormat(input: BuildDatasetInput): 'individual' | 'counts' {
+  if (input.inputFormat && input.inputFormat !== 'auto') return input.inputFormat;
+  const rows = countRows(input.rows);
+  const excluded = new Set(input.excludedColumnIndexes ?? []);
+  const indexes = input.headers.flatMap((header, index) => index > 0 && !isTotal(header) && !excluded.has(index) ? [index] : []);
+  // Totals provide evidence of aggregation. Without that evidence, keep the
+  // individual-record contract; users can explicitly select a matrix without margins.
+  const hasMargins = input.headers.some(isTotal) || input.rows.some((row) => isTotal(row[0] ?? ''));
+  const looksLikeMatrix = hasMargins && input.headers.length >= 3
+    && indexes.some((index) => rows.some((row) => parseCount(row[index] ?? '') !== null));
+  return looksLikeMatrix ? 'counts' : 'individual';
+}
+
+function buildCountDataset(input: BuildDatasetInput): QuiQuadradoBuiltDataset {
+  const excluded = new Set(input.excludedColumnIndexes ?? []);
+  const indexes = input.headers.flatMap((header, index) => index > 0 && !isTotal(header) && !excluded.has(index) ? [index] : []);
+  const rows = countRows(input.rows);
+  const rowLabels = rows.map((row) => row[0]?.trim() ?? '');
+  const colLabels = indexes.map((index) => input.headers[index]);
+  const inputErrors: string[] = [];
+  if (excluded.has(0)) inputErrors.push('Ative a primeira coluna, que identifica as linhas da tabela de contagens.');
+  if (indexes.length < 2) inputErrors.push('Selecione pelo menos duas colunas de contagens, além da primeira coluna de categorias.');
+  if (rowLabels.some((label) => !label) || new Set(rowLabels).size !== rowLabels.length) {
+    inputErrors.push('Na tabela de contagens, cada linha precisa ter uma categoria distinta e preenchida na primeira coluna.');
+  }
+  if (new Set(colLabels).size !== colLabels.length) inputErrors.push('Use nomes distintos nas colunas de contagens.');
+  const categoryLimitExceeded = rows.length > MAX_CATEGORY_LEVELS || indexes.length > MAX_CATEGORY_LEVELS;
+  const table = categoryLimitExceeded ? [] : rows.map((row, rowIndex) => indexes.map((index) => {
+    const value = parseCount(row[index] ?? '');
+    if (value === null && inputErrors.length < 5) {
+      inputErrors.push(`Contagem inválida em "${rowLabels[rowIndex]}", coluna "${input.headers[index]}". Use uma frequência inteira não negativa; valores ausentes ou suprimidos não são zero.`);
+    }
+    return value ?? NaN;
+  }));
+  const totalN = table.flat().reduce((sum, count) => sum + count, 0);
+  if (!inputErrors.length && !categoryLimitExceeded) {
+    if (!Number.isSafeInteger(totalN)) inputErrors.push('O total de contagens ultrapassa a precisão suportada.');
+    if (table.some((row) => row.every((count) => count === 0))
+      || indexes.some((_, index) => table.every((row) => row[index] === 0))) {
+      inputErrors.push('Desative as linhas ou colunas cujo total é zero antes de analisar.');
+    }
+  }
+  return { table, rowLabels, colLabels, columnHeaders: [input.headers[0] || 'Categoria', 'Categorias das colunas'],
+    totalN, categoryLimitExceeded, inputErrors };
+}
+
 /**
  * Builds a contingency table from two categorical columns — string coercion only.
  */
 export function buildDatasetFromConfirmed(input: BuildDatasetInput): QuiQuadradoBuiltDataset {
+  if (resolveQuiQuadradoInputFormat(input) === 'counts') return buildCountDataset(input);
   const { headers, rows, recognizedColumns } = input;
   const indexA = recognizedColumns.categoria_a;
   const indexB = recognizedColumns.categoria_b;
@@ -123,6 +198,7 @@ export function buildDatasetFromConfirmed(input: BuildDatasetInput): QuiQuadrado
 }
 
 export function validateDataset(dataset: QuiQuadradoBuiltDataset): string[] {
+  if (dataset.inputErrors?.length) return dataset.inputErrors;
   const errors: string[] = [];
   const { table, rowLabels, colLabels, totalN } = dataset;
 

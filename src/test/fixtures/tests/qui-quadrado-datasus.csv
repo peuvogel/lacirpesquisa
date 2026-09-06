@@ -1,0 +1,23 @@
+Morbidade Hospitalar do SUS - por local de internação - Brasil
+Internações por Faixa Etária 1 e Sexo
+Lista Morb CID-10: Pneumonia
+Sexo: Masc, Fem
+Período:Jan-Dez/2025, Jun/2026
+"Faixa Etária 1";"Masc";"Fem";"Total"
+"Menor 1 ano";39115;29646;68761
+"1 a 4 anos";62376;55129;117505
+"5 a 9 anos";22608;20984;43592
+"10 a 14 anos";8348;7434;15782
+"15 a 19 anos";4413;4491;8904
+"20 a 29 anos";10825;9988;20813
+"30 a 39 anos";14579;11925;26504
+"40 a 49 anos";20729;16823;37552
+"50 a 59 anos";28226;24616;52842
+"60 a 69 anos";46013;41879;87892
+"70 a 79 anos";60141;58033;118174
+"80 anos e mais";70907;91936;162843
+"Total";388280;372884;761164
+Fonte: Ministério da Saúde - Sistema de Informações Hospitalares do SUS (SIH/SUS)
+Notas:
+
+Dados referentes aos últimos seis meses, sujeitos a atualização.

@@ -105,6 +105,15 @@ export function MannWhitneyConfigPanel({
         value={format}
         onChange={(value) => onFormatChange(value as MannWhitneyFormat)}
       />
+      <p className="text-sm text-muted-foreground">
+        {format === 'wide'
+          ? 'Escolha abaixo Grupo A = Bahia e Grupo B = Pernambuco, por exemplo. As duas colunas devem conter o mesmo desfecho numérico, como dias de internação. Mês/ano é contexto, não um dos grupos; totais não são observações.'
+          : 'Vincule Desfecho à coluna numérica (ex.: Dias) e Grupo à coluna Estado/UF, cujas células contêm Bahia e Pernambuco. Escolha a coluna que identifica os estados, não um estado isolado. Se cada estado já está em sua própria coluna numérica, use “Uma coluna por grupo”.'}
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Valores mensais agregados dos mesmos estados podem ser pareados ou dependentes no tempo.
+        Confirme abaixo a independência apenas se ela corresponde ao desenho dos seus dados.
+      </p>
       {/* Significância e papéis lado a lado: as duas escolhas que governam a
           análise, agora fora da tabela. */}
       <div className="grid gap-4 lg:grid-cols-2">

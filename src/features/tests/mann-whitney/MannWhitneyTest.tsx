@@ -6,7 +6,13 @@ import { ResultsPanelWithCustomizer } from '@/shared/charts/ResultsPanelWithCust
 import { deriveRecognizedColumnsFromTabular } from '@/shared/data-input/recognizedColumnsFromTabular';
 import { useAnalysisTable } from '@/shared/data-input/useAnalysisTable';
 import { prepareGroupedSamples } from '@/shared/data-input/groupedSamples';
-import type { TableDocument } from '@/shared/data-input/tableDocument';
+import {
+  clearTableRoleBindings,
+  isColumnActive,
+  isRowEnabled,
+  setTableRoleBinding,
+  type TableDocument,
+} from '@/shared/data-input/tableDocument';
 import { FlowSteps, type FlowStep } from '@/shared/flow/FlowSteps';
 import { useStatisticsSession } from '@/shared/session/StatisticsSessionProvider';
 import {
@@ -47,14 +53,47 @@ const LONG_GROUP_HEADERS = new Set(
     .map((header) => header.trim().toLocaleLowerCase('pt-BR').replace(/[_-]+/g, ' ')),
 );
 
-function inferMannWhitneyFormat(document: TableDocument): MannWhitneyFormat {
-  const columns = document.columns.filter((column) => column.type !== 'ignorar');
-  if (columns.length !== 2) return 'long';
+function isContextHeader(header: string): boolean {
+  const normalized = header.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
+  return /^(?:ano|mes|data|periodo)(?:\b|_)/.test(normalized);
+}
+
+function isTotalLabel(label: string): boolean {
+  return /^total(?: geral)?$/i.test(label.trim());
+}
+
+function inferWideColumns(document: TableDocument) {
+  const columns = document.columns.filter(isColumnActive);
   const hasNamedGroupColumn = columns.some((column) => (
     LONG_GROUP_HEADERS.has(column.name.trim().toLocaleLowerCase('pt-BR').replace(/[_-]+/g, ' '))
   ));
-  if (hasNamedGroupColumn) return 'long';
-  return columns.every((column) => column.type === 'numerica') ? 'wide' : 'long';
+  if (hasNamedGroupColumn) return null;
+  const samples = columns.filter((column) => !isContextHeader(column.name) && !isTotalLabel(column.name));
+  return samples.length === 2 && samples.every((column) => column.type === 'numerica') ? samples : null;
+}
+
+function withFormatBindings(document: TableDocument, format: MannWhitneyFormat): TableDocument {
+  let next = clearTableRoleBindings(document, 'mann-whitney');
+  const samples = format === 'wide' ? inferWideColumns(next) : null;
+  if (samples) {
+    next = setTableRoleBinding(next, 'mann-whitney', 'grupo_a', samples[0]!.id);
+    next = setTableRoleBinding(next, 'mann-whitney', 'grupo_b', samples[1]!.id);
+  }
+  return next;
+}
+
+function prepareSamples(document: TableDocument, format: MannWhitneyFormat, recognizedColumns: Record<string, number>) {
+  const contextIndex = format === 'wide'
+    ? document.columns.findIndex((column) => isContextHeader(column.name)) : -1;
+  if (contextIndex < 0) return prepareGroupedSamples(document, 'mann-whitney', format, recognizedColumns);
+  const footerIndex = document.rows.findIndex((row) => /^(?:fonte\s*:|notas?\s*:)/i.test(row[contextIndex]?.trim() ?? '')
+    && row.every((cell, index) => index === contextIndex || !cell.trim()));
+  const samplesOnly = {
+    ...document,
+    rowsEnabled: document.rows.map((row, index) => isRowEnabled(document, index)
+      && !isTotalLabel(row[contextIndex] ?? '') && (footerIndex < 0 || index < footerIndex)),
+  };
+  return prepareGroupedSamples(samplesOnly, 'mann-whitney', format, recognizedColumns);
 }
 
 function initialLoadedFromSession(
@@ -123,7 +162,14 @@ export function MannWhitneyTest() {
     }
     if (formatTableIdRef.current === table.id) return;
     formatTableIdRef.current = table.id;
-    setFormat(inferMannWhitneyFormat(table));
+    const explicitRoles = Object.keys(table.bindings['mann-whitney'] ?? {});
+    const savedFormat = testSlots['mann-whitney']?.settings?.format;
+    const nextFormat = explicitRoles.length
+      ? savedFormat === 'wide' || savedFormat === 'long' ? savedFormat
+        : explicitRoles.some((role) => role === 'grupo_a' || role === 'grupo_b') ? 'wide' : 'long'
+      : inferWideColumns(table) ? 'wide' : 'long';
+    setFormat(nextFormat);
+    if (!explicitRoles.length && nextFormat === 'wide') analysisTable.setDocument(withFormatBindings(table, nextFormat));
   }, [analysisTable.table]);
 
   useEffect(() => {
@@ -189,6 +235,7 @@ export function MannWhitneyTest() {
       setShowSoftReset(true);
       setActiveStep('configurar');
     }
+    if (analysisTable.table) analysisTable.setDocument(withFormatBindings(analysisTable.table, nextFormat));
     setFormat(nextFormat);
   }
 
@@ -218,9 +265,8 @@ export function MannWhitneyTest() {
 
   const preparation = useMemo(() => (
     analysisTable.table
-      ? prepareGroupedSamples(
+      ? prepareSamples(
         analysisTable.table,
-        'mann-whitney',
         format,
         analysisTable.recognizedColumns,
       )
@@ -229,9 +275,8 @@ export function MannWhitneyTest() {
 
   const resultsContent = useMemo(() => {
     if (!confirmedDataset || !loadedInput) return null;
-    const prepared = prepareGroupedSamples(
+    const prepared = prepareSamples(
       confirmedDataset.document,
-      'mann-whitney',
       format,
       confirmedDataset.recognizedColumns,
     );

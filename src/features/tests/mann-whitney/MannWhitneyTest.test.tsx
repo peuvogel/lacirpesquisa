@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider, useSession } from '@/shared/session/SessionProvider';
+import { createTableDocument, setTableRoleBinding } from '@/shared/data-input/tableDocument';
 import { runToResultados } from '@/test/flowHelpers';
 import { exampleText as tStudentExampleText } from '@/features/tests/t-student/tStudentConfig';
 import { MannWhitneyTest } from './MannWhitneyTest';
@@ -141,6 +142,77 @@ describe('MannWhitneyTest', () => {
 
     await runToResultados(user);
     expect(screen.getByText('Estatística U')).toBeInTheDocument();
+  });
+
+  it.each([
+    { lastBahia: '4', totalBahia: '10', bahiaN: 4 },
+    { lastBahia: '', totalBahia: '6', bahiaN: 3 },
+  ])('compares the Bahia/Pernambuco columns, not month or totals, with Bahia n=$bahiaN', async ({ lastBahia, totalBahia, bahiaN }) => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<SessionProvider><MannWhitneyTest /></SessionProvider>);
+    fireEvent.change(screen.getByRole('textbox', { name: /Cole aqui os dados/i }), {
+      target: { value: `Mês de atendimento;Bahia;Pernambuco;Total\nJan;1;5;6\nFev;2;6;8\nMar;3;7;10\nAbr;${lastBahia};8;${lastBahia ? '12' : '8'}\nTotal;${totalBahia};26;${Number(totalBahia) + 26}` },
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    expect(await screen.findByRole('radio', { name: /Uma coluna por grupo/i })).toBeChecked();
+    expect(within(screen.getByRole('combobox', { name: 'Vincular Grupo A' })).getByRole('option', { selected: true })).toHaveTextContent('Bahia');
+    expect(within(screen.getByRole('combobox', { name: 'Vincular Grupo B' })).getByRole('option', { selected: true })).toHaveTextContent('Pernambuco');
+    const groups = screen.getByRole('region', { name: 'Prévia dos grupos' });
+    expect(within(groups).getByText('Bahia').parentElement).toHaveTextContent(`n = ${bahiaN}`);
+    expect(within(groups).getByText('Pernambuco').parentElement).toHaveTextContent('n = 4');
+    await user.click(screen.getByRole('checkbox', { name: /grupos são independentes/i }));
+    await runToResultados(user);
+    expect(screen.getByText('Estatística U')).toBeInTheDocument();
+    expect(within(screen.getByRole('article', { name: 'Estatística U' })).getByText('0,00')).toBeInTheDocument();
+  });
+
+  it('releases manual long-format bindings before selecting both wide groups', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<SessionProvider><MannWhitneyTest /></SessionProvider>);
+    fireEvent.change(screen.getByRole('textbox', { name: /Cole aqui os dados/i }), {
+      target: { value: 'Bahia;Pernambuco\n1;5\n2;6\n3;7\n;8' },
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+    await user.click(screen.getByRole('radio', { name: /Valor \+ coluna de grupo/i }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Vincular Desfecho' }),
+      screen.getByRole('combobox', { name: 'Vincular Desfecho' }).querySelectorAll('option')[1]!);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Vincular Grupo' }),
+      screen.getByRole('combobox', { name: 'Vincular Grupo' }).querySelectorAll('option')[2]!);
+    await user.click(screen.getByRole('radio', { name: /Uma coluna por grupo/i }));
+
+    const groupA = screen.getByRole('combobox', { name: 'Vincular Grupo A' });
+    const groupB = screen.getByRole('combobox', { name: 'Vincular Grupo B' });
+    const bahia = within(groupA).getByRole('option', { name: /Bahia/ });
+    const pernambuco = within(groupB).getByRole('option', { name: /Pernambuco/ });
+    expect(bahia).toBeEnabled();
+    expect(pernambuco).toBeEnabled();
+    await user.selectOptions(groupA, bahia);
+    await user.selectOptions(groupB, pernambuco);
+    const groups = screen.getByRole('region', { name: 'Prévia dos grupos' });
+    expect(within(groups).getByText('Bahia').parentElement).toHaveTextContent('n = 3');
+    expect(within(groups).getByText('Pernambuco').parentElement).toHaveTextContent('n = 4');
+    await user.click(screen.getByRole('checkbox', { name: /grupos são independentes/i }));
+    await runToResultados(user);
+    expect(screen.getByText('Estatística U')).toBeInTheDocument();
+  });
+
+  it.each([false, true])('preserves saved wide bindings and revision, including a deliberate empty A=%s', async (emptyA) => {
+    function SeedSavedBindings() {
+      const { setDataset, dataset } = useSession();
+      useEffect(() => {
+        let table = createTableDocument(['Bahia', 'Pernambuco'], [['1', '5'], ['2', '6'], ['3', '7']], 'salvo', () => 'saved-wide');
+        table = setTableRoleBinding(table, 'mann-whitney', 'grupo_a', emptyA ? null : table.columns[1]!.id);
+        table = setTableRoleBinding(table, 'mann-whitney', 'grupo_b', table.columns[0]!.id);
+        setDataset({ headers: table.columns.map((column) => column.name), rows: table.rows, sourceLabel: table.sourceLabel, confirmedAt: 1, table });
+      }, [setDataset]);
+      return <><MannWhitneyTest /><output aria-label="Revisão da tabela">{dataset?.table?.revision}</output></>;
+    }
+    render(<SessionProvider><SeedSavedBindings /></SessionProvider>);
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+    expect(await screen.findByRole('combobox', { name: 'Vincular Grupo A' })).toHaveValue(emptyA ? '' : 'saved-wide-col-2');
+    expect(screen.getByRole('combobox', { name: 'Vincular Grupo B' })).toHaveValue('saved-wide-col-1');
+    expect(screen.getByLabelText('Revisão da tabela')).toHaveTextContent('2');
   });
 
   it('refuses to analyse until independence is confirmed, flagging the checkbox', async () => {
