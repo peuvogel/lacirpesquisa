@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readTabularPasteState } from '@/shared/data-input/parseTabular';
+import { legacyStats } from '@/shared/data-input/legacyAdapters';
+import { createTableDocument, setTableRoleBinding } from '@/shared/data-input/tableDocument';
+import { prepareGroupedSamples, type PreparedGroupedSamples } from '@/shared/data-input/groupedSamples';
+import { WIDE_TABULAR_OPTIONS } from './mannWhitneyConfig';
 import {
   buildDatasetFromPrepared,
   buildDatasetFromConfirmed,
@@ -9,7 +14,6 @@ import {
   validateDataset,
   validateDatasetIssues,
 } from './mannWhitneyEngine';
-import type { PreparedGroupedSamples } from '@/shared/data-input/groupedSamples';
 
 interface GoldenCase {
   input: { groupA: number[]; groupB: number[] };
@@ -80,6 +84,64 @@ describe('runMannWhitney golden parity', () => {
 });
 
 describe('Mann–Whitney dataset contract', () => {
+  it('uses only valid observations from the required Nordeste/Sudeste 9/4 wide pipeline', () => {
+    const pasted = [
+      'Nordeste;Sudeste',
+      '8,3;7,8',
+      '5,7;7,1',
+      '12,5;10,4',
+      '9,2;8,7',
+      '9,2;',
+      '9,6;',
+      '11,0;',
+      '9,4;',
+      '7,3;',
+    ].join('\n');
+    const parsed = readTabularPasteState(pasted, legacyStats, WIDE_TABULAR_OPTIONS);
+    expect(parsed.status).toBe('loaded');
+    if (parsed.status !== 'loaded') throw new Error('expected loaded wide paste');
+    expect(parsed.bodyRows.slice(4).map((row) => row[1])).toEqual(['', '', '', '', '']);
+
+    let document = createTableDocument(parsed.headers, parsed.bodyRows, 'colado', () => 'mann-wide-9-4');
+    document = setTableRoleBinding(document, 'mann-whitney', 'grupo_a', document.columns[0]!.id);
+    document = setTableRoleBinding(document, 'mann-whitney', 'grupo_b', document.columns[1]!.id);
+    const prepared = prepareGroupedSamples(document, 'mann-whitney', 'wide');
+    const dataset = buildDatasetFromPrepared(prepared, { outcome: 'Nordeste / Sudeste', group: 'colunas separadas' });
+    const result = runAnalysis(dataset);
+
+    expect(dataset.groupA).toEqual([8.3, 5.7, 12.5, 9.2, 9.2, 9.6, 11, 9.4, 7.3]);
+    expect(dataset.groupB).toEqual([7.8, 7.1, 10.4, 8.7]);
+    expect(result.groupSummaries.A).toMatchObject({ n: 9, median: 9.2, q1: 8.3, q3: 9.6 });
+    expect(result.groupSummaries.A.iqr).toBeCloseTo(1.3, 12);
+    expect(result.groupSummaries.B).toMatchObject({ n: 4, median: 8.25, q1: 7.625, q3: 9.125, iqr: 1.5 });
+    expect(result.u).toBe(13);
+    expect(result.u1).toBe(23);
+    expect(result.u2).toBe(13);
+    expect(result.pValue).toBeCloseTo(0.48685425514372516, 12);
+    expect(result.rankBiserial).toBeCloseTo(0.2777777777777777, 12);
+    expect(result.probabilityOfSuperiority).toBeCloseTo(0.6388888888888888, 12);
+    expect(result.rankedValues).toHaveLength(13);
+    expect(result.rankedValues.some((item) => item.value === 0)).toBe(false);
+  });
+
+  it('retains explicitly typed zero while excluding blank wide cells', () => {
+    const parsed = readTabularPasteState(
+      'Nordeste;Sudeste\n0;0\n1;\n;2\n3;3',
+      legacyStats,
+      WIDE_TABULAR_OPTIONS,
+    );
+    expect(parsed.status).toBe('loaded');
+    if (parsed.status !== 'loaded') throw new Error('expected loaded zero/missing paste');
+    let document = createTableDocument(parsed.headers, parsed.bodyRows, 'colado', () => 'mann-wide-zero');
+    document = setTableRoleBinding(document, 'mann-whitney', 'grupo_a', document.columns[0]!.id);
+    document = setTableRoleBinding(document, 'mann-whitney', 'grupo_b', document.columns[1]!.id);
+
+    const prepared = prepareGroupedSamples(document, 'mann-whitney', 'wide');
+
+    expect(prepared.groups.map((group) => group.values)).toEqual([[0, 1, 3], [0, 2, 3]]);
+    expect(prepared.invalidRowNumbers).toEqual([2, 3]);
+  });
+
   it.each(['constructor', 'toString', '__proto__'])('keeps the arbitrary long-format label %s', (reservedLabel) => {
     const dataset = buildDatasetFromConfirmed({
       headers: ['desfecho', 'grupo'],

@@ -167,6 +167,38 @@ describe('MannWhitneyTest', () => {
     expect(within(screen.getByRole('article', { name: 'Estatística U' })).getByText('0,00')).toBeInTheDocument();
   });
 
+  it('shows n=9/4 and calculates the required Nordeste/Sudeste example without ranking blanks as zero', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<SessionProvider><MannWhitneyTest /></SessionProvider>);
+    fireEvent.change(screen.getByRole('textbox', { name: /Cole aqui os dados/i }), {
+      target: { value: [
+        'Nordeste;Sudeste',
+        '8,3;7,8',
+        '5,7;7,1',
+        '12,5;10,4',
+        '9,2;8,7',
+        '9,2;',
+        '9,6;',
+        '11,0;',
+        '9,4;',
+        '7,3;',
+      ].join('\n') },
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    expect(await screen.findByRole('radio', { name: /Uma coluna por grupo/i })).toBeChecked();
+    const groups = screen.getByRole('region', { name: 'Prévia dos grupos' });
+    expect(within(groups).getByText('Nordeste').parentElement).toHaveTextContent('n = 9');
+    expect(within(groups).getByText('Sudeste').parentElement).toHaveTextContent('n = 4');
+
+    await user.click(screen.getByRole('checkbox', { name: /grupos são independentes/i }));
+    await runToResultados(user);
+
+    expect(within(screen.getByRole('article', { name: 'Estatística U' })).getByText('13,00')).toBeInTheDocument();
+    expect(within(screen.getByRole('article', { name: 'p-valor' })).getByText('0,4869')).toBeInTheDocument();
+    expect(within(screen.getByRole('article', { name: 'Efeito por postos' })).getByText('0,278')).toBeInTheDocument();
+  });
+
   it('releases manual long-format bindings before selecting both wide groups', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<SessionProvider><MannWhitneyTest /></SessionProvider>);

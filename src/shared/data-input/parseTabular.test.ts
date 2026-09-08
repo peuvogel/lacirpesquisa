@@ -131,6 +131,15 @@ describe('parseDelimitedRows differential parity', () => {
 });
 
 describe('readTabularPasteState direct behavior (not just parity)', () => {
+  it('preserves an explicit numeric zero while normalizing missing parser values', () => {
+    expect(port.normalizeTabularText(0)).toBe('0');
+    expect(port.normalizeTabularSpaces(0)).toBe('0');
+    expect(port.normalizeTabularText('0')).toBe('0');
+    expect(port.normalizeTabularText('')).toBe('');
+    expect(port.normalizeTabularText(null)).toBe('');
+    expect(port.normalizeTabularText(undefined)).toBe('');
+  });
+
   it('rejects an unsupported file before reading its size', async () => {
     const unsupported = new File(['conteúdo'], 'dados.xls');
     const size = vi.fn(() => { throw new Error('size must not be read'); });

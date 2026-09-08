@@ -23,7 +23,7 @@ import type {
 } from './types';
 
 export function normalizeTabularText(value: unknown): string {
-  return String(value || '')
+  return String(value ?? '')
     .replace(/\uFEFF/g, '')
     .replace(/\u0000/g, '')
     .replace(/\r\n?/g, '\n')
