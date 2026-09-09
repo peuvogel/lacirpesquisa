@@ -94,6 +94,31 @@ describe('analysis table helpers', () => {
     });
   });
 
+  it('counts a sparse independent row when either bound group has a valid number', () => {
+    const document = createTableDocument(
+      ['Grupo A', 'Grupo B'],
+      [['1', 'inválido'], ['2', 'inválido'], ['3', 'inválido'], ['inválido', '4'], ['inválido', '5'], ['inválido', '6'], ['', '']],
+      'colado',
+      () => 'doc-sparse',
+    );
+    const bound = setTableRoleBinding(
+      setTableRoleBinding(document, 'mann-whitney', 'grupo_a', document.columns[0]!.id),
+      'mann-whitney',
+      'grupo_b',
+      document.columns[1]!.id,
+    );
+
+    expect(tableValiditySummary(
+      bound,
+      'mann-whitney',
+      ['grupo_a', 'grupo_b'],
+      ['grupo_a', 'grupo_b'],
+      undefined,
+      [],
+      { allowPartialRequiredRows: true },
+    )).toEqual({ valid: 6, incomplete: [7], invalid: [] });
+  });
+
   it('does not mark rows invalid for an optional numeric role with no binding', () => {
     const document = createTableDocument(['Desfecho', 'Grupo'], [['10', 'A']], 'colado', () => 'doc-1');
     const bound = setTableRoleBinding(

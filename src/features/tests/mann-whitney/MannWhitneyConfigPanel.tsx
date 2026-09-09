@@ -196,6 +196,7 @@ export function MannWhitneyConfigPanel({
           bodyRows={loadedInput.rows}
           recognizedColumns={loadedInput.recognizedColumns}
           tabularOptions={getMannWhitneyTabularOptions(format)}
+          confirmMode={format === 'wide' ? 'independent-columns' : 'numeric-required'}
           onRoleAdjust={onRoleAdjust}
           onUndo={onUndo}
           onConfirm={handleConfirm}

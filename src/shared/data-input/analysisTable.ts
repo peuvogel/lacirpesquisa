@@ -16,6 +16,11 @@ export interface TableValiditySummary {
   invalid: number[];
 }
 
+export interface TableValidityOptions {
+  /** Independent wide samples may contribute one valid group value per row. */
+  allowPartialRequiredRows?: boolean;
+}
+
 function valueMatchesRole(
   value: string,
   key: string,
@@ -109,6 +114,7 @@ export function tableValiditySummary(
   numericKeys: readonly string[] = [],
   resolved?: Record<string, number>,
   temporalKeys: readonly string[] = [],
+  options: TableValidityOptions = {},
 ): TableValiditySummary {
   const bindings = resolved ?? resolveBindings(document, testId);
   const validRows: number[] = [];
@@ -118,7 +124,27 @@ export function tableValiditySummary(
   // Linhas desligadas não são contadas, mas as demais mantêm o número original:
   // essas listas são exibidas ao usuário ("linha 7 incompleta").
   enabledRowEntries(document).forEach(({ row, index }) => {
-    const missing = requiredKeys.some((key) => !String(row[bindings[key] ?? -1] ?? '').trim());
+    const requiredValues = requiredKeys.map((key) => String(row[bindings[key] ?? -1] ?? ''));
+    if (options.allowPartialRequiredRows) {
+      if (requiredValues.every((value) => !value.trim())) {
+        incomplete.push(index + 1);
+        return;
+      }
+      const hasValidRequiredValue = requiredKeys.some((key) => {
+        const columnIndex = bindings[key];
+        return columnIndex !== undefined && valueMatchesRole(
+          String(row[columnIndex] ?? ''),
+          key,
+          numericKeys,
+          temporalKeys,
+        );
+      });
+      if (hasValidRequiredValue) validRows.push(index + 1);
+      else invalid.push(index + 1);
+      return;
+    }
+
+    const missing = requiredValues.some((value) => !value.trim());
     if (missing) {
       incomplete.push(index + 1);
       return;

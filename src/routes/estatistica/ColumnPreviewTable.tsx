@@ -45,7 +45,7 @@ const MAX_LISTED_PROBLEM_ROWS = 20;
 /** Duração do balanço do cadeado; casa com a animação `shake-lock` do CSS. */
 const SHAKE_MS = 400;
 
-export type ColumnPreviewConfirmMode = 'numeric-required' | 'categorical-pair';
+export type ColumnPreviewConfirmMode = 'numeric-required' | 'categorical-pair' | 'independent-columns';
 
 export interface ColumnPreviewTableProps {
   /** Existing compatibility API. Prefer the stable document API below. */
@@ -243,9 +243,10 @@ export function ColumnPreviewTable({
         tabularOptions.numericKeys ?? [],
         recognizedColumns,
         tabularOptions.temporalKeys ?? [],
+        { allowPartialRequiredRows: confirmMode === 'independent-columns' },
       )
       : null,
-    [document, recognizedColumns, requiredMappingsComplete, tabularOptions, testId],
+    [confirmMode, document, recognizedColumns, requiredMappingsComplete, tabularOptions, testId],
   );
 
   // validateTableSize lança quando estoura; o botão precisa nascer desabilitado

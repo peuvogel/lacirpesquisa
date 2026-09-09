@@ -29,6 +29,21 @@ describe('prepareGroupedSamples', () => {
     expect(prepared.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
   });
 
+  it('keeps valid independent values and warns when the peer cell is invalid', () => {
+    const document = bind(
+      ['Grupo A', 'Grupo B'],
+      [['1', 'inválido'], ['2', 'inválido'], ['3', 'inválido'], ['inválido', '4'], ['inválido', '5'], ['inválido', '6']],
+      { grupo_a: 0, grupo_b: 1 },
+    );
+
+    const prepared = prepareGroupedSamples(document, 'mann-whitney', 'wide');
+
+    expect(prepared.groups.map((group) => group.values)).toEqual([[1, 2, 3], [4, 5, 6]]);
+    expect(prepared.invalidRowNumbers).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(prepared.issues).toContainEqual(expect.objectContaining({ code: 'rows_ignored', severity: 'warning' }));
+    expect(prepared.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
+
   it('prepares long data without dropping a third group to force a comparison', () => {
     const document = bind(
       ['Valor', 'Grupo'],

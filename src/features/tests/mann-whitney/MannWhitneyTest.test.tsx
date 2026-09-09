@@ -199,6 +199,63 @@ describe('MannWhitneyTest', () => {
     expect(within(screen.getByRole('article', { name: 'Efeito por postos' })).getByText('0,278')).toBeInTheDocument();
   });
 
+  it('infers two numeric groups while retaining a categorical DATASUS context column', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<SessionProvider><MannWhitneyTest /></SessionProvider>);
+    fireEvent.change(screen.getByRole('textbox', { name: /Cole aqui os dados/i }), {
+      target: { value: [
+        'Unidade da Federação\t2 Região Nordeste\t3 Região Sudeste',
+        '21 Maranhão\t8,3\t',
+        '22 Piauí\t5,7\t',
+        '23 Ceará\t12,5\t',
+        '24 Rio Grande do Norte\t9,2\t',
+        '25 Paraíba\t9,2\t',
+        '26 Pernambuco\t9,6\t',
+        '27 Alagoas\t11\t',
+        '28 Sergipe\t9,4\t',
+        '29 Bahia\t7,3\t',
+        '31 Minas Gerais\t\t7,8',
+        '32 Espírito Santo\t\t7,1',
+        '33 Rio de Janeiro\t\t10,4',
+        '35 São Paulo\t\t8,7',
+      ].join('\n') },
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    expect(await screen.findByRole('radio', { name: /Uma coluna por grupo/i })).toBeChecked();
+    expect(within(screen.getByRole('combobox', { name: 'Vincular Grupo A' })).getByRole('option', { selected: true }))
+      .toHaveTextContent('2 Região Nordeste');
+    expect(within(screen.getByRole('combobox', { name: 'Vincular Grupo B' })).getByRole('option', { selected: true }))
+      .toHaveTextContent('3 Região Sudeste');
+    const groups = screen.getByRole('region', { name: 'Prévia dos grupos' });
+    expect(within(groups).getByText('2 Região Nordeste').parentElement).toHaveTextContent('n = 9');
+    expect(within(groups).getByText('3 Região Sudeste').parentElement).toHaveTextContent('n = 4');
+    expect(screen.getByRole('region', { name: 'Validade das linhas' }))
+      .toHaveTextContent(/13 válidas.*0 incompletas.*0 inválidas/);
+
+    await user.click(screen.getByRole('checkbox', { name: /grupos são independentes/i }));
+    await runToResultados(user);
+
+    expect(within(screen.getByRole('article', { name: 'Estatística U' })).getByText('13,00')).toBeInTheDocument();
+    expect(within(screen.getByRole('article', { name: 'p-valor' })).getByText('0,4869')).toBeInTheDocument();
+  });
+
+  it('does not infer wide format when a context table has three numeric candidates', async () => {
+    render(<SessionProvider><MannWhitneyTest /></SessionProvider>);
+    fireEvent.change(screen.getByRole('textbox', { name: /Cole aqui os dados/i }), {
+      target: { value: [
+        'Unidade da Federação\tGrupo A\tGrupo B\tGrupo C',
+        '21 Maranhão\t1\t4\t7',
+        '22 Piauí\t2\t5\t8',
+        '23 Ceará\t3\t6\t9',
+      ].join('\n') },
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(300));
+
+    expect(await screen.findByRole('radio', { name: /Valor \+ coluna de grupo/i })).toBeChecked();
+    expect(screen.queryByRole('combobox', { name: 'Vincular Grupo A' })).not.toBeInTheDocument();
+  });
+
   it('releases manual long-format bindings before selecting both wide groups', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<SessionProvider><MannWhitneyTest /></SessionProvider>);

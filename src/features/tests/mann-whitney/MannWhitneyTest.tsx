@@ -68,8 +68,12 @@ function inferWideColumns(document: TableDocument) {
     LONG_GROUP_HEADERS.has(column.name.trim().toLocaleLowerCase('pt-BR').replace(/[_-]+/g, ' '))
   ));
   if (hasNamedGroupColumn) return null;
-  const samples = columns.filter((column) => !isContextHeader(column.name) && !isTotalLabel(column.name));
-  return samples.length === 2 && samples.every((column) => column.type === 'numerica') ? samples : null;
+  const samples = columns.filter((column) => (
+    column.type === 'numerica'
+    && !isContextHeader(column.name)
+    && !isTotalLabel(column.name)
+  ));
+  return samples.length === 2 ? samples : null;
 }
 
 function withFormatBindings(document: TableDocument, format: MannWhitneyFormat): TableDocument {
