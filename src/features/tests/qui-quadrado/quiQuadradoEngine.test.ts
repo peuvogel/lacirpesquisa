@@ -187,6 +187,18 @@ describe('quiQuadradoEngine validation', () => {
     expect(validateDataset(dataset)).toEqual([]);
   });
 
+  it('keeps an aggregated table in count mode when one count column is disabled', () => {
+    const input = {
+      headers: ['Faixa', 'Masc', 'Fem', 'Total'],
+      rows: [['A', '10', '20', '30'], ['B', '5', '20', '25'], ['Total', '15', '40', '55']],
+      recognizedColumns: {},
+      excludedColumnIndexes: [2],
+    };
+
+    expect(resolveQuiQuadradoInputFormat(input)).toBe('counts');
+    expect(validateDataset(buildDatasetFromConfirmed(input)).join(' ')).toMatch(/pelo menos duas colunas de contagens/i);
+  });
+
   it.each(['', '-', '...', '-1', '1,5', '9007199254740992'])('blocks invalid or missing frequency %j instead of treating it as zero', (count) => {
     const dataset = buildDatasetFromConfirmed({ headers: ['Faixa', 'Masc', 'Fem'],
       rows: [['A', count, '10'], ['B', '5', '20']], recognizedColumns: {}, inputFormat: 'counts' });
@@ -207,13 +219,16 @@ describe('quiQuadradoEngine validation', () => {
     expect(validateDataset(dataset)).toEqual([]);
   });
 
-  it('does not reinterpret unique individual identifiers with two numeric fields as frequencies', () => {
-    const input = { headers: ['Pessoa', 'Codigo', 'Idade'],
-      rows: [['A', '1', '20'], ['B', '2', '30']], recognizedColumns: { categoria_a: 0, categoria_b: 1 } };
+  it.each(['Pessoa', 'ID Paciente', 'Código'])('does not reinterpret individual records headed by %s as frequencies', (identifierHeader) => {
+    const input = {
+      headers: [identifierHeader, 'Sexo', 'Desfecho'],
+      rows: [['A', '1', '1'], ['B', '1', '2'], ['C', '2', '1'], ['D', '2', '2'], ['E', '1', '1']],
+      recognizedColumns: { categoria_a: 1, categoria_b: 2 },
+    };
     expect(resolveQuiQuadradoInputFormat(input)).toBe('individual');
     const dataset = buildDatasetFromConfirmed(input);
-    expect(dataset.table).toEqual([[1, 0], [0, 1]]);
-    expect(dataset.totalN).toBe(2);
+    expect(dataset.table).toEqual([[2, 1], [1, 1]]);
+    expect(dataset.totalN).toBe(5);
   });
 
   it('returns PT errors for missing column mapping', () => {

@@ -65,7 +65,7 @@ function isIndividualIdentifierHeader(value: string): boolean {
     .replace(/[_-]+/g, ' ')
     .trim()
     .toLowerCase();
-  return /^(?:id|identificacao|identificador|pessoa|paciente|registro|prontuario)$/.test(normalized);
+  return /(?:^|\s)(?:id|identificacao|identificador|codigo|pessoa|paciente|registro|prontuario)(?:\s|$)/.test(normalized);
 }
 
 function countRows(rows: string[][]): string[][] {
@@ -98,15 +98,19 @@ export function resolveQuiQuadradoInputFormat(input: BuildDatasetInput): 'indivi
   const hasCountColumns = indexes.length >= 2 && indexes.every((index) => (
     rows.every((row) => parseCount(row[index] ?? '') !== null)
   ));
+  const categoryBindingsSkipFirstColumn = input.recognizedColumns.categoria_a !== undefined
+    && input.recognizedColumns.categoria_b !== undefined
+    && input.recognizedColumns.categoria_a > 0
+    && input.recognizedColumns.categoria_b > 0;
   const marginCountEvidence = hasMargins
     && indexes.some((index) => rows.some((row) => parseCount(row[index] ?? '') !== null));
   const marginlessCountEvidence = !hasMargins
     && rows.length >= 2
     && hasDistinctRowLabels
     && hasCountColumns
+    && !categoryBindingsSkipFirstColumn
     && !isIndividualIdentifierHeader(input.headers[0] ?? '');
   const looksLikeMatrix = input.headers.length >= 3
-    && indexes.length >= 2
     && (marginCountEvidence || marginlessCountEvidence);
   return looksLikeMatrix ? 'counts' : 'individual';
 }
