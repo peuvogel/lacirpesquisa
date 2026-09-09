@@ -8,6 +8,7 @@ import { TABULAR_OPTIONS } from './quiQuadradoConfig';
 import {
   buildDatasetFromConfirmed,
   computeAssumptionNudges,
+  resolveQuiQuadradoInputFormat,
   runAnalysis,
   validateColumnTypes,
   validateDataset,
@@ -107,6 +108,40 @@ describe('quiQuadradoEngine assumption nudges', () => {
 });
 
 describe('quiQuadradoEngine validation', () => {
+  it('imports and automatically detects the exact ready-made age-by-sex table without margins', () => {
+    const text = readFileSync(join(fixtureDir, 'tests/qui-quadrado-faixa-etaria-sexo.csv'), 'utf8');
+    const parsed = readTabularPasteState(text, legacyStats, TABULAR_OPTIONS);
+    expect(parsed.status).toBe('loaded');
+    if (parsed.status !== 'loaded') throw new Error('expected loaded ready-made contingency table');
+    const recognizedColumns = Object.fromEntries(
+      Object.entries(parsed.recognizedColumns).map(([key, column]) => [key, column.index]),
+    );
+    const input = { headers: parsed.headers, rows: parsed.bodyRows, recognizedColumns };
+
+    expect(parsed.headers).toEqual(['Faixa Etária', 'Masculino', 'Feminino']);
+    expect(parsed.bodyRows).toHaveLength(12);
+    expect(resolveQuiQuadradoInputFormat(input)).toBe('counts');
+
+    const dataset = buildDatasetFromConfirmed(input);
+    const result = runAnalysis(dataset);
+
+    expect(dataset.rowLabels).toEqual([
+      'Menor 1 ano', '1 a 4 anos', '5 a 9 anos', '10 a 14 anos',
+      '15 a 19 anos', '20 a 29 anos', '30 a 39 anos', '40 a 49 anos',
+      '50 a 59 anos', '60 a 69 anos', '70 a 79 anos', '80 anos e mais',
+    ]);
+    expect(dataset.colLabels).toEqual(['Masculino', 'Feminino']);
+    expect(dataset.table).toHaveLength(12);
+    expect(dataset.table[0]).toEqual([1437, 1100]);
+    expect(dataset.table[11]).toEqual([3646, 4526]);
+    expect(dataset.totalN).toBe(38858);
+    expect(validateDataset(dataset)).toEqual([]);
+    expect(result.df).toBe(11);
+    expect(result.chi2).toBeCloseTo(192.24328297454238, 10);
+    expect(fmtP(result.p)).toBe('< 0,001');
+    expect(result.cramersV).toBeCloseTo(0.07033724686999093, 12);
+  });
+
   it('decodes a Latin-1 DATASUS CSV file and preserves the same count matrix as paste', async () => {
     const text = readFileSync(join(fixtureDir, 'tests/qui-quadrado-datasus.csv'), 'utf8');
     const bytes = Uint8Array.from(Buffer.from(text, 'latin1'));
@@ -173,8 +208,10 @@ describe('quiQuadradoEngine validation', () => {
   });
 
   it('does not reinterpret unique individual identifiers with two numeric fields as frequencies', () => {
-    const dataset = buildDatasetFromConfirmed({ headers: ['Pessoa', 'Codigo', 'Idade'],
-      rows: [['A', '1', '20'], ['B', '2', '30']], recognizedColumns: { categoria_a: 0, categoria_b: 1 } });
+    const input = { headers: ['Pessoa', 'Codigo', 'Idade'],
+      rows: [['A', '1', '20'], ['B', '2', '30']], recognizedColumns: { categoria_a: 0, categoria_b: 1 } };
+    expect(resolveQuiQuadradoInputFormat(input)).toBe('individual');
+    const dataset = buildDatasetFromConfirmed(input);
     expect(dataset.table).toEqual([[1, 0], [0, 1]]);
     expect(dataset.totalN).toBe(2);
   });

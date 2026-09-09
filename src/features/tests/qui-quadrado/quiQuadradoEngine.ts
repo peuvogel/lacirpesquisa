@@ -59,6 +59,15 @@ function isTotal(value: string): boolean {
   return /^total(?: geral)?$/i.test(value.trim());
 }
 
+function isIndividualIdentifierHeader(value: string): boolean {
+  const normalized = value.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .toLowerCase();
+  return /^(?:id|identificacao|identificador|pessoa|paciente|registro|prontuario)$/.test(normalized);
+}
+
 function countRows(rows: string[][]): string[][] {
   const footer = rows.findIndex((row) => /^(?:fonte\s*:|notas?\s*:)/i.test(row[0]?.trim() ?? '')
     && row.slice(1).every((cell) => !cell.trim()));
@@ -83,11 +92,22 @@ export function resolveQuiQuadradoInputFormat(input: BuildDatasetInput): 'indivi
   const rows = countRows(input.rows);
   const excluded = new Set(input.excludedColumnIndexes ?? []);
   const indexes = input.headers.flatMap((header, index) => index > 0 && !isTotal(header) && !excluded.has(index) ? [index] : []);
-  // Totals provide evidence of aggregation. Without that evidence, keep the
-  // individual-record contract; users can explicitly select a matrix without margins.
   const hasMargins = input.headers.some(isTotal) || input.rows.some((row) => isTotal(row[0] ?? ''));
-  const looksLikeMatrix = hasMargins && input.headers.length >= 3
+  const rowLabels = rows.map((row) => row[0]?.trim() ?? '');
+  const hasDistinctRowLabels = rowLabels.every(Boolean) && new Set(rowLabels).size === rowLabels.length;
+  const hasCountColumns = indexes.length >= 2 && indexes.every((index) => (
+    rows.every((row) => parseCount(row[index] ?? '') !== null)
+  ));
+  const marginCountEvidence = hasMargins
     && indexes.some((index) => rows.some((row) => parseCount(row[index] ?? '') !== null));
+  const marginlessCountEvidence = !hasMargins
+    && rows.length >= 2
+    && hasDistinctRowLabels
+    && hasCountColumns
+    && !isIndividualIdentifierHeader(input.headers[0] ?? '');
+  const looksLikeMatrix = input.headers.length >= 3
+    && indexes.length >= 2
+    && (marginCountEvidence || marginlessCountEvidence);
   return looksLikeMatrix ? 'counts' : 'individual';
 }
 

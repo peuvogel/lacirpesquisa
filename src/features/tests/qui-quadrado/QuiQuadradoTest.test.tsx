@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SessionProvider } from '@/shared/session/SessionProvider';
 import { runToResultados } from '@/test/flowHelpers';
@@ -8,6 +8,7 @@ import * as quiQuadradoInterpretation from './quiQuadradoInterpretation';
 import { findColumnTypeWheel, selectColumnType } from '@/test/columnTypeWheel';
 import { setColumnEnabled } from '@/test/columnToggle';
 import datasusText from '@/test/fixtures/tests/qui-quadrado-datasus.csv?raw';
+import ageBySexText from '@/test/fixtures/tests/qui-quadrado-faixa-etaria-sexo.csv?raw';
 
 const { ChartMock, destroySpy } = vi.hoisted(() => {
   const destroySpy = vi.fn();
@@ -47,6 +48,26 @@ function renderQuiQuadrado() {
 }
 
 describe('QuiQuadradoTest', () => {
+  it('auto-configures the exact ready-made age-by-sex table with no variable or ID binding', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderQuiQuadrado();
+    fireEvent.change(screen.getByLabelText('Cole aqui os dados copiados do DataSUS/TABNET'), {
+      target: { value: ageBySexText },
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(200));
+
+    expect(await screen.findByText(/Tabela de contagens: a primeira coluna/i)).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /Vincular/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/parece numérica/i)).not.toBeInTheDocument();
+
+    await runToResultados(user);
+
+    expect(screen.queryByText(/parece numérica/i)).not.toBeInTheDocument();
+    expect(screen.getByText('Qui-quadrado (χ²)')).toBeInTheDocument();
+    expect(screen.getAllByText(/Tabela 12×2/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('38858')).toBeInTheDocument();
+  });
+
   it('analyzes the pasted DATASUS age-by-sex frequency table without recoding counts as categories', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderQuiQuadrado();
